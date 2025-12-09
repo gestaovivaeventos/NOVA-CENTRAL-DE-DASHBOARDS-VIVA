@@ -203,9 +203,26 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
           const headers = dados[0];
           const rows = dados.slice(1);
           
-          const unidadeIdx = headers.findIndex((h: string) => h === 'nm_unidade');
-          const clusterIdx = headers.findIndex((h: string) => h === 'Cluster');
-          const clustersAtivosIdx = headers.findIndex((h: string) => h === 'Cluster ativos');
+          console.log('[ParametrosContext] Headers clusters:', headers);
+          
+          const unidadeIdx = headers.findIndex((h: string) => 
+            h && (h.toLowerCase() === 'nm_unidade' || h.toLowerCase() === 'unidade')
+          );
+          // Busca por "Cluster" ignorando case e espaços
+          const clusterIdx = headers.findIndex((h: string) => 
+            h && h.toLowerCase().trim() === 'cluster'
+          );
+          const clustersAtivosIdx = headers.findIndex((h: string) => 
+            h && h.toLowerCase().includes('cluster') && h.toLowerCase().includes('ativo')
+          );
+          
+          console.log('[ParametrosContext] Índices - unidade:', unidadeIdx, 'cluster:', clusterIdx, 'clustersAtivos:', clustersAtivosIdx);
+          
+          // Debug: mostrar primeiras linhas
+          if (rows.length > 0) {
+            console.log('[ParametrosContext] Primeira linha:', rows[0]);
+            console.log('[ParametrosContext] Cluster da primeira linha:', rows[0][clusterIdx]);
+          }
           
           const unidades: UnidadeCluster[] = rows
             .filter((row: any[]) => row[unidadeIdx])
@@ -214,21 +231,23 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
               cluster: row[clusterIdx] || ''
             }));
           
+          console.log('[ParametrosContext] Unidades com clusters:', unidades.slice(0, 3));
+          
+          // Extrair clusters únicos diretamente da coluna Cluster
           const clustersSet = new Set<string>();
           rows.forEach((row: any[]) => {
-            const clustersCell = row[clustersAtivosIdx];
-            if (clustersCell) {
-              clustersCell.split('\n')
-                .map((c: string) => c.trim())
-                .filter((c: string) => c.length > 0)
-                .forEach((c: string) => clustersSet.add(c));
+            const clusterValue = row[clusterIdx];
+            if (clusterValue && typeof clusterValue === 'string' && clusterValue.trim()) {
+              clustersSet.add(clusterValue.trim());
             }
           });
+          
+          console.log('[ParametrosContext] Clusters disponíveis:', Array.from(clustersSet));
           
           setData(prev => ({
             ...prev,
             clusters: unidades,
-            clustersAtivos: Array.from(clustersSet),
+            clustersAtivos: Array.from(clustersSet).sort(),
           }));
         }
         setErrors(prev => ({ ...prev, clusters: null }));
