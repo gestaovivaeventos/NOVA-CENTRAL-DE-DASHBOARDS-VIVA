@@ -172,7 +172,7 @@ export default function Dashboard() {
 
   // Loading global - só mostra loading se ainda não temos dados carregados
   // Isso evita mostrar loading ao trocar de página quando os dados já existem
-  const hasData = salesData.length > 0 || metasData.length > 0;
+  const hasData = salesData.length > 0 || metasData.size > 0;
   const isLoading = (loadingSales || loadingMetas || loadingFundos) && !hasData;
   const hasError = errorSales || errorMetas || errorFundos;
 
