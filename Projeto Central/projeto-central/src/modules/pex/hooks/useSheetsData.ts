@@ -5,4 +5,4 @@
  */
 
 // Re-exporta o hook do contexto para manter compatibilidade
-export { useSheetsData } from '@/context/SheetsDataContext';
+export { useSheetsData } from '../context/SheetsDataContext';

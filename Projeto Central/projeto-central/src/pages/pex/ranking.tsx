@@ -7,11 +7,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Head from 'next/head';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
-import { useSheetsData } from '@/hooks/useSheetsData';
+import { useSheetsData, Card, PexLayout } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
-import Card from '@/components/pex/Card';
-import PexLayout from '@/components/pex/PexLayout';
 
 export default function RankingPage() {
   const router = useRouter();

@@ -8,10 +8,7 @@ import React, { useState, useEffect } from 'react';
 import { withAuthAndFranchiser } from '@/utils/auth';
 import Head from 'next/head';
 import Image from 'next/image';
-import Card from '@/components/pex/Card';
-import PexLayout from '@/components/pex/PexLayout';
-import { useSheetsData } from '@/hooks/useSheetsData';
-import { useParametrosData } from '@/context/ParametrosContext';
+import { Card, PexLayout, useSheetsData, useParametrosData } from '@/modules/pex';
 
 interface UnidadeConsultor {
   unidade: string;

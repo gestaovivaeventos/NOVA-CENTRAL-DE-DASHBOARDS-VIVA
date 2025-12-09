@@ -13,3 +13,7 @@ export * from './utils';
 
 // Components
 export * from './components';
+
+// Context
+export { ParametrosProvider, useParametrosData } from './context/ParametrosContext';
+export { SheetsDataProvider, useSheetsData } from './context/SheetsDataContext';

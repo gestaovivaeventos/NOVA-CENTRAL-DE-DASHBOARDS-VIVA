@@ -8,14 +8,9 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
-import { useSheetsData } from '@/hooks/useSheetsData';
+import { useSheetsData, Card, PexLayout, IndicadorCardLegacy as IndicadorCard, TabelaResumo, GraficoEvolucao } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
-import Card from '@/components/pex/Card';
-import PexLayout from '@/components/pex/PexLayout';
-import IndicadorCard from '@/components/pex/IndicadorCard';
-import TabelaResumo from '@/components/pex/TabelaResumo';
-import GraficoEvolucao from '@/components/pex/GraficoEvolucao';
 
 export default function ResultadosPage() {
   const router = useRouter();

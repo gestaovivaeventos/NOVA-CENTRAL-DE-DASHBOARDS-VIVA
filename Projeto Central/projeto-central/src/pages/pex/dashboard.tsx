@@ -9,8 +9,7 @@ import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
-import PexLayout from '@/components/pex/PexLayout';
-import { useSheetsData } from '@/hooks/useSheetsData';
+import { PexLayout, useSheetsData } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
 

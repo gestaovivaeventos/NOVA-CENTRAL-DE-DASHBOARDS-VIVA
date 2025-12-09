@@ -2,9 +2,8 @@ import '@/styles/globals.css';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
 import { AuthProvider } from '@/context/AuthContext';
-import { SheetsDataProvider } from '@/context/SheetsDataContext';
-import { ParametrosProvider } from '@/context/ParametrosContext';
-import { Shell } from '@/components/layout';
+import { SheetsDataProvider, ParametrosProvider } from '@/modules/pex';
+import { Shell } from '@/modules/central';
 
 // Chart.js com plugin de data labels
 import {
