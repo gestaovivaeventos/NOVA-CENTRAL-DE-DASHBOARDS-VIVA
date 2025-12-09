@@ -6,8 +6,8 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { Header, Sidebar, Loading, KPICard, IndicadoresOperacionais, Card, FunilHorizontal, Footer } from '@/modules/vendas/components';
-import { FilterPanel } from '@/modules/vendas/components/filters';
+import { Header, Sidebar, Loading, KPICard, IndicadoresOperacionais, Card, FunilHorizontal, Footer } from '@/components';
+import { FilterPanel } from '@/components/filters';
 import { 
   VVRVsMetaChart, 
   CumulativeYearChart, 
@@ -24,18 +24,18 @@ import {
   CORES_FASES_FUNIL,
   CORES_FASES_PERDAS,
   getCorFase,
-} from '@/modules/vendas/components/charts';
-import { DataTable, CaptacoesTable, DadosDetalhadosTable, IndicadoresOperacionaisTable } from '@/modules/vendas/components/tables';
-import { MotivosPerdaDescarteTable } from '@/modules/vendas/components/MotivosPerdaDescarteTable';
-import { DataTable as GenericDataTable } from '@/modules/vendas/components/DataTable';
-import { useSalesData } from '@/modules/vendas/hooks/useSalesData';
-import { useMetasData } from '@/modules/vendas/hooks/useMetasData';
-import { useFundosData } from '@/modules/vendas/hooks/useFundosData';
-import { useFunilData } from '@/modules/vendas/hooks/useFunilData';
-import { extrairUnidades, filtrarDados } from '@/modules/vendas/utils/calculos';
-import { getPeriodoDatas, identificarPeriodo } from '@/modules/vendas/utils/periodo';
-import { META_CONFIG, PAGES } from '@/modules/vendas/config/app.config';
-import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/types/filtros.types';
+} from '@/components/charts';
+import { DataTable, CaptacoesTable, DadosDetalhadosTable, IndicadoresOperacionaisTable } from '@/components/tables';
+import { MotivosPerdaDescarteTable } from '@/components/MotivosPerdaDescarteTable';
+import { DataTable as GenericDataTable } from '@/components/DataTable';
+import { useSalesData } from '@/hooks/useSalesData';
+import { useMetasData } from '@/hooks/useMetasData';
+import { useFundosData } from '@/hooks/useFundosData';
+import { useFunilData } from '@/hooks/useFunilData';
+import { extrairUnidades, filtrarDados } from '@/utils/calculos';
+import { getPeriodoDatas, identificarPeriodo } from '@/utils/periodo';
+import { META_CONFIG, PAGES } from '@/config/app.config';
+import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/types/filtros.types';
 
 // Estado inicial dos filtros
 const INITIAL_FILTERS: FiltrosState = {
@@ -71,9 +71,8 @@ export default function Dashboard() {
   
   // Função para obter página da URL
   const getPaginaFromPath = (path: string): PaginaAtiva => {
-    if (path.includes('/vendas/indicadores')) return 'indicadores';
-    if (path.includes('/vendas/funil')) return 'funil';
-    if (path.includes('/vendas/metas')) return 'metas';
+    if (path.includes('/indicadores')) return 'indicadores';
+    if (path.includes('/funil')) return 'funil';
     return 'metas';
   };
   
@@ -151,8 +150,8 @@ export default function Dashboard() {
     if (paginaAtiva !== paginaCorreta) {
       setPaginaAtiva(paginaCorreta);
     }
-    if (router.asPath === '/vendas' || router.asPath === '/vendas/') {
-      router.replace('/vendas/metas', undefined, { shallow: true });
+    if (router.asPath === '/') {
+      router.replace('/metas', undefined, { shallow: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -161,7 +160,7 @@ export default function Dashboard() {
   const handlePaginaChange = useCallback((novaPagina: string) => {
     const pagina = novaPagina as PaginaAtiva;
     setPaginaAtiva(pagina);
-    router.push(`/vendas/${pagina}`, undefined, { shallow: true });
+    router.push(`/${pagina}`, undefined, { shallow: true });
   }, [router]);
 
   // Hooks de dados

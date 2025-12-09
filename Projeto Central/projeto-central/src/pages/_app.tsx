@@ -6,6 +6,35 @@ import { SheetsDataProvider } from '@/context/SheetsDataContext';
 import { ParametrosProvider } from '@/context/ParametrosContext';
 import { Shell } from '@/components/layout';
 
+// Chart.js com plugin de data labels
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+
+// Registrar componentes do Chart.js globalmente
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  ChartDataLabels
+);
+
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <>

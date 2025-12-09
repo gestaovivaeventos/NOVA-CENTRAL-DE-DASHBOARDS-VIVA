@@ -1,0 +1,390 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Poppins:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== VARIÁVEIS CSS DO DASHBOARD VIVA EVENTOS ========== */
+:root {
+  --bg-primary: #212529;
+  --bg-secondary: #343A40;
+  --bg-tertiary: #495057;
+  --color-primary: #FF6600;
+  --color-primary-hover: #e55a00;
+  --color-primary-light: #ff8a33;
+  --text-primary: #F8F9FA;
+  --text-secondary: #ADB5BD;
+  --text-muted: #6c757d;
+  --border-color: #3c434a;
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 10px rgba(255, 102, 0, 0.12);
+  --shadow-lg: 0 8px 18px rgba(0, 0, 0, 0.4);
+  --success: #28a745;
+  --warning: #ffc107;
+  --danger: #dc3545;
+}
+
+/* ========== RESET E BASE ========== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* ========== SCROLLBAR CUSTOMIZADA ========== */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 5px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666;
+}
+
+/* ========== LAYOUT PRINCIPAL ========== */
+@layer components {
+  /* Dashboard Wrapper */
+  .dashboard-wrapper {
+    @apply flex min-h-screen;
+  }
+
+  /* Main Content */
+  .main-content {
+    @apply flex-grow p-5 transition-all duration-300;
+    margin-left: 280px;
+  }
+
+  .main-content.full-width {
+    margin-left: 0;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-dark-secondary rounded-lg p-5 border border-dark-border;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-title {
+    margin: 0 0 12px 0;
+    color: #adb5bd;
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    font-family: 'Poppins', Arial, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid #ff6600;
+    padding-bottom: 2px;
+  }
+
+  /* KPI Cards */
+  .kpi-card {
+    @apply flex flex-col gap-2 rounded-lg p-4;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+  }
+
+  .kpi-card-title {
+    @apply font-semibold;
+    font-size: 0.9rem;
+    color: #adb5bd;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .kpi-card-value {
+    @apply text-3xl font-bold;
+    color: var(--text-primary);
+  }
+
+  .kpi-card-details {
+    font-size: 0.75rem;
+    color: #adb5bd;
+  }
+
+  .kpi-meta-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #adb5bd;
+  }
+
+  /* Progress Bar */
+  .progress-bar-bg {
+    @apply w-full h-2 rounded-full overflow-hidden;
+    background-color: var(--bg-tertiary);
+  }
+
+  .progress-bar-fg {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply px-5 py-2.5 rounded-lg font-semibold cursor-pointer transition-all duration-200;
+    background: linear-gradient(135deg, #FF6600, #ff8533);
+    color: white;
+    border: none;
+    box-shadow: var(--shadow-md);
+  }
+
+  .btn-primary:hover {
+    @apply transform -translate-y-0.5;
+    background: linear-gradient(135deg, #e55a00, #FF6600);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .btn-secondary {
+    @apply px-5 py-2.5 rounded-lg font-semibold cursor-pointer transition-all duration-200;
+    background: linear-gradient(180deg, #3a3f44 0%, #2e3236 100%);
+    color: #e9ecef;
+    border: 1px solid rgba(0,0,0,0.45);
+  }
+
+  .btn-secondary:hover {
+    @apply transform -translate-y-0.5;
+    filter: brightness(1.1);
+  }
+
+  .btn-secondary.active {
+    background: linear-gradient(180deg, #ff8a33 0%, #FF6600 50%, #e65500 100%);
+    color: white;
+    border: 1px solid rgba(0,0,0,0.6);
+  }
+
+  /* Inputs */
+  .input-field {
+    @apply w-full px-4 py-3 rounded-lg transition-all duration-200;
+    background: linear-gradient(135deg, #212529 0%, #343A40 100%);
+    border: 2px solid var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  .input-field:focus {
+    @apply outline-none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(255, 102, 0, 0.15);
+  }
+
+  .input-field::placeholder {
+    color: var(--text-muted);
+  }
+
+  /* Select */
+  .select-field {
+    @apply w-full px-4 py-3 rounded-lg cursor-pointer transition-all duration-200;
+    background: linear-gradient(to bottom, #5a6573 0%, #4a5563 50%, #3a4553 100%);
+    color: white;
+    border: none;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .select-field:hover {
+    @apply transform -translate-y-0.5;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Filters Section */
+  .filters-section {
+    @apply flex flex-wrap gap-4 items-center p-6 rounded-xl;
+    background: linear-gradient(135deg, #343A40 0%, #495057 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .filter-item {
+    @apply flex-1 min-w-[200px] flex flex-col gap-2;
+  }
+
+  .filter-label {
+    @apply text-sm font-semibold uppercase tracking-wide flex items-center gap-1.5;
+    color: var(--text-primary);
+  }
+
+  /* Charts */
+  .chart-container {
+    @apply rounded-lg p-5;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--bg-tertiary);
+  }
+
+  .chart-wrapper {
+    @apply relative;
+    height: 45vh;
+  }
+
+  .chart-selector {
+    @apply flex flex-wrap gap-2.5 mb-5;
+  }
+
+  /* Tables */
+  .table-container {
+    @apply rounded-lg p-5 overflow-x-auto;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--bg-tertiary);
+  }
+
+  .data-table {
+    @apply w-full border-collapse;
+  }
+
+  .data-table thead {
+    background-color: #2c3035;
+    border-bottom: 2px solid var(--color-primary);
+  }
+
+  .data-table thead th {
+    @apply px-4 py-3 text-left font-semibold uppercase text-sm tracking-wide;
+    color: var(--text-secondary);
+  }
+
+  .data-table tbody tr {
+    @apply transition-colors duration-200;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .data-table tbody tr:hover {
+    background-color: rgba(255, 102, 0, 0.1);
+  }
+
+  .data-table tbody td {
+    @apply px-4 py-3;
+    color: var(--text-primary);
+  }
+
+  /* Indicators Section */
+  .indicators-section {
+    @apply rounded-lg p-4;
+    background: linear-gradient(180deg, #343a40 0%, #2e363b 100%);
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+
+  .indicators-row {
+    @apply grid grid-cols-4 gap-3;
+  }
+
+  @media (max-width: 900px) {
+    .indicators-row {
+      @apply grid-cols-2;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .indicators-row {
+      @apply grid-cols-1;
+    }
+  }
+
+  .indicator-card {
+    @apply flex flex-col gap-1.5 rounded-lg p-3;
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+  }
+
+  .indicator-label {
+    font-size: 0.9em !important;
+    font-weight: bold !important;
+    color: #ADB5BD !important;
+  }
+
+  .indicator-value {
+    font-size: 1.7em !important;
+    font-weight: bold !important;
+    color: #F8F9FA !important;
+  }
+
+  .indicator-meta {
+    font-size: 0.75rem !important;
+    color: #ADB5BD !important;
+  }
+
+  /* Section Title - Estilo original do dashboard */
+  .section-title {
+    margin: 0 0 12px 0;
+    color: #adb5bd;
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    font-family: 'Poppins', Arial, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid #ff6600;
+    padding-bottom: 2px;
+  }
+
+  /* Título com destaque laranja para indicador de meta */
+  .section-title-highlight {
+    color: #ff6600 !important;
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    font-family: 'Poppins', Arial, sans-serif;
+    font-weight: 600;
+  }
+
+  /* Footer */
+  .dashboard-footer {
+    @apply text-sm font-medium;
+    color: #8b949e;
+  }
+}
+
+/* ========== ANIMAÇÕES ========== */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  @apply w-8 h-8 border-4 border-t-primary-500 border-r-transparent border-b-transparent border-l-transparent rounded-full;
+  animation: spin 1s linear infinite;
+}
+
+/* ========== RESPONSIVIDADE ========== */
+@media (max-width: 768px) {
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+  }
+
+  .filters-section {
+    @apply flex-col gap-4 p-4;
+  }
+
+  .filter-item {
+    @apply w-full min-w-full;
+  }
+}

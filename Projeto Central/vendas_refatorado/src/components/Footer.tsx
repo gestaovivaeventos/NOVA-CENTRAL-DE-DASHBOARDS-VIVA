@@ -1,0 +1,24 @@
+/**
+ * Footer - Componente de rodapé com informações de desenvolvimento
+ */
+
+export default function Footer() {
+  return (
+    <footer style={{
+      position: 'relative',
+      width: '100%',
+      padding: '8px 24px 4px 24px',
+      marginTop: '8px',
+      textAlign: 'left',
+      background: 'none',
+      border: 'none',
+      fontSize: '0.75rem',
+      color: '#6c757d',
+      fontFamily: 'Poppins, sans-serif',
+      letterSpacing: '0.3px',
+      opacity: 0.8
+    }}>
+      📊 Developed by Gestão de Dados - VIVA Eventos Brasil 2025
+    </footer>
+  );
+}

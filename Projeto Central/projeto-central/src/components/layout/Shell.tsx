@@ -51,6 +51,11 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas de Vendas são independentes (layout próprio)
+  if (router.pathname.startsWith('/vendas')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 
