@@ -33,7 +33,9 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
       id: 'gestao-resultados',
       name: 'Gestão por Resultados',
       dashboards: [
-        // Por enquanto vazio - dashboards futuros serão adicionados aqui
+        { id: 'kpi', label: 'Dashboard KPIs', path: '/kpi', icon: 'chart' },
+        { id: 'okr', label: 'Dashboard OKRs', path: '/okr', icon: 'target' },
+        { id: 'gerencial', label: 'Painel Gerencial', path: '/gerencial', icon: 'trophy' },
       ],
     },
     {

@@ -16,6 +16,9 @@
   --text-primary: #F8F9FA;
   --text-secondary: #ADB5BD;
   --border-color: rgba(255, 255, 255, 0.08);
+  --current-accent-color: var(--color-primary);
+  --sidebar-width: 300px;
+  --sidebar-width-collapsed: 80px;
 }
 
 /* Base Styles */
@@ -469,5 +472,1086 @@ body {
 
   .filter-item {
     @apply w-full min-w-full;
+  }
+}
+
+/* ============================================
+   Módulo KPI - Estilos Específicos
+   ============================================ */
+
+/* Dashboard Wrapper KPI */
+.dashboard-wrapper {
+  @apply flex min-h-screen;
+  background-color: var(--bg-primary);
+}
+
+/* Main Content KPI */
+.main-content {
+  @apply flex-grow p-5 transition-all duration-300;
+}
+
+/* Page Container KPI */
+.page-container {
+  width: 100%;
+}
+
+/* KPI Time Section */
+.kpi-time-section {
+  background: var(--bg-secondary);
+  border-radius: 0.75rem;
+  padding: 2.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  width: 100%;
+  margin: 0 0 1.5rem 0;
+  border: 1px solid var(--bg-tertiary);
+}
+
+.kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #ff6600;
+  padding-bottom: 8px;
+}
+
+.kpi-time-section h2 {
+  font-size: 1.2rem;
+  color: #adb5bd;
+  margin: 0;
+  font-weight: 600;
+  font-family: 'Poppins', Arial, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+  flex-shrink: 1;
+}
+
+.tendencia-badge {
+  flex-shrink: 0;
+}
+
+/* KPI Card dentro do Chart */
+.kpi-sidebar .kpi-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+  background-color: var(--bg-tertiary);
+  padding: 1.2rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-height: 90px;
+  /* Reset estilos herdados do Vendas */
+  position: relative;
+  overflow: visible;
+  border: none;
+  box-shadow: none;
+  transform: none;
+  transition: none;
+}
+
+/* Remover a linha laranja do ::before herdada do Vendas */
+.kpi-sidebar .kpi-card::before {
+  display: none;
+}
+
+.kpi-sidebar .kpi-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.kpi-sidebar .kpi-card .kpi-label {
+  font-size: 0.9rem;
+  color: #adb5bd;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  font-family: 'Poppins', Arial, sans-serif;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-sidebar .kpi-card .kpi-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-family: 'Poppins', Arial, sans-serif;
+  color: var(--text-primary);
+  line-height: 1.2;
+  display: block;
+  letter-spacing: 0.02em;
+}
+
+.kpi-sidebar .kpi-card .kpi-value.highlight {
+  color: var(--current-accent-color, #ff6600);
+}
+
+/* Chart Wrapper KPI */
+.kpi-time-section .chart-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-areas: "sidebar chart";
+  gap: 1.5rem;
+  align-items: stretch;
+  height: 450px;
+  max-height: 450px;
+}
+
+.kpi-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  grid-area: sidebar;
+  height: 100%;
+  justify-content: space-between;
+}
+
+.main-chart-area {
+  position: relative;
+  height: 100%;
+  min-width: 0;
+  grid-area: chart;
+  overflow: hidden;
+}
+
+.main-chart-area canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* KPIs Grid */
+.kpis-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Welcome Container KPI */
+.welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.welcome-icon {
+  margin-bottom: 24px;
+  color: var(--color-primary);
+}
+
+.welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  font-family: 'Orbitron', 'Poppins', sans-serif;
+}
+
+.welcome-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+}
+
+/* Loader KPI */
+.loader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.loader p {
+  color: var(--text-secondary);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Dark colors for KPI Sidebar */
+.bg-dark-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.bg-dark-primary {
+  background-color: var(--bg-primary);
+}
+
+.border-dark-tertiary {
+  border-color: var(--bg-tertiary);
+}
+
+/* Responsive KPI */
+@media (max-width: 992px) {
+  .kpi-time-section .chart-wrapper {
+    grid-template-columns: 1fr;
+    grid-template-areas: "sidebar" "chart";
+    height: auto;
+    max-height: none;
+  }
+
+  .kpi-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    height: auto;
+    gap: 0.75rem;
+  }
+
+  .kpi-sidebar .kpi-card {
+    flex: 1 1 calc(50% - 0.75rem);
+    min-width: 140px;
+    max-width: calc(50% - 0.375rem);
+  }
+
+  .main-chart-area {
+    height: 350px;
+    position: relative;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-time-section {
+    width: 100%;
+    max-width: 100%;
+    padding: 1.5rem;
+  }
+
+  .kpi-time-section h2 {
+    font-size: 1rem;
+  }
+
+  .kpi-sidebar .kpi-card {
+    flex: 1 1 100%;
+    max-width: 100%;
+  }
+
+  .main-chart-area {
+    height: 280px;
+  }
+}
+
+/* ========== ESTILOS DO MÓDULO OKR ========== */
+
+/* KR Display Wrapper */
+.kr-display-wrapper {
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+/* KR Display Container (Card dos OKRs) */
+.kr-display-container {
+  background-color: var(--bg-secondary);
+  border-radius: 0.75rem;
+  padding: 2rem;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+/* Container dos gráficos de KR */
+.kr-charts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+/* Seção de OKR */
+.okr-section {
+  margin-bottom: 2rem;
+}
+
+.okr-objective-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--current-accent-color);
+}
+
+/* KR Card Header */
+.kr-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid;
+  border-image: linear-gradient(90deg, var(--current-accent-color, #ff6600) 0%, rgba(255,102,0,0.3) 50%, transparent 100%) 1;
+  padding-bottom: 8px;
+}
+
+.kr-title-row {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.kr-card-header h3 {
+  font-size: 1rem;
+  color: #adb5bd;
+  margin: 0;
+  font-weight: 500;
+  font-family: 'Poppins', Arial, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.tendencia-badge {
+  flex-shrink: 0;
+}
+
+/* Botão Info (i) no header do card */
+.kr-card-header .info-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--current-accent-color);
+  background: transparent;
+  color: var(--current-accent-color);
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.kr-card-header .info-btn:hover {
+  background: var(--current-accent-color);
+  color: var(--bg-primary);
+}
+
+/* Botões do header */
+.kr-header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Botão Preencher Meta | Resultado */
+.fill-data-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 2px solid var(--current-accent-color);
+  color: var(--current-accent-color);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  height: 32px;
+}
+
+.fill-data-btn:hover {
+  background: var(--current-accent-color);
+  color: var(--bg-primary);
+}
+
+/* Data Entry Wrapper (Área de Edição) */
+.data-entry-wrapper {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.responsavel-section {
+  margin-bottom: 1.5rem;
+}
+
+.forma-resp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-end;
+}
+
+.forma-de-medir-block,
+.responsavel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.forma-de-medir-block .select-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.forma-de-medir-block label,
+.responsavel-block label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.forma-de-medir-select {
+  padding: 0.6rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.responsavel-input {
+  padding: 0.6rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  min-width: 250px;
+}
+
+.medida-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.medida-block label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.medida-select {
+  padding: 0.6rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.info-btn-small {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--current-accent-color);
+  background: transparent;
+  color: var(--current-accent-color);
+  font-weight: bold;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Tabela de entrada de dados */
+.data-entry-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+}
+
+.data-entry-table th,
+.data-entry-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-entry-table th {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.data-entry-table td {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.meta-input,
+.realizado-input {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 4px;
+  font-size: 0.9rem;
+  width: 150px;
+  text-align: right;
+}
+
+.meta-input:focus,
+.realizado-input:focus {
+  outline: none;
+  border-color: var(--current-accent-color);
+}
+
+/* Seção de salvar */
+.save-all-section {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 1rem;
+}
+
+.save-message {
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+}
+
+.save-message.success {
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.save-message.error {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.save-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: 2px solid var(--current-accent-color);
+  color: var(--current-accent-color);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 36px;
+}
+
+.save-all-btn:hover:not(:disabled) {
+  background: var(--current-accent-color);
+  color: var(--bg-primary);
+  transform: translateY(-1px);
+}
+
+.save-all-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Chart Wrapper OKR (Layout Sidebar + Gráfico) */
+/* Dentro do contexto .kr-display-container */
+.kr-display-container .chart-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-areas: "sidebar chart";
+  gap: 1.5rem;
+  align-items: stretch;
+  height: 420px;
+  max-height: 420px;
+}
+
+/* KPI Sidebar OKR */
+.kr-display-container .kpi-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  grid-area: sidebar;
+  height: 400px;
+  max-height: 400px;
+}
+
+/* Cards de KPI na sidebar OKR - mesmo estilo de fundo do KPI */
+.kr-display-container .kpi-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+  background-color: var(--bg-tertiary);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+  min-height: 55px;
+  max-height: 70px;
+  /* Reset estilos herdados do Vendas */
+  position: relative;
+  overflow: visible;
+  border: none;
+  box-shadow: none;
+  transform: none;
+  transition: none;
+}
+
+/* Remover a linha laranja do ::before herdada do Vendas */
+.kr-display-container .kpi-card::before {
+  display: none;
+}
+
+.kr-display-container .kpi-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.kr-display-container .kpi-card.kpi-card-atingimento {
+  flex-grow: 2;
+  min-height: 140px;
+  max-height: 160px;
+  position: relative;
+}
+
+.kr-display-container .kpi-card.kpi-card-atingimento .kpi-label {
+  margin-top: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.kr-display-container .kpi-card .kpi-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.3rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.kr-display-container .kpi-card .kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.kr-display-container .kpi-card .kpi-value.highlight {
+  color: var(--current-accent-color, #ff6600);
+}
+
+.kr-display-container .kpi-card .kpi-responsavel {
+  text-transform: uppercase;
+  font-size: 1rem;
+}
+
+.kpi-label {
+  font-size: 0.9rem;
+  color: #adb5bd;
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  font-family: 'Poppins', Arial, sans-serif;
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.kpi-value {
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-family: 'Poppins', Arial, sans-serif;
+  color: var(--text-primary);
+  line-height: 1.2;
+  display: block;
+  letter-spacing: 0.02em;
+}
+
+.kpi-value.highlight {
+  color: var(--current-accent-color);
+}
+
+.kpi-responsavel {
+  text-transform: uppercase;
+  font-size: 1rem;
+}
+
+/* Área do gráfico principal OKR */
+.kr-display-container .main-chart-area {
+  position: relative;
+  height: 400px;
+  max-height: 400px;
+  min-width: 0;
+  grid-area: chart;
+  overflow: hidden;
+}
+
+.kr-display-container .main-chart-area canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* KPI Sidebar OKR - mantendo compatibilidade */
+.okr-chart-wrapper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-areas: "sidebar chart";
+  gap: 1.5rem;
+  align-items: stretch;
+  height: 420px;
+  max-height: 420px;
+}
+
+/* KPI Sidebar OKR */
+.okr-kpi-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  grid-area: sidebar;
+  height: 400px;
+  max-height: 400px;
+}
+
+/* Container do gráfico de atingimento (doughnut) OKR */
+.atingimento-chart-container {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.atingimento-center-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.5rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* Card de atingimento específico OKR */
+.kpi-card-atingimento {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.75rem 1rem 1rem 1rem;
+  flex-grow: 2;
+  min-height: 140px;
+  max-height: 160px;
+  position: relative;
+}
+
+.kpi-card-atingimento .kpi-label {
+  margin-top: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+/* Label do atingimento com espaçamento */
+.atingimento-label {
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive OKR */
+@media (max-width: 1024px) {
+  .kr-display-container .chart-wrapper {
+    grid-template-columns: 1fr;
+    grid-template-areas: 
+      "sidebar"
+      "chart";
+    height: auto;
+    max-height: none;
+  }
+
+  .kr-display-container .kpi-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    height: auto;
+    max-height: none;
+    gap: 0.75rem;
+  }
+
+  .kr-display-container .kpi-card {
+    flex: 1 1 calc(50% - 0.375rem);
+    min-height: 60px;
+    max-height: none;
+  }
+
+  .kr-display-container .kpi-card.kpi-card-atingimento {
+    flex: 1 1 100%;
+    min-height: 120px;
+    max-height: none;
+  }
+
+  .kr-display-container .main-chart-area {
+    height: 300px;
+    max-height: 300px;
+  }
+  
+  .okr-chart-wrapper {
+    grid-template-columns: 1fr;
+    grid-template-areas: 
+      "sidebar"
+      "chart";
+    height: auto;
+    max-height: none;
+  }
+
+  .okr-kpi-sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    height: auto;
+    max-height: none;
+    gap: 0.75rem;
+  }
+
+  .okr-kpi-sidebar .kpi-card {
+    flex: 1 1 calc(50% - 0.375rem);
+    min-height: 60px;
+    max-height: none;
+  }
+
+  .kpi-card-atingimento {
+    flex: 1 1 100%;
+    min-height: 120px;
+    max-height: none;
+  }
+
+  .okr-chart-wrapper .main-chart-area {
+    height: 300px;
+    max-height: 300px;
+  }
+}
+
+/* ========== ESTILOS ADICIONAIS OKR ========== */
+
+/* App container para o layout OKR */
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* Main Content OKR - com margin-left para sidebar */
+.app-container .main-content {
+  flex-grow: 1;
+  margin-left: var(--sidebar-width, 300px);
+  padding: 24px 32px;
+  transition: margin-left 0.3s ease;
+}
+
+.app-container .main-content.sidebar-collapsed {
+  margin-left: var(--sidebar-width-collapsed, 80px);
+}
+
+/* Page Container OKR */
+.app-container .page-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+}
+
+/* Filters Section OKR */
+.filters-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  align-items: flex-start;
+}
+
+/* Filtro de objetivo OKR */
+.filter-group-objetivo {
+  flex: 1;
+  min-width: 0;
+}
+
+.objetivo-filter-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.objetivo-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  font-style: italic;
+  line-height: 1.4;
+  max-width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  text-transform: uppercase;
+}
+
+/* Filter label OKR */
+.filter-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Filter group OKR */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Welcome Container OKR */
+.app-container .welcome-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+}
+
+.app-container .welcome-icon {
+  font-size: 4rem;
+  margin-bottom: 24px;
+}
+
+.app-container .welcome-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text-primary);
+  font-family: 'Orbitron', 'Poppins', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.app-container .welcome-subtitle {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+}
+
+/* Dark colors helper classes */
+.bg-dark-secondary {
+  background-color: var(--bg-secondary);
+}
+
+.bg-dark-primary {
+  background-color: var(--bg-primary);
+}
+
+.border-dark-tertiary {
+  border-color: var(--bg-tertiary);
+}
+
+/* Filter Buttons - Estilo original do KPI */
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(180deg, #3a3f44 0%, #2e3236 100%);
+  color: #e9ecef;
+  border: 1px solid rgba(0,0,0,0.45);
+  font-size: 0.85rem;
+  min-width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-btn:hover {
+  filter: brightness(1.1);
+}
+
+.filter-btn.active {
+  background: linear-gradient(180deg, #ff8a33 0%, #FF6600 50%, #e65500 100%);
+  color: white;
+  border: 1px solid rgba(0,0,0,0.6);
+  font-weight: 600;
+}
+
+/* Filter Buttons no contexto OKR - estilo original okr_refatorado */
+.app-container.okr-module .filter-btn,
+.okr-page .filter-btn {
+  background: transparent;
+  color: #9ca3af;
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.app-container.okr-module .filter-btn:hover,
+.okr-page .filter-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  filter: none;
+}
+
+.app-container.okr-module .filter-btn.active,
+.okr-page .filter-btn.active {
+  background: color-mix(in srgb, var(--current-accent-color, #ff6600) 15%, transparent);
+  color: var(--current-accent-color, #ff6600);
+  border: 1px solid var(--current-accent-color, #ff6600);
+  font-weight: 600;
+  box-shadow: none;
+}
+
+/* Responsive OKR */
+@media (max-width: 1024px) {
+  .app-container .main-content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container .main-content {
+    margin-left: 0;
+    padding: 16px;
+  }
+
+  .filters-section {
+    flex-direction: column;
   }
 }

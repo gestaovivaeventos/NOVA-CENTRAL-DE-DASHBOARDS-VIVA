@@ -56,6 +56,21 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas de KPI são independentes (layout próprio)
+  if (router.pathname.startsWith('/kpi')) {
+    return <>{children}</>;
+  }
+
+  // Páginas de OKR são independentes (layout próprio)
+  if (router.pathname.startsWith('/okr')) {
+    return <>{children}</>;
+  }
+
+  // Páginas do Painel Gerencial são independentes (layout próprio)
+  if (router.pathname.startsWith('/gerencial')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 

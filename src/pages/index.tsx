@@ -31,6 +31,9 @@ interface Dashboard {
 }
 
 const allDashboards: Dashboard[] = [
+  { id: 'kpi', name: 'Dashboard KPIs', description: 'Indicadores de Performance', path: '/kpi', icon: '📊', color: '#3b82f6' },
+  { id: 'okr', name: 'Dashboard OKRs', description: 'Objetivos e Resultados-Chave', path: '/okr', icon: '🎯', color: '#8b5cf6' },
+  { id: 'gerencial', name: 'Painel Gerencial', description: 'Visão consolidada de KPIs e OKRs', path: '/gerencial', icon: '🏅', color: '#f59e0b' },
   { id: 'vendas', name: 'Dashboard Vendas', description: 'Visão geral de vendas', path: '/vendas', icon: '💰', color: '#FF6600' },
   { id: 'pex', name: 'Dashboard PEX', description: 'Visão geral do PEX', path: '/pex', icon: '🏆', color: '#22c55e' },
 ];
