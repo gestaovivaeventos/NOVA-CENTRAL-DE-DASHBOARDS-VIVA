@@ -1278,11 +1278,14 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     
-    // Filtrar por unidades
-    const dadosFiltradosUnidades = unidadesAtivas.length > 0
-      ? salesData.filter(d => unidadesAtivas.includes(d.nm_unidade))
-      : salesData;
+    // Filtrar por unidades e cursos
+    const dadosFiltradosUnidades = salesData.filter(d => {
+      if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      return true;
+    });
 
     // Agrupar por ano
     const salesByYear: Record<string, { vendas: number; posVendas: number }> = {};
@@ -1317,21 +1320,23 @@ export default function Dashboard() {
       vendas: salesByYear[year].vendas,
       posVendas: salesByYear[year].posVendas,
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
 
   // Dados para gráfico VVR Total Mensal (barras empilhadas verticais)
   const dadosVVRMensal = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoVVR || anoVigente;
     
-    // Filtrar por unidades e ano
+    // Filtrar por unidades, cursos e ano
     const dadosFiltradosUnidades = salesData.filter(d => {
       const dt = d.dt_cadastro_integrante;
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
       return true;
     });
 
@@ -1360,18 +1365,21 @@ export default function Dashboard() {
       vendas: salesByMonth[index].vendas,
       posVendas: salesByMonth[index].posVendas,
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades, anoSelecionadoVVR, anoVigente]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoVVR, anoVigente]);
 
   // Dados para gráfico Ticket Médio Anual (barras horizontais)
   const dadosTicketAnual = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     
-    // Filtrar por unidades
-    const dadosFiltradosUnidades = unidadesAtivas.length > 0
-      ? salesData.filter(d => unidadesAtivas.includes(d.nm_unidade))
-      : salesData;
+    // Filtrar por unidades e cursos
+    const dadosFiltradosUnidades = salesData.filter(d => {
+      if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      return true;
+    });
 
     // Agrupar por ano
     const ticketByYear: Record<string, { totalValor: number; totalAdesoes: number }> = {};
@@ -1399,21 +1407,23 @@ export default function Dashboard() {
         ? ticketByYear[year].totalValor / ticketByYear[year].totalAdesoes 
         : 0,
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
 
   // Dados para gráfico Ticket Médio Mensal (barras verticais)
   const dadosTicketMensal = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoTicket || anoVigente;
     
-    // Filtrar por unidades e ano
+    // Filtrar por unidades, cursos e ano
     const dadosFiltradosUnidades = salesData.filter(d => {
       const dt = d.dt_cadastro_integrante;
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
       return true;
     });
 
@@ -1435,7 +1445,7 @@ export default function Dashboard() {
         ? ticketByMonth[index].totalValor / ticketByMonth[index].totalAdesoes 
         : 0,
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades, anoSelecionadoTicket, anoVigente]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoTicket, anoVigente]);
 
   // Estado para anos ativos nos gráficos de comparativo
   const [anosAtivosVVR, setAnosAtivosVVR] = useState<number[]>([]);
@@ -1459,10 +1469,13 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     
-    const dadosFiltradosUnidades = unidadesAtivas.length > 0
-      ? salesData.filter(d => unidadesAtivas.includes(d.nm_unidade))
-      : salesData;
+    const dadosFiltradosUnidades = salesData.filter(d => {
+      if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      return true;
+    });
 
     // Agrupar por ano e mês
     const salesByYearMonth: Record<number, number[]> = {};
@@ -1492,7 +1505,7 @@ export default function Dashboard() {
       year,
       monthlyData: salesByYearMonth[year],
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades, anosAtivosVVR.length]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anosAtivosVVR.length]);
 
   // Anos ativos calculados
   const anosAtivosVVRComputed = useMemo(() => {
@@ -1506,10 +1519,13 @@ export default function Dashboard() {
     if (!fundosData || fundosData.length === 0) return { labels: [], values: [] };
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     
-    const dadosFiltrados = unidadesAtivas.length > 0
-      ? fundosData.filter(d => unidadesAtivas.includes(d.nm_unidade))
-      : fundosData;
+    const dadosFiltrados = fundosData.filter(d => {
+      if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      return true;
+    });
 
     // Agrupar contratos por ano
     const contractsByYear: Record<string, number> = {};
@@ -1531,7 +1547,7 @@ export default function Dashboard() {
       labels: years,
       values: years.map(y => contractsByYear[y] || 0),
     };
-  }, [fundosData, filtros.unidades, opcoesFiltros.unidades]);
+  }, [fundosData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
 
   // Estado para ano selecionado nos contratos
   const [anoSelecionadoContratos, setAnoSelecionadoContratos] = useState<number | null>(null);
@@ -1541,6 +1557,7 @@ export default function Dashboard() {
     if (!fundosData || fundosData.length === 0) return { labels: [], values: [] };
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoContratos || anoVigente;
     
     const dadosFiltrados = fundosData.filter(d => {
@@ -1548,6 +1565,7 @@ export default function Dashboard() {
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
       return true;
     });
 
@@ -1565,17 +1583,20 @@ export default function Dashboard() {
       labels: MESES_NOMES,
       values: contractsByMonth,
     };
-  }, [fundosData, filtros.unidades, opcoesFiltros.unidades, anoSelecionadoContratos, anoVigente]);
+  }, [fundosData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoContratos, anoVigente]);
 
   // Dados para gráfico Comparativo Mensal de Adesões (barras agrupadas)
   const dadosComparativoAdesoes = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     
-    const dadosFiltradosUnidades = unidadesAtivas.length > 0
-      ? salesData.filter(d => unidadesAtivas.includes(d.nm_unidade))
-      : salesData;
+    const dadosFiltradosUnidades = salesData.filter(d => {
+      if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      return true;
+    });
 
     // Agrupar adesões por ano e mês
     const adesoesByYearMonth: Record<number, number[]> = {};
@@ -1605,7 +1626,7 @@ export default function Dashboard() {
       year,
       monthlyData: adesoesByYearMonth[year],
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades, anosAtivosAdesoes.length]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anosAtivosAdesoes.length]);
 
   // Anos ativos calculados para adesões
   const anosAtivosAdesoesComputed = useMemo(() => {
@@ -1619,10 +1640,13 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     
-    const dadosFiltradosUnidades = unidadesAtivas.length > 0
-      ? salesData.filter(d => unidadesAtivas.includes(d.nm_unidade))
-      : salesData;
+    const dadosFiltradosUnidades = salesData.filter(d => {
+      if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      return true;
+    });
 
     // Agrupar por ano e tipo (contagem)
     const adesoesByYear: Record<string, { vendas: number; posVendas: number }> = {};
@@ -1655,7 +1679,7 @@ export default function Dashboard() {
       vendas: adesoesByYear[year].vendas,
       posVendas: adesoesByYear[year].posVendas,
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
 
   // Estado para ano selecionado nas adesões por tipo
   const [anoSelecionadoAdesoesTipo, setAnoSelecionadoAdesoesTipo] = useState<number | null>(null);
@@ -1665,6 +1689,7 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
+    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoAdesoesTipo || anoVigente;
     
     const dadosFiltrados = salesData.filter(d => {
@@ -1672,6 +1697,7 @@ export default function Dashboard() {
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
+      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
       return true;
     });
 
@@ -1700,7 +1726,7 @@ export default function Dashboard() {
       vendas: adesoesByMonth[index].vendas,
       posVendas: adesoesByMonth[index].posVendas,
     }));
-  }, [salesData, filtros.unidades, opcoesFiltros.unidades, anoSelecionadoAdesoesTipo, anoVigente]);
+  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoAdesoesTipo, anoVigente]);
 
   // Dados para tabela de Desempenho por Consultor Comercial
   // Usa dadosFiltrados que já tem todos os filtros aplicados (período, unidade, tipo adesão, etc.)
