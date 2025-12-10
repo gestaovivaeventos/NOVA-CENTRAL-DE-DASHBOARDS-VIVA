@@ -29,7 +29,13 @@ export default function RankingPage() {
   const dadosBrutos = useMemo(() => {
     if (!dadosBrutosOriginal || !user) return [];
     
-    // Aplicar filtro de permissão: franqueado (0) só vê suas unidades, franqueadora (1) vê tudo
+    // Na página de ranking, usuários nível 0 veem tudo normalmente
+    // Apenas franqueadora (1) pode realmente filtrar por unidade
+    if (user.accessLevel === 0) {
+      return dadosBrutosOriginal;
+    }
+    
+    // Aplicar filtro de permissão: franqueadora (1) vê tudo (sem filtro)
     return filterDataByPermission(dadosBrutosOriginal, {
       accessLevel: user.accessLevel as 0 | 1,
       unitNames: user.unitNames || []

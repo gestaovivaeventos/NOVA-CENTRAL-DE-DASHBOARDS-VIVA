@@ -164,11 +164,7 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
                 margin: 0,
                 fontFamily: "'Poppins', sans-serif",
               }}>
-                {user.accessLevel === 22
-                  ? 'Super Admin'
-                  : user.accessLevel >= 1
-                  ? 'Franqueadora'
-                  : 'Franqueado'}
+                {user.unitNames?.[0] || 'Unidade'}
               </p>
             </div>
           </div>

@@ -1,28 +1,27 @@
 /**
  * Componente Sidebar do Dashboard de Vendas
+ * Estilo padronizado com base no módulo PEX
  */
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, BarChart3, TrendingUp, Target, Home, LogOut, Clock, Crosshair } from 'lucide-react';
+import { useRouter } from 'next/router';
+import { BarChart3, Crosshair, Home, LogOut, ChevronLeft, ChevronRight, Filter, ChevronUp, ChevronDown } from 'lucide-react';
 import { PAGES } from '@/modules/vendas/config/app.config';
+import { useAuth } from '@/context/AuthContext';
 
-// Ícone de Funil customizado (similar à imagem de referência)
-const FunnelIcon = ({ size = 20 }: { size?: number }) => (
+// Ícone de Funil customizado
+const FunnelIcon = ({ size = 20, strokeWidth = 2 }: { size?: number; strokeWidth?: number }) => (
   <svg 
     width={size} 
     height={size} 
     viewBox="0 0 24 24" 
     fill="none" 
     stroke="currentColor" 
-    strokeWidth="2" 
+    strokeWidth={strokeWidth} 
     strokeLinecap="round" 
     strokeLinejoin="round"
   >
-    {/* Funil */}
     <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
-    {/* Círculo com $ no topo */}
-    <circle cx="12" cy="3" r="2.5" fill="currentColor" stroke="none" />
-    <text x="12" y="4.5" textAnchor="middle" fontSize="4" fill="#212529" fontWeight="bold">$</text>
   </svg>
 );
 
@@ -34,9 +33,6 @@ interface SidebarProps {
   children?: React.ReactNode;
 }
 
-const SIDEBAR_WIDTH_EXPANDED = 300;
-const SIDEBAR_WIDTH_COLLAPSED = 60;
-
 export default function Sidebar({
   paginaAtiva,
   onPaginaChange,
@@ -44,191 +40,326 @@ export default function Sidebar({
   onCollapseChange,
   children,
 }: SidebarProps) {
-  // Gerar data apenas no cliente para evitar erro de hidratação
-  const [dataAtual, setDataAtual] = useState<string>('');
-  
-  useEffect(() => {
-    const hoje = new Date();
-    setDataAtual(`${hoje.toLocaleDateString('pt-BR')}, ${hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
-  }, []);
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 
-  const getIcon = (pageId: string) => {
+  const getIcon = (pageId: string, isActive: boolean) => {
+    const strokeWidth = isActive ? 2.5 : 2;
     switch (pageId) {
       case 'metas':
-        return <Crosshair size={20} />;
+        return <Crosshair size={20} strokeWidth={strokeWidth} />;
       case 'indicadores':
-        return <BarChart3 size={20} />;
+        return <BarChart3 size={20} strokeWidth={strokeWidth} />;
       case 'funil':
-        return <FunnelIcon size={20} />;
+        return <FunnelIcon size={20} strokeWidth={strokeWidth} />;
       default:
-        return <BarChart3 size={20} />;
+        return <BarChart3 size={20} strokeWidth={strokeWidth} />;
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
+
   return (
-    <>
-      {/* Sidebar Container */}
-      <aside
-        className="fixed left-0 top-0 bottom-0 bg-dark-secondary overflow-y-auto transition-all duration-300 z-50"
-        style={{
-          width: isCollapsed ? `${SIDEBAR_WIDTH_COLLAPSED}px` : `${SIDEBAR_WIDTH_EXPANDED}px`,
-          borderRight: '2px solid #343A40',
-          overflow: 'visible',
-        }}
-      >
-        {/* Toggle Button - Na beirada direita da sidebar */}
+    <aside
+      style={{
+        width: isCollapsed ? '70px' : '280px',
+        backgroundColor: '#1a1d21',
+        borderRight: '1px solid #333',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'all 0.3s ease',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        bottom: 0,
+        zIndex: 50,
+        overflowY: 'auto',
+        overflowX: 'hidden',
+      }}
+    >
+      {/* Header da Sidebar - Perfil do Usuário */}
+      <div style={{
+        padding: isCollapsed ? '16px 10px' : '16px 20px',
+        borderBottom: '1px solid #333',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: '10px',
+      }}>
+        {!isCollapsed ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+            {/* Ícone com letra inicial */}
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: '#FF6600',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <span style={{
+                color: '#FFF',
+                fontSize: '1.2rem',
+                fontWeight: 700,
+                fontFamily: "'Poppins', sans-serif",
+                textTransform: 'uppercase',
+              }}>
+                {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
+              </span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{
+                color: '#F8F9FA',
+                fontSize: '0.95rem',
+                fontWeight: 600,
+                fontFamily: "'Poppins', sans-serif",
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                marginBottom: '0px',
+                lineHeight: '1.2',
+              }}>
+                {user?.firstName || user?.username || 'Usuário'}
+              </h2>
+              <p style={{
+                color: '#6c757d',
+                fontSize: '0.7rem',
+                marginBottom: '4px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                lineHeight: '1.2',
+              }}>
+                {user?.unitNames?.[0] || 'Unidade'}
+              </p>
+              <p style={{
+                color: '#4a5568',
+                fontSize: '0.6rem',
+              }}>
+                Atualizado: {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Botão Toggle */}
         <button
           onClick={() => onCollapseChange(!isCollapsed)}
-          className="absolute w-8 h-8 flex items-center justify-center rounded-md bg-dark-secondary border border-orange-500 hover:bg-orange-500/20 cursor-pointer transition-all duration-200 shadow-lg"
           style={{
-            top: '24px',
-            right: '-16px',
-            zIndex: 60,
+            width: '32px',
+            height: '32px',
+            borderRadius: '6px',
+            backgroundColor: '#FF6600',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: '#FFF',
+            transition: 'all 0.2s',
+            flexShrink: 0,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
           }}
-          title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#ff7a1a';
+            e.currentTarget.style.transform = 'scale(1.05)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#FF6600';
+            e.currentTarget.style.transform = 'scale(1)';
+          }}
         >
-          {isCollapsed ? (
-            <ChevronRight size={18} className="text-orange-500" />
-          ) : (
-            <ChevronLeft size={18} className="text-orange-500" />
-          )}
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
+      </div>
 
-        {/* Conteúdo da Sidebar - com scroll */}
-        <div 
-          className={`${isCollapsed ? 'px-2 pt-16' : 'p-5 pt-16'} flex flex-col`}
-          style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}
-        >
-          {/* Última Atualização - altura fixa para evitar deslocamento */}
-          {!isCollapsed && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                marginBottom: '12px',
-                minHeight: '20px',
-              }}
-            >
-              <Clock size={14} style={{ color: '#FF6600' }} />
-              <div>
-                <span
-                  style={{
-                    color: '#6c757d',
-                    fontSize: '0.7rem',
-                    fontFamily: 'Poppins, sans-serif',
-                  }}
-                >
-                  Última atualização:{' '}
-                </span>
-                <span
-                  style={{
-                    color: '#adb5bd',
-                    fontSize: '0.75rem',
-                    fontWeight: 500,
-                    fontFamily: 'Poppins, sans-serif',
-                  }}
-                >
-                  {dataAtual || '...'}
-                </span>
-              </div>
-            </div>
-          )}
-          
-          <hr className="border-dark-tertiary mb-4" />
-
-          {/* Navegação de Páginas */}
-          <nav className="flex flex-col gap-1.5 mb-6">
-            {PAGES.map((page) => (
-              <button
-                key={page.id}
-                onClick={() => onPaginaChange(page.id)}
-                className={`
-                  group flex items-center rounded-lg transition-all duration-200
-                  ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-4'}
-                  ${paginaAtiva === page.id
-                    ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
-                    : 'text-gray-400 border border-gray-600/50 hover:bg-white/5'
-                  }
-                `}
-                style={{
-                  fontFamily: 'Poppins, sans-serif',
-                  fontSize: '0.85rem',
-                  fontWeight: paginaAtiva === page.id ? 600 : 500,
-                  boxShadow: paginaAtiva !== page.id ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
-                  height: '42px',
-                  whiteSpace: 'nowrap',
-                }}
-                title={isCollapsed ? page.label : undefined}
-              >
-                {React.cloneElement(getIcon(page.id), {
-                  strokeWidth: paginaAtiva === page.id ? 2.5 : 2
-                })}
-                {!isCollapsed && <span>{page.label}</span>}
-              </button>
-            ))}
-          </nav>
-
-          {/* Filtros (children) - só mostra quando expandido */}
-          {!isCollapsed && (
-            <>
-              <hr className="border-dark-tertiary my-4" />
-              <div className="filters-content">
-                {children}
-              </div>
-            </>
-          )}
-
-          {/* Espaçador flexível para empurrar os botões para baixo */}
-          <div className="flex-grow" />
-
-          {/* Área inferior: Central + Sair */}
-          <div className={`${isCollapsed ? 'pb-4' : 'pb-6'}`}>
-            <hr className="border-dark-tertiary mb-4" />
+      {/* Menu de Navegação */}
+      <nav style={{ 
+        padding: isCollapsed ? '20px 10px' : '20px',
+      }}>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {PAGES.map((page) => {
+            const isActive = paginaAtiva === page.id;
             
-            {/* Link para Central de Dashboards */}
-            <a
-              href="/"
-              className={`
-                flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
-                ${isCollapsed ? 'justify-center p-2.5 w-full' : 'gap-3 px-4 py-2.5 w-full'}
-              `}
-              style={{
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '0.95rem',
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              }}
-              title="Central de Dashboards"
-            >
-              <Home size={20} strokeWidth={2} />
-              {!isCollapsed && <span>Central de Dashboards</span>}
-            </a>
+            return (
+              <li key={page.id} style={{ marginBottom: '8px' }}>
+                <button
+                  onClick={() => onPaginaChange(page.id)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: isCollapsed ? '0' : '12px',
+                    padding: isCollapsed ? '12px' : '12px 16px',
+                    borderRadius: '8px',
+                    backgroundColor: isActive ? 'rgba(255, 102, 0, 0.1)' : 'transparent',
+                    border: isActive ? '1px solid #FF6600' : '1px solid transparent',
+                    color: isActive ? '#FF6600' : '#9ca3af',
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: '0.95rem',
+                    fontWeight: isActive ? 600 : 500,
+                    transition: 'all 0.2s',
+                    justifyContent: isCollapsed ? 'center' : 'flex-start',
+                    width: '100%',
+                    cursor: 'pointer',
+                  }}
+                  title={isCollapsed ? page.label : undefined}
+                >
+                  {getIcon(page.id, isActive)}
+                  {!isCollapsed && <span>{page.label}</span>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
 
-            {/* Botão de Logout */}
-            <button
-              onClick={() => {
-                // TODO: Implementar função de logout
-              }}
-              className={`
-                flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50
-                ${isCollapsed ? 'justify-center p-2.5 w-full mt-2' : 'gap-3 px-4 py-2.5 w-full mt-2'}
-              `}
-              style={{
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '0.95rem',
-                fontWeight: 500,
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              }}
-              title={isCollapsed ? 'Sair' : undefined}
-            >
-              <LogOut size={20} strokeWidth={2} />
-              {!isCollapsed && <span>Sair</span>}
-            </button>
+      {/* Seção de Filtros */}
+      {!isCollapsed && children && (
+        <div style={{
+          padding: '0 20px 20px 20px',
+          borderTop: '1px solid #333',
+          marginTop: '10px',
+        }}>
+          {/* Header dos Filtros */}
+          <button
+            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              padding: '16px 0',
+              backgroundColor: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#F8F9FA',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Filter size={18} color="#FF6600" />
+              <span style={{
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                fontFamily: "'Poppins', sans-serif",
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}>
+                Filtros
+              </span>
+            </div>
+            {isFiltersExpanded ? (
+              <ChevronUp size={18} color="#adb5bd" />
+            ) : (
+              <ChevronDown size={18} color="#adb5bd" />
+            )}
+          </button>
+
+          {/* Conteúdo dos Filtros */}
+          <div style={{
+            maxHeight: isFiltersExpanded ? '2000px' : '0',
+            opacity: isFiltersExpanded ? 1 : 0,
+            overflow: 'hidden',
+            transition: 'all 0.3s ease',
+          }}>
+            {children}
           </div>
         </div>
-      </aside>
-    </>
+      )}
+
+      {/* Botão de Filtros quando sidebar colapsada */}
+      {isCollapsed && children && (
+        <div style={{
+          padding: '10px',
+          borderTop: '1px solid #333',
+        }}>
+          <button
+            onClick={() => onCollapseChange(false)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '8px',
+              backgroundColor: 'transparent',
+              border: '1px solid #444',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              color: '#FF6600',
+              transition: 'all 0.2s',
+            }}
+            title="Ver Filtros"
+          >
+            <Filter size={20} />
+          </button>
+        </div>
+      )}
+
+      {/* Footer da Sidebar */}
+      <div style={{
+        padding: isCollapsed ? '15px 10px' : '15px 20px',
+        borderTop: '1px solid #333',
+        marginTop: 'auto',
+      }}>
+        {/* Botão Voltar para Central */}
+        <button
+          onClick={() => router.push('/')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isCollapsed ? '0' : '12px',
+            padding: isCollapsed ? '12px' : '12px 16px',
+            borderRadius: '8px',
+            backgroundColor: 'transparent',
+            border: '1px solid transparent',
+            color: '#6c757d',
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.9rem',
+            fontWeight: 500,
+            transition: 'all 0.2s',
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+            width: '100%',
+            cursor: 'pointer',
+            marginBottom: '8px',
+          }}
+          title={isCollapsed ? 'Voltar para Central' : undefined}
+        >
+          <Home size={18} />
+          {!isCollapsed && <span>Voltar para Central</span>}
+        </button>
+
+        {/* Botão Logout */}
+        <button
+          onClick={handleLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: isCollapsed ? '0' : '12px',
+            padding: isCollapsed ? '12px' : '12px 16px',
+            borderRadius: '8px',
+            backgroundColor: 'transparent',
+            border: '1px solid transparent',
+            color: '#dc3545',
+            fontFamily: "'Poppins', sans-serif",
+            fontSize: '0.9rem',
+            fontWeight: 500,
+            transition: 'all 0.2s',
+            justifyContent: isCollapsed ? 'center' : 'flex-start',
+            width: '100%',
+            cursor: 'pointer',
+          }}
+          title={isCollapsed ? 'Sair' : undefined}
+        >
+          <LogOut size={18} />
+          {!isCollapsed && <span>Sair</span>}
+        </button>
+      </div>
+    </aside>
   );
 }
 

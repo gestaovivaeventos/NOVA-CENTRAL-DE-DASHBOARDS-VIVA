@@ -4,6 +4,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import { Search, X } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -44,18 +45,6 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
       ],
     },
   ];
-
-  // Adiciona grupo admin se nível >= 1
-  if (accessLevel >= 1) {
-    groups.push({
-      id: 'administracao',
-      name: 'Administração',
-      dashboards: [
-        { id: 'admin-users', label: 'Usuários', path: '/admin/users', icon: 'users' },
-        { id: 'admin-config', label: 'Configurações', path: '/admin/config', icon: 'config' },
-      ],
-    });
-  }
 
   return groups;
 };
@@ -166,6 +155,13 @@ const CollapsibleGroup = ({
       d.label.toLowerCase().includes(search)
     );
   }, [group.dashboards, searchTerm]);
+
+  // Expandir automaticamente quando há busca com resultados
+  useEffect(() => {
+    if (searchTerm && filteredDashboards.length > 0) {
+      setIsOpen(true);
+    }
+  }, [searchTerm, filteredDashboards.length]);
 
   // Não renderizar se não houver dashboards após filtro
   if (filteredDashboards.length === 0) return null;
@@ -367,16 +363,20 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="p-3 overflow-y-auto h-[calc(100vh-4rem)] lg:h-[calc(100vh-80px)]">
           {/* Barra de Pesquisa */}
-          <div style={{ position: 'relative', marginBottom: '16px' }}>
+          <div style={{ position: 'relative', marginBottom: '20px' }}>
             <div style={{
               position: 'absolute',
-              left: '12px',
+              left: '14px',
               top: '50%',
               transform: 'translateY(-50%)',
-              color: '#6b7280',
+              color: '#FF6600',
               pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'all 0.2s ease',
             }}>
-              {icons.search}
+              <Search size={18} strokeWidth={2.5} />
             </div>
             <input
               type="text"
@@ -385,23 +385,61 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '10px 12px 10px 38px',
-                borderRadius: '8px',
-                border: '1px solid #333',
-                background: 'rgba(255, 255, 255, 0.03)',
+                padding: '12px 14px 12px 42px',
+                borderRadius: '10px',
+                border: '2px solid #404854',
+                background: 'linear-gradient(135deg, rgba(255, 102, 0, 0.05) 0%, rgba(255, 102, 0, 0.02) 100%)',
                 color: '#e5e7eb',
-                fontSize: '0.85rem',
+                fontSize: '0.9rem',
                 fontFamily: "'Poppins', sans-serif",
+                fontWeight: '500',
                 outline: 'none',
-                transition: 'border-color 0.2s',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = '#FF6600';
+                e.target.style.background = 'linear-gradient(135deg, rgba(255, 102, 0, 0.12) 0%, rgba(255, 102, 0, 0.06) 100%)';
+                e.target.style.boxShadow = '0 0 20px rgba(255, 102, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#333';
+                e.target.style.borderColor = '#404854';
+                e.target.style.background = 'linear-gradient(135deg, rgba(255, 102, 0, 0.05) 0%, rgba(255, 102, 0, 0.02) 100%)';
+                e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
               }}
             />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'rgba(255, 102, 0, 0.1)',
+                  border: 'none',
+                  color: '#FF6600',
+                  borderRadius: '6px',
+                  padding: '4px 8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 102, 0, 0.2)';
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 102, 0, 0.1)';
+                  e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                }}
+                title="Limpar pesquisa"
+              >
+                <X size={16} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
 
           {/* Grupos de Dashboards */}

@@ -1,5 +1,6 @@
 /**
  * Componente Header do Dashboard de Vendas
+ * Estilo padronizado com base no módulo PEX
  */
 
 import React from 'react';
@@ -14,7 +15,7 @@ export default function Header({ sidebarCollapsed = false }: HeaderProps) {
     <header 
       className="bg-dark-primary transition-all duration-300"
       style={{
-        marginLeft: sidebarCollapsed ? '60px' : '300px',
+        marginLeft: sidebarCollapsed ? '70px' : '280px',
       }}
     >
       <div className="px-4 py-4">

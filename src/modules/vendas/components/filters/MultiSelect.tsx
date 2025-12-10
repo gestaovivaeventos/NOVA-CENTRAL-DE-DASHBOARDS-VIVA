@@ -41,7 +41,7 @@ const searchInputStyle: React.CSSProperties = {
   padding: '8px 10px',
   backgroundColor: '#1f2329',
   color: 'white',
-  border: '1px solid #3a3f46',
+  border: '1px solid #444',
   borderRadius: '6px',
   fontSize: '0.85rem',
   fontFamily: 'Poppins, sans-serif',
@@ -227,12 +227,12 @@ export default function MultiSelect({
           left: `${dropdownPosition.left}px`,
           width: `${dropdownPosition.width}px`,
           backgroundColor: '#2a2f36',
-          border: '2px solid #FF6600',
+          border: '1px solid #444',
           borderRadius: '8px',
           zIndex: 9999,
           maxHeight: '300px',
           overflow: 'hidden',
-          boxShadow: '0 8px 16px rgba(0, 0, 0, 0.5)',
+          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.4)',
           opacity: isPositioned ? 1 : 0,
           pointerEvents: isPositioned ? 'auto' : 'none',
         }}
@@ -246,8 +246,8 @@ export default function MultiSelect({
             onChange={(e) => setSearchTerm(e.target.value)}
             onClick={(e) => e.stopPropagation()}
             style={searchInputStyle}
-            onFocus={(e) => { e.currentTarget.style.borderColor = '#FF6600'; }}
-            onBlur={(e) => { e.currentTarget.style.borderColor = '#3a3f46'; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = '#555'; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = '#444'; }}
             autoFocus
           />
         </div>

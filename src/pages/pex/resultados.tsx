@@ -33,7 +33,12 @@ export default function ResultadosPage() {
   const dadosBrutos = useMemo(() => {
     if (!dadosBrutosOriginal || !user) return [];
     
-    // Aplicar filtro de permissão: franqueado (0) só vê suas unidades, franqueadora (1) vê tudo
+    // Usuários nível 0 veem todos os dados normalmente (sem filtros)
+    if (user.accessLevel === 0) {
+      return dadosBrutosOriginal;
+    }
+    
+    // Aplicar filtro de permissão: franqueadora (1) vê tudo
     return filterDataByPermission(dadosBrutosOriginal, {
       accessLevel: user.accessLevel as 0 | 1,
       unitNames: user.unitNames || []
@@ -113,9 +118,15 @@ export default function ResultadosPage() {
 
   useEffect(() => {
     if (listaUnidades.length > 0 && !filtroUnidade) {
-      setFiltroUnidade(listaUnidades[0]);
+      // Se o usuário é nível 0, seleciona sua unidade automaticamente
+      if (user?.accessLevel === 0 && user?.unitNames && user.unitNames.length > 0) {
+        const unidadeDoUsuario = listaUnidades.find(u => user.unitNames?.includes(u));
+        setFiltroUnidade(unidadeDoUsuario || listaUnidades[0]);
+      } else {
+        setFiltroUnidade(listaUnidades[0]);
+      }
     }
-  }, [listaUnidades, filtroUnidade]);
+  }, [listaUnidades, filtroUnidade, user?.accessLevel, user?.unitNames]);
 
   // Item selecionado
   const itemSelecionado = useMemo(() => {

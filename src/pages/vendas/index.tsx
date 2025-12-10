@@ -36,6 +36,8 @@ import { extrairUnidades, filtrarDados } from '@/modules/vendas/utils/calculos';
 import { getPeriodoDatas, identificarPeriodo } from '@/modules/vendas/utils/periodo';
 import { META_CONFIG, PAGES } from '@/modules/vendas/config/app.config';
 import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/types/filtros.types';
+import { useAuth } from '@/context/AuthContext';
+import { filterDataByPermission } from '@/utils/permissoes';
 
 // Estado inicial dos filtros
 const INITIAL_FILTERS: FiltrosState = {
@@ -68,6 +70,14 @@ const MESES_NOMES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'se
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // Verificar autenticação
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+  }, [isAuthenticated, authLoading, router]);
   
   // Função para obter página da URL
   const getPaginaFromPath = (path: string): PaginaAtiva => {
@@ -123,6 +133,19 @@ export default function Dashboard() {
     setFiltrosCarregados(true);
   }, []);
 
+  // Inicializar unidades do franqueado automaticamente (se não tiver filtro salvo)
+  useEffect(() => {
+    if (user && user.accessLevel === 0 && user.unitNames && user.unitNames.length > 0) {
+      // Se é franqueado e não tem unidades selecionadas, selecionar suas unidades
+      if (filtrosCarregados && filtros.unidades.length === 0) {
+        setFiltros(prev => ({
+          ...prev,
+          unidades: user.unitNames || []
+        }));
+      }
+    }
+  }, [user, filtrosCarregados, filtros.unidades.length]);
+
   // Salvar filtros de período e unidades no localStorage quando mudarem
   // Só salvar APÓS o carregamento inicial para evitar sobrescrever com valores vazios
   useEffect(() => {
@@ -165,10 +188,65 @@ export default function Dashboard() {
   }, [router]);
 
   // Hooks de dados
-  const { data: salesData, loading: loadingSales, error: errorSales } = useSalesData();
-  const { data: metasData, loading: loadingMetas, error: errorMetas } = useMetasData();
-  const { data: fundosData, loading: loadingFundos, error: errorFundos } = useFundosData();
-  const { data: funilData, loading: loadingFunil, error: errorFunil } = useFunilData();
+  const { data: salesDataRaw, loading: loadingSales, error: errorSales } = useSalesData();
+  const { data: metasDataRaw, loading: loadingMetas, error: errorMetas } = useMetasData();
+  const { data: fundosDataRaw, loading: loadingFundos, error: errorFundos } = useFundosData();
+  const { data: funilDataRaw, loading: loadingFunil, error: errorFunil } = useFunilData();
+
+  // Filtrar dados por permissão do usuário
+  // Franqueado (0): vê apenas dados da sua unidade
+  // Franqueadora (1): vê todos os dados
+  const salesData = useMemo(() => {
+    if (!salesDataRaw || !user) return [];
+    return filterDataByPermission(salesDataRaw, {
+      accessLevel: user.accessLevel as 0 | 1,
+      unitNames: user.unitNames || []
+    });
+  }, [salesDataRaw, user]);
+
+  const fundosData = useMemo(() => {
+    if (!fundosDataRaw || !user) return [];
+    return filterDataByPermission(fundosDataRaw, {
+      accessLevel: user.accessLevel as 0 | 1,
+      unitNames: user.unitNames || []
+    });
+  }, [fundosDataRaw, user]);
+
+  const funilData = useMemo(() => {
+    if (!funilDataRaw || !user) return [];
+    return filterDataByPermission(funilDataRaw, {
+      accessLevel: user.accessLevel as 0 | 1,
+      unitNames: user.unitNames || []
+    });
+  }, [funilDataRaw, user]);
+
+  // Filtrar metas por permissão (metas são um Map indexado por unidade-ano-mês)
+  const metasData = useMemo(() => {
+    if (!metasDataRaw || !user) return new Map();
+    
+    // Franqueadora vê tudo
+    if (user.accessLevel === 1) {
+      return metasDataRaw;
+    }
+    
+    // Franqueado vê apenas metas de suas unidades
+    if (user.accessLevel === 0 && user.unitNames && user.unitNames.length > 0) {
+      const filteredMetas = new Map();
+      const unitNamesLower = user.unitNames.map(u => u.toLowerCase().trim());
+      
+      metasDataRaw.forEach((value, key) => {
+        // Chave está no formato: unidade-ano-mês
+        const unidadeFromKey = key.split('-')[0]?.toLowerCase().trim();
+        if (unitNamesLower.includes(unidadeFromKey)) {
+          filteredMetas.set(key, value);
+        }
+      });
+      
+      return filteredMetas;
+    }
+    
+    return new Map();
+  }, [metasDataRaw, user]);
 
   // Loading global - mostra tela de carregamento enquanto dados principais não carregaram
   const hasAnySalesData = salesData.length > 0;
@@ -178,7 +256,7 @@ export default function Dashboard() {
   
   // Mostra loading global enquanto os dados de vendas estiverem carregando
   // (igual ao comportamento do PEX)
-  const isLoading = loadingSales && !hasAnySalesData;
+  const isLoading = (loadingSales && !hasAnySalesData) || authLoading;
   
   const hasError = errorSales || errorMetas || errorFundos;
 
@@ -2807,8 +2885,8 @@ export default function Dashboard() {
           <main 
             className="flex-1 pt-6 px-6 pb-2 transition-all duration-300 overflow-x-hidden"
             style={{ 
-              marginLeft: sidebarCollapsed ? '60px' : '300px',
-              width: sidebarCollapsed ? 'calc(100vw - 60px)' : 'calc(100vw - 300px)',
+              marginLeft: sidebarCollapsed ? '70px' : '280px',
+              width: sidebarCollapsed ? 'calc(100vw - 70px)' : 'calc(100vw - 280px)',
             }}
           >
             {/* Conteúdo */}

@@ -8,7 +8,7 @@
  * - Página 3 (Funil): Período, Unidades, Consultor, Origem Lead, Segmentação Lead, Etiquetas
  */
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import DateRangePicker from './DateRangePicker';
 import MultiSelect from './MultiSelect';
 import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/types/filtros.types';
@@ -70,33 +70,13 @@ export default function FilterPanel({
   showSegmentacaoLead,
   showEtiquetas,
 }: FilterPanelProps) {
-  // Estado para controlar expansão/colapso de todos os filtros
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [mounted, setMounted] = useState(false);
-
-  // Carregar estado do localStorage após montagem
-  useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem('filtrosPanelExpanded');
-    if (saved !== null) {
-      setIsExpanded(JSON.parse(saved));
-    }
-  }, []);
-
-  // Salvar estado no localStorage
-  useEffect(() => {
-    if (mounted) {
-      localStorage.setItem('filtrosPanelExpanded', JSON.stringify(isExpanded));
-    }
-  }, [isExpanded, mounted]);
-
   // Determinar quais filtros mostrar baseado na página ativa
   const isMetasPage = paginaAtiva === 'metas';
   const isIndicadoresPage = paginaAtiva === 'indicadores';
   const isFunilPage = paginaAtiva === 'funil';
   
-  // Filtros específicos da página 1 (Metas)
-  const shouldShowCursos = showCursos ?? isMetasPage;
+  // Filtros específicos da página 1 (Metas) e página 2 (Indicadores)
+  const shouldShowCursos = showCursos ?? (isMetasPage || isIndicadoresPage);
   
   // Filtros específicos da página 2 (Indicadores)
   const shouldShowFundos = showFundos ?? isIndicadoresPage;
@@ -116,121 +96,19 @@ export default function FilterPanel({
   // Na página do funil e indicadores, não mostra toggle de meta (só aparece na página de metas)
   const shouldShowMetaToggle = showMetaToggle && isMetasPage;
 
-  // Contar filtros ativos
-  const contarFiltrosAtivos = () => {
-    let count = 0;
-    if (filtros.unidades.length > 0) count++;
-    if (filtros.regionais.length > 0) count++;
-    if (filtros.ufs.length > 0) count++;
-    if (filtros.cidades.length > 0) count++;
-    if (filtros.cursos.length > 0) count++;
-    if (filtros.consultores.length > 0) count++;
-    if (filtros.supervisores.length > 0) count++;
-    if (filtros.formasPagamento.length > 0) count++;
-    if (filtros.fundos.length > 0) count++;
-    if (filtros.tipoAdesao.length > 0) count++;
-    if (filtros.tipoServico.length > 0) count++;
-    if (filtros.tipoCliente.length > 0) count++;
-    if (filtros.consultorComercial.length > 0) count++;
-    if (filtros.indicacaoAdesao.length > 0) count++;
-    if (filtros.instituicao.length > 0) count++;
-    if (filtros.origemLead.length > 0) count++;
-    if (filtros.segmentacaoLead.length > 0) count++;
-    if (filtros.etiquetas.length > 0) count++;
-    return count;
-  };
-
-  const filtrosAtivos = contarFiltrosAtivos();
-
   return (
     <div>
-      {/* Header colapsável "Filtros" - sem caixa, apenas texto e ícone */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          width: '100%',
-          padding: '4px 0',
-          backgroundColor: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          marginBottom: isExpanded ? '16px' : '0',
-          transition: 'all 0.2s ease',
-        }}
-      >
-        {/* Ícone de filtro laranja */}
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#FF6600"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-        </svg>
-        <span
-          style={{
-            color: '#adb5bd',
-            fontSize: '0.85rem',
-            fontWeight: 500,
-            fontFamily: 'Poppins, sans-serif',
-          }}
-        >
-          Filtros
-        </span>
-        {filtrosAtivos > 0 && (
-          <span
-            style={{
-              backgroundColor: '#FF6600',
-              color: '#fff',
-              fontSize: '0.65rem',
-              fontWeight: 600,
-              padding: '2px 6px',
-              borderRadius: '10px',
-              fontFamily: 'Poppins, sans-serif',
-              marginLeft: '2px',
-            }}
-          >
-            {filtrosAtivos}
-          </span>
-        )}
-        {/* Seta de expansão */}
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#6c757d"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          style={{
-            marginLeft: 'auto',
-            transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease',
-          }}
-        >
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-
       {/* Conteúdo dos filtros */}
       <div
         style={{
-          maxHeight: isExpanded ? '2000px' : '0',
-          opacity: isExpanded ? 1 : 0,
-          overflow: 'hidden',
-          transition: 'max-height 0.3s ease, opacity 0.2s ease',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
         }}
       >
         {/* Toggle de Tipo de Meta */}
         {shouldShowMetaToggle && (
-          <div style={{ marginBottom: '20px' }}>
+          <div>
             <label
               style={{
                 display: 'block',
@@ -361,8 +239,8 @@ export default function FilterPanel({
           />
         )}
 
-        {/* Filtro de Cursos - Página Metas */}
-        {shouldShowCursos && opcoes.cursos && opcoes.cursos.length > 0 && (
+        {/* Filtro de Cursos - Página Metas (mantido aqui para compatibilidade) */}
+        {shouldShowCursos && !isIndicadoresPage && opcoes.cursos && opcoes.cursos.length > 0 && (
           <MultiSelect
             label="Cursos"
             options={opcoes.cursos}
@@ -408,6 +286,17 @@ export default function FilterPanel({
         {/* ============================================= */}
         {/* FILTROS ESPECÍFICOS DA PÁGINA 2 (INDICADORES) */}
         {/* ============================================= */}
+
+        {/* Filtro de Cursos - Página Indicadores (entre Unidades e Fundos) */}
+        {shouldShowCursos && isIndicadoresPage && opcoes.cursos && opcoes.cursos.length > 0 && (
+          <MultiSelect
+            label="Cursos"
+            options={opcoes.cursos}
+            selectedValues={filtros.cursos}
+            onChange={(cursos) => onFiltrosChange({ cursos })}
+            placeholder="Todos os cursos"
+          />
+        )}
 
         {/* Filtro de Fundos - Apenas página Indicadores */}
         {shouldShowFundos && opcoes.fundos && opcoes.fundos.length > 0 && (
