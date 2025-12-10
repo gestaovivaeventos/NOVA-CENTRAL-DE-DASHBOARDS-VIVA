@@ -1,0 +1,10 @@
+# Projetos antigos refatorados - não fazer build
+kpi_refatorado
+okr_refatorado
+painel gerencial_refatorado
+Projeto Central
+projeto_central
+
+# Documentação
+*.md
+!README.md

@@ -30,6 +30,13 @@
     },
     "baseUrl": "."
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": [
+    "node_modules",
+    "kpi_refatorado",
+    "okr_refatorado",
+    "painel gerencial_refatorado",
+    "Projeto Central",
+    "projeto_central"
+  ]
 }

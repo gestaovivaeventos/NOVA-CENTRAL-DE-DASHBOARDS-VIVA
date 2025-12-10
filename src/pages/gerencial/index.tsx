@@ -1,105 +1,79 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { useAuth } from '../../context/AuthContext';
 import {
-  GerencialHeader,
-  GerencialLoader,
-  GerencialSidebar,
+  Header,
+  Sidebar,
+  Footer,
+  Loading,
+  FilterPanel,
   EbitdaCard,
   OkrsSection,
   KpisAtencaoTable,
   TeamPerformanceTable,
+  Card
 } from '../../modules/painel-gerencial/components';
-import { COLORS, TRIMESTRES } from '../../modules/painel-gerencial/config/app.config';
-import { GerencialKpiData, ProcessedOkrData, TeamPerformance } from '../../modules/painel-gerencial/types';
-
-interface DashboardData {
-  kpis: GerencialKpiData[];
-  okrs: ProcessedOkrData[];
-  ebitda: { valor: number; meta: number; percentual: number };
-  teamPerformance: TeamPerformance[];
-  kpisAtencao: GerencialKpiData[];
-  equipes: string[];
-}
+import { useDashboardData } from '../../modules/painel-gerencial/hooks';
 
 export default function GerencialPage() {
-  const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [equipeSelecionada, setEquipeSelecionada] = useState('Todas');
-  const [trimestreSelecionado, setTrimestreSelecionado] = useState('Todos');
+  const { 
+    data, 
+    loading, 
+    error, 
+    refetch,
+    selectedCompetencia,
+    changeCompetencia 
+  } = useDashboardData();
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const params = new URLSearchParams();
-        if (equipeSelecionada !== 'Todas') {
-          params.append('equipe', equipeSelecionada);
-        }
-        if (trimestreSelecionado !== 'Todos') {
-          params.append('trimestre', trimestreSelecionado);
-        }
-        
-        const response = await fetch(`/api/gerencial/data?${params}`);
-        const result = await response.json();
-        
-        if (result.success) {
-          setData(result.data);
-          setError(null);
-        } else {
-          setError(result.error || 'Erro ao carregar dados');
-        }
-      } catch (err) {
-        console.error('Erro ao buscar dados:', err);
-        setError('Erro ao conectar com a API');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchData();
-    }
-  }, [user, equipeSelecionada, trimestreSelecionado]);
-
-  if (authLoading || loading) {
+  if (loading) {
     return (
-      <div style={{ backgroundColor: COLORS.background, minHeight: '100vh' }}>
-        <GerencialHeader />
-        <GerencialLoader message="Carregando painel gerencial..." />
-      </div>
+      <>
+        <Head>
+          <title>Painel Gerencial | Carregando...</title>
+        </Head>
+        <div className="min-h-screen bg-dark-primary flex items-center justify-center">
+          <Loading message="Carregando dados do painel..." />
+        </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div style={{ backgroundColor: COLORS.background, minHeight: '100vh' }}>
-        <GerencialHeader />
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '400px',
-            color: COLORS.danger,
-          }}
-        >
-          <p>{error}</p>
+      <>
+        <Head>
+          <title>Painel Gerencial | Erro</title>
+        </Head>
+        <div className="min-h-screen bg-dark-primary flex flex-col items-center justify-center">
+          <div className="text-red-400 text-center">
+            <p className="text-4xl mb-4">❌</p>
+            <p className="text-xl font-semibold mb-2">Erro ao carregar dados</p>
+            <p className="text-text-secondary mb-4">{error}</p>
+            <button
+              onClick={refetch}
+              className="btn-primary"
+            >
+              Tentar novamente
+            </button>
+          </div>
         </div>
-      </div>
+      </>
+    );
+  }
+
+  if (!data) {
+    return (
+      <>
+        <Head>
+          <title>Painel Gerencial | Sem dados</title>
+        </Head>
+        <div className="min-h-screen bg-dark-primary flex items-center justify-center">
+          <p className="text-text-secondary">Nenhum dado disponível</p>
+        </div>
+      </>
     );
   }
 
@@ -109,97 +83,57 @@ export default function GerencialPage() {
         <title>Painel Gerencial | Viva Eventos</title>
         <meta name="description" content="Painel Gerencial - Visão consolidada de KPIs e OKRs" />
       </Head>
-
-      <div style={{ backgroundColor: COLORS.background, minHeight: '100vh' }}>
-        <GerencialHeader />
-        
-        <div style={{ display: 'flex' }}>
-          <GerencialSidebar
-            equipeSelecionada={equipeSelecionada}
-            onEquipeChange={setEquipeSelecionada}
-            equipes={data?.equipes || []}
+      
+      <div className="dashboard-wrapper">
+        {/* Sidebar */}
+        <Sidebar
+          isCollapsed={sidebarCollapsed}
+          onCollapseChange={setSidebarCollapsed}
+        >
+          {/* Filtros dentro da Sidebar */}
+          <FilterPanel
+            competencias={data.competencias}
+            selectedCompetencia={selectedCompetencia}
+            onCompetenciaChange={changeCompetencia}
+            onRefresh={refetch}
           />
+        </Sidebar>
 
-          <main
-            style={{
-              flex: 1,
-              padding: '24px',
-              overflowY: 'auto',
-            }}
-          >
-            {/* Filtro de Trimestre */}
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setTrimestreSelecionado('Todos')}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    backgroundColor: trimestreSelecionado === 'Todos' ? COLORS.primary : COLORS.surface,
-                    color: '#fff',
-                  }}
-                >
-                  Todos
-                </button>
-                {TRIMESTRES.map((tri) => (
-                  <button
-                    key={tri}
-                    onClick={() => setTrimestreSelecionado(tri)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: '0.85rem',
-                      backgroundColor: trimestreSelecionado === tri ? COLORS.primary : COLORS.surface,
-                      color: '#fff',
-                    }}
-                  >
-                    {tri}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* EBITDA Card */}
-            {data?.ebitda && (
-              <div style={{ marginBottom: '24px' }}>
-                <EbitdaCard
-                  valor={data.ebitda.valor}
-                  meta={data.ebitda.meta}
-                  percentual={data.ebitda.percentual}
-                />
-              </div>
-            )}
-
-            {/* Grid de conteúdo */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-                gap: '24px',
-                marginBottom: '24px',
-              }}
-            >
-              {/* Desempenho por Equipe */}
-              {data?.teamPerformance && (
-                <TeamPerformanceTable teams={data.teamPerformance} />
-              )}
-
-              {/* KPIs que precisam de atenção */}
-              {data?.kpisAtencao && (
-                <KpisAtencaoTable kpis={data.kpisAtencao} />
-              )}
+        {/* Main Content */}
+        <div 
+          className="flex-1 min-h-screen bg-dark-primary transition-all duration-300"
+          style={{ marginLeft: sidebarCollapsed ? '60px' : '300px' }}
+        >
+          <Header sidebarCollapsed={sidebarCollapsed} />
+          
+          <main className="p-5">
+            {/* EBITDA Section */}
+            <div className="mb-6">
+              <EbitdaCard ebitdaByYear={data.ebitdaByYear} />
             </div>
 
             {/* OKRs Section */}
-            {data?.okrs && (
-              <OkrsSection okrs={data.okrs} titulo="OKRs do Período" />
-            )}
+            <OkrsSection okrs={data.okrs} competencia={selectedCompetencia} />
+
+            {/* Team Performance Table */}
+            <TeamPerformanceTable 
+              teams={data.teamPerformance} 
+              competencia={selectedCompetencia} 
+            />
+
+            {/* KPIs que precisam de atenção */}
+            <KpisAtencaoTable 
+              kpis={data.kpisAtencao} 
+              competencia={selectedCompetencia} 
+            />
+
+            {/* Última atualização */}
+            <div className="text-center text-text-muted text-sm mt-8 mb-4">
+              <p>Dados atualizados em: {new Date(data.ultimaAtualizacao).toLocaleString('pt-BR')}</p>
+            </div>
           </main>
+
+          <Footer />
         </div>
       </div>
     </>

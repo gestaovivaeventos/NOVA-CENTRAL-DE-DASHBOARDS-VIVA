@@ -2,6 +2,16 @@
  * Configurações do módulo Painel Gerencial
  */
 
+export const API_CONFIG = {
+  SPREADSHEET_ID: '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs',
+  API_KEY: 'AIzaSyBuGRH91CnRuDtN5RGsb5DvHEfhTxJnWSs',
+  SHEETS: {
+    KPIS: 'KPIS',
+    OKRS: 'OKRS VC',
+    PAINEL_OKR: 'NOVO PAINEL OKR'
+  }
+};
+
 export const gerencialConfig = {
   // ID da planilha
   spreadsheetId: '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs',

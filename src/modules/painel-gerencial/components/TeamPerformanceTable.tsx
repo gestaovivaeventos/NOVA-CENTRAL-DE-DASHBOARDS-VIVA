@@ -1,182 +1,149 @@
 'use client';
 
 import React from 'react';
+import Card from './Card';
+import SectionTitle from './SectionTitle';
 import { TeamPerformance } from '../types';
-import { COLORS, STATUS_COLORS } from '../config/app.config';
 
 interface TeamPerformanceTableProps {
   teams: TeamPerformance[];
-  titulo?: string;
+  competencia: string;
 }
 
-const getStatusColor = (percentual: number): string => {
-  if (percentual >= 100) return STATUS_COLORS.verde;
-  if (percentual >= 80) return STATUS_COLORS.amarelo;
-  return STATUS_COLORS.vermelho;
+const getStatusColor = (percent: number | null) => {
+  if (percent === null) return '#94A3B8';
+  if (percent >= 100) return '#22C55E'; // Verde
+  if (percent >= 61) return '#FF6600';  // Laranja
+  return '#EF4444';                      // Vermelho
 };
 
-export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({ 
-  teams, 
-  titulo = 'Desempenho por Equipe' 
-}) => {
-  if (!teams || teams.length === 0) {
-    return (
-      <div
-        style={{
-          backgroundColor: COLORS.backgroundLight,
-          borderRadius: '16px',
-          padding: '24px',
-          border: `1px solid ${COLORS.border}`,
-        }}
+const ProgressBar: React.FC<{ value: number | null; isBold?: boolean }> = ({ value, isBold }) => {
+  if (value === null) {
+    return <span className="text-slate-500">-</span>;
+  }
+
+  const color = getStatusColor(value);
+  const width = Math.min(value, 100);
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span 
+        className={`text-sm ${isBold ? 'font-bold' : 'font-medium'}`}
+        style={{ color }}
       >
-        <h3
+        {value.toFixed(1)}%
+      </span>
+      <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all"
           style={{
-            color: COLORS.primary,
-            fontSize: '1.1rem',
-            fontWeight: '600',
-            marginBottom: '16px',
+            width: `${width}%`,
+            backgroundColor: color,
+            transitionDuration: '300ms'
           }}
-        >
-          {titulo}
-        </h3>
-        <p style={{ color: COLORS.textSecondary, fontSize: '0.9rem' }}>
-          Nenhum dado de equipe disponível.
-        </p>
+        />
+      </div>
+    </div>
+  );
+};
+
+export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({ teams, competencia }) => {
+  // Calcular métricas gerais
+  const timesCom80Porcento = teams.filter(team => team.mediaGeral >= 80).length;
+  const totalTimes = teams.length;
+  const percentualTimes80 = totalTimes > 0 ? (timesCom80Porcento / totalTimes) * 100 : 0;
+  
+  const totalIndicadores = teams.reduce((acc, team) => acc + team.totalIndicadores, 0);
+  const somaMedias = teams.reduce((acc, team) => acc + (team.mediaGeral * team.totalIndicadores), 0);
+  const mediaGeralConsolidada = totalIndicadores > 0 ? somaMedias / totalIndicadores : 0;
+
+  if (teams.length === 0) {
+    return (
+      <div className="mb-8">
+        <SectionTitle 
+          title="Performance dos Times" 
+          icon=""
+          subtitle={`Competência: ${competencia}`}
+        />
+        <Card>
+          <p className="text-slate-400 text-center py-8">
+            Nenhum dado disponível para a competência {competencia}
+          </p>
+        </Card>
       </div>
     );
   }
 
-  // Ordenar equipes por média percentual (decrescente)
-  const sortedTeams = [...teams].sort((a, b) => (b.mediaPercentual ?? b.mediaGeral) - (a.mediaPercentual ?? a.mediaGeral));
-
   return (
-    <div
-      style={{
-        backgroundColor: COLORS.backgroundLight,
-        borderRadius: '16px',
-        padding: '24px',
-        border: `1px solid ${COLORS.border}`,
-      }}
-    >
-      <h3
-        style={{
-          color: COLORS.primary,
-          fontSize: '1.1rem',
-          fontWeight: '600',
-          marginBottom: '20px',
-        }}
-      >
-        {titulo}
-      </h3>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {sortedTeams.map((team, index) => {
-          const percentual = team.mediaPercentual ?? team.mediaGeral;
-          const nomeEquipe = team.equipe ?? team.time;
-          const totalKpis = team.totalKpis ?? team.totalIndicadores;
-          const kpisNaMeta = team.kpisNaMeta ?? 0;
-          const kpisAbaixoMeta = team.kpisAbaixoMeta ?? 0;
-          
-          return (
-          <div
-            key={nomeEquipe}
-            style={{
-              backgroundColor: COLORS.surface,
-              borderRadius: '12px',
-              padding: '16px',
-              border: `1px solid ${COLORS.border}`,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '16px',
-            }}
-          >
-            {/* Ranking */}
-            <div
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                backgroundColor: index < 3 ? COLORS.primary : COLORS.surface,
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                border: index < 3 ? 'none' : `1px solid ${COLORS.border}`,
-              }}
-            >
-              {index + 1}
-            </div>
-
-            {/* Info */}
-            <div style={{ flex: 1 }}>
-              <h4
-                style={{
-                  color: COLORS.text,
-                  fontSize: '0.95rem',
-                  fontWeight: '500',
-                  marginBottom: '4px',
-                }}
-              >
-                {nomeEquipe}
-              </h4>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '16px',
-                  color: COLORS.textSecondary,
-                  fontSize: '0.8rem',
-                }}
-              >
-                <span>KPIs: {totalKpis}</span>
-                <span style={{ color: STATUS_COLORS.verde }}>✓ {kpisNaMeta}</span>
-                <span style={{ color: STATUS_COLORS.vermelho }}>✗ {kpisAbaixoMeta}</span>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div style={{ flex: 1, maxWidth: '200px' }}>
-              <div
-                style={{
-                  width: '100%',
-                  height: '8px',
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                  borderRadius: '4px',
-                  overflow: 'hidden',
-                }}
-              >
-                <div
-                  style={{
-                    width: `${Math.min(percentual, 100)}%`,
-                    height: '100%',
-                    backgroundColor: getStatusColor(percentual),
-                    borderRadius: '4px',
-                    transition: 'width 0.5s ease',
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Percentual */}
-            <div
-              style={{
-                backgroundColor: getStatusColor(percentual),
-                color: '#fff',
-                padding: '6px 12px',
-                borderRadius: '16px',
-                fontSize: '0.85rem',
-                fontWeight: '600',
-                minWidth: '60px',
-                textAlign: 'center',
-              }}
-            >
-              {percentual.toFixed(0)}%
-            </div>
+    <div className="mb-8">
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-primary">{timesCom80Porcento}</p>
+            <p className="text-slate-400 text-sm">TIMES ACIMA DE 80%</p>
           </div>
-          );
-        })}
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-white">{percentualTimes80.toFixed(1)}%</p>
+            <p className="text-slate-400 text-sm">% TIMES NA META</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p 
+              className="text-3xl font-bold"
+              style={{ color: getStatusColor(mediaGeralConsolidada) }}
+            >
+              {mediaGeralConsolidada.toFixed(1)}%
+            </p>
+            <p className="text-slate-400 text-sm">MÉDIA GERAL</p>
+          </div>
+        </Card>
       </div>
+
+      {/* Container agrupando título e tabela */}
+      <Card>
+        <SectionTitle 
+          title="PERFORMANCE DOS TIMES" 
+          icon=""
+          subtitle={`Competência: ${competencia}`}
+        />
+        
+        {/* Tabela detalhada */}
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-orange-500">
+                <th className="text-left py-3 px-4 text-slate-300 font-medium">TIME</th>
+                <th className="text-center py-3 px-4 text-slate-300 font-medium">MÉDIA KPIS</th>
+                <th className="text-center py-3 px-4 text-slate-300 font-medium">MÉDIA OKRS</th>
+                <th className="text-center py-3 px-4 text-slate-300 font-medium">MÉDIA GERAL</th>
+              </tr>
+            </thead>
+            <tbody>
+              {teams.map((team, index) => (
+                <tr 
+                  key={index}
+                  className={`${index % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-900/50'} hover:bg-slate-700/30 transition-colors`}
+                >
+                  <td className="py-3 px-4 text-white font-medium">{team.time}</td>
+                  <td className="py-3 px-4">
+                    <ProgressBar value={team.mediaKpis} />
+                  </td>
+                  <td className="py-3 px-4">
+                    <ProgressBar value={team.mediaOkrs} />
+                  </td>
+                  <td className="py-3 px-4">
+                    <ProgressBar value={team.mediaGeral} isBold />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
     </div>
   );
 };

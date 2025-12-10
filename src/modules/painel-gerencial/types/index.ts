@@ -1,9 +1,38 @@
 /**
  * Tipos do módulo Painel Gerencial
+ * Exatamente igual ao original painel gerencial_refatorado
  */
 
-// Dados de KPI para o painel gerencial
-export interface GerencialKpiData {
+export interface OkrData {
+  objective: string;
+  indicator: string;
+  meta: string;
+  realizado: string;
+  atingimento: number;
+  data: string;
+}
+
+// Tipo simplificado para processamento de OKRs
+export interface ProcessedOkrData {
+  titulo: any;
+  metaAnual: number;
+  realizado: number;
+  percentual: number;
+  status: 'verde' | 'amarelo' | 'vermelho';
+}
+
+// Tipo simplificado para processamento de KPIs
+export interface ProcessedKpiData {
+  indicador: string;
+  meta: number;
+  realizado: number;
+  percentual: number;
+  status: 'verde' | 'amarelo' | 'vermelho';
+  responsavel: string;
+  planoAcao: string;
+}
+
+export interface KpiData {
   competencia: string;
   organizacao: string;
   time: string;
@@ -19,51 +48,17 @@ export interface GerencialKpiData {
   efeito?: string;
   acao?: string;
   responsavel?: string;
-  // Aliases para compatibilidade com componentes
-  nome?: string;
-  equipe?: string;
-  realizado?: number;
-  percentual?: number;
-  unidade?: string;
 }
 
-// Dados de OKR para o painel gerencial
-export interface GerencialOkrData {
-  objective: string;
-  indicator: string;
-  meta: string;
-  realizado: string;
-  atingimento: number;
+export interface NovoOkrData {
   data: string;
-}
-
-// Dados de OKR processados para exibição
-export interface ProcessedOkrData {
-  equipe: string;
-  objetivo: string;
-  keyResult: string;
+  time: string;
+  indicador: string;
   meta: number;
   realizado: number;
-  percentual: number;
-  trimestre: string;
+  atingReal: number;
 }
 
-// Performance por time
-export interface TeamPerformance {
-  time: string;
-  mediaKpis: number | null;
-  mediaOkrs: number | null;
-  mediaGeral: number;
-  totalIndicadores: number;
-  // Aliases para compatibilidade com componentes
-  equipe?: string;
-  totalKpis?: number;
-  kpisNaMeta?: number;
-  kpisAbaixoMeta?: number;
-  mediaPercentual?: number;
-}
-
-// Dados de EBITDA por ano
 export interface EbitdaYearData {
   year: number;
   meta: number;
@@ -71,26 +66,62 @@ export interface EbitdaYearData {
   metasReal: number;
 }
 
-// KPIs que precisam de atenção
-export interface KpiAtencao {
-  indicador: string;
+export interface TeamPerformance {
   time: string;
+  mediaKpis: number | null;
+  mediaOkrs: number | null;
+  mediaGeral: number;
+  totalIndicadores: number;
+}
+
+export interface TrimestralData {
+  trimestre: string;
+  mes: string;
   meta: number;
   realizado: number;
   percentual: number;
-  status: 'verde' | 'amarelo' | 'vermelho';
-  responsavel?: string;
-  planoAcao?: string;
+  desvio: number;
 }
 
-// Dados do dashboard
+export interface EquipeData {
+  membro: string;
+  cargo: string;
+  metaIndividual: number;
+  realizado: number;
+  percentual: number;
+}
+
+export interface FcaData {
+  fato: string;
+  causa: string;
+  acao: string;
+  responsavel: string;
+  prazo: string;
+  status: string;
+}
+
 export interface DashboardData {
-  okrs: GerencialOkrData[];
-  kpisAtencao: KpiAtencao[];
-  teamPerformance: TeamPerformance[];
-  ebitdaByYear: EbitdaYearData[];
+  ebitdaByYear: Record<number, EbitdaYearData>;
+  okrs: OkrData[];
+  kpis: KpiData[];
+  novoOkrs: NovoOkrData[];
   competencias: string[];
+  selectedCompetencia: string;
+  teamPerformance: TeamPerformance[];
+  kpisAtencao: KpiData[];
   ultimaAtualizacao: string;
+}
+
+export interface FilterState {
+  ano: number;
+  trimestre: string;
+  competencia: string;
+}
+
+export interface ChartDataPoint {
+  label: string;
+  value: number;
+  color?: string;
 }
 
 // Resposta da API

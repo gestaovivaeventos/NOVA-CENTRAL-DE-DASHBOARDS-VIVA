@@ -1,226 +1,255 @@
 'use client';
 
-import React from 'react';
-import { GerencialKpiData } from '../types';
-import { COLORS, STATUS_COLORS } from '../config/app.config';
+import React, { useState } from 'react';
+import Card from './Card';
+import SectionTitle from './SectionTitle';
+import { KpiData } from '../types';
 
 interface KpisAtencaoTableProps {
-  kpis: GerencialKpiData[];
-  titulo?: string;
+  kpis: KpiData[];
+  competencia: string;
 }
 
-const getStatusColor = (percentual: number): string => {
-  if (percentual >= 100) return STATUS_COLORS.verde;
-  if (percentual >= 80) return STATUS_COLORS.amarelo;
-  return STATUS_COLORS.vermelho;
+const getStatusColor = (percent: number) => {
+  if (percent >= 100) return '#22C55E'; // Verde
+  if (percent >= 61) return '#FF6600';  // Laranja
+  return '#EF4444';                      // Vermelho
 };
 
-const formatValue = (value: number, unidade?: string): string => {
-  if (!value && value !== 0) return '-';
-  
-  if (unidade === '%') {
-    return `${value.toFixed(1)}%`;
+const formatNumber = (value: number, grandeza: string): string => {
+  if (grandeza === '%') {
+    return `${(value * 100).toFixed(1)}%`;
   }
-  if (unidade === 'R$') {
+  if (value >= 1000000) {
     return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
+      style: 'decimal',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(value);
   }
-  
-  return value.toLocaleString('pt-BR');
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(value);
 };
 
-export const KpisAtencaoTable: React.FC<KpisAtencaoTableProps> = ({ kpis, titulo = 'KPIs que Precisam de Atenção' }) => {
-  // Filtrar apenas KPIs abaixo de 80%
-  const kpisAtencao = kpis.filter(kpi => (kpi.percentual ?? 0) < 80);
+// Modal de FCA
+interface FcaModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  kpi: KpiData | null;
+  competencia: string;
+}
 
-  if (kpisAtencao.length === 0) {
+const FcaModal: React.FC<FcaModalProps> = ({ isOpen, onClose, kpi, competencia }) => {
+  if (!isOpen || !kpi) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60" 
+        onClick={onClose}
+      />
+      
+      {/* Modal Content */}
+      <div className="relative bg-slate-800 rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto z-10">
+        <div className="p-6">
+          <h3 className="text-xl font-bold text-white mb-4">CRIAR FCA</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">TIME</label>
+              <input 
+                type="text" 
+                value={kpi.time} 
+                disabled 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-300"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">KPI</label>
+              <input 
+                type="text" 
+                value={kpi.kpi} 
+                disabled 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-300"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">COMPETÊNCIA</label>
+              <input 
+                type="text" 
+                value={competencia} 
+                disabled 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-slate-300"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">CRIADO EM</label>
+              <input 
+                type="date" 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">FATO</label>
+              <textarea 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white min-h-[80px] resize-y"
+                placeholder="Descreva o fato..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">CAUSA</label>
+              <textarea 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white min-h-[80px] resize-y"
+                placeholder="Descreva a causa..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">AÇÃO (LINK DO CARD)</label>
+              <input 
+                type="url" 
+                placeholder="https://..." 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">RESPONSÁVEL</label>
+              <input 
+                type="text" 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-slate-400 text-sm font-medium mb-1">TÉRMINO PREVISTO</label>
+              <input 
+                type="date" 
+                className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end gap-3 mt-6">
+            <button 
+              onClick={onClose}
+              className="px-4 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-500/10 transition-colors font-medium"
+            >
+              Cancelar
+            </button>
+            <button 
+              className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+            >
+              Salvar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const KpisAtencaoTable: React.FC<KpisAtencaoTableProps> = ({ kpis, competencia }) => {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedKpi, setSelectedKpi] = useState<KpiData | null>(null);
+
+  const handleCriarFca = (kpi: KpiData) => {
+    setSelectedKpi(kpi);
+    setModalOpen(true);
+  };
+
+  if (kpis.length === 0) {
     return (
-      <div
-        style={{
-          backgroundColor: COLORS.backgroundLight,
-          borderRadius: '16px',
-          padding: '24px',
-          border: `1px solid ${COLORS.border}`,
-        }}
-      >
-        <h3
-          style={{
-            color: COLORS.primary,
-            fontSize: '1.1rem',
-            fontWeight: '600',
-            marginBottom: '16px',
-          }}
-        >
-          {titulo}
-        </h3>
-        <p style={{ color: COLORS.success, fontSize: '0.9rem' }}>
-          🎉 Todos os KPIs estão dentro da meta ou próximos dela!
-        </p>
+      <div className="mb-8">
+        <Card>
+          <SectionTitle 
+            title="KPIS QUE REQUEREM ATENÇÃO (FCA)" 
+            icon=""
+            subtitle={`Competência: ${competencia}`}
+          />
+          <p className="text-green-400 text-center py-8">
+            Todos os KPIs estão acima de 60%!
+          </p>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div
-      style={{
-        backgroundColor: COLORS.backgroundLight,
-        borderRadius: '16px',
-        padding: '24px',
-        border: `1px solid ${COLORS.border}`,
-      }}
-    >
-      <h3
-        style={{
-          color: COLORS.primary,
-          fontSize: '1.1rem',
-          fontWeight: '600',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-        }}
-      >
-        <span>⚠️</span>
-        {titulo}
-      </h3>
-
-      <div style={{ overflowX: 'auto' }}>
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            fontSize: '0.9rem',
-          }}
-        >
-          <thead>
-            <tr>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '12px 16px',
-                  color: COLORS.textSecondary,
-                  fontWeight: '500',
-                  borderBottom: `1px solid ${COLORS.border}`,
-                }}
-              >
-                KPI
-              </th>
-              <th
-                style={{
-                  textAlign: 'left',
-                  padding: '12px 16px',
-                  color: COLORS.textSecondary,
-                  fontWeight: '500',
-                  borderBottom: `1px solid ${COLORS.border}`,
-                }}
-              >
-                Equipe
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '12px 16px',
-                  color: COLORS.textSecondary,
-                  fontWeight: '500',
-                  borderBottom: `1px solid ${COLORS.border}`,
-                }}
-              >
-                Realizado
-              </th>
-              <th
-                style={{
-                  textAlign: 'right',
-                  padding: '12px 16px',
-                  color: COLORS.textSecondary,
-                  fontWeight: '500',
-                  borderBottom: `1px solid ${COLORS.border}`,
-                }}
-              >
-                Meta
-              </th>
-              <th
-                style={{
-                  textAlign: 'center',
-                  padding: '12px 16px',
-                  color: COLORS.textSecondary,
-                  fontWeight: '500',
-                  borderBottom: `1px solid ${COLORS.border}`,
-                }}
-              >
-                %
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {kpisAtencao.map((kpi, index) => (
-              <tr key={index}>
-                <td
-                  style={{
-                    padding: '12px 16px',
-                    color: COLORS.text,
-                    borderBottom: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  {kpi.nome}
-                </td>
-                <td
-                  style={{
-                    padding: '12px 16px',
-                    color: COLORS.textSecondary,
-                    borderBottom: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  {kpi.equipe}
-                </td>
-                <td
-                  style={{
-                    padding: '12px 16px',
-                    color: COLORS.text,
-                    textAlign: 'right',
-                    borderBottom: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  {formatValue(kpi.realizado ?? 0, kpi.unidade)}
-                </td>
-                <td
-                  style={{
-                    padding: '12px 16px',
-                    color: COLORS.textSecondary,
-                    textAlign: 'right',
-                    borderBottom: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  {formatValue(kpi.meta, kpi.unidade)}
-                </td>
-                <td
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'center',
-                    borderBottom: `1px solid ${COLORS.border}`,
-                  }}
-                >
-                  <span
-                    style={{
-                      backgroundColor: getStatusColor(kpi.percentual ?? 0),
-                      color: '#fff',
-                      padding: '4px 12px',
-                      borderRadius: '12px',
-                      fontSize: '0.85rem',
-                      fontWeight: '500',
-                    }}
-                  >
-                    {(kpi.percentual ?? 0).toFixed(0)}%
-                  </span>
-                </td>
+    <div className="mb-8">
+      <Card>
+        <SectionTitle 
+          title="KPIS QUE REQUEREM ATENÇÃO (FCA)" 
+          icon=""
+          subtitle={`Indicadores com os menores percentuais de atingimento no período selecionado.`}
+        />
+        
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b-2 border-orange-500">
+                <th className="text-left py-3 px-4 text-slate-300 font-medium uppercase text-sm">Time</th>
+                <th className="text-left py-3 px-4 text-slate-300 font-medium uppercase text-sm">KPI</th>
+                <th className="text-center py-3 px-4 text-slate-300 font-medium uppercase text-sm">Meta</th>
+                <th className="text-center py-3 px-4 text-slate-300 font-medium uppercase text-sm">Resultado</th>
+                <th className="text-center py-3 px-4 text-slate-300 font-medium uppercase text-sm">Atingimento</th>
+                <th className="text-center py-3 px-4 text-slate-300 font-medium uppercase text-sm"></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {kpis.map((kpi, index) => {
+                const atingPercent = (kpi.metasReal ?? 0) * 100;
+                const color = getStatusColor(atingPercent);
+                return (
+                  <tr 
+                    key={index} 
+                    className={`${index % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-900/50'} hover:bg-slate-700/30 transition-colors`}
+                  >
+                    <td className="py-3 px-4 text-orange-500 font-medium">{kpi.time}</td>
+                    <td className="py-3 px-4 text-slate-300">{kpi.kpi}</td>
+                    <td className="py-3 px-4 text-center text-slate-300">
+                      {formatNumber(kpi.meta, kpi.grandeza)}
+                    </td>
+                    <td className="py-3 px-4 text-center text-slate-300">
+                      {formatNumber(kpi.resultado, kpi.grandeza)}
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className="font-semibold" style={{ color }}>
+                        {atingPercent.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        onClick={() => handleCriarFca(kpi)}
+                        className="px-4 py-2 border border-orange-500 text-orange-500 rounded-lg hover:bg-orange-500 hover:text-white transition-all font-semibold text-sm whitespace-nowrap"
+                      >
+                        CRIAR FCA
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Modal de FCA */}
+      <FcaModal 
+        isOpen={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        kpi={selectedKpi}
+        competencia={competencia}
+      />
     </div>
   );
 };
