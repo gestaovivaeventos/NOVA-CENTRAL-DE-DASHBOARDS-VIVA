@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 
 // Cache simples em memória (server-side)
 let cache: { data: any; timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
 
 export default async function handler(
   req: NextApiRequest,

@@ -170,10 +170,16 @@ export default function Dashboard() {
   const { data: fundosData, loading: loadingFundos, error: errorFundos } = useFundosData();
   const { data: funilData, loading: loadingFunil, error: errorFunil } = useFunilData();
 
-  // Loading global - só mostra loading se ainda não temos dados carregados
-  // Isso evita mostrar loading ao trocar de página quando os dados já existem
-  const hasData = salesData.length > 0 || metasData.size > 0;
-  const isLoading = (loadingSales || loadingMetas || loadingFundos) && !hasData;
+  // Loading global - mostra tela de carregamento enquanto dados principais não carregaram
+  const hasAnySalesData = salesData.length > 0;
+  const hasAnyMetasData = metasData.size > 0;
+  const hasAnyFundosData = fundosData.length > 0;
+  const hasAnyFunilData = funilData.length > 0;
+  
+  // Mostra loading global enquanto os dados de vendas estiverem carregando
+  // (igual ao comportamento do PEX)
+  const isLoading = loadingSales && !hasAnySalesData;
+  
   const hasError = errorSales || errorMetas || errorFundos;
 
   // Calcular período ANTES das opções de filtros (para usar na hierarquia)
@@ -2246,6 +2252,7 @@ export default function Dashboard() {
 
   // Renderizar conteúdo baseado na página ativa
   const renderContent = () => {
+    // Mostra loading global enquanto os dados de vendas estão carregando
     if (isLoading) {
       return (
         <div className="flex-1 flex items-center justify-center">
@@ -2254,7 +2261,8 @@ export default function Dashboard() {
       );
     }
 
-    if (hasError) {
+    // Se houve erro e não temos dados, mostra erro
+    if (hasError && !hasAnySalesData) {
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -2265,6 +2273,7 @@ export default function Dashboard() {
       );
     }
 
+    // Renderiza a página quando os dados estão prontos
     switch (paginaAtiva) {
       case 'metas':
         return renderMetasPage();

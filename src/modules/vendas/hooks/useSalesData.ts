@@ -122,8 +122,8 @@ export function useSalesData(): UseSalesDataReturn {
       
       const processedData = processRows(rows);
       
-      // Salvar no cache
-      clientCache.set(CACHE_KEYS.SALES_DATA, processedData, CACHE_TTL.MEDIUM);
+      // Salvar no cache com TTL longo (os dados são atualizados via API cache)
+      clientCache.set(CACHE_KEYS.SALES_DATA, processedData, CACHE_TTL.LONG);
       
       setDados(processedData);
       setLastUpdate(new Date());

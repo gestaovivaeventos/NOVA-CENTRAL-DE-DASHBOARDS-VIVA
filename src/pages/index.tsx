@@ -5,6 +5,23 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 
+// Função para pré-carregar dados de vendas em background
+const prefetchVendasData = () => {
+  // Faz as requisições em paralelo para popular o cache do servidor
+  const endpoints = [
+    '/api/vendas/sales',
+    '/api/vendas/metas',
+    '/api/vendas/fundos',
+    '/api/vendas/funil',
+  ];
+  
+  endpoints.forEach(endpoint => {
+    fetch(endpoint).catch(() => {
+      // Ignora erros - é apenas prefetch
+    });
+  });
+};
+
 export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -15,6 +32,18 @@ export default function HomePage() {
       router.push('/login');
     }
   }, [isAuthenticated, isLoading, router]);
+
+  // Pré-carregar dados de vendas quando usuário está autenticado
+  // Isso popula o cache do servidor para quando o usuário acessar o dashboard
+  useEffect(() => {
+    if (isAuthenticated && !isLoading) {
+      // Pequeno delay para não competir com recursos da página atual
+      const timer = setTimeout(() => {
+        prefetchVendasData();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isAuthenticated, isLoading]);
 
   // Mostrar loading enquanto verifica auth
   if (isLoading || !isAuthenticated) {

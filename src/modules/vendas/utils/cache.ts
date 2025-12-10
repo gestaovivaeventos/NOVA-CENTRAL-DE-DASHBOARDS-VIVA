@@ -93,10 +93,10 @@ export const CACHE_KEYS = {
   FUNDOS_DATA: 'fundos_data',
 };
 
-// TTL em milissegundos
+// TTL em milissegundos (aumentados para melhor performance)
 export const CACHE_TTL = {
-  SHORT: 2 * 60 * 1000,    // 2 minutos
-  MEDIUM: 5 * 60 * 1000,   // 5 minutos
-  LONG: 15 * 60 * 1000,    // 15 minutos
+  SHORT: 5 * 60 * 1000,    // 5 minutos
+  MEDIUM: 10 * 60 * 1000,  // 10 minutos
+  LONG: 30 * 60 * 1000,    // 30 minutos
 };
 
