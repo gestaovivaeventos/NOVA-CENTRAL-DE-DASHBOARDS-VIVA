@@ -46,17 +46,33 @@ export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear }) => {
 
   return (
     <Card>
-      <div className="text-center" style={{ fontFamily: 'Poppins, sans-serif' }}>
-        <h3 className="card-title flex items-center justify-center gap-2">
+      <div style={{ fontFamily: 'Poppins, sans-serif' }}>
+        {/* Título com estilo section-title */}
+        <h3 
+          style={{
+            margin: '0 0 12px 0',
+            color: '#adb5bd',
+            fontSize: '1.2rem',
+            letterSpacing: '0.06em',
+            fontFamily: "'Poppins', Arial, sans-serif",
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            borderBottom: '1px solid #ff6600',
+            paddingBottom: '2px',
+          }}
+        >
           EBITDA
         </h3>
         
         {/* Barra de progresso do ano atual */}
         {currentYearData && (
-          <div className="mb-6">
-            <div className="progress-bar-bg h-4 mb-2">
+          <div className="mb-6 text-center">
+            <div 
+              className="w-full h-4 rounded-full overflow-hidden mb-2"
+              style={{ backgroundColor: '#495057' }}
+            >
               <div
-                className="progress-bar-fg"
+                className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${Math.min(atingimentoPercent, 100)}%`,
                   background: `linear-gradient(to right, ${gradientColors.start}, ${gradientColors.end})`,
@@ -66,7 +82,7 @@ export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear }) => {
             <p className="text-2xl font-bold" style={{ color: statusColor }}>
               {atingimentoPercent.toFixed(1)}%
             </p>
-            <p className="text-text-secondary text-sm">ATINGIMENTO {currentYear}</p>
+            <p className="text-sm" style={{ color: '#ADB5BD' }}>ATINGIMENTO {currentYear}</p>
           </div>
         )}
 
@@ -78,17 +94,23 @@ export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear }) => {
             const yearColor = getStatusColor(yearAtingimento);
             
             return (
-              <div key={year} className="kpi-card">
+              <div 
+                key={year} 
+                className="flex flex-col gap-2 rounded-lg p-4"
+                style={{ 
+                  background: 'linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03))'
+                }}
+              >
                 <div className="flex items-center justify-between min-h-[60px]">
-                  <span className="text-text-primary font-semibold text-lg">{year}</span>
+                  <span className="font-semibold text-lg" style={{ color: '#F8F9FA' }}>{year}</span>
                   <div className="grid grid-cols-2 gap-6 flex-1 mx-6">
                     <div className="text-center">
-                      <p className="text-text-secondary text-sm mb-1">META</p>
-                      <p className="text-text-primary font-medium">{formatCurrency(item.meta)}</p>
+                      <p className="text-sm mb-1" style={{ color: '#ADB5BD' }}>META</p>
+                      <p className="font-medium" style={{ color: '#F8F9FA' }}>{formatCurrency(item.meta)}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-text-secondary text-sm mb-1">RESULTADO</p>
-                      <p className="text-text-primary font-medium">
+                      <p className="text-sm mb-1" style={{ color: '#ADB5BD' }}>RESULTADO</p>
+                      <p className="font-medium" style={{ color: '#F8F9FA' }}>
                         {item.resultado > 0 ? formatCurrency(item.resultado) : '-'}
                       </p>
                     </div>

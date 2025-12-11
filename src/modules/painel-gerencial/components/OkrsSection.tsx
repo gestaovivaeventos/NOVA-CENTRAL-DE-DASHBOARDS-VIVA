@@ -193,10 +193,27 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
           
           return (
             <Card key={obj.objective}>
-              <div className="text-center">
-                <h4 className="text-white font-medium text-sm mb-4 line-clamp-2">{obj.objective}</h4>
+              <div>
+                {/* Título com estilo section-title */}
+                <h4 
+                  style={{
+                    margin: '0 0 12px 0',
+                    color: '#adb5bd',
+                    fontSize: '0.9rem',
+                    letterSpacing: '0.06em',
+                    fontFamily: "'Poppins', Arial, sans-serif",
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    borderBottom: '1px solid #ff6600',
+                    paddingBottom: '2px',
+                    lineHeight: '1.4',
+                  }}
+                >
+                  {obj.objective}
+                </h4>
                 
                 {/* Donut Chart */}
+                <div className="text-center">
                 <div className="relative w-48 h-48 mx-auto">
                   <svg width="192" height="192" viewBox="0 0 192 192" className="transform -rotate-90">
                     <defs>
@@ -239,6 +256,7 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
                 </div>
                 
                 <p className="text-slate-400 text-xs mt-4">{obj.krs.length} INDICADORES</p>
+                </div>
               </div>
             </Card>
           );

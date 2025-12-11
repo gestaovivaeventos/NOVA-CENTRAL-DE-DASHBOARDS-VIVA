@@ -126,11 +126,6 @@ export default function GerencialPage() {
               kpis={data.kpisAtencao} 
               competencia={selectedCompetencia} 
             />
-
-            {/* Última atualização */}
-            <div className="text-center text-text-muted text-sm mt-8 mb-4">
-              <p>Dados atualizados em: {new Date(data.ultimaAtualizacao).toLocaleString('pt-BR')}</p>
-            </div>
           </main>
 
           <Footer />

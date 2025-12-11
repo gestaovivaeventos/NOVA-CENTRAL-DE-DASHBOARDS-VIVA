@@ -281,6 +281,16 @@ body {
     @apply text-red-400;
   }
 
+  /* Progress Bar */
+  .progress-bar-bg {
+    @apply w-full rounded-full overflow-hidden;
+    background-color: var(--bg-tertiary);
+  }
+
+  .progress-bar-fg {
+    @apply h-full rounded-full transition-all duration-500;
+  }
+
   /* Card Title Vendas */
   .card-title {
     @apply text-lg font-semibold mb-4;
