@@ -44,11 +44,14 @@ function processKpiData(rows: any[][]): KpiData[] {
     status: headers.indexOf('STATUS'),
     grandeza: headers.indexOf('GRANDEZA'),
     data: headers.indexOf('DATA'),
+    criadoEm: headers.indexOf('CRIADO EM'),
     fato: headers.indexOf('FATO'),
     causa: headers.indexOf('CAUSA'),
     efeito: headers.indexOf('EFEITO'),
-    acao: headers.indexOf('AÇÃO (LINK DO CAR'),
-    responsavel: headers.indexOf('RESPONSÁVEL (FC')
+    acao: headers.findIndex((h: string) => h.includes('AÇÃO')),
+    responsavel: headers.findIndex((h: string) => h.includes('RESPONSÁVEL (FCA)')),
+    terminoPrevisto: headers.findIndex((h: string) => h.includes('TÉRMINO')),
+    fcaRealizado: headers.indexOf('REALIZADO')
   };
 
   const dataRows = rows.slice(1);
@@ -87,11 +90,14 @@ function processKpiData(rows: any[][]): KpiData[] {
       status: row[colIndices.status] || '',
       grandeza: grandeza || '',
       year: year,
+      criadoEm: row[colIndices.criadoEm] || '',
       fato: row[colIndices.fato] || '',
       causa: row[colIndices.causa] || '',
       efeito: row[colIndices.efeito] || '',
-      acao: row[colIndices.acao] || '',
-      responsavel: row[colIndices.responsavel] || ''
+      acao: colIndices.acao >= 0 ? (row[colIndices.acao] || '') : '',
+      responsavel: colIndices.responsavel >= 0 ? (row[colIndices.responsavel] || '') : '',
+      terminoPrevisto: colIndices.terminoPrevisto >= 0 ? (row[colIndices.terminoPrevisto] || '') : '',
+      fcaRealizado: colIndices.fcaRealizado >= 0 ? (row[colIndices.fcaRealizado] || '') : ''
     };
   }).filter(item => 
     (item.organizacao === 'FRANQUEADORA | QUOKKA' || item.organizacao === 'FEAT') && 

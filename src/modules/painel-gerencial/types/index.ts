@@ -48,6 +48,9 @@ export interface KpiData {
   efeito?: string;
   acao?: string;
   responsavel?: string;
+  criadoEm?: string;
+  terminoPrevisto?: string;
+  fcaRealizado?: string;
 }
 
 export interface NovoOkrData {
