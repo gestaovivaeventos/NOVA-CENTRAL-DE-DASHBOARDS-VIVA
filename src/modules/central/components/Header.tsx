@@ -126,27 +126,6 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
         {/* User info */}
         {user && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {/* Avatar */}
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #FF6600 0%, #D35400 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 10px rgba(255, 102, 0, 0.3)',
-            }}>
-              <span style={{
-                color: '#FFF',
-                fontWeight: 700,
-                fontSize: '1.1em',
-                fontFamily: "'Poppins', sans-serif",
-              }}>
-                {user.firstName?.charAt(0)?.toUpperCase() || 'U'}
-              </span>
-            </div>
-
             {/* User details */}
             <div style={{ textAlign: 'right' }}>
               <p style={{

@@ -15,7 +15,9 @@ export default function Header({ sidebarCollapsed = false }: HeaderProps) {
     <header 
       className="bg-dark-primary transition-all duration-300"
       style={{
-        marginLeft: sidebarCollapsed ? '70px' : '280px',
+        marginLeft: sidebarCollapsed ? '60px' : '300px',
+        position: 'relative',
+        zIndex: 10,
       }}
     >
       <div className="px-4 py-4">

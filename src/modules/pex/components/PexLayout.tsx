@@ -40,7 +40,7 @@ interface PexLayoutProps {
 
 export default function PexLayout({ children, currentPage, filters }: PexLayoutProps) {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     // Inicializar com o valor salvo no localStorage
     if (typeof window !== 'undefined') {
@@ -104,10 +104,8 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
     });
   }
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    localStorage.removeItem('accessLevel');
+  const handleLogout = async () => {
+    await logout();
     router.push('/login');
   };
 
@@ -202,29 +200,9 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
           justifyContent: 'space-between',
           gap: '10px',
         }}>
-          {(!isCollapsed || isMobile) ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-              {/* Ícone com letra inicial */}
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: '#FF6600',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}>
-                <span style={{
-                  color: '#FFF',
-                  fontSize: '1.2rem',
-                  fontWeight: 700,
-                  fontFamily: "'Poppins', sans-serif",
-                  textTransform: 'uppercase',
-                }}>
-                  {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-                </span>
-              </div>
+          {(!isCollapsed || isMobile) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+              {/* Info do Usuário - sem círculo com letra */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h2 style={{
                   color: '#F8F9FA',
@@ -234,7 +212,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  marginBottom: '0px',
+                  marginBottom: '2px',
                   lineHeight: '1.2',
                 }}>
                   {user?.firstName || user?.username || 'Usuário'}
@@ -242,13 +220,13 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                 <p style={{
                   color: '#6c757d',
                   fontSize: '0.7rem',
-                  marginBottom: '4px',
+                  marginBottom: '2px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   lineHeight: '1.2',
                 }}>
-                  {user?.unitNames?.[0] || 'Unidade'}
+                  {user?.unitNames?.[0] || 'Franquia'}
                 </p>
                 <p style={{
                   color: '#4a5568',
@@ -258,9 +236,9 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                 </p>
               </div>
             </div>
-          ) : null}
+          )}
 
-          {/* Botão Toggle - apenas desktop */}
+          {/* Botão Toggle - estilo igual ao Vendas */}
           {!isMobile && (
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -268,25 +246,18 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
               width: '32px',
               height: '32px',
               borderRadius: '6px',
-              backgroundColor: '#FF6600',
-              border: 'none',
+              backgroundColor: '#1a1d21',
+              border: '1px solid #FF6600',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              color: '#FFF',
+              color: '#FF6600',
               transition: 'all 0.2s',
               flexShrink: 0,
               boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#ff7a1a';
-              e.currentTarget.style.transform = 'scale(1.05)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = '#FF6600';
-              e.currentTarget.style.transform = 'scale(1)';
-            }}
+            title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
           >
             {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
@@ -314,16 +285,28 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                       padding: (isCollapsed && !isMobile) ? '12px' : '12px 16px',
                       borderRadius: '8px',
                       backgroundColor: isActive ? 'rgba(255, 102, 0, 0.1)' : 'transparent',
-                      border: isActive ? '1px solid #FF6600' : '1px solid transparent',
+                      border: isActive ? '1px solid #FF6600' : '1px solid rgba(75, 85, 99, 0.5)',
                       color: isActive ? '#FF6600' : '#9ca3af',
                       textDecoration: 'none',
                       fontFamily: "'Poppins', sans-serif",
-                      fontSize: '0.95rem',
+                      fontSize: '0.85rem',
                       fontWeight: isActive ? 600 : 500,
                       transition: 'all 0.2s',
                       justifyContent: (isCollapsed && !isMobile) ? 'center' : 'flex-start',
+                      boxShadow: !isActive ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
+                      height: '42px',
                     }}
                     title={(isCollapsed && !isMobile) ? item.label : undefined}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
                   >
                     <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
                     {(!isCollapsed || isMobile) && <span>{item.label}</span>}
@@ -537,43 +520,12 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
           </div>
         )}
 
-        {/* Botão de Filtros quando sidebar colapsada (apenas desktop) */}
-        {hasFilters && isCollapsed && !isMobile && (
-          <div style={{
-            padding: '10px',
-            borderTop: '1px solid #333',
-          }}>
-            <button
-              onClick={() => setIsCollapsed(false)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '8px',
-                backgroundColor: 'rgba(255, 102, 0, 0.1)',
-                border: '1px solid #FF6600',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s',
-              }}
-              title="Expandir para ver filtros"
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.25)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.1)';
-              }}
-            >
-              <Filter size={20} color="#FF6600" />
-            </button>
-          </div>
-        )}
+        {/* Botão de Filtros quando sidebar colapsada - REMOVIDO para padronizar com Vendas */}
 
         {/* Spacer */}
         <div style={{ flex: 1 }} />
 
-        {/* Footer da Sidebar */}
+        {/* Footer da Sidebar - Igual ao Vendas */}
         <div style={{
           padding: (isCollapsed && !isMobile) ? '15px 10px' : '15px 20px',
           borderTop: '1px solid #333',
@@ -586,23 +538,31 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
               display: 'flex',
               alignItems: 'center',
               gap: (isCollapsed && !isMobile) ? '0' : '12px',
-              padding: (isCollapsed && !isMobile) ? '12px' : '12px 16px',
+              padding: (isCollapsed && !isMobile) ? '10px' : '10px 16px',
               borderRadius: '8px',
               backgroundColor: 'transparent',
-              border: '1px solid transparent',
-              color: '#6c757d',
+              border: '1px solid rgba(75, 85, 99, 0.5)',
+              color: '#9ca3af',
               textDecoration: 'none',
               fontFamily: "'Poppins', sans-serif",
-              fontSize: '0.9rem',
+              fontSize: '0.95rem',
               fontWeight: 500,
               transition: 'all 0.2s',
               justifyContent: (isCollapsed && !isMobile) ? 'center' : 'flex-start',
               marginBottom: '8px',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+              width: '100%',
             }}
-            title={(isCollapsed && !isMobile) ? 'Voltar para Central' : undefined}
+            title={(isCollapsed && !isMobile) ? 'Central de Dashboards' : undefined}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
           >
-            <Home size={18} />
-            {(!isCollapsed || isMobile) && <span>Voltar para Central</span>}
+            <Home size={20} strokeWidth={2} />
+            {(!isCollapsed || isMobile) && <span>Central de Dashboards</span>}
           </Link>
 
           {/* Logout */}
@@ -612,22 +572,33 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
               display: 'flex',
               alignItems: 'center',
               gap: (isCollapsed && !isMobile) ? '0' : '12px',
-              padding: (isCollapsed && !isMobile) ? '12px' : '12px 16px',
+              padding: (isCollapsed && !isMobile) ? '10px' : '10px 16px',
               borderRadius: '8px',
               backgroundColor: 'transparent',
-              border: '1px solid transparent',
-              color: '#dc3545',
+              border: '1px solid rgba(75, 85, 99, 0.5)',
+              color: '#9ca3af',
               fontFamily: "'Poppins', sans-serif",
-              fontSize: '0.9rem',
+              fontSize: '0.95rem',
               fontWeight: 500,
               cursor: 'pointer',
               transition: 'all 0.2s',
               justifyContent: (isCollapsed && !isMobile) ? 'center' : 'flex-start',
               width: '100%',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
             }}
             title={(isCollapsed && !isMobile) ? 'Sair' : undefined}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+              e.currentTarget.style.color = '#f87171';
+              e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#9ca3af';
+              e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.5)';
+            }}
           >
-            <LogOut size={18} />
+            <LogOut size={20} strokeWidth={2} />
             {(!isCollapsed || isMobile) && <span>Sair</span>}
           </button>
         </div>

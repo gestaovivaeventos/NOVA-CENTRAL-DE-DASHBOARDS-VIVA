@@ -2909,10 +2909,10 @@ export default function Dashboard() {
 
           {/* Conteúdo principal */}
           <main 
-            className="flex-1 pt-6 px-6 pb-2 transition-all duration-300 overflow-x-hidden"
+            className="flex-1 pt-6 px-6 pb-12 transition-all duration-300 overflow-x-hidden"
             style={{ 
-              marginLeft: sidebarCollapsed ? '70px' : '280px',
-              width: sidebarCollapsed ? 'calc(100vw - 70px)' : 'calc(100vw - 280px)',
+              marginLeft: sidebarCollapsed ? '60px' : '300px',
+              width: sidebarCollapsed ? 'calc(100vw - 60px)' : 'calc(100vw - 300px)',
             }}
           >
             {/* Conteúdo */}

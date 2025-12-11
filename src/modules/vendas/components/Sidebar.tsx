@@ -51,6 +51,14 @@ export default function Sidebar({
   // Gerar data apenas no cliente para evitar erro de hidratação
   const [dataAtual, setDataAtual] = useState<string>('');
   
+  // Debug: Log de unitNames
+  React.useEffect(() => {
+    if (user) {
+      console.log('User unitNames:', user.unitNames);
+      console.log('User data:', user);
+    }
+  }, [user]);
+  
   useEffect(() => {
     const hoje = new Date();
     setDataAtual(`${hoje.toLocaleDateString('pt-BR')}, ${hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
@@ -92,32 +100,6 @@ export default function Sidebar({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            {/* Avatar */}
-            <div
-              style={{
-                width: isCollapsed ? '36px' : '40px',
-                height: isCollapsed ? '36px' : '40px',
-                borderRadius: '50%',
-                backgroundColor: '#FF6600',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                flexShrink: 0,
-              }}
-            >
-              <span
-                style={{
-                  color: '#FFF',
-                  fontSize: isCollapsed ? '1rem' : '1.2rem',
-                  fontWeight: 700,
-                  fontFamily: "'Poppins', sans-serif",
-                  textTransform: 'uppercase',
-                }}
-              >
-                {user?.firstName?.charAt(0) || user?.username?.charAt(0) || 'U'}
-              </span>
-            </div>
-
             {/* Info do Usuário */}
             {!isCollapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -147,7 +129,7 @@ export default function Sidebar({
                     lineHeight: '1.2',
                   }}
                 >
-                  {user?.unitNames?.[0] || 'Unidade'}
+                  {user?.unitNames?.[0] || 'Franquia'}
                 </p>
                 <p
                   style={{

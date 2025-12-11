@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import {
   ChevronLeft,
   ChevronRight,
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 import { SidebarProps } from '../types';
 import { teamIcons } from '../config/app.config';
+import { useAuth } from '@/context/AuthContext';
 
 const iconMap: Record<string, React.ElementType> = {
   Headphones,
@@ -39,7 +41,7 @@ const iconMap: Record<string, React.ElementType> = {
 };
 
 const SIDEBAR_WIDTH_EXPANDED = 300;
-const SIDEBAR_WIDTH_COLLAPSED = 80;
+const SIDEBAR_WIDTH_COLLAPSED = 60;
 
 export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
@@ -48,40 +50,112 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTeamSelect,
   teams,
 }) => {
+  const router = useRouter();
+  const { user, logout } = useAuth();
   const isFeatTeam = selectedTeam === 'FEAT';
   const accentColor = isFeatTeam ? '#EA2B82' : '#FF6600';
 
+  // Gerar data apenas no cliente para evitar erro de hidratação
+  const [dataAtual, setDataAtual] = useState<string>('');
+  
+  useEffect(() => {
+    const hoje = new Date();
+    setDataAtual(`${hoje.toLocaleDateString('pt-BR')}, ${hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
+  }, []);
+
   return (
     <aside
-      className="fixed left-0 top-0 bottom-0 bg-dark-secondary overflow-y-auto transition-all duration-300 z-50"
+      className="fixed left-0 top-0 bottom-0 overflow-y-auto transition-all duration-300 z-50"
       style={{
         width: isCollapsed ? `${SIDEBAR_WIDTH_COLLAPSED}px` : `${SIDEBAR_WIDTH_EXPANDED}px`,
-        borderRight: '2px solid #343A40',
-        overflow: 'visible',
+        backgroundColor: '#1a1d21',
+        borderRight: '1px solid #333',
       }}
     >
-      {/* Toggle Button */}
-      <button
-        onClick={() => onCollapseChange(!isCollapsed)}
-        className="absolute w-8 h-8 flex items-center justify-center rounded-md bg-dark-secondary border border-orange-500 hover:bg-orange-500/20 cursor-pointer transition-all duration-200 shadow-lg"
+      {/* Header com Perfil do Usuário */}
+      <div
         style={{
-          top: '24px',
-          right: '-16px',
-          zIndex: 60,
+          padding: isCollapsed ? '16px 10px' : '16px 20px',
+          borderBottom: '1px solid #333',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
         }}
-        title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
       >
-        {isCollapsed ? (
-          <ChevronRight size={18} className="text-orange-500" />
-        ) : (
-          <ChevronLeft size={18} className="text-orange-500" />
-        )}
-      </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+          {/* Info do Usuário */}
+          {!isCollapsed && (
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2
+                style={{
+                  color: '#F8F9FA',
+                  fontSize: '0.95rem',
+                  fontWeight: 600,
+                  fontFamily: "'Poppins', sans-serif",
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  marginBottom: '2px',
+                  lineHeight: '1.2',
+                }}
+              >
+                {user?.firstName || user?.username || 'Usuário'}
+              </h2>
+              <p
+                style={{
+                  color: '#6c757d',
+                  fontSize: '0.7rem',
+                  marginBottom: '2px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  lineHeight: '1.2',
+                }}
+              >
+                {user?.unitNames?.[0] || 'Franquia'}
+              </p>
+              <p
+                style={{
+                  color: '#4a5568',
+                  fontSize: '0.6rem',
+                }}
+              >
+                Atualizado: {dataAtual || new Date().toLocaleDateString('pt-BR')}
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Botão Toggle */}
+        <button
+          onClick={() => onCollapseChange(!isCollapsed)}
+          className="hover:bg-orange-500/20"
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '6px',
+            backgroundColor: '#1a1d21',
+            border: `1px solid ${accentColor}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            color: accentColor,
+            transition: 'all 0.2s',
+            flexShrink: 0,
+            boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          }}
+          title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
+        >
+          {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
+      </div>
 
       {/* Conteúdo da Sidebar */}
       <div 
-        className={`${isCollapsed ? 'px-2 pt-16' : 'p-5 pt-16'} flex flex-col`}
-        style={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}
+        className={`${isCollapsed ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
+        style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
       >
         {/* Botão OKR */}
         <Link
@@ -199,13 +273,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Link
             href="/"
             className={`
-              flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
+              flex items-center rounded-lg transition-all duration-200 hover:bg-white/5
               ${isCollapsed ? 'justify-center p-3 w-full' : 'gap-3 px-4 py-2.5 w-full'}
             `}
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontSize: '0.85rem',
               fontWeight: 500,
+              color: '#9ca3af',
+              border: '1px solid rgba(75, 85, 99, 0.5)',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
               height: isCollapsed ? '48px' : 'auto',
               textDecoration: 'none',
@@ -218,19 +294,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Botão de Logout */}
           <button
-            onClick={() => {
-              // TODO: Implementar função de logout
+            onClick={async () => {
+              await logout();
+              router.push('/login');
             }}
             className={`
-              flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50
+              flex items-center rounded-lg transition-all duration-200 hover:bg-red-500/10
               ${isCollapsed ? 'justify-center p-3 w-full mt-2' : 'gap-3 px-4 py-2.5 w-full mt-2'}
             `}
             style={{
               fontFamily: 'Poppins, sans-serif',
               fontSize: '0.85rem',
               fontWeight: 500,
+              color: '#9ca3af',
+              border: '1px solid rgba(75, 85, 99, 0.5)',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
               height: isCollapsed ? '48px' : 'auto',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = '#f87171';
+              e.currentTarget.style.borderColor = 'rgba(248, 113, 113, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = '#9ca3af';
+              e.currentTarget.style.borderColor = 'rgba(75, 85, 99, 0.5)';
             }}
             title={isCollapsed ? 'Sair' : undefined}
           >

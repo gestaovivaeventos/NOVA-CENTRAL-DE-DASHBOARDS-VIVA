@@ -7,8 +7,8 @@ export default function Footer() {
     <footer style={{
       position: 'relative',
       width: '100%',
-      padding: '8px 24px 4px 24px',
-      marginTop: '8px',
+      padding: '24px 24px 16px 24px',
+      marginTop: '40px',
       textAlign: 'left',
       background: 'none',
       border: 'none',

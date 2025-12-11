@@ -237,78 +237,50 @@ export default function GraficoEvolucao({
           gap: '12px'
         }}>
           {/* Filtro de Indicador */}
-          <div style={{ position: 'relative' }}>
-            <select
-              value={indicadorSelecionado}
-              onChange={(e) => setIndicadorSelecionado(e.target.value)}
-              style={{
-                padding: '10px 35px 10px 14px',
-                background: 'linear-gradient(to bottom, #5a6573 0%, #4a5563 50%, #3a4553 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                fontFamily: 'Poppins, sans-serif',
-                cursor: 'pointer',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                WebkitAppearance: 'none',
-                appearance: 'none'
-              } as React.CSSProperties}
-            >
-              {INDICADORES.map(ind => (
-                <option key={ind.codigo} value={ind.codigo}>
-                  {ind.nome}
-                </option>
-              ))}
-            </select>
-            <span style={{ 
-              position: 'absolute', 
-              right: '12px', 
-              top: '50%', 
-              transform: 'translateY(-50%)', 
-              pointerEvents: 'none', 
-              fontSize: '0.7rem', 
-              color: 'white' 
-            }}>▼</span>
-          </div>
+          <select
+            value={indicadorSelecionado}
+            onChange={(e) => setIndicadorSelecionado(e.target.value)}
+            style={{
+              padding: '10px 12px',
+              borderRadius: '6px',
+              backgroundColor: '#2a2f36',
+              border: '1px solid #444',
+              color: '#F8F9FA',
+              fontSize: '0.85rem',
+              fontFamily: 'Poppins, sans-serif',
+              cursor: 'pointer',
+              minWidth: '150px',
+            }}
+          >
+            {INDICADORES.map(ind => (
+              <option key={ind.codigo} value={ind.codigo}>
+                {ind.nome}
+              </option>
+            ))}
+          </select>
 
           {/* Filtro de Ano */}
-          <div style={{ position: 'relative' }}>
-            <select
-              value={anoSelecionado}
-              onChange={(e) => setAnoSelecionado(e.target.value)}
-              style={{
-                padding: '10px 35px 10px 14px',
-                background: 'linear-gradient(to bottom, #5a6573 0%, #4a5563 50%, #3a4553 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                fontFamily: 'Poppins, sans-serif',
-                cursor: 'pointer',
-                boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                WebkitAppearance: 'none',
-                appearance: 'none'
-              } as React.CSSProperties}
-            >
-              {anosDisponiveis.map(ano => (
-                <option key={ano} value={ano || ''}>
-                  {ano}
-                </option>
-              ))}
-            </select>
-            <span style={{ 
-              position: 'absolute', 
-              right: '12px', 
-              top: '50%', 
-              transform: 'translateY(-50%)', 
-              pointerEvents: 'none', 
-              fontSize: '0.7rem', 
-              color: 'white' 
-            }}>▼</span>
-          </div>
+          <select
+            value={anoSelecionado}
+            onChange={(e) => setAnoSelecionado(e.target.value)}
+            style={{
+              padding: '10px 12px',
+              borderRadius: '6px',
+              backgroundColor: '#2a2f36',
+              border: '1px solid #444',
+              color: '#F8F9FA',
+              fontSize: '0.85rem',
+              fontFamily: 'Poppins, sans-serif',
+              cursor: 'pointer',
+              minWidth: '90px',
+            }}
+          >
+            {anosDisponiveis.map(ano => (
+              <option key={ano} value={ano || ''}>
+                {ano}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Estatística da Média */}

@@ -45,6 +45,7 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
 
     // Colunas esperadas (do Novo Pex):
     // B (índice 1) = nm_unidade (unidade vinculada)
+    // C (índice 2) = nm_unidade_principal_desc (descrição da unidade principal)
     // D (índice 3) = nome (full name)
     // E (índice 4) = username
     // F (índice 5) = enabled (TRUE/FALSE)
@@ -65,6 +66,7 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
       const cells = parseCSVLine(line);
       if (cells.length > 11) {
         const unitName = cells[1]?.trim().replace(/^"|"$/g, ''); // Coluna B
+        const unitPrincipalDesc = cells[2]?.trim().replace(/^"|"$/g, ''); // Coluna C
         const name = cells[3]?.trim().replace(/^"|"$/g, ''); // Coluna D
         const username = cells[4]?.trim().replace(/^"|"$/g, ''); // Coluna E
         const enabledStr = cells[5]?.trim().replace(/^"|"$/g, '').toUpperCase(); // Coluna F
@@ -84,8 +86,9 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
           }
 
           const user = userMap.get(username)!;
-          if (accessLevel === 0 && unitName) {
-            user.unitNames.add(unitName);
+          if (unitPrincipalDesc) {
+            // Usar nm_unidade_principal_desc para todos os tipos de usuário
+            user.unitNames.add(unitPrincipalDesc);
           }
         }
       }

@@ -1,10 +1,11 @@
 /**
- * Tabela Resumo - Exibe todas as unidades com suas pontuações
+ * Tabela Resumo - Exibe todas as unidades com suas pontuções
  * Com funcionalidade de ordenação por coluna e exportação para Excel
  */
 
 import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
+import { Download } from 'lucide-react';
 
 interface TabelaResumoProps {
   dados: any[];
@@ -185,33 +186,11 @@ export default function TabelaResumo({
       <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-end' }}>
         <button
           onClick={exportarParaExcel}
-          style={{
-            background: 'linear-gradient(to bottom, #9CA3AF 0%, #6B7280 50%, #4B5563 100%)',
-            color: '#FFFFFF',
-            padding: 'clamp(4px, 1vw, 6px) clamp(12px, 3vw, 20px)',
-            borderRadius: '6px',
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 600,
-            fontSize: 'clamp(0.75rem, 2vw, 0.875rem)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.2s',
-            fontFamily: 'Poppins, sans-serif',
-            boxShadow: '0 4px 12px rgba(107, 114, 128, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(to bottom, #ACB3BF 0%, #7B8290 50%, #5B6573 100%)';
-            e.currentTarget.style.transform = 'translateY(-2px)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'linear-gradient(to bottom, #9CA3AF 0%, #6B7280 50%, #4B5563 100%)';
-            e.currentTarget.style.transform = 'translateY(0)';
-          }}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-dark-tertiary border border-gray-600 text-gray-400 hover:bg-orange-500/10 hover:border-orange-500 hover:text-orange-500"
+          style={{ fontFamily: 'Poppins, sans-serif' }}
         >
-          <span style={{ fontSize: '1.2rem' }}>📥</span>
-          Exportar para Excel
+          <Download size={16} />
+          Exportar
         </button>
       </div>
 

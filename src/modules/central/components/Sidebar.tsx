@@ -183,17 +183,17 @@ const CollapsibleGroup = ({
           justifyContent: 'space-between',
           width: '100%',
           padding: '10px 12px',
-          background: 'transparent',
+          backgroundColor: 'rgba(255, 255, 255, 0.05)',
           border: 'none',
           borderRadius: '6px',
           cursor: 'pointer',
           transition: 'background 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
         }}
       >
         <span style={{ 
@@ -220,7 +220,7 @@ const CollapsibleGroup = ({
         <div style={{ 
           display: 'flex', 
           flexDirection: 'column', 
-          gap: '2px',
+          gap: '4px',
           marginTop: '4px',
         }}>
           {filteredDashboards.map((dashboard) => {
@@ -235,8 +235,20 @@ const CollapsibleGroup = ({
                   alignItems: 'center',
                   borderRadius: '8px',
                   backgroundColor: active ? 'rgba(255, 102, 0, 0.1)' : 'transparent',
-                  border: active ? '1px solid #FF6600' : '1px solid transparent',
+                  border: active ? '1px solid #FF6600' : '1px solid rgba(75, 85, 99, 0.5)',
+                  boxShadow: !active ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
                   transition: 'all 0.2s',
+                  height: '42px',
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }
                 }}
               >
                 <Link
@@ -251,7 +263,7 @@ const CollapsibleGroup = ({
                     color: active ? '#FF6600' : '#9ca3af',
                     textDecoration: 'none',
                     fontFamily: "'Poppins', sans-serif",
-                    fontSize: '0.9rem',
+                    fontSize: '0.85rem',
                     fontWeight: active ? 600 : 500,
                   }}
                 >
@@ -480,14 +492,15 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           }}
           className="absolute bottom-0 left-0 right-0 p-4"
         >
-          <div className="text-center">
-            <p className="text-dark-text-muted text-xs">
-              Central de Dashboards v1.0.0
-            </p>
-            <p className="text-dark-text-muted text-xs mt-1">
-              © 2024 Viva Eventos
-            </p>
-          </div>
+          <p style={{
+            fontSize: '0.75rem',
+            color: '#6c757d',
+            fontFamily: 'Poppins, sans-serif',
+            letterSpacing: '0.3px',
+            opacity: 0.8
+          }}>
+            📊 Developed by Gestão de Dados - VIVA Eventos Brasil 2025
+          </p>
         </div>
       </aside>
     </>

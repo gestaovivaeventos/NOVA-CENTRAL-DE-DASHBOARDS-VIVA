@@ -35,7 +35,7 @@ export default function GerencialPage() {
           <title>Painel Gerencial | Carregando...</title>
         </Head>
         <div className="min-h-screen bg-dark-primary flex items-center justify-center">
-          <Loading message="Carregando dados do painel..." />
+          <Loading mensagem="Carregando dados do painel..." />
         </div>
       </>
     );
@@ -106,7 +106,7 @@ export default function GerencialPage() {
         >
           <Header sidebarCollapsed={sidebarCollapsed} />
           
-          <main className="p-5">
+          <main className="p-5 pb-12">
             {/* EBITDA Section */}
             <div className="mb-6">
               <EbitdaCard ebitdaByYear={data.ebitdaByYear} />

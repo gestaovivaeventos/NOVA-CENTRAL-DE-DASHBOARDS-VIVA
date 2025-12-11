@@ -1,6 +1,6 @@
 /**
  * Componente FilterPanel - Painel completo de filtros
- * Estilo baseado no PEX (Sidebar.tsx)
+ * Estilo igual ao PexLayout (seção de filtros na sidebar)
  * 
  * Filtros por página:
  * - Página 1 (Metas): Período, Meta, Unidades, Cursos
@@ -8,7 +8,8 @@
  * - Página 3 (Funil): Período, Unidades, Consultor, Origem Lead, Segmentação Lead, Etiquetas
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { ChevronUp, ChevronDown, Filter } from 'lucide-react';
 import DateRangePicker from './DateRangePicker';
 import MultiSelect from './MultiSelect';
 import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/types/filtros.types';
@@ -96,26 +97,63 @@ export default function FilterPanel({
   // Na página do funil e indicadores, não mostra toggle de meta (só aparece na página de metas)
   const shouldShowMetaToggle = showMetaToggle && isMetasPage;
 
+  // Estado para controlar se os filtros estão expandidos
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+
   return (
     <div>
-      {/* Conteúdo dos filtros */}
-      <div
+      {/* Header dos Filtros - Igual ao PexLayout */}
+      <button
+        onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
         style={{
           display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          width: '100%',
+          padding: '16px 0',
+          backgroundColor: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          color: '#F8F9FA',
         }}
       >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Filter size={18} color="#FF6600" />
+          <span style={{
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            fontFamily: "'Poppins', sans-serif",
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+          }}>
+            Filtros
+          </span>
+        </div>
+        {isFiltersExpanded ? (
+          <ChevronUp size={18} color="#adb5bd" />
+        ) : (
+          <ChevronDown size={18} color="#adb5bd" />
+        )}
+      </button>
+
+      {/* Conteúdo dos Filtros */}
+      <div style={{
+        maxHeight: isFiltersExpanded ? '2000px' : '0',
+        opacity: isFiltersExpanded ? 1 : 0,
+        overflow: isFiltersExpanded ? 'visible' : 'hidden',
+        transition: 'all 0.3s ease',
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '-1px' }}>
         {/* Toggle de Tipo de Meta */}
         {shouldShowMetaToggle && (
-          <div>
+          <div style={{ marginBottom: '8px' }}>
             <label
               style={{
                 display: 'block',
                 color: '#adb5bd',
                 fontSize: '0.75rem',
                 fontWeight: 600,
-                marginBottom: '8px',
+                marginBottom: '0px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 fontFamily: 'Poppins, sans-serif',
@@ -422,6 +460,7 @@ export default function FilterPanel({
             placeholder="Todas as etiquetas"
           />
         )}
+        </div>
       </div>
     </div>
   );
