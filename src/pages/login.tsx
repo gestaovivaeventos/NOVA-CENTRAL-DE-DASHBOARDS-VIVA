@@ -407,7 +407,7 @@ export default function LoginPage() {
 
             {/* Link Redefinir Senha */}
             <div className="forgot-password-link">
-              <Link href="/reset-password">Esqueceu sua senha?</Link>
+              <a href="/reset-password">Primeiro acesso / Esqueceu sua senha?</a>
             </div>
           </section>
           
