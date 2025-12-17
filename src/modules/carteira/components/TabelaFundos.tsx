@@ -700,6 +700,7 @@ export default function TabelaFundos({ dados, loading = false }: TabelaFundosPro
                             borderRadius: '9999px',
                             fontSize: '0.7rem',
                             fontWeight: 600,
+                            textTransform: 'uppercase',
                             backgroundColor: SAUDE_COLORS[item.saude].bg,
                             color: SAUDE_COLORS[item.saude].text,
                           }}
