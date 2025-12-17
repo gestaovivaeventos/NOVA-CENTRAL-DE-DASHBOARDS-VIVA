@@ -52,6 +52,13 @@ export interface KPIsCarteira {
   integrantesInadimplentes: number;
   nuncaPagaram: number;
   tatAtual: number; // TAT total
+  // Fundos por saúde
+  fundosPorSaude: {
+    critico: number;
+    atencao: number;
+    quaseLa: number;
+    alcancada: number;
+  };
 }
 
 // Status de saúde do fundo

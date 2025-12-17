@@ -13,7 +13,8 @@ import {
   Header, 
   Loading, 
   Footer, 
-  KPICards, 
+  KPICards,
+  SaudeCards,
   TabelaFundos, 
   TabelaFranquias 
 } from '@/modules/carteira/components';
@@ -173,6 +174,14 @@ export default function AnalisesPage() {
               Indicadores Principais
             </h2>
             <KPICards kpis={kpis} loading={loading} />
+          </section>
+
+          {/* Fundos por Saúde */}
+          <section className="mb-8">
+            <h2 className="section-title">
+              Fundos por Saúde
+            </h2>
+            <SaudeCards fundosPorSaude={kpis.fundosPorSaude} loading={loading} />
           </section>
 
           {/* Tabelas */}

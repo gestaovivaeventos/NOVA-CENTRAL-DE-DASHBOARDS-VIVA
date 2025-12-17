@@ -8,6 +8,7 @@ export { default as Loading } from './Loading';
 export { default as Footer } from './Footer';
 export { default as KPICard } from './KPICard';
 export { default as KPICards } from './KPICards';
+export { default as SaudeCards } from './SaudeCards';
 export { default as TabelaFundos } from './TabelaFundos';
 export { default as TabelaFranquias } from './TabelaFranquias';
 export { default as GraficosHistoricos } from './GraficosHistoricos';

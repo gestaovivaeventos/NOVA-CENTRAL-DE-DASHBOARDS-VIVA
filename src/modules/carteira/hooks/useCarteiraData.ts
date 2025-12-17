@@ -56,6 +56,12 @@ const INITIAL_KPIS: KPIsCarteira = {
   integrantesInadimplentes: 0,
   nuncaPagaram: 0,
   tatAtual: 0,
+  fundosPorSaude: {
+    critico: 0,
+    atencao: 0,
+    quaseLa: 0,
+    alcancada: 0,
+  },
 };
 
 /**
@@ -331,6 +337,46 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     const inadimplentes = dadosFiltrados.reduce((sum, row) => sum + row.integrantesInadimplentes, 0);
     const nuncaPagaram = dadosFiltrados.reduce((sum, row) => sum + row.nuncaPagaram, 0);
 
+    // Calcular fundos por saúde (agrupar por fundo e calcular saúde)
+    const fundoSaudeMap = new Map<string, SaudeFundo>();
+    const fundoDataMap = new Map<string, { alunosAtivos: number; macMeta: number; dataBaile: Date | null }>();
+    
+    dadosFiltrados.forEach((row: any) => {
+      const key = row.idFundo || row.fundo;
+      const existing = fundoDataMap.get(key);
+      if (existing) {
+        existing.alunosAtivos += row.alunosAtivos;
+        existing.macMeta += row.macMeta;
+      } else {
+        fundoDataMap.set(key, {
+          alunosAtivos: row.alunosAtivos,
+          macMeta: row.macMeta,
+          dataBaile: row.dataBaile,
+        });
+      }
+    });
+
+    // Calcular saúde para cada fundo
+    const fundosPorSaude = {
+      critico: 0,
+      atencao: 0,
+      quaseLa: 0,
+      alcancada: 0,
+    };
+
+    fundoDataMap.forEach((data, key) => {
+      const atingimento = data.macMeta > 0 ? data.alunosAtivos / data.macMeta : 0;
+      const saude = calcularSaudeFundo(data.dataBaile, atingimento);
+      fundoSaudeMap.set(key, saude);
+      
+      switch (saude) {
+        case 'Crítico': fundosPorSaude.critico++; break;
+        case 'Atenção': fundosPorSaude.atencao++; break;
+        case 'Quase lá': fundosPorSaude.quaseLa++; break;
+        case 'Alcançada': fundosPorSaude.alcancada++; break;
+      }
+    });
+
     return {
       atingimentoMAC: {
         realizado: integrantesAtivos,
@@ -343,6 +389,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       integrantesInadimplentes: inadimplentes,
       nuncaPagaram,
       tatAtual,
+      fundosPorSaude,
     };
   }, [dadosFiltrados]);
 
