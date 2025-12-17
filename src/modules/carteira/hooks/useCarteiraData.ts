@@ -496,7 +496,8 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
     const result = Array.from(franquiaMap.values());
     result.forEach(item => {
-      item.atingimento = item.macMeta > 0 ? item.macRealizado / item.macMeta : 0;
+      // CORREÇÃO: Atingimento = Alunos Ativos / MAC Meta (igual ao card e tabela de fundos)
+      item.atingimento = item.macMeta > 0 ? item.alunosAtivos / item.macMeta : 0;
       item.totalFundos = fundosPorFranquia.get(item.franquia)?.size || 0;
     });
 
