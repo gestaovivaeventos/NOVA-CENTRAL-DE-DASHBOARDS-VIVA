@@ -19,14 +19,19 @@ export interface CarteiraRow {
   macMeta: number;
   macAtingimento: number;
   
-  // Alunos
-  alunosAtivos: number;
+  // Integrantes
+  alunosAtivos: number; // integrantes_ativos
   alunosAderidos: number;
-  alunosEventoPrincipal: number;
+  alunosEventoPrincipal: number; // aderidos_principal (coluna Y)
   
   // Inadimplência
-  integrantesInadimplentes: number;
+  integrantesInadimplentes: number; // total_inadimplentes (coluna U)
+  nuncaPagaram: number; // nunca_pagaram (coluna V)
   valorInadimplencia: number;
+  
+  // Baile
+  baileARealizar: string; // baile_a_realizar (coluna W) - "REALIZAR" ou outro
+  dataBaile: Date | null; // data do baile para cálculo de saúde
   
   // Status
   status: string;
@@ -44,7 +49,11 @@ export interface KPIsCarteira {
   alunosAtivos: number;
   alunosEventoPrincipal: number;
   integrantesInadimplentes: number;
+  nuncaPagaram: number;
 }
+
+// Status de saúde do fundo
+export type SaudeFundo = 'Crítico' | 'Atenção' | 'Quase lá' | 'Alcançada';
 
 // Dados agrupados por fundo
 export interface DadosPorFundo {
@@ -58,8 +67,17 @@ export interface DadosPorFundo {
   atingimento: number;
   alunosAtivos: number;
   alunosAderidos: number;
+  alunosEventoPrincipal: number;
   inadimplentes: number;
+  nuncaPagaram: number;
   status: string;
+  dataBaile: Date | null;
+  baileARealizar: string;
+  saude: SaudeFundo;
+  // Consultores
+  consultorRelacionamento: string;
+  consultorAtendimento: string;
+  consultorProducao: string;
 }
 
 // Dados agrupados por franquia
@@ -70,7 +88,9 @@ export interface DadosPorFranquia {
   macMeta: number;
   atingimento: number;
   alunosAtivos: number;
+  alunosEventoPrincipal: number;
   inadimplentes: number;
+  nuncaPagaram: number;
 }
 
 // Dados para gráfico de evolução histórica
@@ -93,6 +113,7 @@ export interface FiltrosCarteira {
   consultorRelacionamento: string[];
   consultorAtendimento: string[];
   consultorProducao: string[];
+  saude: SaudeFundo[];
 }
 
 // Opções disponíveis para filtros
@@ -102,6 +123,7 @@ export interface FiltrosCarteiraOpcoes {
   consultoresRelacionamento: string[];
   consultoresAtendimento: string[];
   consultoresProducao: string[];
+  saudeOpcoes: SaudeFundo[];
 }
 
 // Resposta da API de carteira

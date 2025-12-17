@@ -149,31 +149,6 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Título do Módulo */}
-        {!isCollapsed && (
-          <div
-            style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid #333',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}
-          >
-            <Wallet size={22} color="#FF6600" />
-            <span
-              style={{
-                color: '#FF6600',
-                fontSize: '1rem',
-                fontWeight: 600,
-                fontFamily: "'Poppins', sans-serif",
-              }}
-            >
-              Dashboard Carteira
-            </span>
-          </div>
-        )}
-
         {/* Menu de Navegação */}
         <nav style={{ padding: '12px 8px' }}>
           {PAGES.map((page) => {

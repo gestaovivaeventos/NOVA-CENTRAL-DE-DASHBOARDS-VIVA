@@ -10,7 +10,8 @@ import {
   DadosPorFranquia, 
   DadosHistorico,
   FiltrosCarteiraOpcoes,
-  FiltrosCarteira 
+  FiltrosCarteira,
+  SaudeFundo 
 } from '@/modules/carteira/types';
 import { parseDate, parseNumericValue, getMesAno } from '@/modules/carteira/utils/formatacao';
 import { clientCache, CACHE_KEYS, CACHE_TTL } from '@/modules/carteira/utils/cache';
@@ -52,7 +53,55 @@ const INITIAL_KPIS: KPIsCarteira = {
   alunosAtivos: 0,
   alunosEventoPrincipal: 0,
   integrantesInadimplentes: 0,
+  nuncaPagaram: 0,
 };
+
+/**
+ * Calcula a saúde do fundo baseado no tempo até o baile e percentual MAC
+ */
+function calcularSaudeFundo(dataBaile: Date | null, atingimentoMAC: number): SaudeFundo {
+  if (!dataBaile) return 'Atenção'; // Sem data de baile = atenção por padrão
+  
+  const hoje = new Date();
+  const diffMs = dataBaile.getTime() - hoje.getTime();
+  const mesesAteBaile = diffMs / (1000 * 60 * 60 * 24 * 30);
+  const percentual = atingimentoMAC * 100;
+  
+  if (percentual >= 100) return 'Alcançada';
+  
+  // Até 6 meses
+  if (mesesAteBaile <= 6) {
+    if (percentual < 90) return 'Crítico';
+    if (percentual <= 95) return 'Atenção';
+    return 'Quase lá';
+  }
+  
+  // Até 1 ano (12 meses)
+  if (mesesAteBaile <= 12) {
+    if (percentual < 80) return 'Crítico';
+    if (percentual <= 85) return 'Atenção';
+    return 'Quase lá';
+  }
+  
+  // Até 1.5 anos (18 meses)
+  if (mesesAteBaile <= 18) {
+    if (percentual < 70) return 'Crítico';
+    if (percentual <= 80) return 'Atenção';
+    return 'Quase lá';
+  }
+  
+  // Até 2 anos (24 meses)
+  if (mesesAteBaile <= 24) {
+    if (percentual < 65) return 'Crítico';
+    if (percentual <= 70) return 'Atenção';
+    return 'Quase lá';
+  }
+  
+  // Mais de 2 anos
+  if (percentual < 50) return 'Crítico';
+  if (percentual <= 60) return 'Atenção';
+  return 'Quase lá';
+}
 
 /**
  * Hook para buscar e gerenciar dados da carteira
@@ -89,12 +138,15 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       curso: getIndex(['curso', 'curso_fundo', 'nm_curso']),
       tipoServico: getIndex(['tipo_servico', 'tp_servico', 'servico']),
       macRealizado: getIndex(['mac_realizado', 'realizado', 'vlr_realizado', 'arrecadado']),
-      macMeta: getIndex(['mac_meta', 'meta', 'vlr_meta', 'meta_mac']),
+      macMeta: getIndex(['mac_meta', 'meta', 'vlr_meta', 'meta_mac', 'mac_atual']),
       alunosAtivos: getIndex(['alunos_ativos', 'qtd_alunos', 'integrantes_ativos']),
       alunosAderidos: getIndex(['alunos_aderidos', 'aderidos', 'qtd_aderidos']),
-      alunosEventoPrincipal: getIndex(['alunos_evento', 'evento_principal', 'integrantes_evento']),
-      inadimplentes: getIndex(['inadimplentes', 'qtd_inadimplentes', 'integrantes_inadimplentes']),
+      alunosEventoPrincipal: getIndex(['aderidos_principal', 'alunos_evento', 'evento_principal', 'integrantes_evento']),
+      inadimplentes: getIndex(['total_inadimplentes', 'inadimplentes', 'qtd_inadimplentes', 'integrantes_inadimplentes']),
+      nuncaPagaram: getIndex(['int_nunca_pagaram', 'nunca_pagaram', 'nunca_pagou']),
       valorInadimplencia: getIndex(['valor_inadimplencia', 'vlr_inadimplencia']),
+      baileARealizar: getIndex(['baile_a_realizar', 'baile_realizar', 'realizar_baile']),
+      dataBaile: getIndex(['data_baile', 'dt_baile', 'data_evento']),
       status: getIndex(['status', 'situacao_fundo', 'status_fundo']),
       situacao: getIndex(['situacao', 'situacao_carteira']),
       // Novos campos de consultores
@@ -109,6 +161,12 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       .map((row: string[]) => {
         const dateValue = indices.data !== -1 ? parseDate(row[indices.data]) : new Date();
         if (!dateValue) return null;
+
+        // Parse da data do baile
+        const dataBaileValue = indices.dataBaile !== -1 ? parseDate(row[indices.dataBaile]) : null;
+        
+        // Verificar se baile é para realizar
+        const baileARealizar = indices.baileARealizar !== -1 ? (row[indices.baileARealizar] || '').toUpperCase().trim() : '';
 
         return {
           data: dateValue,
@@ -126,7 +184,10 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           alunosAderidos: indices.alunosAderidos !== -1 ? parseNumericValue(row[indices.alunosAderidos]) : 0,
           alunosEventoPrincipal: indices.alunosEventoPrincipal !== -1 ? parseNumericValue(row[indices.alunosEventoPrincipal]) : 0,
           integrantesInadimplentes: indices.inadimplentes !== -1 ? parseNumericValue(row[indices.inadimplentes]) : 0,
+          nuncaPagaram: indices.nuncaPagaram !== -1 ? parseNumericValue(row[indices.nuncaPagaram]) : 0,
           valorInadimplencia: indices.valorInadimplencia !== -1 ? parseNumericValue(row[indices.valorInadimplencia]) : 0,
+          baileARealizar: baileARealizar,
+          dataBaile: dataBaileValue,
           status: indices.status !== -1 ? row[indices.status] || 'Ativo' : 'Ativo',
           situacao: indices.situacao !== -1 ? row[indices.situacao] || '' : '',
           // Campos de consultores
@@ -199,9 +260,14 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
   // Filtrar dados baseado nos filtros
   const dadosFiltrados = useMemo(() => {
-    if (!filtros) return dados;
+    // IMPORTANTE: Só considerar fundos com baile "REALIZAR"
+    let filteredData = dados.filter((row: any) => {
+      return row.baileARealizar === 'REALIZAR';
+    });
 
-    return dados.filter((row: any) => {
+    if (!filtros) return filteredData;
+
+    return filteredData.filter((row: any) => {
       // Filtro de data
       if (filtros.dataInicio) {
         const dataInicio = new Date(filtros.dataInicio);
@@ -242,35 +308,42 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     });
   }, [dados, filtros]);
 
-  // Calcular KPIs
+  // Filtrar dadosPorFundo por saúde (após agrupar)
+  const dadosFiltradosPorSaude = useMemo(() => {
+    if (!filtros?.saude || filtros.saude.length === 0) return null;
+    return filtros.saude;
+  }, [filtros?.saude]);
+
+  // Calcular KPIs - Atingimento MAC = integrantes_ativos / mac_atual
   const kpis = useMemo((): KPIsCarteira => {
     if (dadosFiltrados.length === 0) return INITIAL_KPIS;
 
-    const macRealizado = dadosFiltrados.reduce((sum, row) => sum + row.macRealizado, 0);
-    const macMeta = dadosFiltrados.reduce((sum, row) => sum + row.macMeta, 0);
+    const integrantesAtivos = dadosFiltrados.reduce((sum, row) => sum + row.alunosAtivos, 0);
+    const macAtual = dadosFiltrados.reduce((sum, row) => sum + row.macMeta, 0);
     const fundosUnicos = new Set(dadosFiltrados.map(row => row.idFundo || row.fundo)).size;
-    const alunosAtivos = dadosFiltrados.reduce((sum, row) => sum + row.alunosAtivos, 0);
     const alunosEventoPrincipal = dadosFiltrados.reduce((sum, row) => sum + row.alunosEventoPrincipal, 0);
     const inadimplentes = dadosFiltrados.reduce((sum, row) => sum + row.integrantesInadimplentes, 0);
+    const nuncaPagaram = dadosFiltrados.reduce((sum, row) => sum + row.nuncaPagaram, 0);
 
     return {
       atingimentoMAC: {
-        realizado: macRealizado,
-        meta: macMeta,
-        percentual: macMeta > 0 ? macRealizado / macMeta : 0,
+        realizado: integrantesAtivos,
+        meta: macAtual,
+        percentual: macAtual > 0 ? integrantesAtivos / macAtual : 0,
       },
       fundosAtivos: fundosUnicos,
-      alunosAtivos,
+      alunosAtivos: integrantesAtivos,
       alunosEventoPrincipal,
       integrantesInadimplentes: inadimplentes,
+      nuncaPagaram,
     };
   }, [dadosFiltrados]);
 
   // Agrupar por fundo
   const dadosPorFundo = useMemo((): DadosPorFundo[] => {
-    const fundoMap = new Map<string, DadosPorFundo>();
+    const fundoMap = new Map<string, DadosPorFundo & { dataBaile: Date | null }>();
 
-    dadosFiltrados.forEach(row => {
+    dadosFiltrados.forEach((row: any) => {
       const key = row.idFundo || row.fundo;
       const existing = fundoMap.get(key);
 
@@ -279,7 +352,9 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
         existing.macMeta += row.macMeta;
         existing.alunosAtivos += row.alunosAtivos;
         existing.alunosAderidos += row.alunosAderidos;
+        existing.alunosEventoPrincipal += row.alunosEventoPrincipal;
         existing.inadimplentes += row.integrantesInadimplentes;
+        existing.nuncaPagaram += row.nuncaPagaram;
       } else {
         fundoMap.set(key, {
           fundo: row.fundo,
@@ -292,21 +367,35 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           atingimento: 0,
           alunosAtivos: row.alunosAtivos,
           alunosAderidos: row.alunosAderidos,
+          alunosEventoPrincipal: row.alunosEventoPrincipal,
           inadimplentes: row.integrantesInadimplentes,
+          nuncaPagaram: row.nuncaPagaram,
           status: row.status,
+          dataBaile: row.dataBaile,
+          baileARealizar: row.baileARealizar,
+          saude: 'Atenção',
+          consultorRelacionamento: row.consultorRelacionamento || '',
+          consultorAtendimento: row.consultorAtendimento || '',
+          consultorProducao: row.consultorProducao || '',
         });
       }
     });
 
-    // Calcular atingimento
-    const result = Array.from(fundoMap.values());
+    // Calcular atingimento e saúde
+    let result = Array.from(fundoMap.values());
     result.forEach(item => {
-      item.atingimento = item.macMeta > 0 ? item.macRealizado / item.macMeta : 0;
+      item.atingimento = item.macMeta > 0 ? item.alunosAtivos / item.macMeta : 0;
+      item.saude = calcularSaudeFundo(item.dataBaile, item.atingimento);
     });
+
+    // Filtrar por saúde se houver filtro
+    if (dadosFiltradosPorSaude && dadosFiltradosPorSaude.length > 0) {
+      result = result.filter(item => dadosFiltradosPorSaude.includes(item.saude));
+    }
 
     // Ordenar por atingimento (menor primeiro para destacar problemas)
     return result.sort((a, b) => a.atingimento - b.atingimento);
-  }, [dadosFiltrados]);
+  }, [dadosFiltrados, dadosFiltradosPorSaude]);
 
   // Agrupar por franquia
   const dadosPorFranquia = useMemo((): DadosPorFranquia[] => {
@@ -321,7 +410,9 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
         existing.macRealizado += row.macRealizado;
         existing.macMeta += row.macMeta;
         existing.alunosAtivos += row.alunosAtivos;
+        existing.alunosEventoPrincipal += row.alunosEventoPrincipal;
         existing.inadimplentes += row.integrantesInadimplentes;
+        existing.nuncaPagaram += row.nuncaPagaram;
       } else {
         franquiaMap.set(key, {
           franquia: row.franquia,
@@ -330,7 +421,9 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           macMeta: row.macMeta,
           atingimento: 0,
           alunosAtivos: row.alunosAtivos,
+          alunosEventoPrincipal: row.alunosEventoPrincipal,
           inadimplentes: row.integrantesInadimplentes,
+          nuncaPagaram: row.nuncaPagaram,
         });
       }
     });
@@ -402,8 +495,9 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     const consultoresRelacionamento = [...new Set(dados.map((row: any) => row.consultorRelacionamento))].filter(Boolean).sort();
     const consultoresAtendimento = [...new Set(dados.map((row: any) => row.consultorAtendimento))].filter(Boolean).sort();
     const consultoresProducao = [...new Set(dados.map((row: any) => row.consultorProducao))].filter(Boolean).sort();
+    const saudeOpcoes: SaudeFundo[] = ['Crítico', 'Atenção', 'Quase lá', 'Alcançada'];
 
-    return { unidades, fundos, consultoresRelacionamento, consultoresAtendimento, consultoresProducao };
+    return { unidades, fundos, consultoresRelacionamento, consultoresAtendimento, consultoresProducao, saudeOpcoes };
   }, [dados]);
 
   // Função para refetch

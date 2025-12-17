@@ -50,6 +50,7 @@ const getInitialFiltros = (): FiltrosCarteira => {
     consultorRelacionamento: [],
     consultorAtendimento: [],
     consultorProducao: [],
+    saude: [],
   };
 };
 

@@ -5,13 +5,7 @@
 import React from 'react';
 import { KPIsCarteira } from '@/modules/carteira/types';
 import KPICard from './KPICard';
-import { 
-  Target, 
-  Wallet, 
-  Users, 
-  PartyPopper, 
-  AlertTriangle 
-} from 'lucide-react';
+import { formatPercent, formatCurrency } from '@/modules/carteira/utils/formatacao';
 
 interface KPICardsProps {
   kpis: KPIsCarteira;
@@ -20,16 +14,13 @@ interface KPICardsProps {
 
 export default function KPICards({ kpis, loading = false }: KPICardsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-      {/* Atingimento de MAC */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+      {/* Atingimento de MAC - somente percentual */}
       <KPICard
         titulo="Atingimento MAC"
-        valor={kpis.atingimentoMAC.realizado}
-        formatarComoMoeda={true}
-        percentual={kpis.atingimentoMAC.percentual}
-        meta={kpis.atingimentoMAC.meta}
+        valor={formatPercent(kpis.atingimentoMAC.percentual)}
+        subtitulo="integrantes / meta alunos"
         loading={loading}
-        icone={<Target size={16} />}
       />
 
       {/* Fundos Ativos */}
@@ -38,34 +29,46 @@ export default function KPICards({ kpis, loading = false }: KPICardsProps) {
         valor={kpis.fundosAtivos}
         subtitulo="fundos em operação"
         loading={loading}
-        icone={<Wallet size={16} />}
       />
 
-      {/* Alunos Ativos */}
+      {/* Integrantes Ativos */}
       <KPICard
-        titulo="Alunos Ativos"
+        titulo="Integrantes Ativos"
         valor={kpis.alunosAtivos}
         subtitulo="integrantes ativos"
         loading={loading}
-        icone={<Users size={16} />}
       />
 
-      {/* Alunos Evento Principal */}
+      {/* MAC Atual - Meta de Alunos do Contrato */}
+      <KPICard
+        titulo="MAC Atual"
+        valor={kpis.atingimentoMAC.meta}
+        subtitulo="meta de alunos do contrato"
+        loading={loading}
+      />
+
+      {/* Evento Principal */}
       <KPICard
         titulo="Evento Principal"
         valor={kpis.alunosEventoPrincipal}
-        subtitulo="alunos aderidos"
+        subtitulo="aderidos ao principal"
         loading={loading}
-        icone={<PartyPopper size={16} />}
       />
 
-      {/* Inadimplentes */}
+      {/* Inadimplentes - valor absoluto + % sobre integrantes ativos */}
       <KPICard
         titulo="Inadimplentes"
         valor={kpis.integrantesInadimplentes}
-        subtitulo="integrantes"
+        destaque={`${kpis.alunosAtivos > 0 ? ((kpis.integrantesInadimplentes / kpis.alunosAtivos) * 100).toFixed(1) : 0}% da base ativa`}
         loading={loading}
-        icone={<AlertTriangle size={16} />}
+      />
+
+      {/* Nunca Pagaram - valor absoluto + % sobre integrantes ativos */}
+      <KPICard
+        titulo="Nunca Pagaram"
+        valor={kpis.nuncaPagaram}
+        destaque={`${kpis.alunosAtivos > 0 ? ((kpis.nuncaPagaram / kpis.alunosAtivos) * 100).toFixed(1) : 0}% da base ativa`}
+        loading={loading}
       />
     </div>
   );

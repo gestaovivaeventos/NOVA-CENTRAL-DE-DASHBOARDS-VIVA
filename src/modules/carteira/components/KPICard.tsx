@@ -16,6 +16,7 @@ interface KPICardProps {
   formatarComoNumero?: boolean;
   loading?: boolean;
   icone?: React.ReactNode;
+  destaque?: string; // Texto destacado em laranja abaixo do valor (ex: porcentagem)
 }
 
 // Skeleton para loading
@@ -36,6 +37,7 @@ export default function KPICard({
   formatarComoNumero = true,
   loading = false,
   icone,
+  destaque,
 }: KPICardProps) {
   const showProgress = percentual !== undefined;
   const progressWidth = showProgress ? Math.min(percentual * 100, 100) : 0;
@@ -76,16 +78,13 @@ export default function KPICard({
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
       }}
     >
-      {/* Título com ícone opcional */}
-      <div className="flex items-center gap-2">
-        {icone && <span className="text-orange-500">{icone}</span>}
-        <span 
-          className="text-xs font-semibold uppercase tracking-wider"
-          style={{ color: '#9ca3af', fontFamily: "'Poppins', sans-serif" }}
-        >
-          {titulo}
-        </span>
-      </div>
+      {/* Título - sem ícone */}
+      <span 
+        className="text-xs font-semibold uppercase tracking-wider"
+        style={{ color: '#9ca3af', fontFamily: "'Poppins', sans-serif" }}
+      >
+        {titulo}
+      </span>
       
       {/* Valor Principal */}
       <span 
@@ -94,6 +93,16 @@ export default function KPICard({
       >
         {valorFormatado}
       </span>
+
+      {/* Destaque em laranja (ex: porcentagem) */}
+      {destaque && (
+        <span 
+          className="text-sm font-light"
+          style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
+        >
+          {destaque}
+        </span>
+      )}
       
       {/* Subtítulo ou Percentual + Meta */}
       {(subtitulo || showProgress) && (

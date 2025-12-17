@@ -131,6 +131,17 @@ export default function FilterPanel({
               placeholder="Todos os consultores"
             />
           )}
+
+          {/* Filtro de Saúde */}
+          {opcoes.saudeOpcoes && opcoes.saudeOpcoes.length > 0 && (
+            <MultiSelect
+              label="Saúde do Fundo"
+              options={opcoes.saudeOpcoes}
+              selectedValues={filtros.saude || []}
+              onChange={(saude) => onFiltrosChange({ saude: saude as any })}
+              placeholder="Todos os status"
+            />
+          )}
         </div>
       </div>
     </div>

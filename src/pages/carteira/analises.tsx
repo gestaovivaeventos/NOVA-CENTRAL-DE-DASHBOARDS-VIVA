@@ -52,6 +52,7 @@ const getInitialFiltros = (): FiltrosCarteira => {
     consultorRelacionamento: [],
     consultorAtendimento: [],
     consultorProducao: [],
+    saude: [],
   };
 };
 
@@ -168,10 +169,7 @@ export default function AnalisesPage() {
 
           {/* KPIs */}
           <section className="mb-8">
-            <h2 
-              className="text-xl font-semibold mb-4"
-              style={{ color: '#F8F9FA', fontFamily: "'Poppins', sans-serif" }}
-            >
+            <h2 className="section-title">
               Indicadores Principais
             </h2>
             <KPICards kpis={kpis} loading={loading} />
