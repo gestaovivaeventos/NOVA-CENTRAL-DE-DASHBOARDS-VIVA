@@ -291,10 +291,17 @@ body {
     @apply h-full rounded-full transition-all duration-500;
   }
 
-  /* Card Title Vendas */
+  /* Card Title Vendas - Mesmo padrão do section-title */
   .card-title {
-    @apply text-lg font-semibold mb-4;
-    color: var(--text-primary);
+    margin: 0 0 12px 0;
+    color: #adb5bd;
+    font-size: 1.2rem;
+    letter-spacing: 0.06em;
+    font-family: 'Poppins', Arial, sans-serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-bottom: 1px solid #ff6600;
+    padding-bottom: 2px;
   }
 
   .card-subtitle {

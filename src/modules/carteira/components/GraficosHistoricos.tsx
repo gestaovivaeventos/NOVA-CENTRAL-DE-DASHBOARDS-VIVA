@@ -239,30 +239,18 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div 
-            className="rounded-lg p-6"
-            style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-          >
+          <div className="bg-dark-secondary rounded-xl p-6">
             <ChartSkeleton />
           </div>
-          <div 
-            className="lg:col-span-2 rounded-lg p-6"
-            style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-          >
+          <div className="lg:col-span-2 bg-dark-secondary rounded-xl p-6">
             <ChartSkeleton />
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div 
-            className="rounded-lg p-6"
-            style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-          >
+          <div className="bg-dark-secondary rounded-xl p-6">
             <ChartSkeleton />
           </div>
-          <div 
-            className="lg:col-span-2 rounded-lg p-6"
-            style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-          >
+          <div className="lg:col-span-2 bg-dark-secondary rounded-xl p-6">
             <ChartSkeleton />
           </div>
         </div>
@@ -275,14 +263,8 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
       {/* ========== FUNDOS ATIVOS ========== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico de Fundos Ativos Total Anual (Barras Horizontais) - 1/3 */}
-        <div 
-          className="rounded-lg p-6"
-          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-        >
-          <h3 
-            className="text-sm font-semibold mb-4 uppercase tracking-wide"
-            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
-          >
+        <div className="bg-dark-secondary rounded-xl p-6">
+          <h3 className="section-title">
             FUNDOS ATIVOS TOTAL ANUAL
           </h3>
           <div style={{ height: '350px' }}>
@@ -295,14 +277,8 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
         </div>
 
         {/* Gráfico de Fundos Ativos Total Mensal - 2/3 */}
-        <div 
-          className="lg:col-span-2 rounded-lg p-6"
-          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-        >
-          <h3 
-            className="text-sm font-semibold mb-4 uppercase tracking-wide"
-            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
-          >
+        <div className="lg:col-span-2 bg-dark-secondary rounded-xl p-6">
+          <h3 className="section-title">
             FUNDOS ATIVOS TOTAL MENSAL
           </h3>
           <div style={{ minHeight: '350px' }}>
@@ -319,14 +295,8 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
       {/* ========== INTEGRANTES ATIVOS ========== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico de Integrantes Ativos Total Anual (Barras Horizontais) - 1/3 */}
-        <div 
-          className="rounded-lg p-6"
-          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-        >
-          <h3 
-            className="text-sm font-semibold mb-4 uppercase tracking-wide"
-            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
-          >
+        <div className="bg-dark-secondary rounded-xl p-6">
+          <h3 className="section-title">
             INTEGRANTES ATIVOS TOTAL ANUAL
           </h3>
           <div style={{ height: '350px' }}>
@@ -339,14 +309,8 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
         </div>
 
         {/* Gráfico de Integrantes Ativos Total Mensal - 2/3 */}
-        <div 
-          className="lg:col-span-2 rounded-lg p-6"
-          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-        >
-          <h3 
-            className="text-sm font-semibold mb-4 uppercase tracking-wide"
-            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
-          >
+        <div className="lg:col-span-2 bg-dark-secondary rounded-xl p-6">
+          <h3 className="section-title">
             INTEGRANTES ATIVOS TOTAL MENSAL
           </h3>
           <div style={{ minHeight: '350px' }}>
@@ -363,14 +327,8 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
       {/* ========== % ATINGIMENTO MAC ========== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Gráfico de % Atingimento MAC Total Anual (Barras Horizontais) - 1/3 */}
-        <div 
-          className="rounded-lg p-6"
-          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-        >
-          <h3 
-            className="text-sm font-semibold mb-4 uppercase tracking-wide"
-            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
-          >
+        <div className="bg-dark-secondary rounded-xl p-6">
+          <h3 className="section-title">
             % ATINGIMENTO MAC TOTAL ANUAL
           </h3>
           <div style={{ height: '350px' }}>
@@ -384,14 +342,8 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
         </div>
 
         {/* Gráfico de % Atingimento MAC Total Mensal - 2/3 */}
-        <div 
-          className="lg:col-span-2 rounded-lg p-6"
-          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-        >
-          <h3 
-            className="text-sm font-semibold mb-4 uppercase tracking-wide"
-            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
-          >
+        <div className="lg:col-span-2 bg-dark-secondary rounded-xl p-6">
+          <h3 className="section-title">
             % ATINGIMENTO MAC TOTAL MENSAL
           </h3>
           <div style={{ minHeight: '350px' }}>

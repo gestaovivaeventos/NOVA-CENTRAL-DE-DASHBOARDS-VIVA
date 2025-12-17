@@ -165,12 +165,6 @@ export default function HistoricoPage() {
 
           {/* Gráficos */}
           <section>
-            <h2 
-              className="text-xl font-semibold mb-6"
-              style={{ color: '#F8F9FA', fontFamily: "'Poppins', sans-serif" }}
-            >
-              Evolução Histórica
-            </h2>
             <GraficosHistoricos dados={historico} loading={loading} />
           </section>
         </main>

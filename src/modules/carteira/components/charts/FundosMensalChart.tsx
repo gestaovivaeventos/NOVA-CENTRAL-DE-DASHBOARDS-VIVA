@@ -213,7 +213,7 @@ export default function FundosMensalChart({
               px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
               ${activeYears.includes(year)
                 ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
-                : 'text-gray-400 border border-transparent bg-gray-800 hover:bg-white/5'
+                : 'text-gray-400 border border-transparent bg-dark-tertiary hover:bg-white/5'
               }
             `}
             style={{ fontFamily: 'Poppins, sans-serif' }}
