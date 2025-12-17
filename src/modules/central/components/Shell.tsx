@@ -71,6 +71,11 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas de Carteira são independentes (layout próprio)
+  if (router.pathname.startsWith('/carteira')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 
