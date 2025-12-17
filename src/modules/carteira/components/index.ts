@@ -11,3 +11,6 @@ export { default as KPICards } from './KPICards';
 export { default as TabelaFundos } from './TabelaFundos';
 export { default as TabelaFranquias } from './TabelaFranquias';
 export { default as GraficosHistoricos } from './GraficosHistoricos';
+
+// Gráficos individuais
+export { FundosAtivosAnualChart, FundosMensalChart } from './charts';

@@ -28,6 +28,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
     const totalFundos = dados.reduce((sum, item) => sum + item.totalFundos, 0);
     const totalAlunosAtivos = dados.reduce((sum, item) => sum + item.alunosAtivos, 0);
     const totalMacMeta = dados.reduce((sum, item) => sum + item.macMeta, 0);
+    const totalTatAtual = dados.reduce((sum, item) => sum + (item.tatAtual || 0), 0);
     const totalEventoPrincipal = dados.reduce((sum, item) => sum + item.alunosEventoPrincipal, 0);
     const totalInadimplentes = dados.reduce((sum, item) => sum + item.inadimplentes, 0);
     const totalNuncaPagaram = dados.reduce((sum, item) => sum + item.nuncaPagaram, 0);
@@ -40,6 +41,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
       totalFundos,
       totalAlunosAtivos,
       totalMacMeta,
+      totalTatAtual,
       atingimentoGeral,
       totalEventoPrincipal,
       totalInadimplentes,
@@ -81,6 +83,10 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
         case 'macMeta':
           valorA = a.macMeta;
           valorB = b.macMeta;
+          break;
+        case 'tatAtual':
+          valorA = a.tatAtual || 0;
+          valorB = b.tatAtual || 0;
           break;
         case 'alunosEventoPrincipal':
           valorA = a.alunosEventoPrincipal;
@@ -146,7 +152,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
   // Exportar para CSV
   const exportarCSV = () => {
     const headers = [
-      'Unidade', 'Fundos Ativos', '% Ating. MAC', 'Alunos Ativos', 'MAC Atual',
+      'Unidade', 'Fundos Ativos', '% Ating. MAC', 'Alunos Ativos', 'MAC Atual', 'TAT Atual',
       'Evento Principal', 'Inadimplentes', '% Inadimplentes', 'Nunca Pagaram', '% Nunca Pagaram'
     ];
     const linhas = dadosFiltrados.map(item => {
@@ -158,6 +164,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
         formatPercent(item.atingimento),
         formatNumber(item.alunosAtivos),
         formatNumber(item.macMeta),
+        formatNumber(item.tatAtual || 0),
         formatNumber(item.alunosEventoPrincipal),
         formatNumber(item.inadimplentes),
         percInad,
@@ -173,6 +180,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
       formatPercent(totais.atingimentoGeral),
       formatNumber(totais.totalAlunosAtivos),
       formatNumber(totais.totalMacMeta),
+      formatNumber(totais.totalTatAtual),
       formatNumber(totais.totalEventoPrincipal),
       formatNumber(totais.totalInadimplentes),
       (totais.percInadimplentes * 100).toFixed(1) + '%',
@@ -350,6 +358,26 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
                 MAC Atual {renderIconeOrdenacao('macMeta')}
               </th>
               <th
+                onClick={() => handleOrdenacao('tatAtual')}
+                className="cursor-pointer"
+                style={{
+                  padding: '12px 8px',
+                  textAlign: 'center',
+                  borderBottom: '2px solid #FF6600',
+                  color: '#adb5bd',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  fontSize: '0.7rem',
+                  letterSpacing: '0.05em',
+                  transition: 'background-color 0.2s ease',
+                  width: '9%',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d4349'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2a2f36'}
+              >
+                TAT Atual {renderIconeOrdenacao('tatAtual')}
+              </th>
+              <th
                 onClick={() => handleOrdenacao('alunosEventoPrincipal')}
                 className="cursor-pointer"
                 style={{
@@ -459,7 +487,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
             <tbody>
               {dadosPaginados.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ textAlign: 'center', padding: '40px', color: '#adb5bd' }}>
+                  <td colSpan={11} style={{ textAlign: 'center', padding: '40px', color: '#adb5bd' }}>
                     Nenhum registro encontrado
                   </td>
                 </tr>
@@ -484,6 +512,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
                       <td style={{ padding: '10px 8px', textAlign: 'center', color: '#F8F9FA', width: '10%' }}>{formatPercent(item.atingimento)}</td>
                       <td style={{ padding: '10px 8px', textAlign: 'center', color: '#F8F9FA', width: '10%' }}>{formatNumber(item.alunosAtivos)}</td>
                       <td style={{ padding: '10px 8px', textAlign: 'center', color: '#F8F9FA', width: '9%' }}>{formatNumber(item.macMeta)}</td>
+                      <td style={{ padding: '10px 8px', textAlign: 'center', color: '#F8F9FA', width: '9%' }}>{formatNumber(item.tatAtual || 0)}</td>
                       <td style={{ padding: '10px 8px', textAlign: 'center', color: '#F8F9FA', width: '10%' }}>{formatNumber(item.alunosEventoPrincipal)}</td>
                       <td style={{ padding: '10px 8px', textAlign: 'center', color: item.inadimplentes > 0 ? '#ef4444' : '#F8F9FA', width: '10%' }}>{formatNumber(item.inadimplentes)}</td>
                       <td style={{ padding: '10px 8px', textAlign: 'center', color: percInad > 0.15 ? '#ef4444' : '#FF6600', width: '8%', fontWeight: 300 }}>{(percInad * 100).toFixed(1)}%</td>
@@ -507,6 +536,7 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
                 <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '10%' }}>{formatPercent(totais.atingimentoGeral)}</td>
                 <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '10%' }}>{formatNumber(totais.totalAlunosAtivos)}</td>
                 <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '9%' }}>{formatNumber(totais.totalMacMeta)}</td>
+                <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '9%' }}>{formatNumber(totais.totalTatAtual)}</td>
                 <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '10%' }}>{formatNumber(totais.totalEventoPrincipal)}</td>
                 <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '10%' }}>{formatNumber(totais.totalInadimplentes)}</td>
                 <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '8%' }}>{(totais.percInadimplentes * 100).toFixed(1)}%</td>

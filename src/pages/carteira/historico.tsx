@@ -173,18 +173,6 @@ export default function HistoricoPage() {
             </h2>
             <GraficosHistoricos dados={historico} loading={loading} />
           </section>
-
-          {/* Info sobre período */}
-          {historico.length > 0 && !loading && (
-            <div 
-              className="mt-8 p-4 rounded-lg text-center"
-              style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-            >
-              <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>
-                📅 Período analisado: {historico.length} meses de dados disponíveis
-              </p>
-            </div>
-          )}
         </main>
 
         {/* Footer */}

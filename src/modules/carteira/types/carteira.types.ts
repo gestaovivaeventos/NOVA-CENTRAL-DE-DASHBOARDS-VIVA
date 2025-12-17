@@ -18,6 +18,7 @@ export interface CarteiraRow {
   macRealizado: number;
   macMeta: number;
   macAtingimento: number;
+  tatAtual: number; // TAT atual (coluna AD)
   
   // Integrantes
   alunosAtivos: number; // integrantes_ativos
@@ -50,6 +51,7 @@ export interface KPIsCarteira {
   alunosEventoPrincipal: number;
   integrantesInadimplentes: number;
   nuncaPagaram: number;
+  tatAtual: number; // TAT total
 }
 
 // Status de saúde do fundo
@@ -64,6 +66,7 @@ export interface DadosPorFundo {
   curso: string;
   macRealizado: number;
   macMeta: number;
+  tatAtual: number;
   atingimento: number;
   alunosAtivos: number;
   alunosAderidos: number;
@@ -86,6 +89,7 @@ export interface DadosPorFranquia {
   totalFundos: number;
   macRealizado: number;
   macMeta: number;
+  tatAtual: number;
   atingimento: number;
   alunosAtivos: number;
   alunosEventoPrincipal: number;

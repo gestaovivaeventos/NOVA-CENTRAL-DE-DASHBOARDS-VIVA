@@ -1,68 +1,16 @@
 /**
  * Gráficos Históricos para o módulo Carteira
- * Usando Recharts (mesmo padrão do módulo de vendas)
+ * Usando Chart.js (mesmo padrão do módulo de vendas)
  */
 
-import React from 'react';
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-} from 'recharts';
+import React, { useMemo, useState } from 'react';
 import { DadosHistorico } from '@/modules/carteira/types';
-import { formatCurrency, formatPercent, getMesNome } from '@/modules/carteira/utils/formatacao';
+import { FundosAtivosAnualChart, FundosMensalChart } from './charts';
 
 interface GraficosHistoricosProps {
   dados: DadosHistorico[];
   loading?: boolean;
 }
-
-// Formatar dados para exibição
-const formatarDados = (dados: DadosHistorico[]) => {
-  return dados.map(item => ({
-    ...item,
-    periodoLabel: getMesNome(item.periodo),
-    atingimentoPercent: item.atingimento * 100,
-  }));
-};
-
-// Tooltip customizado
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (!active || !payload || !payload.length) return null;
-
-  return (
-    <div
-      style={{
-        backgroundColor: '#1a1d21',
-        border: '1px solid #333',
-        borderRadius: '8px',
-        padding: '12px',
-      }}
-    >
-      <p style={{ color: '#FF6600', fontWeight: 600, marginBottom: '8px' }}>{label}</p>
-      {payload.map((entry: any, index: number) => (
-        <p key={index} style={{ color: entry.color, fontSize: '0.875rem' }}>
-          {entry.name}: {
-            entry.dataKey === 'atingimentoPercent' 
-              ? `${entry.value.toFixed(1)}%`
-              : entry.dataKey.includes('mac')
-                ? formatCurrency(entry.value)
-                : entry.value.toLocaleString('pt-BR')
-          }
-        </p>
-      ))}
-    </div>
-  );
-};
 
 // Skeleton para loading
 const ChartSkeleton = () => (
@@ -70,26 +18,249 @@ const ChartSkeleton = () => (
 );
 
 export default function GraficosHistoricos({ dados, loading = false }: GraficosHistoricosProps) {
-  const dadosFormatados = formatarDados(dados);
+  // ========== FUNDOS ATIVOS ==========
+  // Processar dados para gráfico anual (último mês de cada ano)
+  const dadosFundosAnuais = useMemo(() => {
+    const porAno: Record<string, { periodo: string; valor: number }> = {};
+    
+    dados.forEach(item => {
+      const year = item.periodo.substring(0, 4);
+      // Guardar sempre o último mês (maior período) de cada ano
+      if (!porAno[year] || item.periodo > porAno[year].periodo) {
+        porAno[year] = { periodo: item.periodo, valor: item.fundosAtivos };
+      }
+    });
+
+    return Object.entries(porAno)
+      .map(([year, data]) => ({
+        ano: year,
+        valor: data.valor,
+      }))
+      .sort((a, b) => a.ano.localeCompare(b.ano));
+  }, [dados]);
+
+  // Processar dados para gráfico mensal de fundos
+  const dadosFundosMensais = useMemo(() => {
+    const porAnoMes: Record<string, Record<number, number>> = {};
+    
+    dados.forEach(item => {
+      const year = item.periodo.substring(0, 4);
+      const month = parseInt(item.periodo.substring(5, 7), 10) - 1;
+      
+      if (!porAnoMes[year]) {
+        porAnoMes[year] = {};
+      }
+      porAnoMes[year][month] = item.fundosAtivos;
+    });
+
+    return Object.entries(porAnoMes)
+      .map(([year, months]) => {
+        const monthlyData = Array(12).fill(0);
+        Object.entries(months).forEach(([month, value]) => {
+          monthlyData[parseInt(month, 10)] = value;
+        });
+        return {
+          year: parseInt(year, 10),
+          monthlyData,
+        };
+      })
+      .sort((a, b) => a.year - b.year);
+  }, [dados]);
+
+  // ========== INTEGRANTES ATIVOS ==========
+  // Processar dados para gráfico anual de integrantes (último mês de cada ano)
+  const dadosIntegrantesAnuais = useMemo(() => {
+    const porAno: Record<string, { periodo: string; valor: number }> = {};
+    
+    dados.forEach(item => {
+      const year = item.periodo.substring(0, 4);
+      // Guardar sempre o último mês (maior período) de cada ano
+      if (!porAno[year] || item.periodo > porAno[year].periodo) {
+        porAno[year] = { periodo: item.periodo, valor: item.alunosAtivos };
+      }
+    });
+
+    return Object.entries(porAno)
+      .map(([year, data]) => ({
+        ano: year,
+        valor: data.valor,
+      }))
+      .sort((a, b) => a.ano.localeCompare(b.ano));
+  }, [dados]);
+
+  // Processar dados para gráfico mensal de integrantes
+  const dadosIntegrantesMensais = useMemo(() => {
+    const porAnoMes: Record<string, Record<number, number>> = {};
+    
+    dados.forEach(item => {
+      const year = item.periodo.substring(0, 4);
+      const month = parseInt(item.periodo.substring(5, 7), 10) - 1;
+      
+      if (!porAnoMes[year]) {
+        porAnoMes[year] = {};
+      }
+      porAnoMes[year][month] = item.alunosAtivos;
+    });
+
+    return Object.entries(porAnoMes)
+      .map(([year, months]) => {
+        const monthlyData = Array(12).fill(0);
+        Object.entries(months).forEach(([month, value]) => {
+          monthlyData[parseInt(month, 10)] = value;
+        });
+        return {
+          year: parseInt(year, 10),
+          monthlyData,
+        };
+      })
+      .sort((a, b) => a.year - b.year);
+  }, [dados]);
+
+  // ========== % ATINGIMENTO MAC (apenas 2024 e 2025) ==========
+  // Fórmula: alunosAtivos / macMeta (mesma fórmula da página de análise)
+  // Processar dados para gráfico anual de atingimento (último mês de cada ano)
+  const dadosAtingimentoAnuais = useMemo(() => {
+    const porAno: Record<string, { periodo: string; alunosAtivos: number; meta: number }> = {};
+    
+    dados.forEach(item => {
+      const year = item.periodo.substring(0, 4);
+      // Filtrar apenas 2024 e 2025
+      if (year !== '2024' && year !== '2025') return;
+      
+      // Acumular alunosAtivos e meta para calcular atingimento
+      if (!porAno[year]) {
+        porAno[year] = { periodo: item.periodo, alunosAtivos: 0, meta: 0 };
+      }
+      if (item.periodo >= porAno[year].periodo) {
+        porAno[year].periodo = item.periodo;
+      }
+      porAno[year].alunosAtivos += item.alunosAtivos;
+      porAno[year].meta += item.macMeta;
+    });
+
+    return Object.entries(porAno)
+      .map(([year, data]) => ({
+        ano: year,
+        valor: data.meta > 0 ? Math.round((data.alunosAtivos / data.meta) * 100) : 0,
+      }))
+      .sort((a, b) => a.ano.localeCompare(b.ano));
+  }, [dados]);
+
+  // Processar dados para gráfico mensal de atingimento
+  const dadosAtingimentoMensais = useMemo(() => {
+    const porAnoMes: Record<string, Record<number, { alunosAtivos: number; meta: number }>> = {};
+    
+    dados.forEach(item => {
+      const year = item.periodo.substring(0, 4);
+      // Filtrar apenas 2024 e 2025
+      if (year !== '2024' && year !== '2025') return;
+      
+      const month = parseInt(item.periodo.substring(5, 7), 10) - 1;
+      
+      if (!porAnoMes[year]) {
+        porAnoMes[year] = {};
+      }
+      if (!porAnoMes[year][month]) {
+        porAnoMes[year][month] = { alunosAtivos: 0, meta: 0 };
+      }
+      porAnoMes[year][month].alunosAtivos += item.alunosAtivos;
+      porAnoMes[year][month].meta += item.macMeta;
+    });
+
+    return Object.entries(porAnoMes)
+      .map(([year, months]) => {
+        const monthlyData = Array(12).fill(0);
+        Object.entries(months).forEach(([month, data]) => {
+          const atingimento = data.meta > 0 ? Math.round((data.alunosAtivos / data.meta) * 100) : 0;
+          monthlyData[parseInt(month, 10)] = atingimento;
+        });
+        return {
+          year: parseInt(year, 10),
+          monthlyData,
+        };
+      })
+      .sort((a, b) => a.year - b.year);
+  }, [dados]);
+
+  // Estado para anos ativos no gráfico mensal de fundos
+  const [activeYearsFundos, setActiveYearsFundos] = useState<number[]>(() => {
+    const currentYear = new Date().getFullYear();
+    const previousYear = currentYear - 1;
+    const availableYears = dadosFundosMensais.map(d => d.year);
+    return [previousYear, currentYear].filter(y => availableYears.includes(y));
+  });
+
+  // Estado para anos ativos no gráfico mensal de integrantes
+  const [activeYearsIntegrantes, setActiveYearsIntegrantes] = useState<number[]>(() => {
+    const currentYear = new Date().getFullYear();
+    const previousYear = currentYear - 1;
+    const availableYears = dadosIntegrantesMensais.map(d => d.year);
+    return [previousYear, currentYear].filter(y => availableYears.includes(y));
+  });
+
+  // Estado para anos ativos no gráfico mensal de atingimento
+  // Como filtramos apenas 2024 e 2025, já definimos esses anos diretamente
+  const [activeYearsAtingimento, setActiveYearsAtingimento] = useState<number[]>([2024, 2025]);
+
+  // Handler para toggle de anos (fundos)
+  const handleYearToggleFundos = (year: number) => {
+    setActiveYearsFundos(prev => {
+      if (prev.includes(year)) {
+        if (prev.length === 1) return prev;
+        return prev.filter(y => y !== year);
+      }
+      return [...prev, year].sort((a, b) => a - b);
+    });
+  };
+
+  // Handler para toggle de anos (integrantes)
+  const handleYearToggleIntegrantes = (year: number) => {
+    setActiveYearsIntegrantes(prev => {
+      if (prev.includes(year)) {
+        if (prev.length === 1) return prev;
+        return prev.filter(y => y !== year);
+      }
+      return [...prev, year].sort((a, b) => a - b);
+    });
+  };
+
+  // Handler para toggle de anos (atingimento)
+  const handleYearToggleAtingimento = (year: number) => {
+    setActiveYearsAtingimento(prev => {
+      if (prev.includes(year)) {
+        if (prev.length === 1) return prev;
+        return prev.filter(y => y !== year);
+      }
+      return [...prev, year].sort((a, b) => a - b);
+    });
+  };
 
   if (loading) {
     return (
       <div className="space-y-6">
-        <div 
-          className="rounded-lg p-4"
-          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-        >
-          <ChartSkeleton />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div 
-            className="rounded-lg p-4"
+            className="rounded-lg p-6"
             style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
           >
             <ChartSkeleton />
           </div>
           <div 
-            className="rounded-lg p-4"
+            className="lg:col-span-2 rounded-lg p-6"
+            style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
+          >
+            <ChartSkeleton />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div 
+            className="rounded-lg p-6"
+            style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
+          >
+            <ChartSkeleton />
+          </div>
+          <div 
+            className="lg:col-span-2 rounded-lg p-6"
             style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
           >
             <ChartSkeleton />
@@ -101,163 +272,137 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
 
   return (
     <div className="space-y-6">
-      {/* Gráfico de Evolução MAC - Área */}
-      <div 
-        className="rounded-lg p-4"
-        style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
-      >
-        <h3 
-          className="text-lg font-semibold mb-4"
-          style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
-        >
-          📈 Evolução do MAC (Realizado vs Meta)
-        </h3>
-        <ResponsiveContainer width="100%" height={350}>
-          <AreaChart data={dadosFormatados}>
-            <defs>
-              <linearGradient id="colorRealizado" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#FF6600" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#FF6600" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="colorMeta" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-            <XAxis 
-              dataKey="periodoLabel" 
-              stroke="#6c757d" 
-              fontSize={12}
-              tickLine={false}
-            />
-            <YAxis 
-              stroke="#6c757d" 
-              fontSize={12}
-              tickLine={false}
-              tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend />
-            <Area
-              type="monotone"
-              dataKey="macMeta"
-              name="Meta"
-              stroke="#3b82f6"
-              fill="url(#colorMeta)"
-              strokeWidth={2}
-            />
-            <Area
-              type="monotone"
-              dataKey="macRealizado"
-              name="Realizado"
-              stroke="#FF6600"
-              fill="url(#colorRealizado)"
-              strokeWidth={2}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Gráfico de Atingimento - Barras */}
+      {/* ========== FUNDOS ATIVOS ========== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Gráfico de Fundos Ativos Total Anual (Barras Horizontais) - 1/3 */}
         <div 
-          className="rounded-lg p-4"
+          className="rounded-lg p-6"
           style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
         >
           <h3 
-            className="text-lg font-semibold mb-4"
+            className="text-sm font-semibold mb-4 uppercase tracking-wide"
             style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
           >
-            🎯 Atingimento Mensal (%)
+            FUNDOS ATIVOS TOTAL ANUAL
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={dadosFormatados}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis 
-                dataKey="periodoLabel" 
-                stroke="#6c757d" 
-                fontSize={11}
-                tickLine={false}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis 
-                stroke="#6c757d" 
-                fontSize={12}
-                tickLine={false}
-                tickFormatter={(value) => `${value}%`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Bar
-                dataKey="atingimentoPercent"
-                name="Atingimento"
-                fill="#FF6600"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ height: '350px' }}>
+            <FundosAtivosAnualChart 
+              data={dadosFundosAnuais}
+              suffix=" fundos"
+              onBarClick={(item) => console.log('Clicou em:', item)}
+            />
+          </div>
         </div>
 
-        {/* Gráfico de Fundos e Alunos - Linha */}
+        {/* Gráfico de Fundos Ativos Total Mensal - 2/3 */}
         <div 
-          className="rounded-lg p-4"
+          className="lg:col-span-2 rounded-lg p-6"
           style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
         >
           <h3 
-            className="text-lg font-semibold mb-4"
+            className="text-sm font-semibold mb-4 uppercase tracking-wide"
             style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
           >
-            👥 Evolução de Fundos e Alunos
+            FUNDOS ATIVOS TOTAL MENSAL
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={dadosFormatados}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-              <XAxis 
-                dataKey="periodoLabel" 
-                stroke="#6c757d" 
-                fontSize={11}
-                tickLine={false}
-                angle={-45}
-                textAnchor="end"
-                height={60}
-              />
-              <YAxis 
-                yAxisId="left"
-                stroke="#6c757d" 
-                fontSize={12}
-                tickLine={false}
-              />
-              <YAxis 
-                yAxisId="right"
-                orientation="right"
-                stroke="#6c757d" 
-                fontSize={12}
-                tickLine={false}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="fundosAtivos"
-                name="Fundos Ativos"
-                stroke="#22c55e"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="alunosAtivos"
-                name="Alunos Ativos"
-                stroke="#a855f7"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div style={{ minHeight: '350px' }}>
+            <FundosMensalChart 
+              data={dadosFundosMensais}
+              activeYears={activeYearsFundos}
+              onYearToggle={handleYearToggleFundos}
+              suffix=" fundos"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ========== INTEGRANTES ATIVOS ========== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Gráfico de Integrantes Ativos Total Anual (Barras Horizontais) - 1/3 */}
+        <div 
+          className="rounded-lg p-6"
+          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
+        >
+          <h3 
+            className="text-sm font-semibold mb-4 uppercase tracking-wide"
+            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
+          >
+            INTEGRANTES ATIVOS TOTAL ANUAL
+          </h3>
+          <div style={{ height: '350px' }}>
+            <FundosAtivosAnualChart 
+              data={dadosIntegrantesAnuais}
+              suffix=" integrantes"
+              onBarClick={(item) => console.log('Clicou em:', item)}
+            />
+          </div>
+        </div>
+
+        {/* Gráfico de Integrantes Ativos Total Mensal - 2/3 */}
+        <div 
+          className="lg:col-span-2 rounded-lg p-6"
+          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
+        >
+          <h3 
+            className="text-sm font-semibold mb-4 uppercase tracking-wide"
+            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
+          >
+            INTEGRANTES ATIVOS TOTAL MENSAL
+          </h3>
+          <div style={{ minHeight: '350px' }}>
+            <FundosMensalChart 
+              data={dadosIntegrantesMensais}
+              activeYears={activeYearsIntegrantes}
+              onYearToggle={handleYearToggleIntegrantes}
+              suffix=" integrantes"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ========== % ATINGIMENTO MAC ========== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Gráfico de % Atingimento MAC Total Anual (Barras Horizontais) - 1/3 */}
+        <div 
+          className="rounded-lg p-6"
+          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
+        >
+          <h3 
+            className="text-sm font-semibold mb-4 uppercase tracking-wide"
+            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
+          >
+            % ATINGIMENTO MAC TOTAL ANUAL
+          </h3>
+          <div style={{ height: '350px' }}>
+            <FundosAtivosAnualChart 
+              data={dadosAtingimentoAnuais}
+              suffix="%"
+              showSuffixOnScale={true}
+              onBarClick={(item) => console.log('Clicou em:', item)}
+            />
+          </div>
+        </div>
+
+        {/* Gráfico de % Atingimento MAC Total Mensal - 2/3 */}
+        <div 
+          className="lg:col-span-2 rounded-lg p-6"
+          style={{ backgroundColor: '#1a1d21', border: '1px solid #333' }}
+        >
+          <h3 
+            className="text-sm font-semibold mb-4 uppercase tracking-wide"
+            style={{ color: '#FF6600', fontFamily: "'Poppins', sans-serif" }}
+          >
+            % ATINGIMENTO MAC TOTAL MENSAL
+          </h3>
+          <div style={{ minHeight: '350px' }}>
+            <FundosMensalChart 
+              data={dadosAtingimentoMensais}
+              activeYears={activeYearsAtingimento}
+              onYearToggle={handleYearToggleAtingimento}
+              suffix="%"
+              showSuffixOnScale={true}
+            />
+          </div>
         </div>
       </div>
     </div>

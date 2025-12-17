@@ -22,6 +22,7 @@ interface CarteiraRowExtended extends CarteiraRow {
   consultorAtendimento: string;
   consultorProducao: string;
   unidade: string;
+  tatAtual: number;
 }
 
 interface UseCarteiraDataReturn {
@@ -54,6 +55,7 @@ const INITIAL_KPIS: KPIsCarteira = {
   alunosEventoPrincipal: 0,
   integrantesInadimplentes: 0,
   nuncaPagaram: 0,
+  tatAtual: 0,
 };
 
 /**
@@ -154,6 +156,8 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       consultorAtendimento: getIndex(['consultor_atendimento', 'consultor_atd', 'atendimento']),
       consultorProducao: getIndex(['consultor_producao', 'consultor_prod', 'producao']),
       unidade: getIndex(['unidade', 'nm_unidade', 'franquia']),
+      // TAT
+      tatAtual: getIndex(['tat_atual', 'tat', 'meta_tat']),
     };
 
     // Processar dados
@@ -180,6 +184,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           macRealizado: indices.macRealizado !== -1 ? parseNumericValue(row[indices.macRealizado]) : 0,
           macMeta: indices.macMeta !== -1 ? parseNumericValue(row[indices.macMeta]) : 0,
           macAtingimento: 0, // Calculado depois
+          tatAtual: indices.tatAtual !== -1 ? parseNumericValue(row[indices.tatAtual]) : 0,
           alunosAtivos: indices.alunosAtivos !== -1 ? parseNumericValue(row[indices.alunosAtivos]) : 0,
           alunosAderidos: indices.alunosAderidos !== -1 ? parseNumericValue(row[indices.alunosAderidos]) : 0,
           alunosEventoPrincipal: indices.alunosEventoPrincipal !== -1 ? parseNumericValue(row[indices.alunosEventoPrincipal]) : 0,
@@ -320,6 +325,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
     const integrantesAtivos = dadosFiltrados.reduce((sum, row) => sum + row.alunosAtivos, 0);
     const macAtual = dadosFiltrados.reduce((sum, row) => sum + row.macMeta, 0);
+    const tatAtual = dadosFiltrados.reduce((sum, row: any) => sum + (row.tatAtual || 0), 0);
     const fundosUnicos = new Set(dadosFiltrados.map(row => row.idFundo || row.fundo)).size;
     const alunosEventoPrincipal = dadosFiltrados.reduce((sum, row) => sum + row.alunosEventoPrincipal, 0);
     const inadimplentes = dadosFiltrados.reduce((sum, row) => sum + row.integrantesInadimplentes, 0);
@@ -336,6 +342,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       alunosEventoPrincipal,
       integrantesInadimplentes: inadimplentes,
       nuncaPagaram,
+      tatAtual,
     };
   }, [dadosFiltrados]);
 
@@ -350,6 +357,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       if (existing) {
         existing.macRealizado += row.macRealizado;
         existing.macMeta += row.macMeta;
+        existing.tatAtual += row.tatAtual || 0;
         existing.alunosAtivos += row.alunosAtivos;
         existing.alunosAderidos += row.alunosAderidos;
         existing.alunosEventoPrincipal += row.alunosEventoPrincipal;
@@ -364,6 +372,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           curso: row.curso,
           macRealizado: row.macRealizado,
           macMeta: row.macMeta,
+          tatAtual: row.tatAtual || 0,
           atingimento: 0,
           alunosAtivos: row.alunosAtivos,
           alunosAderidos: row.alunosAderidos,
@@ -401,7 +410,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
   const dadosPorFranquia = useMemo((): DadosPorFranquia[] => {
     const franquiaMap = new Map<string, DadosPorFranquia>();
 
-    dadosFiltrados.forEach(row => {
+    dadosFiltrados.forEach((row: any) => {
       const key = row.franquia;
       const existing = franquiaMap.get(key);
 
@@ -409,6 +418,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
         existing.totalFundos += 1;
         existing.macRealizado += row.macRealizado;
         existing.macMeta += row.macMeta;
+        existing.tatAtual += row.tatAtual || 0;
         existing.alunosAtivos += row.alunosAtivos;
         existing.alunosEventoPrincipal += row.alunosEventoPrincipal;
         existing.inadimplentes += row.integrantesInadimplentes;
@@ -419,6 +429,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           totalFundos: 1,
           macRealizado: row.macRealizado,
           macMeta: row.macMeta,
+          tatAtual: row.tatAtual || 0,
           atingimento: 0,
           alunosAtivos: row.alunosAtivos,
           alunosEventoPrincipal: row.alunosEventoPrincipal,
@@ -446,11 +457,53 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     return result.sort((a, b) => b.atingimento - a.atingimento);
   }, [dadosFiltrados]);
 
-  // Agrupar por período (histórico)
+  // Dados filtrados SEM filtro de período (para histórico)
+  const dadosSemFiltroPeriodo = useMemo(() => {
+    // IMPORTANTE: Só considerar fundos com baile "REALIZAR"
+    let filteredData = dados.filter((row: any) => {
+      return row.baileARealizar === 'REALIZAR';
+    });
+
+    if (!filtros) return filteredData;
+
+    return filteredData.filter((row: any) => {
+      // NÃO aplicar filtro de data aqui - queremos todos os períodos
+
+      // Filtro de unidades
+      if (filtros.unidades && filtros.unidades.length > 0) {
+        const unidadeRow = row.unidade || row.franquia;
+        if (!filtros.unidades.includes(unidadeRow)) return false;
+      }
+
+      // Filtro de fundos
+      if (filtros.fundos && filtros.fundos.length > 0 && !filtros.fundos.includes(row.fundo)) {
+        return false;
+      }
+
+      // Filtro de consultor de relacionamento
+      if (filtros.consultorRelacionamento && filtros.consultorRelacionamento.length > 0) {
+        if (!filtros.consultorRelacionamento.includes(row.consultorRelacionamento)) return false;
+      }
+
+      // Filtro de consultor de atendimento
+      if (filtros.consultorAtendimento && filtros.consultorAtendimento.length > 0) {
+        if (!filtros.consultorAtendimento.includes(row.consultorAtendimento)) return false;
+      }
+
+      // Filtro de consultor de produção
+      if (filtros.consultorProducao && filtros.consultorProducao.length > 0) {
+        if (!filtros.consultorProducao.includes(row.consultorProducao)) return false;
+      }
+
+      return true;
+    });
+  }, [dados, filtros]);
+
+  // Agrupar por período (histórico) - SEM FILTRO DE PERÍODO
   const historico = useMemo((): DadosHistorico[] => {
     const periodoMap = new Map<string, DadosHistorico>();
 
-    dadosFiltrados.forEach(row => {
+    dadosSemFiltroPeriodo.forEach(row => {
       const key = row.mesAno;
       const existing = periodoMap.get(key);
 
@@ -472,7 +525,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
     // Contar fundos por período
     const fundosPorPeriodo = new Map<string, Set<string>>();
-    dadosFiltrados.forEach(row => {
+    dadosSemFiltroPeriodo.forEach(row => {
       const fundos = fundosPorPeriodo.get(row.mesAno) || new Set();
       fundos.add(row.idFundo || row.fundo);
       fundosPorPeriodo.set(row.mesAno, fundos);
@@ -486,7 +539,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
     // Ordenar por período
     return result.sort((a, b) => a.periodo.localeCompare(b.periodo));
-  }, [dadosFiltrados]);
+  }, [dadosSemFiltroPeriodo]);
 
   // Extrair opções de filtros
   const filtrosOpcoes = useMemo((): FiltrosCarteiraOpcoes => {
