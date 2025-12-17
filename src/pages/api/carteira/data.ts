@@ -1,6 +1,5 @@
 /**
  * API Route para buscar dados da carteira do Google Sheets
- * Planilha: 1nNUVFGhD6ihAFj_EMQibwcEJGMuxYPI6VtDxx-9ye7E
  * Aba: HISTORICO
  */
 
@@ -11,8 +10,8 @@ import cache from '@/lib/cache';
 const CACHE_KEY = 'carteira:data';
 const CACHE_TTL = 5 * 60 * 1000;
 
-// ID da planilha e nome da aba
-const SPREADSHEET_ID = '1nNUVFGhD6ihAFj_EMQibwcEJGMuxYPI6VtDxx-9ye7E';
+// ID da planilha via variável de ambiente
+const SPREADSHEET_ID = process.env.CARTEIRA_SHEET_ID;
 const SHEET_NAME = 'HISTORICO';
 
 export default async function handler(
@@ -34,6 +33,10 @@ export default async function handler(
 
         if (!API_KEY) {
           throw new Error('Variável NEXT_PUBLIC_GOOGLE_API_KEY não configurada');
+        }
+
+        if (!SPREADSHEET_ID) {
+          throw new Error('Variável CARTEIRA_SHEET_ID não configurada no .env.local');
         }
 
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}?key=${API_KEY}`;

@@ -1,6 +1,6 @@
 /**
  * Tipos para dados do módulo Carteira
- * Baseado na aba HISTORICO da planilha 1nNUVFGhD6ihAFj_EMQibwcEJGMuxYPI6VtDxx-9ye7E
+ * Baseado na aba HISTORICO da planilha de carteira (ver CARTEIRA_SHEET_ID no .env.local)
  */
 
 // Dados de uma linha do histórico de carteira
