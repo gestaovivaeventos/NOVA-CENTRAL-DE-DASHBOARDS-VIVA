@@ -1,10 +1,12 @@
 /**
  * Componente KPICard para o módulo Carteira
  * Baseado no padrão do módulo de Vendas
+ * Com tooltip explicativo do indicador
  */
 
 import React from 'react';
 import { formatCurrency, formatPercent, formatNumber, getColorForPercentage, getProgressGradient } from '@/modules/carteira/utils/formatacao';
+import { HelpCircle } from 'lucide-react';
 
 interface KPICardProps {
   titulo: string;
@@ -17,6 +19,7 @@ interface KPICardProps {
   loading?: boolean;
   icone?: React.ReactNode;
   destaque?: string; // Texto destacado em laranja abaixo do valor (ex: porcentagem)
+  tooltip?: string; // Explicação do indicador
 }
 
 // Skeleton para loading
@@ -38,6 +41,7 @@ export default function KPICard({
   loading = false,
   icone,
   destaque,
+  tooltip,
 }: KPICardProps) {
   const showProgress = percentual !== undefined;
   const progressWidth = showProgress ? Math.min(percentual * 100, 100) : 0;
@@ -78,13 +82,30 @@ export default function KPICard({
         boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
       }}
     >
-      {/* Título - sem ícone */}
-      <span 
-        className="text-xs font-semibold uppercase tracking-wider"
-        style={{ color: '#9ca3af', fontFamily: "'Poppins', sans-serif" }}
-      >
-        {titulo}
-      </span>
+      {/* Título com tooltip */}
+      <div className="flex items-center gap-2">
+        <span 
+          className="text-xs font-semibold uppercase tracking-wider"
+          style={{ color: '#9ca3af', fontFamily: "'Poppins', sans-serif" }}
+        >
+          {titulo}
+        </span>
+        {tooltip && (
+          <div className="relative group">
+            <HelpCircle 
+              size={14} 
+              style={{ color: '#6b7280', cursor: 'help' }} 
+            />
+            <div 
+              className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50 pointer-events-none"
+              style={{ minWidth: '200px', whiteSpace: 'normal' }}
+            >
+              {tooltip}
+              <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+            </div>
+          </div>
+        )}
+      </div>
       
       {/* Valor Principal */}
       <span 

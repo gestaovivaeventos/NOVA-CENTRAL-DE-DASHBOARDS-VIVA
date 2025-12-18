@@ -144,22 +144,19 @@ export default function AnalisesPage() {
 
           {/* Fundos por Saúde */}
           <section className="mb-8">
-            <h2 className="section-title">
-              Fundos por Saúde
-            </h2>
             <SaudeCards fundosPorSaude={kpis.fundosPorSaude} loading={loading} />
           </section>
 
           {/* Tabelas */}
           <div className="grid grid-cols-1 gap-8">
-            {/* Tabela por Franquia */}
-            <section>
-              <TabelaFranquias dados={dadosPorFranquia} loading={loading} />
-            </section>
-
             {/* Tabela por Fundo */}
             <section>
               <TabelaFundos dados={dadosPorFundo} loading={loading} />
+            </section>
+
+            {/* Tabela por Franquia */}
+            <section>
+              <TabelaFranquias dados={dadosPorFranquia} loading={loading} />
             </section>
           </div>
         </main>

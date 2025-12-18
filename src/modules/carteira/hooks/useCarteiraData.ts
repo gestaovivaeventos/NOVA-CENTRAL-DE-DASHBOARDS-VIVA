@@ -450,6 +450,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           franquia: row.franquia,
           instituicao: row.instituicao,
           curso: row.curso,
+          tipoServico: row.tipoServico || '',
           macRealizado: row.macRealizado,
           macMeta: row.macMeta,
           tatAtual: row.tatAtual || 0,

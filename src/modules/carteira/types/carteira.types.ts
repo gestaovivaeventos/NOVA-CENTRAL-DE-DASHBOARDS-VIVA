@@ -71,6 +71,7 @@ export interface DadosPorFundo {
   franquia: string;
   instituicao: string;
   curso: string;
+  tipoServico: string;
   macRealizado: number;
   macMeta: number;
   tatAtual: number;
