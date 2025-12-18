@@ -699,17 +699,21 @@ export default function TabelaFundos({ dados, loading = false }: TabelaFundosPro
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '10%', fontSize: '0.8rem', verticalAlign: 'middle', ...cellTextStyle }}>{item.franquia}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '7%', fontSize: '0.75rem', verticalAlign: 'middle' }}>{item.idFundo}</td>
                       <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '12%', fontSize: '0.8rem', verticalAlign: 'middle', ...cellTextStyle }}>{item.fundo}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '7%', fontSize: '0.75rem', verticalAlign: 'middle' }}>{formatarData(item.dataBaile)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', width: '8%', verticalAlign: 'middle' }}>
+                      <td style={{ padding: '10px 4px', textAlign: 'center', color: '#9ca3af', width: '7%', fontSize: '0.7rem', verticalAlign: 'middle', wordBreak: 'break-word', overflowWrap: 'break-word' }}>{formatarData(item.dataBaile)}</td>
+                      <td style={{ padding: '10px 4px', textAlign: 'center', width: '8%', verticalAlign: 'middle' }}>
                         <span 
                           style={{ 
-                            padding: '4px 8px',
+                            display: 'inline-block',
+                            padding: '3px 6px',
                             borderRadius: '9999px',
-                            fontSize: '0.7rem',
+                            fontSize: '0.6rem',
                             fontWeight: 600,
                             textTransform: 'uppercase',
                             backgroundColor: SAUDE_COLORS[item.saude].bg,
                             color: SAUDE_COLORS[item.saude].text,
+                            maxWidth: '100%',
+                            wordBreak: 'break-word',
+                            lineHeight: 1.2,
                           }}
                         >
                           {item.saude}
