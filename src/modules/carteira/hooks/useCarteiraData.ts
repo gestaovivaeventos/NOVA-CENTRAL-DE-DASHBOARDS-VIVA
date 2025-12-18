@@ -330,20 +330,9 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     return filtros.saude;
   }, [filtros?.saude]);
 
-  // Calcular KPIs - Atingimento MAC = integrantes_ativos / mac_atual
-  const kpis = useMemo((): KPIsCarteira => {
-    if (dadosFiltrados.length === 0) return INITIAL_KPIS;
-
-    const integrantesAtivos = dadosFiltrados.reduce((sum, row) => sum + row.alunosAtivos, 0);
-    const macAtual = dadosFiltrados.reduce((sum, row) => sum + row.macMeta, 0);
-    const tatAtual = dadosFiltrados.reduce((sum, row: any) => sum + (row.tatAtual || 0), 0);
-    const fundosUnicos = new Set(dadosFiltrados.map(row => row.idFundo || row.fundo)).size;
-    const alunosEventoPrincipal = dadosFiltrados.reduce((sum, row) => sum + row.alunosEventoPrincipal, 0);
-    const inadimplentes = dadosFiltrados.reduce((sum, row) => sum + row.integrantesInadimplentes, 0);
-    const nuncaPagaram = dadosFiltrados.reduce((sum, row) => sum + row.nuncaPagaram, 0);
-
-    // Calcular fundos por saúde (agrupar por fundo e calcular saúde)
-    const fundoSaudeMap = new Map<string, SaudeFundo>();
+  // Calcular mapa de saúde por fundo (necessário para filtrar KPIs por saúde)
+  const fundoSaudeMap = useMemo(() => {
+    const map = new Map<string, SaudeFundo>();
     const fundoDataMap = new Map<string, { alunosAtivos: number; macMeta: number; dataBaile: Date | null }>();
     
     dadosFiltrados.forEach((row: any) => {
@@ -361,7 +350,43 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       }
     });
 
-    // Calcular saúde para cada fundo
+    fundoDataMap.forEach((data, key) => {
+      const atingimento = data.macMeta > 0 ? data.alunosAtivos / data.macMeta : 0;
+      const saude = calcularSaudeFundo(data.dataBaile, atingimento);
+      map.set(key, saude);
+    });
+
+    return map;
+  }, [dadosFiltrados]);
+
+  // Dados filtrados também por saúde (para KPIs)
+  const dadosFiltradosComSaude = useMemo(() => {
+    if (!dadosFiltradosPorSaude || dadosFiltradosPorSaude.length === 0) {
+      return dadosFiltrados;
+    }
+    
+    // Filtrar dados apenas dos fundos que têm a saúde selecionada
+    return dadosFiltrados.filter((row: any) => {
+      const key = row.idFundo || row.fundo;
+      const saude = fundoSaudeMap.get(key);
+      return saude && dadosFiltradosPorSaude.includes(saude);
+    });
+  }, [dadosFiltrados, dadosFiltradosPorSaude, fundoSaudeMap]);
+
+  // Calcular KPIs - Atingimento MAC = integrantes_ativos / mac_atual
+  // AGORA USA dadosFiltradosComSaude para incluir filtro de saúde
+  const kpis = useMemo((): KPIsCarteira => {
+    if (dadosFiltradosComSaude.length === 0) return INITIAL_KPIS;
+
+    const integrantesAtivos = dadosFiltradosComSaude.reduce((sum, row) => sum + row.alunosAtivos, 0);
+    const macAtual = dadosFiltradosComSaude.reduce((sum, row) => sum + row.macMeta, 0);
+    const tatAtual = dadosFiltradosComSaude.reduce((sum, row: any) => sum + (row.tatAtual || 0), 0);
+    const fundosUnicos = new Set(dadosFiltradosComSaude.map(row => row.idFundo || row.fundo)).size;
+    const alunosEventoPrincipal = dadosFiltradosComSaude.reduce((sum, row) => sum + row.alunosEventoPrincipal, 0);
+    const inadimplentes = dadosFiltradosComSaude.reduce((sum, row) => sum + row.integrantesInadimplentes, 0);
+    const nuncaPagaram = dadosFiltradosComSaude.reduce((sum, row) => sum + row.nuncaPagaram, 0);
+
+    // Calcular fundos por saúde
     const fundosPorSaude = {
       critico: 0,
       atencao: 0,
@@ -369,16 +394,19 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       alcancada: 0,
     };
 
-    fundoDataMap.forEach((data, key) => {
-      const atingimento = data.macMeta > 0 ? data.alunosAtivos / data.macMeta : 0;
-      const saude = calcularSaudeFundo(data.dataBaile, atingimento);
-      fundoSaudeMap.set(key, saude);
-      
-      switch (saude) {
-        case 'Crítico': fundosPorSaude.critico++; break;
-        case 'Atenção': fundosPorSaude.atencao++; break;
-        case 'Quase lá': fundosPorSaude.quaseLa++; break;
-        case 'Alcançada': fundosPorSaude.alcancada++; break;
+    // Contar fundos únicos e sua saúde
+    const fundosContados = new Set<string>();
+    dadosFiltradosComSaude.forEach((row: any) => {
+      const key = row.idFundo || row.fundo;
+      if (!fundosContados.has(key)) {
+        fundosContados.add(key);
+        const saude = fundoSaudeMap.get(key);
+        switch (saude) {
+          case 'Crítico': fundosPorSaude.critico++; break;
+          case 'Atenção': fundosPorSaude.atencao++; break;
+          case 'Quase lá': fundosPorSaude.quaseLa++; break;
+          case 'Alcançada': fundosPorSaude.alcancada++; break;
+        }
       }
     });
 
@@ -396,7 +424,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       tatAtual,
       fundosPorSaude,
     };
-  }, [dadosFiltrados]);
+  }, [dadosFiltradosComSaude, fundoSaudeMap]);
 
   // Agrupar por fundo
   const dadosPorFundo = useMemo((): DadosPorFundo[] => {
@@ -458,11 +486,11 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     return result.sort((a, b) => a.atingimento - b.atingimento);
   }, [dadosFiltrados, dadosFiltradosPorSaude]);
 
-  // Agrupar por franquia
+  // Agrupar por franquia - USA dadosFiltradosComSaude para incluir filtro de saúde
   const dadosPorFranquia = useMemo((): DadosPorFranquia[] => {
     const franquiaMap = new Map<string, DadosPorFranquia>();
 
-    dadosFiltrados.forEach((row: any) => {
+    dadosFiltradosComSaude.forEach((row: any) => {
       const key = row.franquia;
       const existing = franquiaMap.get(key);
 
@@ -493,7 +521,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
     // Calcular atingimento e contar fundos únicos
     const fundosPorFranquia = new Map<string, Set<string>>();
-    dadosFiltrados.forEach(row => {
+    dadosFiltradosComSaude.forEach(row => {
       const fundos = fundosPorFranquia.get(row.franquia) || new Set();
       fundos.add(row.idFundo || row.fundo);
       fundosPorFranquia.set(row.franquia, fundos);
@@ -508,7 +536,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
     // Ordenar por atingimento
     return result.sort((a, b) => b.atingimento - a.atingimento);
-  }, [dadosFiltrados]);
+  }, [dadosFiltradosComSaude]);
 
   // Dados filtrados SEM filtro de período (para histórico)
   const dadosSemFiltroPeriodo = useMemo(() => {

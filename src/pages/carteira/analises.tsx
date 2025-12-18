@@ -3,11 +3,12 @@
  * Exibe KPIs, Tabela por Fundo e Tabela por Franquia
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { useCarteiraData } from '@/modules/carteira/hooks';
+import { useFiltrosCarteira } from '@/modules/carteira/context/FiltrosCarteiraContext';
 import { 
   Sidebar, 
   Header, 
@@ -20,53 +21,17 @@ import {
 } from '@/modules/carteira/components';
 import { PaginaCarteiraAtiva, FiltrosCarteira } from '@/modules/carteira/types';
 
-// Função para calcular datas do mês atual
-function getDatasMesAtual() {
-  const hoje = new Date();
-  const year = hoje.getFullYear();
-  const month = hoje.getMonth();
-  const primeiroDia = new Date(year, month, 1);
-  const ultimoDia = new Date(year, month + 1, 0);
-  
-  const formatDate = (date: Date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const y = date.getFullYear();
-    return `${y}-${m}-${day}`;
-  };
-  
-  return {
-    dataInicio: formatDate(primeiroDia),
-    dataFim: formatDate(ultimoDia),
-  };
-}
-
-// Estado inicial dos filtros (mês atual)
-const getInitialFiltros = (): FiltrosCarteira => {
-  const { dataInicio, dataFim } = getDatasMesAtual();
-  return {
-    periodoSelecionado: 'estemes',
-    dataInicio,
-    dataFim,
-    unidades: [],
-    consultorRelacionamento: [],
-    consultorAtendimento: [],
-    consultorProducao: [],
-    cursos: [],
-    fundos: [],
-    saude: [],
-  };
-};
-
 export default function AnalisesPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   
-  // Estados
+  // Usar filtros do Context (compartilhado entre páginas)
+  const { filtros, updateFiltros } = useFiltrosCarteira();
+  
+  // Estados locais
   const [paginaAtiva, setPaginaAtiva] = useState<PaginaCarteiraAtiva>('analises');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [filtros, setFiltros] = useState<FiltrosCarteira>(getInitialFiltros);
 
   // Hook de dados com filtros
   const { 
@@ -79,9 +44,9 @@ export default function AnalisesPage() {
   } = useCarteiraData(filtros);
 
   // Handler para atualização de filtros
-  const handleFiltrosChange = useCallback((novosFiltros: Partial<FiltrosCarteira>) => {
-    setFiltros(prev => ({ ...prev, ...novosFiltros }));
-  }, []);
+  const handleFiltrosChange = (novosFiltros: Partial<FiltrosCarteira>) => {
+    updateFiltros(novosFiltros);
+  };
 
   // Verificar autenticação
   useEffect(() => {

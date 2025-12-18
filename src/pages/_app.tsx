@@ -4,6 +4,7 @@ import Head from 'next/head';
 import { AuthProvider } from '@/context/AuthContext';
 import { SheetsDataProvider, ParametrosProvider } from '@/modules/pex';
 import { Shell } from '@/modules/central';
+import { FiltrosCarteiraProvider } from '@/modules/carteira/context/FiltrosCarteiraContext';
 
 // Chart.js com plugin de data labels
 import {
@@ -46,9 +47,11 @@ export default function App({ Component, pageProps }: AppProps) {
       <AuthProvider>
         <SheetsDataProvider>
           <ParametrosProvider>
-            <Shell>
-              <Component {...pageProps} />
-            </Shell>
+            <FiltrosCarteiraProvider>
+              <Shell>
+                <Component {...pageProps} />
+              </Shell>
+            </FiltrosCarteiraProvider>
           </ParametrosProvider>
         </SheetsDataProvider>
       </AuthProvider>
