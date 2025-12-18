@@ -678,6 +678,13 @@ export default function TabelaFundos({ dados, loading = false }: TabelaFundosPro
                   const percInad = item.alunosAtivos > 0 ? item.inadimplentes / item.alunosAtivos : 0;
                   const percNunca = item.alunosAtivos > 0 ? item.nuncaPagaram / item.alunosAtivos : 0;
                   
+                  // Estilo para células com texto que pode ser longo - permite quebra de linha
+                  const cellTextStyle = {
+                    wordWrap: 'break-word' as const,
+                    wordBreak: 'break-word' as const,
+                    overflowWrap: 'break-word' as const,
+                  };
+                  
                   return (
                     <tr
                       key={`${item.idFundo}-${index}`}
@@ -689,11 +696,11 @@ export default function TabelaFundos({ dados, loading = false }: TabelaFundosPro
                       onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d4349'}
                       onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#343A40' : '#2c3136'}
                     >
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '10%', fontSize: '0.8rem' }}>{item.franquia}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '7%', fontSize: '0.75rem' }}>{item.idFundo}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '12%', fontSize: '0.8rem' }}>{item.fundo}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '7%', fontSize: '0.75rem' }}>{formatarData(item.dataBaile)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', width: '8%' }}>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '10%', fontSize: '0.8rem', verticalAlign: 'middle', ...cellTextStyle }}>{item.franquia}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '7%', fontSize: '0.75rem', verticalAlign: 'middle' }}>{item.idFundo}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '12%', fontSize: '0.8rem', verticalAlign: 'middle', ...cellTextStyle }}>{item.fundo}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '7%', fontSize: '0.75rem', verticalAlign: 'middle' }}>{formatarData(item.dataBaile)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', width: '8%', verticalAlign: 'middle' }}>
                         <span 
                           style={{ 
                             padding: '4px 8px',
@@ -708,18 +715,18 @@ export default function TabelaFundos({ dados, loading = false }: TabelaFundosPro
                           {item.saude}
                         </span>
                       </td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '8%' }}>{formatPercent(item.atingimento)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '7%' }}>{formatNumber(item.alunosAtivos)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '7%' }}>{formatNumber(item.macMeta)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '6%' }}>{formatNumber(item.tatAtual || 0)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '8%' }}>{formatNumber(item.alunosEventoPrincipal)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: item.inadimplentes > 0 ? '#ef4444' : '#F8F9FA', width: '7%' }}>{formatNumber(item.inadimplentes)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: percInad > 0.15 ? '#ef4444' : '#FF6600', width: '7%', fontWeight: 300, fontSize: '0.8rem' }}>{(percInad * 100).toFixed(1)}%</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: item.nuncaPagaram > 0 ? '#ef4444' : '#F8F9FA', width: '7%' }}>{formatNumber(item.nuncaPagaram)}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: percNunca > 0.05 ? '#ef4444' : '#FF6600', width: '7%', fontWeight: 300, fontSize: '0.8rem' }}>{(percNunca * 100).toFixed(1)}%</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '6%', fontSize: '0.7rem' }}>{item.consultorAtendimento || '-'}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '6%', fontSize: '0.7rem' }}>{item.consultorRelacionamento || '-'}</td>
-                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '6%', fontSize: '0.7rem' }}>{item.consultorProducao || '-'}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '8%', verticalAlign: 'middle' }}>{formatPercent(item.atingimento)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '7%', verticalAlign: 'middle' }}>{formatNumber(item.alunosAtivos)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '7%', verticalAlign: 'middle' }}>{formatNumber(item.macMeta)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '6%', verticalAlign: 'middle' }}>{formatNumber(item.tatAtual || 0)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', width: '8%', verticalAlign: 'middle' }}>{formatNumber(item.alunosEventoPrincipal)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: item.inadimplentes > 0 ? '#ef4444' : '#F8F9FA', width: '7%', verticalAlign: 'middle' }}>{formatNumber(item.inadimplentes)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: percInad > 0.15 ? '#ef4444' : '#FF6600', width: '7%', fontWeight: 300, fontSize: '0.8rem', verticalAlign: 'middle' }}>{(percInad * 100).toFixed(1)}%</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: item.nuncaPagaram > 0 ? '#ef4444' : '#F8F9FA', width: '7%', verticalAlign: 'middle' }}>{formatNumber(item.nuncaPagaram)}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: percNunca > 0.05 ? '#ef4444' : '#FF6600', width: '7%', fontWeight: 300, fontSize: '0.8rem', verticalAlign: 'middle' }}>{(percNunca * 100).toFixed(1)}%</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '6%', fontSize: '0.7rem', verticalAlign: 'middle', ...cellTextStyle }}>{item.consultorAtendimento || '-'}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '6%', fontSize: '0.7rem', verticalAlign: 'middle', ...cellTextStyle }}>{item.consultorRelacionamento || '-'}</td>
+                      <td style={{ padding: '10px 6px', textAlign: 'center', color: '#9ca3af', width: '6%', fontSize: '0.7rem', verticalAlign: 'middle', ...cellTextStyle }}>{item.consultorProducao || '-'}</td>
                     </tr>
                   );
                 })

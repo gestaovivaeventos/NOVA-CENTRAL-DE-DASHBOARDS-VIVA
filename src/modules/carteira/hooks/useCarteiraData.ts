@@ -158,7 +158,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       status: getIndex(['status', 'situacao_fundo', 'status_fundo']),
       situacao: getIndex(['situacao', 'situacao_carteira']),
       // Novos campos de consultores
-      consultorRelacionamento: getIndex(['consultor_relacionamento', 'consultor_rel', 'relacionamento']),
+      consultorRelacionamento: getIndex(['consultor_planejamento', 'consultor_relacionamento', 'consultor_rel', 'relacionamento']),
       consultorAtendimento: getIndex(['consultor_atendimento', 'consultor_atd', 'atendimento']),
       consultorProducao: getIndex(['consultor_producao', 'consultor_prod', 'producao']),
       unidade: getIndex(['unidade', 'nm_unidade', 'franquia']),
