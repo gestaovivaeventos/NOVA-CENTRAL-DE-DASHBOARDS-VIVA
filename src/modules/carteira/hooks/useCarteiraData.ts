@@ -295,11 +295,6 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
         if (!filtros.unidades.includes(unidadeRow)) return false;
       }
 
-      // Filtro de fundos
-      if (filtros.fundos && filtros.fundos.length > 0 && !filtros.fundos.includes(row.fundo)) {
-        return false;
-      }
-
       // Filtro de consultor de relacionamento
       if (filtros.consultorRelacionamento && filtros.consultorRelacionamento.length > 0) {
         if (!filtros.consultorRelacionamento.includes(row.consultorRelacionamento)) return false;
@@ -313,6 +308,16 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       // Filtro de consultor de produção
       if (filtros.consultorProducao && filtros.consultorProducao.length > 0) {
         if (!filtros.consultorProducao.includes(row.consultorProducao)) return false;
+      }
+
+      // Filtro de cursos
+      if (filtros.cursos && filtros.cursos.length > 0) {
+        if (!filtros.cursos.includes(row.curso)) return false;
+      }
+
+      // Filtro de fundos
+      if (filtros.fundos && filtros.fundos.length > 0 && !filtros.fundos.includes(row.fundo)) {
+        return false;
       }
 
       return true;
@@ -523,11 +528,6 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
         if (!filtros.unidades.includes(unidadeRow)) return false;
       }
 
-      // Filtro de fundos
-      if (filtros.fundos && filtros.fundos.length > 0 && !filtros.fundos.includes(row.fundo)) {
-        return false;
-      }
-
       // Filtro de consultor de relacionamento
       if (filtros.consultorRelacionamento && filtros.consultorRelacionamento.length > 0) {
         if (!filtros.consultorRelacionamento.includes(row.consultorRelacionamento)) return false;
@@ -541,6 +541,16 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       // Filtro de consultor de produção
       if (filtros.consultorProducao && filtros.consultorProducao.length > 0) {
         if (!filtros.consultorProducao.includes(row.consultorProducao)) return false;
+      }
+
+      // Filtro de cursos
+      if (filtros.cursos && filtros.cursos.length > 0) {
+        if (!filtros.cursos.includes(row.curso)) return false;
+      }
+
+      // Filtro de fundos
+      if (filtros.fundos && filtros.fundos.length > 0 && !filtros.fundos.includes(row.fundo)) {
+        return false;
       }
 
       return true;
@@ -589,17 +599,33 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     return result.sort((a, b) => a.periodo.localeCompare(b.periodo));
   }, [dadosSemFiltroPeriodo]);
 
-  // Extrair opções de filtros
+  // Extrair opções de filtros COM HIERARQUIA
+  // Unidade é o filtro pai - quando selecionado, os filtros abaixo só mostram dados da unidade
   const filtrosOpcoes = useMemo((): FiltrosCarteiraOpcoes => {
+    // Unidades sempre mostram todas as opções (é o filtro principal)
     const unidades = [...new Set(dados.map((row: any) => row.unidade || row.franquia))].filter(Boolean).sort();
-    const fundos = [...new Set(dados.map((row: any) => row.fundo))].filter(Boolean).sort();
-    const consultoresRelacionamento = [...new Set(dados.map((row: any) => row.consultorRelacionamento))].filter(Boolean).sort();
-    const consultoresAtendimento = [...new Set(dados.map((row: any) => row.consultorAtendimento))].filter(Boolean).sort();
-    const consultoresProducao = [...new Set(dados.map((row: any) => row.consultorProducao))].filter(Boolean).sort();
+    
+    // Determinar base de dados para filtros hierárquicos
+    // Se unidade está selecionada, filtrar os dados para extrair opções dos outros filtros
+    let dadosParaFiltros = dados;
+    if (filtros?.unidades && filtros.unidades.length > 0) {
+      dadosParaFiltros = dados.filter((row: any) => {
+        const unidadeRow = row.unidade || row.franquia;
+        return filtros.unidades.includes(unidadeRow);
+      });
+    }
+
+    // Extrair opções dos filtros hierárquicos baseado na unidade selecionada
+    const consultoresRelacionamento = [...new Set(dadosParaFiltros.map((row: any) => row.consultorRelacionamento))].filter(Boolean).sort();
+    const consultoresAtendimento = [...new Set(dadosParaFiltros.map((row: any) => row.consultorAtendimento))].filter(Boolean).sort();
+    const consultoresProducao = [...new Set(dadosParaFiltros.map((row: any) => row.consultorProducao))].filter(Boolean).sort();
+    const cursos = [...new Set(dadosParaFiltros.map((row: any) => row.curso))].filter(Boolean).sort();
+    const fundos = [...new Set(dadosParaFiltros.map((row: any) => row.fundo))].filter(Boolean).sort();
+    
     const saudeOpcoes: SaudeFundo[] = ['Crítico', 'Atenção', 'Quase lá', 'Alcançada'];
 
-    return { unidades, fundos, consultoresRelacionamento, consultoresAtendimento, consultoresProducao, saudeOpcoes };
-  }, [dados]);
+    return { unidades, consultoresRelacionamento, consultoresAtendimento, consultoresProducao, cursos, fundos, saudeOpcoes };
+  }, [dados, filtros?.unidades]);
 
   // Função para refetch
   const refetch = useCallback(async () => {

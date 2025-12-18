@@ -120,20 +120,22 @@ export interface FiltrosCarteira {
   dataInicio: string;
   dataFim: string;
   unidades: string[];
-  fundos: string[];
   consultorRelacionamento: string[];
   consultorAtendimento: string[];
   consultorProducao: string[];
+  cursos: string[];
+  fundos: string[];
   saude: SaudeFundo[];
 }
 
 // Opções disponíveis para filtros
 export interface FiltrosCarteiraOpcoes {
   unidades: string[];
-  fundos: string[];
   consultoresRelacionamento: string[];
   consultoresAtendimento: string[];
   consultoresProducao: string[];
+  cursos: string[];
+  fundos: string[];
   saudeOpcoes: SaudeFundo[];
 }
 

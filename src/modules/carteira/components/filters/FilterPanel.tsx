@@ -1,6 +1,7 @@
 /**
  * Componente FilterPanel - Painel de filtros do módulo Carteira
- * Filtros: Período, Unidade, Fundo, Consultor Relacionamento, Consultor Atendimento, Consultor Produção
+ * Filtros hierárquicos: Período > Unidade > Consultores > Curso > Fundo > Saúde
+ * Quando uma unidade é selecionada, os filtros abaixo mostram apenas dados correspondentes
  */
 
 import React, { useState } from 'react';
@@ -77,25 +78,24 @@ export default function FilterPanel({
             onDataFimChange={(dataFim) => onFiltrosChange({ dataFim })}
           />
 
-          {/* Filtro de Unidades */}
+          {/* Filtro de Unidades (Filtro Principal - controla a hierarquia) */}
           {opcoes.unidades.length > 0 && (
             <MultiSelect
               label="Unidade"
               options={opcoes.unidades}
               selectedValues={filtros.unidades}
-              onChange={(unidades) => onFiltrosChange({ unidades })}
+              onChange={(unidades) => {
+                // Ao mudar unidade, limpar os filtros hierárquicos abaixo
+                onFiltrosChange({ 
+                  unidades,
+                  consultorRelacionamento: [],
+                  consultorAtendimento: [],
+                  consultorProducao: [],
+                  cursos: [],
+                  fundos: [],
+                });
+              }}
               placeholder="Todas as unidades"
-            />
-          )}
-
-          {/* Filtro de Fundos */}
-          {opcoes.fundos.length > 0 && (
-            <MultiSelect
-              label="Fundo"
-              options={opcoes.fundos}
-              selectedValues={filtros.fundos}
-              onChange={(fundos) => onFiltrosChange({ fundos })}
-              placeholder="Todos os fundos"
             />
           )}
 
@@ -129,6 +129,28 @@ export default function FilterPanel({
               selectedValues={filtros.consultorProducao}
               onChange={(consultorProducao) => onFiltrosChange({ consultorProducao })}
               placeholder="Todos os consultores"
+            />
+          )}
+
+          {/* Filtro de Curso */}
+          {opcoes.cursos && opcoes.cursos.length > 0 && (
+            <MultiSelect
+              label="Curso"
+              options={opcoes.cursos}
+              selectedValues={filtros.cursos || []}
+              onChange={(cursos) => onFiltrosChange({ cursos })}
+              placeholder="Todos os cursos"
+            />
+          )}
+
+          {/* Filtro de Fundos */}
+          {opcoes.fundos.length > 0 && (
+            <MultiSelect
+              label="Fundo"
+              options={opcoes.fundos}
+              selectedValues={filtros.fundos}
+              onChange={(fundos) => onFiltrosChange({ fundos })}
+              placeholder="Todos os fundos"
             />
           )}
 

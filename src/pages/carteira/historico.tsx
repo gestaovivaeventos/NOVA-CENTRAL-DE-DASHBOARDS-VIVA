@@ -46,10 +46,11 @@ const getInitialFiltros = (): FiltrosCarteira => {
     dataInicio,
     dataFim,
     unidades: [],
-    fundos: [],
     consultorRelacionamento: [],
     consultorAtendimento: [],
     consultorProducao: [],
+    cursos: [],
+    fundos: [],
     saude: [],
   };
 };
