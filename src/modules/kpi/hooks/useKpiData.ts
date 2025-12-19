@@ -9,6 +9,38 @@ import { KpiData } from '../types';
 const buildApiUrl = () =>
   `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodeURIComponent(config.sheetName)}?key=${config.apiKey}`;
 
+// Função para parsear valores numéricos (incluindo moeda)
+const parseNumericValue = (value: string | null | undefined): number => {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    return 0;
+  }
+  
+  let cleanValue = String(value)
+    .replace(/R\$\s*/gi, '')    // Remove "R$" e espaços
+    .replace(/\./g, '')         // Remove pontos de milhar
+    .replace(',', '.')          // Troca vírgula decimal por ponto
+    .trim();
+  
+  const parsed = parseFloat(cleanValue);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
+// Função para parsear resultado (pode ser null)
+const parseResultado = (value: string | null | undefined): number | null => {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    return null;
+  }
+  
+  let cleanValue = String(value)
+    .replace(/R\$\s*/gi, '')    // Remove "R$" e espaços
+    .replace(/\./g, '')         // Remove pontos de milhar
+    .replace(',', '.')          // Troca vírgula decimal por ponto
+    .trim();
+  
+  const parsed = parseFloat(cleanValue);
+  return isNaN(parsed) ? null : parsed;
+};
+
 export function useKpiData() {
   const [data, setData] = useState<KpiData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -34,17 +66,13 @@ export function useKpiData() {
           return nivelAcesso !== 'GESTORES';
         })
         .map((row: string[]) => {
-          const resultadoCell = row[kpiColumns.RESULTADO];
           return {
             competencia: row[kpiColumns.COMPETENCIA] || '',
             time: row[kpiColumns.TIME] || '',
             kpi: row[kpiColumns.KPI] || '',
-            meta: parseFloat((row[kpiColumns.META] || '0').replace(',', '.')),
-            resultado:
-              resultadoCell !== null && resultadoCell !== undefined && String(resultadoCell).trim() !== ''
-                ? parseFloat(String(resultadoCell).replace(',', '.'))
-                : null,
-            percentual: parseFloat((row[kpiColumns.PERCENTUAL] || '0').replace(',', '.')),
+            meta: parseNumericValue(row[kpiColumns.META]),
+            resultado: parseResultado(row[kpiColumns.RESULTADO]),
+            percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
             grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
             tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
             tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
@@ -84,17 +112,13 @@ export async function fetchKpiData(): Promise<KpiData[]> {
       return nivelAcesso !== 'GESTORES';
     })
     .map((row: string[]) => {
-      const resultadoCell = row[kpiColumns.RESULTADO];
       return {
         competencia: row[kpiColumns.COMPETENCIA] || '',
         time: row[kpiColumns.TIME] || '',
         kpi: row[kpiColumns.KPI] || '',
-        meta: parseFloat((row[kpiColumns.META] || '0').replace(',', '.')),
-        resultado:
-          resultadoCell !== null && resultadoCell !== undefined && String(resultadoCell).trim() !== ''
-            ? parseFloat(String(resultadoCell).replace(',', '.'))
-            : null,
-        percentual: parseFloat((row[kpiColumns.PERCENTUAL] || '0').replace(',', '.')),
+        meta: parseNumericValue(row[kpiColumns.META]),
+        resultado: parseResultado(row[kpiColumns.RESULTADO]),
+        percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
         grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
         tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),

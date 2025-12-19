@@ -521,7 +521,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
   margin: 0 0 1.5rem 0;
   border: 1px solid var(--bg-tertiary);
@@ -617,12 +617,14 @@ body {
 /* Chart Wrapper KPI */
 .kpi-time-section .chart-wrapper {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 3fr);
   grid-template-areas: "sidebar chart";
   gap: 1.5rem;
   align-items: stretch;
-  height: 450px;
-  max-height: 450px;
+  min-height: 400px;
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 .kpi-sidebar {
@@ -638,16 +640,17 @@ body {
   position: relative;
   height: 100%;
   min-width: 0;
+  min-height: 300px;
   grid-area: chart;
-  overflow: hidden;
+  overflow: visible;
+  display: flex;
+  align-items: stretch;
 }
 
 .main-chart-area canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100% !important;
   height: 100% !important;
+  max-width: 100%;
 }
 
 /* KPIs Grid */
@@ -729,6 +732,7 @@ body {
     grid-template-areas: "sidebar" "chart";
     height: auto;
     max-height: none;
+    min-height: auto;
   }
 
   .kpi-sidebar {
@@ -746,8 +750,10 @@ body {
   }
 
   .main-chart-area {
-    height: 350px;
+    min-height: 350px;
+    height: auto;
     position: relative;
+    overflow: visible;
   }
 }
 
@@ -768,7 +774,8 @@ body {
   }
 
   .main-chart-area {
-    height: 280px;
+    min-height: 280px;
+    height: auto;
   }
 }
 
@@ -1105,12 +1112,14 @@ body {
 /* Dentro do contexto .kr-display-container */
 .kr-display-container .chart-wrapper {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 3fr);
   grid-template-areas: "sidebar chart";
   gap: 1.5rem;
   align-items: stretch;
-  height: 420px;
-  max-height: 420px;
+  min-height: 400px;
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 /* KPI Sidebar OKR */
@@ -1119,8 +1128,9 @@ body {
   flex-direction: column;
   gap: 1rem;
   grid-area: sidebar;
-  height: 400px;
-  max-height: 400px;
+  min-height: 380px;
+  height: auto;
+  max-height: none;
 }
 
 /* Cards de KPI na sidebar OKR - mesmo estilo de fundo do KPI */
@@ -1225,30 +1235,33 @@ body {
 /* Área do gráfico principal OKR */
 .kr-display-container .main-chart-area {
   position: relative;
-  height: 400px;
-  max-height: 400px;
+  min-height: 380px;
+  height: auto;
+  max-height: none;
   min-width: 0;
   grid-area: chart;
-  overflow: hidden;
+  overflow: visible;
+  display: flex;
+  align-items: stretch;
 }
 
 .kr-display-container .main-chart-area canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
 }
 
 /* KPI Sidebar OKR - mantendo compatibilidade */
 .okr-chart-wrapper {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
+  grid-template-columns: minmax(200px, 1fr) minmax(0, 3fr);
   grid-template-areas: "sidebar chart";
   gap: 1.5rem;
   align-items: stretch;
-  height: 420px;
-  max-height: 420px;
+  min-height: 400px;
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }
 
 /* KPI Sidebar OKR */
@@ -1257,8 +1270,9 @@ body {
   flex-direction: column;
   gap: 1rem;
   grid-area: sidebar;
-  height: 400px;
-  max-height: 400px;
+  min-height: 380px;
+  height: auto;
+  max-height: none;
 }
 
 /* Container do gráfico de atingimento (doughnut) OKR */
@@ -1315,6 +1329,7 @@ body {
       "chart";
     height: auto;
     max-height: none;
+    min-height: auto;
   }
 
   .kr-display-container .kpi-sidebar {
@@ -1322,6 +1337,7 @@ body {
     flex-wrap: wrap;
     height: auto;
     max-height: none;
+    min-height: auto;
     gap: 0.75rem;
   }
 
@@ -1338,8 +1354,10 @@ body {
   }
 
   .kr-display-container .main-chart-area {
-    height: 300px;
-    max-height: 300px;
+    min-height: 300px;
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
   
   .okr-chart-wrapper {
@@ -1349,6 +1367,7 @@ body {
       "chart";
     height: auto;
     max-height: none;
+    min-height: auto;
   }
 
   .okr-kpi-sidebar {
@@ -1356,6 +1375,7 @@ body {
     flex-wrap: wrap;
     height: auto;
     max-height: none;
+    min-height: auto;
     gap: 0.75rem;
   }
 
@@ -1372,8 +1392,10 @@ body {
   }
 
   .okr-chart-wrapper .main-chart-area {
-    height: 300px;
-    max-height: 300px;
+    min-height: 300px;
+    height: auto;
+    max-height: none;
+    overflow: visible;
   }
 }
 

@@ -62,5 +62,8 @@ export interface SidebarProps {
   onCollapseChange: (collapsed: boolean) => void;
   selectedTeam: string;
   onTeamSelect: (team: string) => void;
+  selectedYear: string;
+  onYearSelect: (year: string) => void;
   teams: string[];
+  years: string[];
 }

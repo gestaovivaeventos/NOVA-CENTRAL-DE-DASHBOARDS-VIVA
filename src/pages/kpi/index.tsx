@@ -40,8 +40,11 @@ export default function KpiPage() {
   
   // Estado do módulo KPI
   const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [teams, setTeams] = useState<string[]>([]);
+  const [years, setYears] = useState<string[]>([]);
+  const [allKpiData, setAllKpiData] = useState<KpiData[]>([]);
   const [kpiData, setKpiData] = useState<KpiData[]>([]);
   const [loading, setLoading] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -56,44 +59,83 @@ export default function KpiPage() {
     }
   }, [user, authLoading, router]);
 
-  // Carregar times disponíveis
+  // Extrair ano da competência (formato MM/YYYY)
+  const extractYear = (competencia: string): string | null => {
+    if (!competencia) return null;
+    const parts = competencia.split('/');
+    if (parts.length === 2) {
+      return parts[1]; // Retorna o ano (YYYY)
+    }
+    return null;
+  };
+
+  // Carregar todos os dados e extrair anos e times
   useEffect(() => {
-    const loadTeams = async () => {
+    const loadAllData = async () => {
       try {
         const data = await fetchKpiData();
-        const uniqueTeams = [...new Set(data.map((d) => d.time))].filter(Boolean).sort();
-        setTeams(uniqueTeams);
+        setAllKpiData(data);
+        
+        // Extrair anos únicos (ordenados crescente)
+        const uniqueYears = [...new Set(
+          data.map(d => extractYear(d.competencia)).filter((y): y is string => y !== null)
+        )].sort((a, b) => parseInt(a) - parseInt(b));
+        setYears(uniqueYears);
+        
+        // Selecionar ano vigente por padrão
+        if (uniqueYears.length > 0) {
+          const currentYear = new Date().getFullYear().toString();
+          if (uniqueYears.includes(currentYear)) {
+            setSelectedYear(currentYear);
+          } else {
+            setSelectedYear(uniqueYears[uniqueYears.length - 1]); // Mais recente
+          }
+        }
       } catch (error) {
-        console.error('Erro ao carregar times:', error);
+        console.error('Erro ao carregar dados:', error);
       }
     };
     if (user) {
-      loadTeams();
+      loadAllData();
     }
   }, [user]);
 
-  // Carregar dados quando o time mudar
+  // Atualizar lista de times quando ano muda
   useEffect(() => {
-    if (!selectedTeam) return;
+    if (!selectedYear || allKpiData.length === 0) return;
+    
+    // Filtrar dados pelo ano selecionado
+    const dataForYear = allKpiData.filter(d => extractYear(d.competencia) === selectedYear);
+    
+    // Extrair times únicos para o ano
+    const uniqueTeams = [...new Set(dataForYear.map(d => d.time))].filter(Boolean).sort();
+    setTeams(uniqueTeams);
+    
+    // Reset time se não existir no ano selecionado
+    if (selectedTeam && !uniqueTeams.includes(selectedTeam)) {
+      setSelectedTeam('');
+    }
+  }, [selectedYear, allKpiData]);
 
-    const loadData = async () => {
-      setLoading(true);
-      setIsLoading(true);
-      try {
-        const data = await fetchKpiData();
-        // Filtrar pelo time selecionado
-        const filteredData = data.filter((item) => item.time === selectedTeam);
-        setKpiData(filteredData);
-      } catch (error) {
-        console.error('Erro ao carregar dados de KPI:', error);
-      } finally {
-        setLoading(false);
-        setIsLoading(false);
-      }
-    };
+  // Carregar dados filtrados quando time ou ano mudar
+  useEffect(() => {
+    if (!selectedTeam || !selectedYear) {
+      setKpiData([]);
+      return;
+    }
 
-    loadData();
-  }, [selectedTeam]);
+    setLoading(true);
+    setIsLoading(true);
+    
+    // Filtrar pelo time e ano selecionados
+    const filteredData = allKpiData.filter(
+      (item) => item.time === selectedTeam && extractYear(item.competencia) === selectedYear
+    );
+    setKpiData(filteredData);
+    
+    setLoading(false);
+    setIsLoading(false);
+  }, [selectedTeam, selectedYear, allKpiData]);
 
   // Atualizar variável CSS de cor de destaque
   useEffect(() => {
@@ -162,7 +204,10 @@ export default function KpiPage() {
             onCollapseChange={setSidebarCollapsed}
             selectedTeam={selectedTeam}
             onTeamSelect={setSelectedTeam}
+            selectedYear={selectedYear}
+            onYearSelect={setSelectedYear}
             teams={teams}
+            years={years}
           />
           <main 
             className="main-content transition-all duration-300"

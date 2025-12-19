@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  BarChart3,
   Headphones,
   Rocket,
   Flag,
@@ -20,7 +19,7 @@ import {
   Megaphone,
   Users,
   LogOut,
-  Target,
+  Calendar,
 } from 'lucide-react';
 import { SidebarProps } from '../types';
 import { teamIcons } from '../config/app.config';
@@ -48,7 +47,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onCollapseChange,
   selectedTeam,
   onTeamSelect,
+  selectedYear,
+  onYearSelect,
   teams,
+  years,
 }) => {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -157,53 +159,77 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={`${isCollapsed ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
         style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
       >
-        {/* Botão OKR */}
-        <Link
-          href="/okr"
-          className={`
-            flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
-            ${isCollapsed ? 'justify-center p-3 w-full' : 'gap-3 px-4 py-2.5 w-full'}
-          `}
-          style={{
-            fontFamily: 'Poppins, sans-serif',
-            fontSize: '0.85rem',
-            fontWeight: 500,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-            height: isCollapsed ? '48px' : 'auto',
-            marginBottom: '12px',
-            textDecoration: 'none',
-          }}
-          title={isCollapsed ? 'OKRs' : undefined}
-        >
-          <Target size={isCollapsed ? 22 : 20} strokeWidth={2} />
-          {!isCollapsed && <span>OKRs</span>}
-        </Link>
-        
-        <hr className="border-dark-tertiary mb-4" />
+        {/* Year Selector */}
+        <div className="flex flex-col gap-1.5 mb-4">
+          {!isCollapsed && (
+            <span
+              style={{
+                color: '#6c757d',
+                fontSize: '0.7rem',
+                fontFamily: 'Poppins, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '8px',
+              }}
+            >
+              Selecione o Ano:
+            </span>
+          )}
 
-        {/* Page Indicator */}
-        <nav className="flex flex-col gap-1.5 mb-6">
-          <div
-            className={`
-              group flex items-center rounded-lg transition-all duration-200
-              ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4'}
-              bg-orange-500/10 border border-orange-500 text-orange-500
-            `}
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              height: isCollapsed ? '48px' : '42px',
-              whiteSpace: 'nowrap',
-              borderColor: accentColor,
-              color: accentColor,
-              backgroundColor: `${accentColor}15`,
-            }}
-          >
-            <BarChart3 size={isCollapsed ? 22 : 20} strokeWidth={2.5} />
-            {!isCollapsed && <span>KPIs</span>}
-          </div>
-        </nav>
+          {isCollapsed ? (
+            // Modo collapsed: mostrar apenas o ano selecionado
+            <button
+              className="group flex items-center justify-center p-3 rounded-lg transition-all duration-200"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                height: '48px',
+                backgroundColor: `${accentColor}15`,
+                border: `1px solid ${accentColor}`,
+                color: accentColor,
+              }}
+              title={`Ano: ${selectedYear}`}
+            >
+              <Calendar size={22} strokeWidth={2.5} />
+            </button>
+          ) : (
+            // Modo expanded: mostrar todos os anos
+            <div className="flex gap-2 flex-wrap">
+              {years.map((year) => {
+                const isActive = selectedYear === year;
+                return (
+                  <button
+                    key={year}
+                    onClick={() => onYearSelect(year)}
+                    className={`
+                      group flex items-center justify-center rounded-lg transition-all duration-200
+                      ${isActive
+                        ? ''
+                        : 'text-gray-400 border border-gray-600/50 hover:bg-white/5'
+                      }
+                    `}
+                    style={{
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '0.8rem',
+                      fontWeight: isActive ? 600 : 500,
+                      padding: '8px 16px',
+                      minWidth: '60px',
+                      boxShadow: !isActive ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
+                      ...(isActive && {
+                        backgroundColor: `${accentColor}15`,
+                        border: `1px solid ${accentColor}`,
+                        color: accentColor,
+                      }),
+                    }}
+                  >
+                    {year}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <hr className="border-dark-tertiary mb-4" />
 
