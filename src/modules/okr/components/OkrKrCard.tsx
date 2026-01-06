@@ -260,16 +260,15 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
       }
     }
 
-    // Último realizado válido
+    // Último realizado válido (incluindo 0 como valor válido)
     const entradasComDados = sortedData.filter(d =>
       d.realizado !== null &&
-      d.realizado !== undefined &&
-      d.realizado !== 0
+      d.realizado !== undefined
     );
     const lastMonthEntry = entradasComDados.length > 0
       ? entradasComDados[entradasComDados.length - 1]
       : (sortedData.length > 0 ? sortedData[sortedData.length - 1] : null);
-    const realizadoUltimoMes = lastMonthEntry ? (lastMonthEntry.realizado || 0) : 0;
+    const realizadoUltimoMes = lastMonthEntry ? (lastMonthEntry.realizado ?? 0) : 0;
 
     return {
       somaRealizado,
@@ -284,11 +283,11 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
     if (formaDeMedir === 'ACUMULADO') return 'ACUMULADO';
     if (formaDeMedir === 'MÉDIA') return 'MÉDIA';
     if (tendencia.includes('AUMENTAR')) {
-      if (medida.includes('DEGRAU')) return 'AUMENTAR_DEGRAU';
+      if (formaDeMedir.includes('DEGRAU')) return 'AUMENTAR_DEGRAU';
       return 'AUMENTAR_PONTUAL';
     }
     if (tendencia.includes('DIMINUIR')) {
-      if (medida.includes('DEGRAU')) return 'DIMINUIR_DEGRAU';
+      if (formaDeMedir.includes('DEGRAU')) return 'DIMINUIR_DEGRAU';
       return 'DIMINUIR_PONTUAL';
     }
     return 'PADRÃO';
@@ -300,7 +299,16 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
   };
 
   // Configuração do gráfico principal (barras + linha)
-  const mainChartConfig = {
+  const mainChartConfig = useMemo(() => {
+    // Calcular min e max para detectar valores baixos
+    const allValues = [...chartData.realizadoData, ...chartData.metaData].filter(
+      (v) => typeof v === 'number' && !isNaN(v)
+    ) as number[];
+    const minY = Math.min(...allValues, 0);
+    const maxY = Math.max(...allValues, 1);
+    const range = maxY - minY;
+
+    return {
     data: {
       labels: chartData.labels,
       datasets: [
@@ -315,12 +323,49 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
           order: 2,
           datalabels: {
             color: '#FFFFFF',
-            anchor: 'center' as const,
-            align: 'center' as const,
             font: { family: 'Poppins, sans-serif', weight: 'bold' as const, size: 13 },
             display: (context: any) => {
               const val = context.dataset.data[context.dataIndex];
               return showDataLabel(val);
+            },
+            // Posicionamento: centralizado por padrão, mas ajusta quando valor está muito baixo
+            anchor: (context: any) => {
+              const idx = context.dataIndex;
+              const resultadoVal = chartData.realizadoData[idx];
+              
+              // Se o valor é muito baixo (próximo do eixo X), colocar rótulo acima da barra
+              if (resultadoVal !== null && resultadoVal !== undefined && range > 0) {
+                const heightPercent = (resultadoVal - minY) / range;
+                if (heightPercent < 0.18) {
+                  return 'end' as const;
+                }
+              }
+              return 'center' as const;
+            },
+            align: (context: any) => {
+              const idx = context.dataIndex;
+              const resultadoVal = chartData.realizadoData[idx];
+              
+              // Se o valor é muito baixo, posicionar acima
+              if (resultadoVal !== null && resultadoVal !== undefined && range > 0) {
+                const heightPercent = (resultadoVal - minY) / range;
+                if (heightPercent < 0.18) {
+                  return 'top' as const;
+                }
+              }
+              return 'center' as const;
+            },
+            offset: (context: any) => {
+              const idx = context.dataIndex;
+              const resultadoVal = chartData.realizadoData[idx];
+              
+              if (resultadoVal !== null && resultadoVal !== undefined && range > 0) {
+                const heightPercent = (resultadoVal - minY) / range;
+                if (heightPercent < 0.18) {
+                  return 6;
+                }
+              }
+              return 0;
             },
             formatter: (v: number | null) => {
               if (!showDataLabel(v)) return '';
@@ -354,9 +399,34 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
             color: '#FFFFFF',
             font: { family: 'Poppins, sans-serif', weight: 'bold' as const, size: 12 },
             padding: { top: 4, bottom: 4, left: 8, right: 8 },
+            // Posicionamento padrão: acima. Quando próximo ao eixo X, vai para a direita
             anchor: 'end' as const,
-            align: 'top' as const,
-            offset: 8,
+            align: (context: any) => {
+              const idx = context.dataIndex;
+              const metaVal = chartData.metaData[idx];
+              
+              // Se meta está muito baixa (próxima do eixo X), posicionar à direita
+              if (metaVal !== null && metaVal !== undefined && range > 0) {
+                const heightPercent = (metaVal - minY) / range;
+                if (heightPercent < 0.18) {
+                  return 'right' as const;
+                }
+              }
+              
+              return 'top' as const;
+            },
+            offset: (context: any) => {
+              const idx = context.dataIndex;
+              const metaVal = chartData.metaData[idx];
+              
+              if (metaVal !== null && metaVal !== undefined && range > 0) {
+                const heightPercent = (metaVal - minY) / range;
+                if (heightPercent < 0.18) {
+                  return 12; // Offset maior quando próximo ao eixo X
+                }
+              }
+              return 8;
+            },
             formatter: (v: number | null) => {
               if (!showDataLabel(v)) return '';
               return formatValue(v, medida, true);
@@ -420,6 +490,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
       },
     },
   };
+  }, [chartData, barGradient, medida]);
 
   // Configuração do gráfico de atingimento (doughnut)
   const atingimentoPercent = metrics.atingimentoFinal;

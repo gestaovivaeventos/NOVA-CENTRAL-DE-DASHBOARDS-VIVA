@@ -3,7 +3,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Home,
-  Target,
   Headphones,
   Rocket,
   Flag,
@@ -17,7 +16,6 @@ import {
   Megaphone,
   Users,
   LogOut,
-  BarChart3,
   Calendar,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -31,8 +29,11 @@ interface SidebarProps {
   onTeamSelect: (team: string) => void;
   selectedQuarter: string;
   onQuarterSelect: (quarter: string) => void;
+  selectedYear: string;
+  onYearSelect: (year: string) => void;
   quarters: string[];
   teams: string[];
+  years: string[];
 }
 
 const iconMap: Record<string, React.ElementType> = {
@@ -76,8 +77,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTeamSelect,
   selectedQuarter,
   onQuarterSelect,
+  selectedYear,
+  onYearSelect,
   quarters,
   teams,
+  years,
 }) => {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -186,51 +190,79 @@ export const Sidebar: React.FC<SidebarProps> = ({
         className={`${isCollapsed ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
         style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
       >
-        {/* Page Indicator - OKRs (ativo) */}
-        <nav className="flex flex-col gap-1.5 mb-3">
-          <div
-            className={`
-              group flex items-center rounded-lg transition-all duration-200
-              ${isCollapsed ? 'justify-center p-3' : 'gap-3 px-4'}
-            `}
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontSize: '0.85rem',
-              fontWeight: 600,
-              height: isCollapsed ? '48px' : '42px',
-              whiteSpace: 'nowrap',
-              border: `1px solid ${accentColor}`,
-              color: accentColor,
-              backgroundColor: `${accentColor}15`,
-            }}
-          >
-            <Target size={isCollapsed ? 22 : 20} strokeWidth={2.5} />
-            {!isCollapsed && <span>OKRs</span>}
-          </div>
-        </nav>
+        {/* Year Selector */}
+        <div className="flex flex-col gap-1.5 mb-4">
+          {!isCollapsed && (
+            <span
+              style={{
+                color: '#6c757d',
+                fontSize: '0.7rem',
+                fontFamily: 'Poppins, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                marginBottom: '8px',
+              }}
+            >
+              Selecione o Ano:
+            </span>
+          )}
 
-        {/* Botão KPIs */}
-        <Link
-          href="/kpi"
-          className={`
-            flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
-            ${isCollapsed ? 'justify-center p-3 w-full' : 'gap-3 px-4 py-2.5 w-full'}
-          `}
-          style={{
-            fontFamily: 'Poppins, sans-serif',
-            fontSize: '0.85rem',
-            fontWeight: 500,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-            height: isCollapsed ? '48px' : 'auto',
-            textDecoration: 'none',
-          }}
-          title={isCollapsed ? 'KPIs' : undefined}
-        >
-          <BarChart3 size={isCollapsed ? 22 : 20} strokeWidth={2} />
-          {!isCollapsed && <span>KPIs</span>}
-        </Link>
+          {isCollapsed ? (
+            // Modo collapsed: mostrar apenas o ano selecionado
+            <button
+              className="group flex items-center justify-center p-3 rounded-lg transition-all duration-200"
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                height: '48px',
+                backgroundColor: `${accentColor}15`,
+                border: `1px solid ${accentColor}`,
+                color: accentColor,
+              }}
+              title={`Ano: ${selectedYear}`}
+            >
+              <Calendar size={22} strokeWidth={2.5} />
+            </button>
+          ) : (
+            // Modo expanded: mostrar todos os anos
+            <div className="flex gap-2 flex-wrap">
+              {years.map((year) => {
+                const isActive = selectedYear === year;
+                return (
+                  <button
+                    key={year}
+                    onClick={() => onYearSelect(year)}
+                    className={`
+                      group flex items-center justify-center rounded-lg transition-all duration-200
+                      ${isActive
+                        ? ''
+                        : 'text-gray-400 border border-gray-600/50 hover:bg-white/5'
+                      }
+                    `}
+                    style={{
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '0.8rem',
+                      fontWeight: isActive ? 600 : 500,
+                      padding: '8px 16px',
+                      minWidth: '60px',
+                      boxShadow: !isActive ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
+                      ...(isActive && {
+                        backgroundColor: `${accentColor}15`,
+                        border: `1px solid ${accentColor}`,
+                        color: accentColor,
+                      }),
+                    }}
+                  >
+                    {year}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-        <hr className="border-dark-tertiary mb-4 mt-4" />
+        <hr className="border-dark-tertiary mb-4" />
 
         {/* Quarter Selector */}
         <div className="flex flex-col gap-1.5 mb-4">

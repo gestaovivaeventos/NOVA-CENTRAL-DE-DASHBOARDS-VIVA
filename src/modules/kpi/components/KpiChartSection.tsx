@@ -292,12 +292,52 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
         order: 2,
         datalabels: {
           color: '#fff',
-          anchor: 'center' as const,
-          align: 'center' as const,
           font: { size: 14, weight: 'bold' as const, family: 'Poppins, Arial, sans-serif' },
           display: (context: any) => {
             const val = context.dataset.data[context.dataIndex];
             return showDataLabel(val);
+          },
+          // Posicionamento: centralizado por padrão, mas ajusta quando valor está muito baixo
+          anchor: (context: any) => {
+            const idx = context.dataIndex;
+            const resultadoVal = resultados[idx];
+            const range = maxY - minY;
+            
+            // Se o valor é muito baixo (próximo do eixo X), colocar rótulo acima da barra
+            if (resultadoVal !== null && resultadoVal !== undefined) {
+              const heightPercent = (resultadoVal - minY) / range;
+              if (heightPercent < 0.18) {
+                return 'end' as const;
+              }
+            }
+            return 'center' as const;
+          },
+          align: (context: any) => {
+            const idx = context.dataIndex;
+            const resultadoVal = resultados[idx];
+            const range = maxY - minY;
+            
+            // Se o valor é muito baixo, posicionar acima
+            if (resultadoVal !== null && resultadoVal !== undefined) {
+              const heightPercent = (resultadoVal - minY) / range;
+              if (heightPercent < 0.18) {
+                return 'top' as const;
+              }
+            }
+            return 'center' as const;
+          },
+          offset: (context: any) => {
+            const idx = context.dataIndex;
+            const resultadoVal = resultados[idx];
+            const range = maxY - minY;
+            
+            if (resultadoVal !== null && resultadoVal !== undefined) {
+              const heightPercent = (resultadoVal - minY) / range;
+              if (heightPercent < 0.18) {
+                return 6;
+              }
+            }
+            return 0;
           },
           formatter: (v: any, context: any) => {
             if (!showDataLabel(v)) return '';
@@ -340,9 +380,37 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
             left: 8,
             right: 8,
           },
+          // Posicionamento padrão: acima. Quando próximo ao eixo X, vai para a direita
           anchor: 'end' as const,
-          align: 'top' as const,
-          offset: 8,
+          align: (context: any) => {
+            const idx = context.dataIndex;
+            const metaVal = metas[idx];
+            const resultadoVal = resultados[idx];
+            const range = maxY - minY;
+            
+            // Se meta está muito baixa (próxima do eixo X), posicionar à direita
+            if (metaVal !== null && metaVal !== undefined) {
+              const heightPercent = (metaVal - minY) / range;
+              if (heightPercent < 0.18) {
+                return 'right' as const;
+              }
+            }
+            
+            return 'top' as const;
+          },
+          offset: (context: any) => {
+            const idx = context.dataIndex;
+            const metaVal = metas[idx];
+            const range = maxY - minY;
+            
+            if (metaVal !== null && metaVal !== undefined) {
+              const heightPercent = (metaVal - minY) / range;
+              if (heightPercent < 0.18) {
+                return 12; // Offset maior quando próximo ao eixo X
+              }
+            }
+            return 8;
+          },
           formatter: (value: any, context: any) => {
             const g = grandezas[context.dataIndex] || grandeza;
             return formatValor(value, g);
@@ -355,6 +423,14 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: {
+      padding: {
+        bottom: 10,
+        left: 10,
+        right: 10,
+        top: 10,
+      },
+    },
     plugins: {
       legend: { display: false },
       tooltip: {

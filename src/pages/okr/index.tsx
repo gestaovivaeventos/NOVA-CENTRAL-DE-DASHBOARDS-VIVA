@@ -28,10 +28,13 @@ interface AppContextType {
   setSelectedTeam: (team: string) => void;
   selectedQuarter: string;
   setSelectedQuarter: (quarter: string) => void;
+  selectedYear: string;
+  setSelectedYear: (year: string) => void;
   accentColor: string;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   allQuarters: string[];
+  allYears: string[];
   teamsForQuarter: string[];
 }
 
@@ -52,6 +55,7 @@ interface AppProviderProps {
 const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [selectedQuarter, setSelectedQuarter] = useState<string>('');
+  const [selectedYear, setSelectedYear] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [allOkrData, setAllOkrData] = useState<OkrData[]>([]);
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
@@ -70,25 +74,61 @@ const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     loadAllData();
   }, []);
 
-  // Obter todos os quarters únicos
-  const allQuarters = useMemo(() => {
-    const quarters = [...new Set(allOkrData.map(item => item.quarter).filter(Boolean))];
-    return quarters.sort();
+  // Obter todos os anos únicos baseado na coluna DATA
+  const allYears = useMemo(() => {
+    const years = allOkrData
+      .map(item => item.data ? item.data.getFullYear().toString() : null)
+      .filter((year): year is string => year !== null);
+    const uniqueYears = [...new Set(years)];
+    return uniqueYears.sort((a, b) => parseInt(a) - parseInt(b)); // Ordenar crescente (2025, 2026...)
   }, [allOkrData]);
 
-  // Selecionar o maior quarter por padrão quando os dados carregarem
+  // Selecionar o ano vigente (atual) por padrão quando os dados carregarem
   useEffect(() => {
-    if (allQuarters.length > 0 && !selectedQuarter) {
-      // Pegar o último quarter (maior)
-      const highestQuarter = allQuarters[allQuarters.length - 1];
-      setSelectedQuarter(highestQuarter);
+    if (allYears.length > 0 && !selectedYear) {
+      const currentYear = new Date().getFullYear().toString();
+      // Se o ano atual existir nos dados, seleciona ele; senão, seleciona o mais recente
+      if (allYears.includes(currentYear)) {
+        setSelectedYear(currentYear);
+      } else {
+        setSelectedYear(allYears[allYears.length - 1]); // Último é o mais recente
+      }
     }
-  }, [allQuarters, selectedQuarter]);
+  }, [allYears, selectedYear]);
 
-  // Obter times que possuem objetivos no quarter selecionado
+  // Obter todos os quarters únicos filtrados pelo ano selecionado
+  const allQuarters = useMemo(() => {
+    let filteredData = allOkrData;
+    if (selectedYear) {
+      filteredData = allOkrData.filter(item => 
+        item.data && item.data.getFullYear().toString() === selectedYear
+      );
+    }
+    const quarters = [...new Set(filteredData.map(item => item.quarter).filter(Boolean))];
+    return quarters.sort();
+  }, [allOkrData, selectedYear]);
+
+  // Selecionar o maior quarter por padrão quando os dados carregarem ou quando mudar o ano
+  useEffect(() => {
+    if (allQuarters.length > 0) {
+      // Verificar se o quarter atual existe no ano selecionado
+      if (!allQuarters.includes(selectedQuarter)) {
+        // Pegar o último quarter (maior)
+        const highestQuarter = allQuarters[allQuarters.length - 1];
+        setSelectedQuarter(highestQuarter);
+      }
+    } else {
+      setSelectedQuarter('');
+    }
+  }, [allQuarters, selectedYear]);
+
+  // Obter times que possuem objetivos no quarter e ano selecionados
   const teamsForQuarter = useMemo(() => {
-    if (!selectedQuarter) return [];
-    const dataForQuarter = allOkrData.filter(item => item.quarter === selectedQuarter);
+    if (!selectedQuarter || !selectedYear) return [];
+    const dataForQuarter = allOkrData.filter(item => 
+      item.quarter === selectedQuarter && 
+      item.data && item.data.getFullYear().toString() === selectedYear
+    );
     const teams = [...new Set(dataForQuarter.map(item => item.time).filter(Boolean))];
     // Ordenar pela ordem do ALL_TEAMS
     return teams.sort((a, b) => {
@@ -96,7 +136,7 @@ const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       const indexB = ALL_TEAMS.indexOf(b);
       return indexA - indexB;
     });
-  }, [allOkrData, selectedQuarter]);
+  }, [allOkrData, selectedQuarter, selectedYear]);
 
   // Reset do time selecionado quando mudar de quarter (se o time não existir no novo quarter)
   useEffect(() => {
@@ -115,10 +155,13 @@ const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       setSelectedTeam,
       selectedQuarter,
       setSelectedQuarter,
+      selectedYear,
+      setSelectedYear,
       accentColor,
       isLoading,
       setIsLoading,
       allQuarters,
+      allYears,
       teamsForQuarter
     }}>
       {children}
@@ -128,7 +171,7 @@ const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
 // Componente de conteúdo da página
 const OkrPageContent: React.FC = () => {
-  const { selectedTeam, selectedQuarter, setSelectedTeam, setSelectedQuarter, setIsLoading, accentColor, allQuarters, teamsForQuarter } = useAppContext();
+  const { selectedTeam, selectedQuarter, selectedYear, setSelectedTeam, setSelectedQuarter, setSelectedYear, setIsLoading, accentColor, allQuarters, allYears, teamsForQuarter } = useAppContext();
   const [okrData, setOkrData] = useState<OkrData[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedObjective, setSelectedObjective] = useState<string>('');
@@ -147,8 +190,11 @@ const OkrPageContent: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await fetchOkrData();
-      // Filtrar pelo time selecionado
-      const filteredData = data.filter((item) => item.time === selectedTeam);
+      // Filtrar pelo time selecionado e ano selecionado
+      const filteredData = data.filter((item) => 
+        item.time === selectedTeam && 
+        item.data && item.data.getFullYear().toString() === selectedYear
+      );
       setOkrData(filteredData);
     } catch (error) {
       console.error('Erro ao carregar dados de OKR:', error);
@@ -156,9 +202,9 @@ const OkrPageContent: React.FC = () => {
       setLoading(false);
       setIsLoading(false);
     }
-  }, [selectedTeam, setIsLoading]);
+  }, [selectedTeam, selectedYear, setIsLoading]);
 
-  // Carregar dados quando o time mudar
+  // Carregar dados quando o time ou ano mudar
   useEffect(() => {
     loadData();
   }, [loadData]);
@@ -241,8 +287,11 @@ const OkrPageContent: React.FC = () => {
         onTeamSelect={setSelectedTeam}
         selectedQuarter={selectedQuarter}
         onQuarterSelect={setSelectedQuarter}
+        selectedYear={selectedYear}
+        onYearSelect={setSelectedYear}
         quarters={allQuarters}
         teams={teamsForQuarter}
+        years={allYears}
       />
       <main className={`main-content ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         {!selectedTeam ? (
