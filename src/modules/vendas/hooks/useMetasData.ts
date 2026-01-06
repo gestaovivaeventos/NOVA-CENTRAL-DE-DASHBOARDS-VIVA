@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Meta, MetasMap } from '@/modules/vendas/types/vendas.types';
 import { clientCache, CACHE_KEYS, CACHE_TTL } from '@/modules/vendas/utils/cache';
+import { normalizarNomeUnidade } from '@/modules/vendas/utils/calculos';
 
 interface UseMetasDataReturn {
   data: MetasMap;
@@ -85,7 +86,7 @@ export function useMetasData(): UseMetasDataReturn {
       const metasMap: MetasMap = new Map();
       
       rows.slice(1).forEach((row: string[]) => {
-        const unidade = row[indices.unidade];
+        const unidade = normalizarNomeUnidade(row[indices.unidade]);
         const ano = row[indices.ano];
         const mes = String(row[indices.mes]).padStart(2, '0');
 

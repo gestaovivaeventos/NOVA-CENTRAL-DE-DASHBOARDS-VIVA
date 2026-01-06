@@ -8,6 +8,24 @@ import { normalizeText } from './formatacao';
 import { COLORS, META_CONFIG } from '@/modules/vendas/config/app.config';
 
 /**
+ * Mapeamento para correção de nomes de unidades inconsistentes
+ * Mapeia nomes incorretos/incompletos para os nomes corretos
+ */
+const UNIDADE_CORRECOES: Record<string, string> = {
+  'Volta Redonda': 'Volta Redonda - VivaMixx',
+  // Adicione outras correções aqui se necessário
+};
+
+/**
+ * Normaliza o nome da unidade, corrigindo inconsistências conhecidas
+ */
+export function normalizarNomeUnidade(unidade: string): string {
+  if (!unidade) return '';
+  const trimmed = unidade.trim();
+  return UNIDADE_CORRECOES[trimmed] || trimmed;
+}
+
+/**
  * Retorna cor baseada no percentual de atingimento
  */
 export function getColorForPercentage(percent: number): string {
@@ -235,9 +253,14 @@ export function agruparPorMes<T extends { dt_cadastro_integrante?: Date; dt_cont
 
 /**
  * Extrai lista única de unidades dos dados
+ * Aplica normalização para corrigir nomes inconsistentes
  */
 export function extrairUnidades(dados: { nm_unidade: string }[]): string[] {
-  return [...new Set(dados.map(d => d.nm_unidade).filter(Boolean))].sort();
+  return [...new Set(
+    dados
+      .map(d => normalizarNomeUnidade(d.nm_unidade))
+      .filter(Boolean)
+  )].sort();
 }
 
 /**

@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Fundo } from '@/modules/vendas/types/vendas.types';
 import { parseDate } from '@/modules/vendas/utils/periodo';
 import { clientCache, CACHE_KEYS, CACHE_TTL } from '@/modules/vendas/utils/cache';
+import { normalizarNomeUnidade } from '@/modules/vendas/utils/calculos';
 
 interface UseFundosDataReturn {
   data: Fundo[];
@@ -94,7 +95,7 @@ export function useFundosData(): UseFundosDataReturn {
           if (!dtContrato) return null;
 
           return {
-            nm_unidade: row[indices.unidade] || 'N/A',
+            nm_unidade: normalizarNomeUnidade(row[indices.unidade]) || 'N/A',
             id_fundo: row[indices.idFundo] || 'N/A',
             nm_fundo: indices.nmFundo !== -1 ? row[indices.nmFundo] || 'N/A' : 'N/A',
             dt_contrato: dtContrato,

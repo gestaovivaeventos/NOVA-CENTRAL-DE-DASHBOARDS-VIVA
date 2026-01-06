@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { LeadFunil } from '@/modules/vendas/types/funil.types';
+import { normalizarNomeUnidade } from '@/modules/vendas/utils/calculos';
 
 // Cache simples em memória
 let funilCache: { data: LeadFunil[]; timestamp: number } | null = null;
@@ -118,7 +119,7 @@ export function useFunilData(): UseFunilDataReturn {
             fechamento_comissao: row[columnIndices.fechamentoComissao] || '',
             concat_motivo_perda: row[columnIndices.concatMotivoPerda] || '',
             concat_concorrente: row[columnIndices.concatConcorrente] || '',
-            nm_unidade: row[columnIndices.nmUnidade] || '',
+            nm_unidade: normalizarNomeUnidade(row[columnIndices.nmUnidade]) || '',
             perda_11: row[columnIndices.perda11] || '',
             perda_12: row[columnIndices.perda12] || '',
             perda_13: row[columnIndices.perda13] || '',

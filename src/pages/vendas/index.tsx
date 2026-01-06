@@ -32,7 +32,7 @@ import { useSalesData } from '@/modules/vendas/hooks/useSalesData';
 import { useMetasData } from '@/modules/vendas/hooks/useMetasData';
 import { useFundosData } from '@/modules/vendas/hooks/useFundosData';
 import { useFunilData } from '@/modules/vendas/hooks/useFunilData';
-import { extrairUnidades, filtrarDados } from '@/modules/vendas/utils/calculos';
+import { extrairUnidades, filtrarDados, normalizarNomeUnidade } from '@/modules/vendas/utils/calculos';
 import { getPeriodoDatas, identificarPeriodo } from '@/modules/vendas/utils/periodo';
 import { META_CONFIG, PAGES } from '@/modules/vendas/config/app.config';
 import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/types/filtros.types';
@@ -117,13 +117,17 @@ export default function Dashboard() {
       const savedFilters = localStorage.getItem('dashboardFilters');
       if (savedFilters) {
         const parsed = JSON.parse(savedFilters);
+        // Normalizar nomes de unidades salvos para corrigir inconsistências
+        const unidadesNormalizadas = parsed.unidades 
+          ? parsed.unidades.map((u: string) => normalizarNomeUnidade(u))
+          : [];
         setFiltros(prev => ({
           ...prev,
           periodoSelecionado: parsed.periodoSelecionado || prev.periodoSelecionado,
           dataInicio: parsed.dataInicio || prev.dataInicio,
           dataFim: parsed.dataFim || prev.dataFim,
           isMetaInterna: parsed.isMetaInterna ?? prev.isMetaInterna,
-          unidades: parsed.unidades || prev.unidades,
+          unidades: unidadesNormalizadas.length > 0 ? unidadesNormalizadas : prev.unidades,
         }));
       }
     } catch (e) {
@@ -317,8 +321,9 @@ export default function Dashboard() {
     const unidadesVendas = extrairUnidades(salesData);
     
     // Extrair unidades do funil e incluir "Sem Unidade" se houver leads sem unidade
+    // Aplicar normalização para corrigir nomes inconsistentes
     const unidadesFunil = funilData ? [...new Set(funilData.map(d => {
-      const unidade = (d.nm_unidade || '').trim();
+      const unidade = normalizarNomeUnidade(d.nm_unidade || '');
       return unidade === '' ? 'Sem Unidade' : unidade;
     }))].filter(Boolean) : [];
     
