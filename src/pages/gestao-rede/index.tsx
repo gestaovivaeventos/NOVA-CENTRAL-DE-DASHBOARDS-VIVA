@@ -24,6 +24,7 @@ import {
   GraficoDonut,
   GraficoBarras,
   TabelaFranquias,
+  TabelaClassificacaoPEX,
   Footer,
 } from '@/modules/gestao-rede';
 import { 
@@ -70,17 +71,30 @@ export default function GestaoRedeDashboard() {
   ];
 
   const dadosMaturidade = [
-    { nome: 'Incubação 1', valor: resumo.incubacao1, cor: CORES.incubacao1 },
-    { nome: 'Incubação 2', valor: resumo.incubacao2, cor: CORES.incubacao2 },
-    { nome: 'Incubação 3', valor: resumo.incubacao3, cor: CORES.incubacao3 },
+    { nome: '1º Ano Op.', valor: resumo.incubacao1, cor: CORES.incubacao1 },
+    { nome: '2º Ano Op.', valor: resumo.incubacao2, cor: CORES.incubacao2 },
+    { nome: '3º Ano Op.', valor: resumo.incubacao3, cor: CORES.incubacao3 },
     { nome: 'Maduras', valor: resumo.maduras, cor: CORES.maduras },
   ];
 
   const dadosBarrasStatus = [
     { nome: 'Maduras', valor: resumo.maduras, cor: CORES.maduras },
     { nome: 'Em Implantação', valor: resumo.emImplantacao, cor: CORES.implantacao },
-    { nome: 'Em Incubação', valor: resumo.emIncubacao, cor: CORES.incubacao },
+    { nome: '1º/2º/3º Ano Op.', valor: resumo.emIncubacao, cor: CORES.incubacao },
     { nome: 'Inativas', valor: resumo.inativas, cor: CORES.inativas },
+  ];
+
+  // Dados para gráfico de classificação PEX
+  const franquiasEmOperacao = franquias.filter(
+    f => f.status === 'ATIVA' && f.statusOperacao === 'OPERACAO'
+  );
+  
+  const dadosClassificacaoPEX = [
+    { nome: 'TOP Performance', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'TOP_PERFORMANCE').length, cor: '#28a745' },
+    { nome: 'Performando', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'PERFORMANDO').length, cor: '#20c997' },
+    { nome: 'Atenção', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'ATENCAO').length, cor: '#ffc107' },
+    { nome: 'UTI Recuperação', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'UTI_RECUPERACAO').length, cor: '#dc3545' },
+    { nome: 'UTI Repasse', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'UTI_REPASSE').length, cor: '#c0392b' },
   ];
 
   if (authLoading) {
@@ -200,38 +214,28 @@ export default function GestaoRedeDashboard() {
 
         {/* Conteúdo Principal */}
         <div className="container mx-auto px-4 py-6">
-          {/* KPIs Principais */}
+          {/* KPIs Principais - Linha única */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+            gridTemplateColumns: 'repeat(5, 1fr)', 
             gap: '16px',
             marginBottom: '24px'
           }}>
             <KPICard
-              titulo="Total de Franquias"
-              valor={resumo.totalFranquias}
-              cor={CORES.primaria}
-              icone={<Building2 size={32} />}
-            />
-            <KPICard
               titulo="Franquias Ativas"
               valor={resumo.ativas}
-              total={resumo.totalFranquias}
-              porcentagem={(resumo.ativas / resumo.totalFranquias) * 100}
-              cor={CORES.ativas}
-              icone={<CheckCircle size={32} />}
-              onClick={() => setFiltroStatus(filtroStatus === 'ATIVA' ? 'TODOS' : 'ATIVA')}
-              selecionado={filtroStatus === 'ATIVA'}
+              cor={CORES.primaria}
+              icone={<Building2 size={32} />}
+              subtitulo="Rede ativa atual"
             />
             <KPICard
               titulo="Franquias Inativas"
               valor={resumo.inativas}
-              total={resumo.totalFranquias}
-              porcentagem={(resumo.inativas / resumo.totalFranquias) * 100}
               cor={CORES.inativas}
               icone={<XCircle size={32} />}
               onClick={() => setFiltroStatus(filtroStatus === 'INATIVA' ? 'TODOS' : 'INATIVA')}
               selecionado={filtroStatus === 'INATIVA'}
+              subtitulo="Encerradas"
             />
             <KPICard
               titulo="Em Implantação"
@@ -243,13 +247,13 @@ export default function GestaoRedeDashboard() {
               subtitulo="das ativas"
             />
             <KPICard
-              titulo="Em Incubação"
-              valor={resumo.emIncubacao}
-              total={resumo.emOperacao}
-              porcentagem={resumo.emOperacao > 0 ? (resumo.emIncubacao / resumo.emOperacao) * 100 : 0}
-              cor={CORES.incubacao}
+              titulo="Em Operação"
+              valor={resumo.emOperacao}
+              total={resumo.ativas}
+              porcentagem={resumo.ativas > 0 ? (resumo.emOperacao / resumo.ativas) * 100 : 0}
+              cor={CORES.operacao}
               icone={<TrendingUp size={32} />}
-              subtitulo="em operação"
+              subtitulo="das ativas"
             />
             <KPICard
               titulo="Franquias Maduras"
@@ -272,7 +276,7 @@ export default function GestaoRedeDashboard() {
             {/* Hierarquia em Árvore */}
             <HierarquiaTree 
               data={arvoreHierarquica}
-              expandido={true}
+              expandirApenasAtivas={true}
             />
 
             {/* Gráficos lado a lado */}
@@ -297,7 +301,7 @@ export default function GestaoRedeDashboard() {
             </div>
           </div>
 
-          {/* Gráfico de Barras */}
+          {/* Gráfico de Barras - Visão Geral */}
           <div style={{ marginBottom: '24px' }}>
             <GraficoBarras
               dados={dadosBarrasStatus}
@@ -307,7 +311,37 @@ export default function GestaoRedeDashboard() {
             />
           </div>
 
-          {/* Cards de Incubação */}
+          {/* Seção Classificação PEX */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: '1fr 2fr', 
+            gap: '24px',
+            marginBottom: '24px'
+          }}>
+            {/* Gráfico Donut - Classificação PEX */}
+            <GraficoDonut
+              dados={dadosClassificacaoPEX}
+              titulo="Distribuição por Classificação PEX"
+              valorCentral={franquiasEmOperacao.length}
+              labelCentral="Em Operação"
+              tamanho={200}
+            />
+
+            {/* Gráfico de Barras - Classificação PEX */}
+            <GraficoBarras
+              dados={dadosClassificacaoPEX}
+              titulo="Quantidade de Franquias por Classificação PEX"
+              mostrarValores={true}
+              mostrarPorcentagem={true}
+            />
+          </div>
+
+          {/* Tabela Kanban - Classificação PEX */}
+          <div style={{ marginBottom: '24px' }}>
+            <TabelaClassificacaoPEX franquias={franquias} />
+          </div>
+
+          {/* Cards de Anos de Operação */}
           <div style={{
             backgroundColor: '#343A40',
             borderRadius: '12px',
@@ -326,7 +360,7 @@ export default function GestaoRedeDashboard() {
               borderBottom: '1px solid #555',
               fontFamily: 'Poppins, sans-serif',
             }}>
-              Detalhamento - Franquias em Incubação
+              Franquias em Operação - Por Tempo de Atividade
             </h3>
             
             <div style={{ 
@@ -335,9 +369,10 @@ export default function GestaoRedeDashboard() {
               gap: '16px'
             }}>
               {[
-                { fase: 1, valor: resumo.incubacao1, cor: CORES.incubacao1, descricao: 'Primeiros 6 meses' },
-                { fase: 2, valor: resumo.incubacao2, cor: CORES.incubacao2, descricao: '6 a 12 meses' },
-                { fase: 3, valor: resumo.incubacao3, cor: CORES.incubacao3, descricao: '12 a 18 meses' },
+                { fase: 1, valor: resumo.incubacao1, cor: CORES.incubacao1, titulo: '1º Ano de Operação', descricao: '0 a 12 meses' },
+                { fase: 2, valor: resumo.incubacao2, cor: CORES.incubacao2, titulo: '2º Ano de Operação', descricao: '12 a 24 meses' },
+                { fase: 3, valor: resumo.incubacao3, cor: CORES.incubacao3, titulo: '3º Ano de Operação', descricao: '24 a 36 meses' },
+                { fase: 4, valor: resumo.maduras, cor: CORES.maduras, titulo: 'Maduras', descricao: '+36 meses' },
               ].map((item) => (
                 <div 
                   key={item.fase}
@@ -360,7 +395,7 @@ export default function GestaoRedeDashboard() {
                       fontSize: '0.85rem',
                       fontWeight: 500,
                     }}>
-                      Incubação {item.fase}
+                      {item.titulo}
                     </span>
                     <span style={{
                       backgroundColor: item.cor,

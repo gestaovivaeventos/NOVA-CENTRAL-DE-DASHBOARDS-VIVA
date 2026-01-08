@@ -11,6 +11,7 @@ interface HierarquiaTreeProps {
   data: TreeNode;
   onNodeClick?: (node: TreeNode) => void;
   expandido?: boolean;
+  expandirApenasAtivas?: boolean;
 }
 
 const getIconeNode = (id: string) => {
@@ -34,14 +35,30 @@ function TreeNodeComponent({
   node, 
   level = 0, 
   onNodeClick,
-  defaultExpanded = false
+  defaultExpanded = false,
+  expandirApenasAtivas = false
 }: { 
   node: TreeNode; 
   level?: number; 
   onNodeClick?: (node: TreeNode) => void;
   defaultExpanded?: boolean;
+  expandirApenasAtivas?: boolean;
 }) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded || level < 2);
+  // Determinar estado inicial de expansão
+  const getEstadoInicial = () => {
+    if (defaultExpanded) return true;
+    if (expandirApenasAtivas) {
+      // Root sempre expandido
+      if (level === 0) return true;
+      // "Ativas" expandido no primeiro nível
+      if (level === 1 && node.id === 'ativas') return true;
+      // Resto fechado
+      return false;
+    }
+    return level < 2;
+  };
+  
+  const [isExpanded, setIsExpanded] = useState(getEstadoInicial());
   const hasChildren = node.children && node.children.length > 0;
   const paddingLeft = level * 24;
 
@@ -139,6 +156,7 @@ function TreeNodeComponent({
               level={level + 1}
               onNodeClick={onNodeClick}
               defaultExpanded={defaultExpanded}
+              expandirApenasAtivas={expandirApenasAtivas}
             />
           ))}
         </div>
@@ -147,7 +165,7 @@ function TreeNodeComponent({
   );
 }
 
-export default function HierarquiaTree({ data, onNodeClick, expandido = false }: HierarquiaTreeProps) {
+export default function HierarquiaTree({ data, onNodeClick, expandido = false, expandirApenasAtivas = false }: HierarquiaTreeProps) {
   return (
     <div style={{
       backgroundColor: '#343A40',
@@ -173,6 +191,7 @@ export default function HierarquiaTree({ data, onNodeClick, expandido = false }:
         node={data} 
         onNodeClick={onNodeClick}
         defaultExpanded={expandido}
+        expandirApenasAtivas={expandirApenasAtivas}
       />
     </div>
   );

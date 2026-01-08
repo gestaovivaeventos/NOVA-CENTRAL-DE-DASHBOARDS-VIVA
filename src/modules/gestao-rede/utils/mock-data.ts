@@ -2,7 +2,7 @@
 // Dados Mockados - Gestão Rede
 // ============================================
 
-import { Franquia } from '../types';
+import { Franquia, ClassificacaoPEX, FlagsEstruturais } from '../types';
 
 /**
  * Lista de cidades para geração de dados mockados
@@ -77,11 +77,46 @@ const consultores = [
 ];
 
 /**
+ * Gera score PEX aleatório baseado na maturidade
+ */
+function gerarScorePEX(maturidade?: string, statusOperacao?: string): number {
+  if (statusOperacao === 'IMPLANTACAO') {
+    return 0; // Sem score durante implantação
+  }
+  
+  if (maturidade === 'MADURA') {
+    return Math.floor(Math.random() * 40) + 60; // 60-100
+  }
+  
+  return Math.floor(Math.random() * 70) + 30; // 30-100
+}
+
+/**
+ * Classifica franquia baseado no score PEX
+ */
+function classificarPEX(score: number): ClassificacaoPEX {
+  if (score > 95) return 'TOP_PERFORMANCE';
+  if (score >= 70) return 'PERFORMANDO';
+  if (score >= 50) return 'ATENCAO';
+  return Math.random() > 0.5 ? 'UTI_RECUPERACAO' : 'UTI_REPASSE';
+}
+
+/**
+ * Gera flags estruturais aleatórias
+ */
+function gerarFlags(score: number): FlagsEstruturais {
+  const chanceFlag = score < 50 ? 0.4 : score < 70 ? 0.2 : 0.05;
+  
+  return {
+    socioOperador: Math.random() < chanceFlag,
+    timeCritico: Math.random() < chanceFlag,
+    governanca: Math.random() < chanceFlag * 0.5,
+  };
+}
+
+/**
  * Gera dados mockados de franquias
  * Total: 49 franquias (45 ativas + 4 inativas)
- * - 8 em implantação
- * - 5 em incubação (distribuídas em fase 1, 2 e 3)
- * - 32 maduras
  */
 export function gerarDadosMockados(): Franquia[] {
   const franquias: Franquia[] = [];
@@ -92,6 +127,7 @@ export function gerarDadosMockados(): Franquia[] {
     const cidadeInfo = cidades[i % cidades.length];
     const dataAbertura = new Date(2020, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
     const dataOperacao = new Date(dataAbertura.getTime() + (90 * 24 * 60 * 60 * 1000)); // +90 dias
+    const scorePEX = gerarScorePEX('MADURA', 'OPERACAO');
     
     franquias.push({
       id: `FR${String(id).padStart(3, '0')}`,
@@ -108,16 +144,20 @@ export function gerarDadosMockados(): Franquia[] {
       email: `${nomes[i % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
       consultor: consultores[i % consultores.length],
+      scorePEX,
+      classificacaoPEX: classificarPEX(scorePEX),
+      flags: gerarFlags(scorePEX),
     });
     id++;
   }
 
-  // 5 Franquias em Incubação (2 fase 1, 2 fase 2, 1 fase 3)
+  // 5 Franquias em Incubação (2 no 1º ano, 2 no 2º ano, 1 no 3º ano)
   const incubacaoDistribuicao = [1, 1, 2, 2, 3];
   for (let i = 0; i < 5; i++) {
     const cidadeInfo = cidades[(32 + i) % cidades.length];
     const dataAbertura = new Date(2024, Math.floor(Math.random() * 6), Math.floor(Math.random() * 28) + 1);
     const dataOperacao = new Date(dataAbertura.getTime() + (60 * 24 * 60 * 60 * 1000)); // +60 dias
+    const scorePEX = gerarScorePEX('INCUBACAO', 'OPERACAO');
     
     franquias.push({
       id: `FR${String(id).padStart(3, '0')}`,
@@ -135,6 +175,9 @@ export function gerarDadosMockados(): Franquia[] {
       email: `${nomes[(32 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
       consultor: consultores[(32 + i) % consultores.length],
+      scorePEX,
+      classificacaoPEX: classificarPEX(scorePEX),
+      flags: gerarFlags(scorePEX),
     });
     id++;
   }
@@ -157,14 +200,19 @@ export function gerarDadosMockados(): Franquia[] {
       email: `${nomes[(37 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
       consultor: consultores[(37 + i) % consultores.length],
+      scorePEX: 0,
+      classificacaoPEX: 'ATENCAO',
+      flags: { socioOperador: false, timeCritico: false, governanca: false },
     });
     id++;
   }
 
-  // 4 Franquias Inativas
-  for (let i = 0; i < 4; i++) {
+  // 2 Franquias Inativas - Encerradas em Operação
+  for (let i = 0; i < 2; i++) {
     const cidadeInfo = cidades[(45 + i) % cidades.length];
     const dataAbertura = new Date(2019, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+    const dataOperacao = new Date(dataAbertura.getTime() + (90 * 24 * 60 * 60 * 1000));
+    const dataEncerramento = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
     
     franquias.push({
       id: `FR${String(id).padStart(3, '0')}`,
@@ -173,10 +221,42 @@ export function gerarDadosMockados(): Franquia[] {
       estado: cidadeInfo.estado,
       regiao: cidadeInfo.regiao,
       status: 'INATIVA',
+      motivoEncerramento: 'ENCERRADA_OPERACAO',
       dataAbertura: dataAbertura.toISOString().split('T')[0],
+      dataInicioOperacao: dataOperacao.toISOString().split('T')[0],
+      dataEncerramento: dataEncerramento.toISOString().split('T')[0],
       responsavel: nomes[(45 + i) % nomes.length],
       email: `${nomes[(45 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
+      scorePEX: 0,
+      classificacaoPEX: 'UTI_REPASSE',
+      flags: { socioOperador: false, timeCritico: false, governanca: false },
+    });
+    id++;
+  }
+
+  // 2 Franquias Inativas - Encerradas em Implantação
+  for (let i = 0; i < 2; i++) {
+    const cidadeInfo = cidades[(47 + i) % cidades.length];
+    const dataAbertura = new Date(2023, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+    const dataEncerramento = new Date(2024, Math.floor(Math.random() * 6), Math.floor(Math.random() * 28) + 1);
+    
+    franquias.push({
+      id: `FR${String(id).padStart(3, '0')}`,
+      nome: `Viva ${cidadeInfo.cidade}`,
+      cidade: cidadeInfo.cidade,
+      estado: cidadeInfo.estado,
+      regiao: cidadeInfo.regiao,
+      status: 'INATIVA',
+      motivoEncerramento: 'ENCERRADA_IMPLANTACAO',
+      dataAbertura: dataAbertura.toISOString().split('T')[0],
+      dataEncerramento: dataEncerramento.toISOString().split('T')[0],
+      responsavel: nomes[(47 + i) % nomes.length],
+      email: `${nomes[(47 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
+      telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
+      scorePEX: 0,
+      classificacaoPEX: 'UTI_REPASSE',
+      flags: { socioOperador: false, timeCritico: false, governanca: false },
     });
     id++;
   }

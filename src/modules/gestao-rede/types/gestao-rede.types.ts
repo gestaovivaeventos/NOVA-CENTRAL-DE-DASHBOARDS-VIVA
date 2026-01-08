@@ -18,9 +18,28 @@ export type StatusOperacao = 'IMPLANTACAO' | 'OPERACAO';
 export type MaturidadeFranquia = 'INCUBACAO' | 'MADURA';
 
 /**
- * Fase de incubação (1, 2 ou 3)
+ * Fase de incubação (1, 2 ou 3) - Anos de operação
  */
 export type FaseIncubacao = 1 | 2 | 3;
+
+/**
+ * Motivo de encerramento para franquias inativas
+ */
+export type MotivoEncerramento = 'ENCERRADA_OPERACAO' | 'ENCERRADA_IMPLANTACAO';
+
+/**
+ * Classificação PEX baseada no score
+ */
+export type ClassificacaoPEX = 'TOP_PERFORMANCE' | 'PERFORMANDO' | 'ATENCAO' | 'UTI_RECUPERACAO' | 'UTI_REPASSE';
+
+/**
+ * Flags estruturais - alertas críticos
+ */
+export interface FlagsEstruturais {
+  socioOperador: boolean;
+  timeCritico: boolean;
+  governanca: boolean;
+}
 
 /**
  * Interface para dados de uma franquia
@@ -35,12 +54,18 @@ export interface Franquia {
   statusOperacao?: StatusOperacao;
   maturidade?: MaturidadeFranquia;
   faseIncubacao?: FaseIncubacao;
+  motivoEncerramento?: MotivoEncerramento;
   dataAbertura: string;
   dataInicioOperacao?: string;
+  dataEncerramento?: string;
   responsavel: string;
   email: string;
   telefone: string;
   consultor?: string;
+  // Dados PEX
+  scorePEX: number;
+  classificacaoPEX: ClassificacaoPEX;
+  flags: FlagsEstruturais;
 }
 
 /**
@@ -50,6 +75,8 @@ export interface ResumoRede {
   totalFranquias: number;
   ativas: number;
   inativas: number;
+  encerradasOperacao: number;
+  encerradasImplantacao: number;
   emImplantacao: number;
   emOperacao: number;
   emIncubacao: number;

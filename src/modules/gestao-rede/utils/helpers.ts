@@ -10,6 +10,8 @@ import { Franquia, ResumoRede, TreeNode } from '../types';
 export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
   const ativas = franquias.filter(f => f.status === 'ATIVA');
   const inativas = franquias.filter(f => f.status === 'INATIVA');
+  const encerradasOperacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_OPERACAO');
+  const encerradasImplantacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_IMPLANTACAO');
   const emImplantacao = ativas.filter(f => f.statusOperacao === 'IMPLANTACAO');
   const emOperacao = ativas.filter(f => f.statusOperacao === 'OPERACAO');
   const emIncubacao = emOperacao.filter(f => f.maturidade === 'INCUBACAO');
@@ -22,6 +24,8 @@ export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
     totalFranquias: franquias.length,
     ativas: ativas.length,
     inativas: inativas.length,
+    encerradasOperacao: encerradasOperacao.length,
+    encerradasImplantacao: encerradasImplantacao.length,
     emImplantacao: emImplantacao.length,
     emOperacao: emOperacao.length,
     emIncubacao: emIncubacao.length,
@@ -37,11 +41,13 @@ export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
  */
 export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
   const resumo = calcularResumoRede(franquias);
-  const total = resumo.totalFranquias;
+  const total = resumo.ativas; // Apenas ativas no total principal
 
   // Separar franquias por categoria
   const ativas = franquias.filter(f => f.status === 'ATIVA');
   const inativas = franquias.filter(f => f.status === 'INATIVA');
+  const encerradasOperacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_OPERACAO');
+  const encerradasImplantacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_IMPLANTACAO');
   const emImplantacao = ativas.filter(f => f.statusOperacao === 'IMPLANTACAO');
   const emOperacao = ativas.filter(f => f.statusOperacao === 'OPERACAO');
   const emIncubacao = emOperacao.filter(f => f.maturidade === 'INCUBACAO');
@@ -52,78 +58,68 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
 
   return {
     id: 'root',
-    nome: 'Total de Franquias',
+    nome: 'Franquias Ativas',
     valor: total,
     porcentagem: 100,
     cor: '#FF6600',
     children: [
       {
-        id: 'ativas',
-        nome: 'Franquias Ativas',
-        valor: resumo.ativas,
-        porcentagem: (resumo.ativas / total) * 100,
-        cor: '#28a745',
-        franquias: ativas,
+        id: 'implantacao',
+        nome: 'Em Implantação',
+        valor: resumo.emImplantacao,
+        porcentagem: total > 0 ? (resumo.emImplantacao / total) * 100 : 0,
+        cor: '#17a2b8',
+        franquias: emImplantacao,
+      },
+      {
+        id: 'operacao',
+        nome: 'Em Operação',
+        valor: resumo.emOperacao,
+        porcentagem: total > 0 ? (resumo.emOperacao / total) * 100 : 0,
+        cor: '#20c997',
+        franquias: emOperacao,
         children: [
           {
-            id: 'implantacao',
-            nome: 'Em Implantação',
-            valor: resumo.emImplantacao,
-            porcentagem: (resumo.emImplantacao / resumo.ativas) * 100,
-            cor: '#17a2b8',
-            franquias: emImplantacao,
-          },
-          {
-            id: 'operacao',
-            nome: 'Em Operação',
-            valor: resumo.emOperacao,
-            porcentagem: (resumo.emOperacao / resumo.ativas) * 100,
-            cor: '#20c997',
-            franquias: emOperacao,
+            id: 'incubacao',
+            nome: 'Em Incubação',
+            valor: resumo.emIncubacao,
+            porcentagem: resumo.emOperacao > 0 ? (resumo.emIncubacao / resumo.emOperacao) * 100 : 0,
+            cor: '#ffc107',
+            franquias: emIncubacao,
             children: [
               {
-                id: 'incubacao',
-                nome: 'Em Incubação',
-                valor: resumo.emIncubacao,
-                porcentagem: resumo.emOperacao > 0 ? (resumo.emIncubacao / resumo.emOperacao) * 100 : 0,
-                cor: '#ffc107',
-                franquias: emIncubacao,
-                children: [
-                  {
-                    id: 'incubacao1',
-                    nome: 'Incubação 1',
-                    valor: resumo.incubacao1,
-                    porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao1 / resumo.emIncubacao) * 100 : 0,
-                    cor: '#f8d568',
-                    franquias: incubacao1,
-                  },
-                  {
-                    id: 'incubacao2',
-                    nome: 'Incubação 2',
-                    valor: resumo.incubacao2,
-                    porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao2 / resumo.emIncubacao) * 100 : 0,
-                    cor: '#f0c040',
-                    franquias: incubacao2,
-                  },
-                  {
-                    id: 'incubacao3',
-                    nome: 'Incubação 3',
-                    valor: resumo.incubacao3,
-                    porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao3 / resumo.emIncubacao) * 100 : 0,
-                    cor: '#e8a800',
-                    franquias: incubacao3,
-                  },
-                ],
+                id: 'incubacao1',
+                nome: '1º Ano de Operação',
+                valor: resumo.incubacao1,
+                porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao1 / resumo.emIncubacao) * 100 : 0,
+                cor: '#f8d568',
+                franquias: incubacao1,
               },
               {
-                id: 'maduras',
-                nome: 'Maduras',
-                valor: resumo.maduras,
-                porcentagem: resumo.emOperacao > 0 ? (resumo.maduras / resumo.emOperacao) * 100 : 0,
-                cor: '#198754',
-                franquias: maduras,
+                id: 'incubacao2',
+                nome: '2º Ano de Operação',
+                valor: resumo.incubacao2,
+                porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao2 / resumo.emIncubacao) * 100 : 0,
+                cor: '#f0c040',
+                franquias: incubacao2,
+              },
+              {
+                id: 'incubacao3',
+                nome: '3º Ano de Operação',
+                valor: resumo.incubacao3,
+                porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao3 / resumo.emIncubacao) * 100 : 0,
+                cor: '#e8a800',
+                franquias: incubacao3,
               },
             ],
+          },
+          {
+            id: 'maduras',
+            nome: 'Maduras',
+            valor: resumo.maduras,
+            porcentagem: resumo.emOperacao > 0 ? (resumo.maduras / resumo.emOperacao) * 100 : 0,
+            cor: '#198754',
+            franquias: maduras,
           },
         ],
       },
@@ -131,9 +127,27 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
         id: 'inativas',
         nome: 'Franquias Inativas',
         valor: resumo.inativas,
-        porcentagem: (resumo.inativas / total) * 100,
+        porcentagem: resumo.totalFranquias > 0 ? (resumo.inativas / resumo.totalFranquias) * 100 : 0,
         cor: '#dc3545',
         franquias: inativas,
+        children: [
+          {
+            id: 'encerradas-operacao',
+            nome: 'Encerradas em Operação',
+            valor: resumo.encerradasOperacao,
+            porcentagem: resumo.inativas > 0 ? (resumo.encerradasOperacao / resumo.inativas) * 100 : 0,
+            cor: '#c0392b',
+            franquias: encerradasOperacao,
+          },
+          {
+            id: 'encerradas-implantacao',
+            nome: 'Encerradas em Implantação',
+            valor: resumo.encerradasImplantacao,
+            porcentagem: resumo.inativas > 0 ? (resumo.encerradasImplantacao / resumo.inativas) * 100 : 0,
+            cor: '#e74c3c',
+            franquias: encerradasImplantacao,
+          },
+        ],
       },
     ],
   };

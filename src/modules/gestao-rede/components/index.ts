@@ -10,4 +10,5 @@ export { default as HierarquiaTree } from './HierarquiaTree';
 export { default as GraficoDonut } from './GraficoDonut';
 export { default as GraficoBarras } from './GraficoBarras';
 export { default as TabelaFranquias } from './TabelaFranquias';
+export { default as TabelaClassificacaoPEX } from './TabelaClassificacaoPEX';
 export { default as GestaoRedeLayout } from './GestaoRedeLayout';
