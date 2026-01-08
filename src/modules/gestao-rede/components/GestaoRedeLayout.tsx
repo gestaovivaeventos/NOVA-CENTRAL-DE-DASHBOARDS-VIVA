@@ -1,29 +1,43 @@
 /**
  * GestaoRedeLayout - Layout wrapper para o módulo
  * Inclui sidebar de navegação e estrutura principal
+ * Segue o padrão do módulo de Vendas
  */
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { 
-  Building2, 
   LayoutDashboard, 
   ChevronLeft, 
   ChevronRight, 
   Home, 
   LogOut, 
   Menu, 
-  X 
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { FiltrosGestaoRede } from '../types';
+import { FilterPanel } from './filters';
 
 interface GestaoRedeLayoutProps {
   children: React.ReactNode;
   currentPage: 'dashboard';
+  filtros?: FiltrosGestaoRede;
+  onFiltrosChange?: (filtros: FiltrosGestaoRede) => void;
+  consultoresDisponiveis?: string[];
 }
 
-export default function GestaoRedeLayout({ children, currentPage }: GestaoRedeLayoutProps) {
+const SIDEBAR_WIDTH_EXPANDED = 300;
+const SIDEBAR_WIDTH_COLLAPSED = 60;
+
+export default function GestaoRedeLayout({ 
+  children, 
+  currentPage, 
+  filtros, 
+  onFiltrosChange, 
+  consultoresDisponiveis = [] 
+}: GestaoRedeLayoutProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -69,6 +83,12 @@ export default function GestaoRedeLayout({ children, currentPage }: GestaoRedeLa
     router.push('/login');
   };
 
+  const handleFiltrosChange = (novosFiltros: Partial<FiltrosGestaoRede>) => {
+    if (onFiltrosChange && filtros) {
+      onFiltrosChange({ ...filtros, ...novosFiltros });
+    }
+  };
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -82,35 +102,28 @@ export default function GestaoRedeLayout({ children, currentPage }: GestaoRedeLa
           onClick={() => setIsMobileMenuOpen(false)}
           style={{
             position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
             zIndex: 40,
           }}
         />
       )}
 
-      {/* Botão Menu Mobile */}
+      {/* Botão de menu mobile */}
       {isMobile && (
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           style={{
             position: 'fixed',
-            top: '12px',
-            left: '12px',
-            zIndex: 60,
-            width: '44px',
-            height: '44px',
+            top: '16px',
+            left: '16px',
+            zIndex: 50,
+            backgroundColor: '#343A40',
+            border: '1px solid #FF6600',
             borderRadius: '8px',
-            backgroundColor: '#1a1d21',
-            border: '1px solid #333',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
+            padding: '8px',
             color: '#FF6600',
+            cursor: 'pointer',
           }}
         >
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -120,61 +133,58 @@ export default function GestaoRedeLayout({ children, currentPage }: GestaoRedeLa
       {/* Sidebar */}
       <aside
         style={{
-          width: isMobile ? '280px' : (isCollapsed ? '70px' : '280px'),
+          position: 'fixed',
+          top: 0,
+          left: isMobile ? (isMobileMenuOpen ? 0 : '-100%') : 0,
+          height: '100vh',
+          width: isMobile ? SIDEBAR_WIDTH_EXPANDED : (isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
           backgroundColor: '#1a1d21',
           borderRight: '1px solid #333',
           display: 'flex',
           flexDirection: 'column',
           transition: 'all 0.3s ease',
-          position: 'fixed',
-          top: 0,
-          left: isMobile ? (isMobileMenuOpen ? '0' : '-280px') : 0,
-          bottom: 0,
-          zIndex: 50,
+          zIndex: 45,
           overflowY: 'auto',
           overflowX: 'hidden',
         }}
       >
         {/* Header da Sidebar */}
         <div style={{
-          padding: (isCollapsed && !isMobile) ? '16px 10px' : '16px 20px',
-          borderBottom: '1px solid #333',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '10px',
+          padding: '16px',
+          borderBottom: '1px solid #333',
+          minHeight: '64px',
         }}>
           {(!isCollapsed || isMobile) && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h2 style={{
-                  color: '#F8F9FA',
-                  fontSize: '0.95rem',
-                  fontWeight: 600,
-                  fontFamily: "'Poppins', sans-serif",
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  marginBottom: '2px',
-                  lineHeight: '1.2',
-                }}>
-                  {user?.firstName || user?.username || 'Usuário'}
-                </h2>
-                <p style={{
-                  color: '#6c757d',
-                  fontSize: '0.7rem',
-                  marginBottom: '2px',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  lineHeight: '1.2',
-                }}>
-                  {user?.unitNames?.[0] || 'Franqueadora'}
-                </p>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '8px',
+                background: 'linear-gradient(135deg, #FF6600 0%, #FF8533 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <LayoutDashboard size={20} color="#fff" />
               </div>
+              <span style={{
+                fontSize: '1.1rem',
+                fontWeight: 600,
+                color: '#F8F9FA',
+                fontFamily: 'Poppins, sans-serif',
+              }}>
+                Gestão Rede
+              </span>
             </div>
           )}
-
+          
           {!isMobile && (
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -198,7 +208,7 @@ export default function GestaoRedeLayout({ children, currentPage }: GestaoRedeLa
         </div>
 
         {/* Menu Items */}
-        <nav style={{ flex: 1, padding: '16px 8px' }}>
+        <nav style={{ padding: '16px 8px' }}>
           {menuItems.map((item) => {
             const isActive = currentPage === item.id;
             const Icon = item.icon;
@@ -235,6 +245,23 @@ export default function GestaoRedeLayout({ children, currentPage }: GestaoRedeLa
             );
           })}
         </nav>
+
+        {/* Seção de Filtros - Igual ao Vendas */}
+        {(!isCollapsed || isMobile) && onFiltrosChange && filtros && (
+          <>
+            <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '0 16px' }} />
+            <div style={{ padding: '0 16px', flex: 1 }}>
+              <FilterPanel
+                filtros={filtros}
+                onFiltrosChange={handleFiltrosChange}
+                consultoresDisponiveis={consultoresDisponiveis}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Espaçador flexível */}
+        <div style={{ flex: 1 }} />
 
         {/* Footer da Sidebar */}
         <div style={{
@@ -292,7 +319,7 @@ export default function GestaoRedeLayout({ children, currentPage }: GestaoRedeLa
       {/* Conteúdo Principal */}
       <main style={{
         flex: 1,
-        marginLeft: isMobile ? 0 : (isCollapsed ? '70px' : '280px'),
+        marginLeft: isMobile ? 0 : (isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
         transition: 'margin-left 0.3s ease',
         minHeight: '100vh',
         backgroundColor: '#212529',

@@ -11,9 +11,15 @@ interface TabelaFranquiasProps {
   franquias: Franquia[];
   titulo?: string;
   itensPorPagina?: number;
+  filtros?: {
+    maturidade?: string[];
+    classificacao?: string[];
+    consultor?: string[];
+    flags?: string[];
+  };
 }
 
-type CampoOrdenacao = 'nome' | 'cidade' | 'estado' | 'status' | 'scorePEX' | 'dataAbertura';
+type CampoOrdenacao = 'nome' | 'cidade' | 'dataAbertura' | 'status' | 'scorePEX' | 'classificacao' | 'consultor' | 'postoAvancado';
 
 // Cores e labels para classificação PEX
 const CLASSIFICACAO_CONFIG: Record<ClassificacaoPEX, { label: string; cor: string; bg: string }> = {
@@ -46,7 +52,17 @@ const calcularTempoAtivo = (dataAbertura: string): string => {
   }
 };
 
-export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15 }: TabelaFranquiasProps) {
+// Mapeamento de postos avançados
+const POSTOS_AVANCADOS: Record<string, string> = {
+  'Viva Volta Redonda': 'Vassouras',
+  'Viva Lavras': 'Varginha',
+};
+
+const getPostoAvancado = (nomeFranquia: string): string | null => {
+  return POSTOS_AVANCADOS[nomeFranquia] || null;
+};
+
+export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15, filtros }: TabelaFranquiasProps) {
   const [busca, setBusca] = useState('');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [ordenacao, setOrdenacao] = useState<{ campo: CampoOrdenacao; direcao: 'asc' | 'desc' }>({
@@ -65,6 +81,13 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
     return 'Madura';
   };
 
+  const getMaturidadeKey = (franquia: Franquia): string => {
+    if (franquia.status === 'INATIVA') return 'INATIVA';
+    if (franquia.statusOperacao === 'IMPLANTACAO') return 'IMPLANTACAO';
+    if (franquia.maturidade === 'INCUBACAO') return `INCUBACAO_${franquia.faseIncubacao}`;
+    return 'MADURA';
+  };
+
   const getStatusCor = (franquia: Franquia) => {
     if (franquia.status === 'INATIVA') return '#dc3545';
     if (franquia.statusOperacao === 'IMPLANTACAO') return '#17a2b8';
@@ -74,12 +97,46 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
 
   const franquiasFiltradas = useMemo(() => {
     return franquias
-      .filter(f => 
-        f.nome.toLowerCase().includes(busca.toLowerCase()) ||
-        f.cidade.toLowerCase().includes(busca.toLowerCase()) ||
-        f.estado.toLowerCase().includes(busca.toLowerCase()) ||
-        f.responsavel.toLowerCase().includes(busca.toLowerCase())
-      )
+      .filter(f => {
+        // Filtro de busca
+        const matchBusca = f.nome.toLowerCase().includes(busca.toLowerCase()) ||
+          f.cidade.toLowerCase().includes(busca.toLowerCase()) ||
+          f.estado.toLowerCase().includes(busca.toLowerCase()) ||
+          f.responsavel.toLowerCase().includes(busca.toLowerCase());
+        
+        if (!matchBusca) return false;
+        
+        // Filtro de maturidade
+        if (filtros?.maturidade && filtros.maturidade.length > 0) {
+          const maturidadeKey = getMaturidadeKey(f);
+          if (!filtros.maturidade.includes(maturidadeKey)) return false;
+        }
+        
+        // Filtro de classificação
+        if (filtros?.classificacao && filtros.classificacao.length > 0) {
+          if (f.statusOperacao === 'IMPLANTACAO' || f.status === 'INATIVA') return false;
+          if (!filtros.classificacao.includes(f.classificacaoPEX)) return false;
+        }
+        
+        // Filtro de consultor
+        if (filtros?.consultor && filtros.consultor.length > 0) {
+          if (!filtros.consultor.includes(f.responsavel)) return false;
+        }
+        
+        // Filtro de flags
+        if (filtros?.flags && filtros.flags.length > 0) {
+          const temFlag = filtros.flags.some(flag => {
+            if (flag === 'socioOperador') return f.flags.socioOperador;
+            if (flag === 'timeCritico') return f.flags.timeCritico;
+            if (flag === 'governanca') return f.flags.governanca;
+            if (flag === 'semFlags') return !f.flags.socioOperador && !f.flags.timeCritico && !f.flags.governanca;
+            return false;
+          });
+          if (!temFlag) return false;
+        }
+        
+        return true;
+      })
       .sort((a, b) => {
         let valorA: string | number = '';
         let valorB: string | number = '';
@@ -90,12 +147,12 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             valorB = b.nome;
             break;
           case 'cidade':
-            valorA = a.cidade;
-            valorB = b.cidade;
+            valorA = `${a.cidade}/${a.estado}`;
+            valorB = `${b.cidade}/${b.estado}`;
             break;
-          case 'estado':
-            valorA = a.estado;
-            valorB = b.estado;
+          case 'dataAbertura':
+            valorA = a.dataAbertura;
+            valorB = b.dataAbertura;
             break;
           case 'status':
             valorA = getStatusLabel(a);
@@ -105,9 +162,17 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             valorA = a.scorePEX;
             valorB = b.scorePEX;
             break;
-          case 'dataAbertura':
-            valorA = a.dataAbertura;
-            valorB = b.dataAbertura;
+          case 'classificacao':
+            valorA = a.classificacaoPEX;
+            valorB = b.classificacaoPEX;
+            break;
+          case 'consultor':
+            valorA = a.responsavel;
+            valorB = b.responsavel;
+            break;
+          case 'postoAvancado':
+            valorA = getPostoAvancado(a.nome) || '';
+            valorB = getPostoAvancado(b.nome) || '';
             break;
         }
 
@@ -116,7 +181,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
         }
         return valorA < valorB ? 1 : -1;
       });
-  }, [franquias, busca, ordenacao]);
+  }, [franquias, busca, ordenacao, filtros]);
 
   // Paginação
   const totalPaginas = Math.ceil(franquiasFiltradas.length / itensPorPagina);
@@ -126,7 +191,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
   // Reset página quando filtro muda
   React.useEffect(() => {
     setPaginaAtual(1);
-  }, [busca]);
+  }, [busca, filtros]);
 
   const handleOrdenacao = (campo: CampoOrdenacao) => {
     setOrdenacao(prev => ({
@@ -264,12 +329,14 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
           <thead>
             <tr>
               {[
-                { campo: 'nome' as CampoOrdenacao, label: 'Franquia', width: '180px' },
-                { campo: 'cidade' as CampoOrdenacao, label: 'Cidade', width: '120px' },
-                { campo: 'estado' as CampoOrdenacao, label: 'UF', width: '50px' },
-                { campo: 'dataAbertura' as CampoOrdenacao, label: 'Inauguração', width: '110px' },
-                { campo: 'status' as CampoOrdenacao, label: 'Maturidade', width: '100px' },
-                { campo: 'scorePEX' as CampoOrdenacao, label: 'Score PEX', width: '90px' },
+                { campo: 'nome' as CampoOrdenacao, label: 'Franquia', width: '150px' },
+                { campo: 'cidade' as CampoOrdenacao, label: 'Cidade/UF', width: '130px' },
+                { campo: 'dataAbertura' as CampoOrdenacao, label: 'Inauguração', width: '100px' },
+                { campo: 'status' as CampoOrdenacao, label: 'Maturidade', width: '95px' },
+                { campo: 'scorePEX' as CampoOrdenacao, label: 'Score PEX', width: '80px' },
+                { campo: 'classificacao' as CampoOrdenacao, label: 'Classificação', width: '110px' },
+                { campo: 'consultor' as CampoOrdenacao, label: 'Consultor', width: '100px' },
+                { campo: 'postoAvancado' as CampoOrdenacao, label: 'Posto Avançado', width: '95px' },
               ].map(col => (
                 <th 
                   key={col.campo}
@@ -295,19 +362,6 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                 </th>
               ))}
               <th style={{
-                textAlign: 'left',
-                padding: '12px 8px',
-                color: '#adb5bd',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                borderBottom: '2px solid #555',
-                width: '130px',
-              }}>
-                Classificação
-              </th>
-              <th style={{
                 textAlign: 'center',
                 padding: '12px 8px',
                 color: '#adb5bd',
@@ -316,7 +370,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                 textTransform: 'uppercase',
                 letterSpacing: '0.05em',
                 borderBottom: '2px solid #555',
-                width: '80px',
+                width: '70px',
               }}>
                 Flags
               </th>
@@ -327,6 +381,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
               const classificacao = CLASSIFICACAO_CONFIG[franquia.classificacaoPEX];
               const isImplantacao = franquia.statusOperacao === 'IMPLANTACAO';
               const isInativa = franquia.status === 'INATIVA';
+              const postoAvancado = getPostoAvancado(franquia.nome);
               
               return (
                 <tr 
@@ -356,15 +411,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                     fontSize: '0.85rem',
                     borderBottom: '1px solid #444',
                   }}>
-                    {franquia.cidade}
-                  </td>
-                  <td style={{ 
-                    padding: '10px 8px', 
-                    color: '#adb5bd',
-                    fontSize: '0.85rem',
-                    borderBottom: '1px solid #444',
-                  }}>
-                    {franquia.estado}
+                    {franquia.cidade}/{franquia.estado}
                   </td>
                   <td style={{ 
                     padding: '10px 8px',
@@ -439,6 +486,34 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                       }}>
                         {classificacao.label}
                       </span>
+                    )}
+                  </td>
+                  <td style={{ 
+                    padding: '10px 8px',
+                    color: '#adb5bd',
+                    fontSize: '0.8rem',
+                    borderBottom: '1px solid #444',
+                  }}>
+                    {franquia.responsavel}
+                  </td>
+                  <td style={{ 
+                    padding: '10px 8px',
+                    borderBottom: '1px solid #444',
+                  }}>
+                    {postoAvancado ? (
+                      <span style={{
+                        backgroundColor: '#6f42c1',
+                        color: '#fff',
+                        padding: '3px 8px',
+                        borderRadius: '10px',
+                        fontSize: '0.7rem',
+                        fontWeight: 500,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {postoAvancado}
+                      </span>
+                    ) : (
+                      <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>-</span>
                     )}
                   </td>
                   <td style={{ 

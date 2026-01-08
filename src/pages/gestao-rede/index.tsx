@@ -26,6 +26,7 @@ import {
   TabelaFranquias,
   TabelaClassificacaoPEX,
   Footer,
+  FiltrosGestaoRede,
 } from '@/modules/gestao-rede';
 import { 
   FRANQUIAS_MOCK, 
@@ -50,10 +51,24 @@ export default function GestaoRedeDashboard() {
   const resumo = useMemo(() => calcularResumoRede(franquias), [franquias]);
   const arvoreHierarquica = useMemo(() => montarArvoreHierarquica(franquias), [franquias]);
 
-  // Estado para filtro de tabela
+  // Estado para filtro de tabela (legado)
   const [filtroStatus, setFiltroStatus] = useState<'TODOS' | 'ATIVA' | 'INATIVA'>('TODOS');
   
-  // Franquias filtradas
+  // Estado para filtros avançados
+  const [filtros, setFiltros] = useState<FiltrosGestaoRede>({
+    maturidade: [],
+    classificacao: [],
+    consultor: [],
+    flags: [],
+  });
+
+  // Lista de consultores disponíveis
+  const consultoresDisponiveis = useMemo(() => {
+    const consultores = [...new Set(franquias.map(f => f.responsavel))];
+    return consultores.sort();
+  }, [franquias]);
+  
+  // Franquias filtradas (para cards KPI)
   const franquiasFiltradas = useMemo(() => {
     if (filtroStatus === 'TODOS') return franquias;
     return franquias.filter(f => f.status === filtroStatus);
@@ -140,7 +155,12 @@ export default function GestaoRedeDashboard() {
         />
       </Head>
 
-      <GestaoRedeLayout currentPage="dashboard">
+      <GestaoRedeLayout 
+        currentPage="dashboard"
+        filtros={filtros}
+        onFiltrosChange={setFiltros}
+        consultoresDisponiveis={consultoresDisponiveis}
+      >
         {/* Header */}
         <div style={{ backgroundColor: '#212529' }}>
           <div className="container mx-auto px-4 py-6">
@@ -424,6 +444,7 @@ export default function GestaoRedeDashboard() {
           {/* Tabela de Franquias */}
           <TabelaFranquias 
             franquias={franquiasFiltradas}
+            filtros={filtros}
             titulo={
               filtroStatus === 'TODOS' 
                 ? 'Todas as Franquias' 

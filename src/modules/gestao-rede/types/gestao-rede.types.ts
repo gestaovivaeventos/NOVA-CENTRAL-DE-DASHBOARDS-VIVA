@@ -113,12 +113,11 @@ export interface KPICardProps {
 }
 
 /**
- * Filtros da página
+ * Filtros avançados da página (multi-seleção)
  */
 export interface FiltrosGestaoRede {
-  status: StatusFranquia | 'TODOS';
-  statusOperacao: StatusOperacao | 'TODOS';
-  maturidade: MaturidadeFranquia | 'TODOS';
-  regiao: string;
-  estado: string;
+  maturidade: string[];
+  classificacao: string[];
+  consultor: string[];
+  flags: string[];
 }
