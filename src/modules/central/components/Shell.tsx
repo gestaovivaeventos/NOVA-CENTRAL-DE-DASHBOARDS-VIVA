@@ -76,6 +76,11 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas de Gestão Rede são independentes (layout próprio)
+  if (router.pathname.startsWith('/gestao-rede')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 
