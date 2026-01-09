@@ -25,6 +25,7 @@ import {
   GraficoBarras,
   TabelaFranquias,
   TabelaClassificacaoPEX,
+  TabelaSegmentoMercado,
   Footer,
   FiltrosGestaoRede,
 } from '@/modules/gestao-rede';
@@ -360,6 +361,9 @@ export default function GestaoRedeDashboard() {
           <div style={{ marginBottom: '24px' }}>
             <TabelaClassificacaoPEX franquias={franquias} />
           </div>
+
+          {/* Tabela - Segmento de Mercado */}
+          <TabelaSegmentoMercado franquias={franquias} />
 
           {/* Cards de Anos de Operação */}
           <div style={{

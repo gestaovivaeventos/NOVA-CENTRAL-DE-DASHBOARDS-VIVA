@@ -33,6 +33,11 @@ export type MotivoEncerramento = 'ENCERRADA_OPERACAO' | 'ENCERRADA_IMPLANTACAO';
 export type ClassificacaoPEX = 'TOP_PERFORMANCE' | 'PERFORMANDO' | 'ATENCAO' | 'UTI_RECUPERACAO' | 'UTI_REPASSE';
 
 /**
+ * Segmento de mercado da franquia
+ */
+export type SegmentoMercado = 'PADRAO' | 'MASTER' | 'MEGA' | 'GIGA';
+
+/**
  * Flags estruturais - alertas críticos
  */
 export interface FlagsEstruturais {
@@ -62,9 +67,11 @@ export interface Franquia {
   email: string;
   telefone: string;
   consultor?: string;
+  segmentoMercado: SegmentoMercado;
   // Dados PEX
   scorePEX: number;
   classificacaoPEX: ClassificacaoPEX;
+  classificacaoPEXAnterior: ClassificacaoPEX;
   flags: FlagsEstruturais;
 }
 

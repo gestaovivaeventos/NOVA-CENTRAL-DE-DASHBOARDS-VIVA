@@ -2,7 +2,7 @@
 // Dados Mockados - Gestão Rede
 // ============================================
 
-import { Franquia, ClassificacaoPEX, FlagsEstruturais } from '../types';
+import { Franquia, ClassificacaoPEX, FlagsEstruturais, SegmentoMercado } from '../types';
 
 /**
  * Lista de cidades para geração de dados mockados
@@ -115,6 +115,27 @@ function gerarFlags(score: number): FlagsEstruturais {
 }
 
 /**
+ * Gera segmento de mercado aleatório com distribuição realista
+ */
+function gerarSegmentoMercado(): SegmentoMercado {
+  const rand = Math.random();
+  if (rand < 0.55) return 'PADRAO';  // 55%
+  if (rand < 0.80) return 'MASTER';  // 25%
+  if (rand < 0.95) return 'MEGA';    // 15%
+  return 'GIGA';                      // 5%
+}
+
+/**
+ * Gera classificação PEX do mês anterior com base no score atual
+ * Simula variação de -15 a +15 pontos
+ */
+function gerarClassificacaoPEXAnterior(scorePEXAtual: number): ClassificacaoPEX {
+  const variacao = (Math.random() - 0.5) * 30;
+  const scoreAnterior = Math.max(0, Math.min(100, scorePEXAtual + variacao));
+  return classificarPEX(scoreAnterior);
+}
+
+/**
  * Gera dados mockados de franquias
  * Total: 49 franquias (45 ativas + 4 inativas)
  */
@@ -144,8 +165,10 @@ export function gerarDadosMockados(): Franquia[] {
       email: `${nomes[i % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
       consultor: consultores[i % consultores.length],
+      segmentoMercado: gerarSegmentoMercado(),
       scorePEX,
       classificacaoPEX: classificarPEX(scorePEX),
+      classificacaoPEXAnterior: gerarClassificacaoPEXAnterior(scorePEX),
       flags: gerarFlags(scorePEX),
     });
     id++;
@@ -175,8 +198,10 @@ export function gerarDadosMockados(): Franquia[] {
       email: `${nomes[(32 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
       consultor: consultores[(32 + i) % consultores.length],
+      segmentoMercado: gerarSegmentoMercado(),
       scorePEX,
       classificacaoPEX: classificarPEX(scorePEX),
+      classificacaoPEXAnterior: gerarClassificacaoPEXAnterior(scorePEX),
       flags: gerarFlags(scorePEX),
     });
     id++;
@@ -200,8 +225,10 @@ export function gerarDadosMockados(): Franquia[] {
       email: `${nomes[(37 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
       consultor: consultores[(37 + i) % consultores.length],
+      segmentoMercado: gerarSegmentoMercado(),
       scorePEX: 0,
       classificacaoPEX: 'ATENCAO',
+      classificacaoPEXAnterior: 'ATENCAO',
       flags: { socioOperador: false, timeCritico: false, governanca: false },
     });
     id++;
@@ -228,8 +255,10 @@ export function gerarDadosMockados(): Franquia[] {
       responsavel: nomes[(45 + i) % nomes.length],
       email: `${nomes[(45 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
+      segmentoMercado: gerarSegmentoMercado(),
       scorePEX: 0,
       classificacaoPEX: 'UTI_REPASSE',
+      classificacaoPEXAnterior: 'UTI_REPASSE',
       flags: { socioOperador: false, timeCritico: false, governanca: false },
     });
     id++;
@@ -254,8 +283,10 @@ export function gerarDadosMockados(): Franquia[] {
       responsavel: nomes[(47 + i) % nomes.length],
       email: `${nomes[(47 + i) % nomes.length].toLowerCase().replace(' ', '.')}@vivaeventos.com.br`,
       telefone: `(${Math.floor(Math.random() * 90) + 10}) 9${Math.floor(Math.random() * 9000) + 1000}-${Math.floor(Math.random() * 9000) + 1000}`,
+      segmentoMercado: gerarSegmentoMercado(),
       scorePEX: 0,
       classificacaoPEX: 'UTI_REPASSE',
+      classificacaoPEXAnterior: 'UTI_REPASSE',
       flags: { socioOperador: false, timeCritico: false, governanca: false },
     });
     id++;
