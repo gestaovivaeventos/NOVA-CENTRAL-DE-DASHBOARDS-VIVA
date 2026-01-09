@@ -12,6 +12,7 @@ export { default as GraficoBarras } from './GraficoBarras';
 export { default as TabelaFranquias } from './TabelaFranquias';
 export { default as TabelaClassificacaoPEX } from './TabelaClassificacaoPEX';
 export { default as TabelaSegmentoMercado } from './TabelaSegmentoMercado';
+export { default as TabelaFlags } from './TabelaFlags';
 export { default as GestaoRedeLayout } from './GestaoRedeLayout';
 
 // Re-exportar de subdiretórios
