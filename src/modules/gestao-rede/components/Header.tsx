@@ -29,7 +29,7 @@ export default function Header({ titulo = 'Gestão Rede' }: HeaderProps) {
             alignItems: 'center'
           }}
         >
-          <div className="flex items-center space-x-6">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
             {/* Logo Viva Eventos */}
             <div style={{ position: 'relative', width: '180px', height: '60px' }}>
               <Image 
@@ -41,7 +41,14 @@ export default function Header({ titulo = 'Gestão Rede' }: HeaderProps) {
               />
             </div>
             
-            <div className="border-l border-gray-600 pl-6 h-16 flex flex-col justify-center">
+            {/* Divisor com gradiente igual ao da Central */}
+            <div style={{
+              width: '2px',
+              height: '40px',
+              background: 'linear-gradient(to bottom, transparent, #FF6600, transparent)',
+            }} />
+            
+            <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <h1 style={{ 
                 fontSize: '1.75rem',
                 fontWeight: 700,
