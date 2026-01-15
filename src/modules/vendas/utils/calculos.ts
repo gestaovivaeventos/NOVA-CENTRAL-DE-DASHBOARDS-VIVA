@@ -103,7 +103,7 @@ export function calcularKPIs(
   const unidadesNorm = unidadesSelecionadas.map(u => u?.toLowerCase().trim());
 
   metas.forEach((metaInfo, chave) => {
-    const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('-');
+    const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('|');
     const unidadeMeta = unidadeMetaRaw?.toLowerCase().trim();
 
     if (!unidadeMeta) return;
@@ -168,7 +168,7 @@ export function calcularIndicadoresOperacionais(
   const unidadesNorm = unidadesSelecionadas.map(u => u?.toLowerCase().trim());
 
   metas.forEach((metaInfo, chave) => {
-    const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('-');
+    const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('|');
     const unidadeMeta = unidadeMetaRaw?.toLowerCase().trim();
 
     if (!unidadeMeta) return;

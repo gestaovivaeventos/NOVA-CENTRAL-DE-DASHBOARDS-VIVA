@@ -96,7 +96,7 @@ export function useMetasData(): UseMetasDataReturn {
           return parseFloat(String(value || '0').replace(/\./g, '').replace(',', '.')) || 0;
         };
 
-        const chave = `${unidade}-${ano}-${mes}`;
+        const chave = `${unidade}|${ano}|${mes}`;
         const metaVendas = parseValue(row[indices.metaVendas]);
         const metaPosVendas = parseValue(row[indices.metaPosVendas]);
         

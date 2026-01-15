@@ -240,7 +240,7 @@ export default function Dashboard() {
       
       metasDataRaw.forEach((value, key) => {
         // Chave está no formato: unidade-ano-mês
-        const unidadeFromKey = key.split('-')[0]?.toLowerCase().trim();
+        const unidadeFromKey = key.split('|')[0]?.toLowerCase().trim();
         if (unitNamesLower.includes(unidadeFromKey)) {
           filteredMetas.set(key, value);
         }
@@ -342,7 +342,9 @@ export default function Dashboard() {
     
     // Filtrar salesData por unidade e período
     const salesDataFiltrado = salesData.filter(d => {
-      const unidadeMatch = !hasUnidadeFilter || filtros.unidades.includes(d.nm_unidade);
+      const unidadeNormalizada = normalizarNomeUnidade(d.nm_unidade || '');
+      const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
+      const unidadeMatch = !hasUnidadeFilter || filtrosNormalizados.includes(unidadeNormalizada);
       const dataMatch = !startDate || !endDate || 
         (d.dt_cadastro_integrante instanceof Date && 
          d.dt_cadastro_integrante >= startDate && 
@@ -352,7 +354,9 @@ export default function Dashboard() {
     
     // Filtrar fundosData por unidade e período (usando dt_contrato)
     const fundosDataFiltrado = fundosData ? fundosData.filter(d => {
-      const unidadeMatch = !hasUnidadeFilter || filtros.unidades.includes(d.nm_unidade);
+      const unidadeNormalizada = normalizarNomeUnidade(d.nm_unidade || '');
+      const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
+      const unidadeMatch = !hasUnidadeFilter || filtrosNormalizados.includes(unidadeNormalizada);
       const dataMatch = !startDate || !endDate || 
         (d.dt_contrato instanceof Date && 
          d.dt_contrato >= startDate && 
@@ -362,7 +366,9 @@ export default function Dashboard() {
     
     // Filtrar funilData por unidade e período (usando criado_em)
     const funilDataFiltrado = funilData ? funilData.filter(d => {
-      const unidadeMatch = !hasUnidadeFilter || filtros.unidades.includes(d.nm_unidade);
+      const unidadeNormalizada = normalizarNomeUnidade(d.nm_unidade || '');
+      const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
+      const unidadeMatch = !hasUnidadeFilter || filtrosNormalizados.includes(unidadeNormalizada);
       if (!unidadeMatch) return false;
       
       if (!startDate || !endDate) return true;
@@ -572,18 +578,16 @@ export default function Dashboard() {
       // Se há filtro de unidades, usar as unidades selecionadas
       // Se não há filtro, considerar TODAS as unidades que têm meta (como no original)
       const hasUnidadeFilter = filtros.unidades.length > 0;
-      const unidadesNorm = hasUnidadeFilter 
-        ? filtros.unidades.map((u: string) => u.toString().toLowerCase().trim())
-        : [];
       
       metasData.forEach((metaInfo, chave) => {
-        const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('-');
-        const unidadeMeta = unidadeMetaRaw?.toString().toLowerCase().trim() || '';
+        const [unidadeMeta, anoMeta, mesMeta] = chave.split('|');
         
         if (!unidadeMeta) return;
         
-        // Verificar unidade - só filtra se houver filtro de unidades ativo
-        if (hasUnidadeFilter && !unidadesNorm.includes(unidadeMeta)) return;
+        // Verificar unidade - comparação direta
+        if (hasUnidadeFilter && !filtros.unidades.includes(unidadeMeta)) {
+          return;
+        }
         
         // Verificar se o mês/ano da meta está dentro do período (lógica igual ao original)
         if (anoMeta && mesMeta) {
@@ -676,12 +680,12 @@ export default function Dashboard() {
       // Se não há filtro, considerar TODAS as unidades que têm meta (como no original)
       const hasUnidadeFilter = filtros.unidades.length > 0;
       const unidadesNorm = hasUnidadeFilter 
-        ? filtros.unidades.map((u: string) => u.toString().toLowerCase().trim())
+        ? filtros.unidades.map((u: string) => normalizarNomeUnidade(u).toLowerCase().trim())
         : [];
       
       metasData.forEach((metaInfo, chave) => {
-        const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('-');
-        const unidadeMeta = unidadeMetaRaw?.toString().toLowerCase().trim() || '';
+        const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('|');
+        const unidadeMeta = normalizarNomeUnidade(unidadeMetaRaw || '').toLowerCase().trim();
         
         if (!unidadeMeta) return;
         
@@ -763,8 +767,12 @@ export default function Dashboard() {
     // Contar leads do funil no período, filtrado por unidade
     const leadsCount = (funilData || []).filter(item => {
       // Verificar unidade - se não há filtro, aceitar todos
-      if (hasUnidadeFilter && !filtros.unidades.includes(item.nm_unidade)) {
-        return false;
+      if (hasUnidadeFilter) {
+        const unidadeNormalizada = normalizarNomeUnidade(item.nm_unidade || '');
+        const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
+        if (!filtrosNormalizados.includes(unidadeNormalizada)) {
+          return false;
+        }
       }
       
       // Verificar se tem título
@@ -784,8 +792,12 @@ export default function Dashboard() {
     // Usar diagnostico_realizado ou proposta_enviada do funil
     const reunioesCount = (funilData || []).reduce((acc, item) => {
       // Verificar unidade - se não há filtro, aceitar todos
-      if (hasUnidadeFilter && !filtros.unidades.includes(item.nm_unidade)) {
-        return acc;
+      if (hasUnidadeFilter) {
+        const unidadeNormalizada = normalizarNomeUnidade(item.nm_unidade || '');
+        const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
+        if (!filtrosNormalizados.includes(unidadeNormalizada)) {
+          return acc;
+        }
       }
       
       // Usar diagnostico_realizado ou proposta_enviada
@@ -813,8 +825,12 @@ export default function Dashboard() {
     // Contar id_fundo em fundosData dentro do período
     const contratosCount = (fundosData || []).filter(d => {
       // Verificar unidade - se não há filtro, aceitar todos
-      if (hasUnidadeFilter && !filtros.unidades.includes(d.nm_unidade)) {
-        return false;
+      if (hasUnidadeFilter) {
+        const unidadeNormalizada = normalizarNomeUnidade(d.nm_unidade || '');
+        const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
+        if (!filtrosNormalizados.includes(unidadeNormalizada)) {
+          return false;
+        }
       }
       
       // Verificar se tem id_fundo
@@ -842,12 +858,12 @@ export default function Dashboard() {
     if (metasData && metasData.size > 0 && periodo?.startDate && periodo?.endDate) {
       // Se há filtro de unidades, normalizar para comparação
       const unidadesNorm = hasUnidadeFilter 
-        ? filtros.unidades.map(u => u?.toString().toLowerCase().trim() || '')
+        ? filtros.unidades.map(u => normalizarNomeUnidade(u || '').toLowerCase().trim())
         : [];
       
       metasData.forEach((metaInfo, chave) => {
-        const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('-');
-        const unidadeMeta = unidadeMetaRaw?.toString().toLowerCase().trim() || '';
+        const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('|');
+        const unidadeMeta = normalizarNomeUnidade(unidadeMetaRaw || '').toLowerCase().trim();
         
         if (!unidadeMeta) return;
         
@@ -942,7 +958,7 @@ export default function Dashboard() {
     // Preencher metas
     if (metasData) {
       metasData.forEach((metaInfo, key) => {
-        const [unidade, ano, mes] = key.split('-');
+        const [unidade, ano, mes] = key.split('|');
         const periodoKey = `${ano}-${mes}`;
         
         if (String(ano) === String(anoVigente) && chartDataMap.has(periodoKey)) {
@@ -1066,14 +1082,18 @@ export default function Dashboard() {
       const endDate = periodo.endDate;
       
       metasData.forEach((meta, key) => {
-        const [unidade, anoStr, mesStr] = key.split('-');
+        const [unidadeRaw, anoStr, mesStr] = key.split('|');
+        const unidade = normalizarNomeUnidade(unidadeRaw || '');
         const metaDate = new Date(parseInt(anoStr), parseInt(mesStr) - 1, 1);
         
         // Verificar se a meta está no período selecionado
         if (metaDate >= startDate && metaDate <= endDate) {
           // Verificar filtro de unidades
-          if (filtros.unidades.length > 0 && !filtros.unidades.includes(unidade)) {
-            return;
+          if (filtros.unidades.length > 0) {
+            const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
+            if (!filtrosNormalizados.includes(unidade)) {
+              return;
+            }
           }
           
           if (!porUnidade[unidade]) {
@@ -1168,7 +1188,7 @@ export default function Dashboard() {
       let leadsMeta = 0;
       if (metasData) {
         metasData.forEach((metaInfo, chave) => {
-          const [u, ano, mes] = chave.split('-');
+          const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
@@ -1203,7 +1223,7 @@ export default function Dashboard() {
       let reunioesMeta = 0;
       if (metasData) {
         metasData.forEach((metaInfo, chave) => {
-          const [u, ano, mes] = chave.split('-');
+          const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
@@ -1227,7 +1247,7 @@ export default function Dashboard() {
       let contratosMeta = 0;
       if (metasData) {
         metasData.forEach((metaInfo, chave) => {
-          const [u, ano, mes] = chave.split('-');
+          const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
@@ -1250,7 +1270,7 @@ export default function Dashboard() {
       let adesoesMeta = 0;
       if (metasData) {
         metasData.forEach((metaInfo, chave) => {
-          const [u, ano, mes] = chave.split('-');
+          const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
