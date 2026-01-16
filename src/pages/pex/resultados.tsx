@@ -50,6 +50,7 @@ export default function ResultadosPage() {
   const [filtroUnidade, setFiltroUnidade] = useState<string>('');
   const [filtroCluster, setFiltroCluster] = useState<string>('');
   const [filtroConsultor, setFiltroConsultor] = useState<string>('');
+  const [filtroPerformanceComercial, setFiltroPerformanceComercial] = useState<string>('');
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
 
@@ -95,6 +96,14 @@ export default function ResultadosPage() {
       .sort();
   }, [dadosBrutos, nomeColunaConsultor]);
 
+  const listaPerformanceComercial = useMemo(() => {
+    if (!dadosBrutos || dadosBrutos.length === 0) return [];
+    return dadosBrutos
+      .map(item => item.performance_comercial)
+      .filter((value, index, self) => value && self.indexOf(value) === index)
+      .sort();
+  }, [dadosBrutos]);
+
   const listaUnidades = useMemo(() => {
     if (!dadosBrutos || dadosBrutos.length === 0) return [];
     let dados = dadosBrutos;
@@ -102,12 +111,13 @@ export default function ResultadosPage() {
     if (filtroQuarter) dados = dados.filter(item => item.quarter === filtroQuarter);
     if (filtroCluster) dados = dados.filter(item => item.cluster === filtroCluster);
     if (filtroConsultor) dados = dados.filter(item => item[nomeColunaConsultor] === filtroConsultor);
+    if (filtroPerformanceComercial) dados = dados.filter(item => item.performance_comercial === filtroPerformanceComercial);
     
     return dados
       .map(item => item.nm_unidade)
       .filter((value, index, self) => value && self.indexOf(value) === index)
       .sort();
-  }, [dadosBrutos, filtroQuarter, filtroCluster, filtroConsultor, nomeColunaConsultor]);
+  }, [dadosBrutos, filtroQuarter, filtroCluster, filtroConsultor, filtroPerformanceComercial, nomeColunaConsultor]);
 
   // Inicializar filtros
   useEffect(() => {
@@ -189,13 +199,27 @@ export default function ResultadosPage() {
     return { posicaoRede, totalRede, posicaoCluster, totalCluster };
   }, [dadosBrutos, filtroUnidade]);
 
-  // Posição no Quarter selecionado
+  // Posição no Quarter selecionado (respeita quarter ativo)
   const posicoesQuarter = useMemo(() => {
-    if (!dadosBrutos || !filtroUnidade || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
+    if (!dadosBrutos || !filtroUnidade || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
     
     const dadosQuarter = dadosBrutos.filter(item => item.quarter === filtroQuarter);
     
-    const rankingRede = dadosQuarter.map(item => ({
+    // Verificar se o quarter selecionado está ativo para a unidade selecionada
+    const itemUnidade = dadosQuarter.find(item => item.nm_unidade === filtroUnidade);
+    const quarterAtivo = itemUnidade ? (itemUnidade.quarter_ativo || '').toString().toLowerCase() === 'ativo' : false;
+    
+    // Se quarter inativo, retornar zeros
+    if (!quarterAtivo) {
+      return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
+    }
+    
+    // Filtrar apenas itens com quarter ativo para o ranking
+    const dadosQuarterAtivo = dadosQuarter.filter(item => 
+      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
+    );
+    
+    const rankingRede = dadosQuarterAtivo.map(item => ({
       unidade: item.nm_unidade,
       pontuacao: parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.')),
       cluster: item.cluster
@@ -209,7 +233,7 @@ export default function ResultadosPage() {
     const posicaoCluster = rankingCluster.findIndex(item => item.unidade === filtroUnidade) + 1;
     const totalCluster = rankingCluster.length;
     
-    return { posicaoRede, totalRede, posicaoCluster, totalCluster };
+    return { posicaoRede, totalRede, posicaoCluster, totalCluster, ativo: true };
   }, [dadosBrutos, filtroUnidade, filtroQuarter, itemSelecionado]);
 
   // Pontuações por quarter (apenas quarters ativos)
@@ -232,6 +256,9 @@ export default function ResultadosPage() {
   const indicadores = useMemo(() => {
     if (!itemSelecionado || !dadosBrutos) return [];
     
+    // Verificar se o quarter está ativo
+    const quarterAtivo = (itemSelecionado.quarter_ativo || '').toString().toLowerCase() === 'ativo';
+    
     const parseValor = (valor: any): number => {
       if (!valor) return 0;
       return parseFloat(valor.toString().replace(',', '.')) || 0;
@@ -241,39 +268,55 @@ export default function ResultadosPage() {
     const cluster = itemSelecionado.cluster;
     const dadosCluster = dadosFiltrados.filter(item => item.cluster === cluster);
 
+    // Pesos dos indicadores (peso * 100 = teto máximo de pontos)
     const listaIndicadores = [
-      { codigo: 'VVR_12_MESES', coluna: 'vvr_12_meses', titulo: 'VVR 12 MESES', notaGeral: 'VALOR DE VENDAS REALIZADAS 12 MESES' },
-      { codigo: 'VVR_CARTEIRA', coluna: 'vvr_carteira', titulo: 'VVR CARTEIRA', notaGeral: 'VALOR DE VENDAS REALIZADAS CARTEIRA' },
-      { codigo: 'ENDIVIDAMENTO', coluna: 'Indice_endividamento', titulo: 'ENDIVIDAMENTO', notaGeral: 'ÍNDICE DE ENDIVIDAMENTO' },
-      { codigo: 'NPS', coluna: 'nps_geral', titulo: 'NPS GERAL', notaGeral: 'NET PROMOTER SCORE' },
-      { codigo: 'MARGEM_ENTREGA', coluna: 'indice_margem_entrega', titulo: 'MARGEM ENTREGA', notaGeral: 'ÍNDICE DE MARGEM DE ENTREGA' },
-      { codigo: 'ENPS', coluna: 'enps_rede', titulo: 'eNPS REDE', notaGeral: 'EMPLOYEE NET PROMOTER SCORE' },
-      { codigo: 'CONFORMIDADES', coluna: 'conformidades', titulo: 'CONFORMIDADES', notaGeral: 'AUDITORIA DE CONFORMIDADES' },
-      { codigo: 'RECLAME_AQUI', coluna: 'reclame_aqui', titulo: 'RECLAME AQUI', notaGeral: 'ÍNDICE RECLAME AQUI' },
-      { codigo: 'COLABORADORES', coluna: 'colaboradores_mais_1_ano', titulo: 'COLAB. +1 ANO', notaGeral: 'COLABORADORES COM MAIS DE 1 ANO' },
-      { codigo: 'ESTRUTURA', coluna: 'estrutura_organizacioanl', titulo: 'ESTRUTURA ORG.', notaGeral: 'ESTRUTURA ORGANIZACIONAL' },
-      { codigo: 'CHURN', coluna: 'churn', titulo: 'CHURN', notaGeral: 'ÍNDICE DE CHURN' },
-      { codigo: 'BONUS', coluna: 'bonus', titulo: 'BÔNUS', notaGeral: 'PONTOS DE BÔNUS' }
+      { codigo: 'VVR_12_MESES', coluna: 'vvr_12_meses', titulo: 'VVR 12 MESES', notaGeral: 'VALOR DE VENDAS REALIZADAS 12 MESES', peso: 2.5 },
+      { codigo: 'VVR_CARTEIRA', coluna: 'vvr_carteira', titulo: 'VVR CARTEIRA', notaGeral: 'VALOR DE VENDAS REALIZADAS CARTEIRA', peso: 1.0 },
+      { codigo: 'ENDIVIDAMENTO', coluna: 'Indice_endividamento', titulo: 'ENDIVIDAMENTO', notaGeral: 'ÍNDICE DE ENDIVIDAMENTO', peso: 0.5 },
+      { codigo: 'NPS', coluna: 'nps_geral', titulo: 'NPS GERAL', notaGeral: 'NET PROMOTER SCORE', peso: 1.0 },
+      { codigo: 'MARGEM_ENTREGA', coluna: 'indice_margem_entrega', titulo: 'MARGEM ENTREGA', notaGeral: 'ÍNDICE DE MARGEM DE ENTREGA', peso: 1.0 },
+      { codigo: 'ENPS', coluna: 'enps_rede', titulo: 'eNPS REDE', notaGeral: 'EMPLOYEE NET PROMOTER SCORE', peso: 0.5 },
+      { codigo: 'CONFORMIDADES', coluna: 'conformidades', titulo: 'CONFORMIDADES', notaGeral: 'AUDITORIA DE CONFORMIDADES', peso: 1.0 },
+      { codigo: 'RECLAME_AQUI', coluna: 'reclame_aqui', titulo: 'RECLAME AQUI', notaGeral: 'ÍNDICE RECLAME AQUI', peso: 0.5 },
+      { codigo: 'COLABORADORES', coluna: 'colaboradores_mais_1_ano', titulo: 'COLAB. +1 ANO', notaGeral: 'COLABORADORES COM MAIS DE 1 ANO', peso: 0.5 },
+      { codigo: 'ESTRUTURA', coluna: 'estrutura_organizacioanl', titulo: 'ESTRUTURA ORG.', notaGeral: 'ESTRUTURA ORGANIZACIONAL', peso: 0.5 },
+      { codigo: 'CHURN', coluna: 'churn', titulo: 'CHURN', notaGeral: 'ÍNDICE DE CHURN', peso: 1.0 },
+      { codigo: 'BONUS', coluna: 'bonus', titulo: 'BÔNUS', notaGeral: 'PONTOS DE BÔNUS', peso: 0 }
     ];
 
     return listaIndicadores.map(ind => {
-      const pontuacaoUnidade = parseValor(itemSelecionado[ind.coluna]);
+      // Se quarter inativo, todos os valores zerados
+      const pontuacaoUnidade = quarterAtivo ? parseValor(itemSelecionado[ind.coluna]) : 0;
       
-      const valoresRede = dadosFiltrados.map(item => parseValor(item[ind.coluna]));
+      // Calcular percentual de atingimento (pontuação / (peso * 100) * 100)
+      const tetoMaximo = ind.peso * 100;
+      const percentualAtingimento = tetoMaximo > 0 ? (pontuacaoUnidade / tetoMaximo) * 100 : 0;
+      
+      const valoresRede = quarterAtivo 
+        ? dadosFiltrados.map(item => parseValor(item[ind.coluna])) 
+        : [];
       const melhorRede = valoresRede.length > 0 ? Math.max(...valoresRede) : 0;
-      const itemMelhorRede = dadosFiltrados.find(item => parseValor(item[ind.coluna]) === melhorRede);
+      const itemMelhorRede = quarterAtivo 
+        ? dadosFiltrados.find(item => parseValor(item[ind.coluna]) === melhorRede) 
+        : null;
       
-      const valoresCluster = dadosCluster.map(item => parseValor(item[ind.coluna]));
+      const valoresCluster = quarterAtivo 
+        ? dadosCluster.map(item => parseValor(item[ind.coluna])) 
+        : [];
       const melhorCluster = valoresCluster.length > 0 ? Math.max(...valoresCluster) : 0;
-      const itemMelhorCluster = dadosCluster.find(item => parseValor(item[ind.coluna]) === melhorCluster);
+      const itemMelhorCluster = quarterAtivo 
+        ? dadosCluster.find(item => parseValor(item[ind.coluna]) === melhorCluster) 
+        : null;
 
       return {
         ...ind,
         pontuacao: pontuacaoUnidade,
+        percentualAtingimento,
+        tetoMaximo,
         melhorPontuacaoRede: melhorRede,
         melhorPontuacaoCluster: melhorCluster,
-        unidadeMelhorRede: itemMelhorRede?.nm_unidade,
-        unidadeMelhorCluster: itemMelhorCluster?.nm_unidade
+        unidadeMelhorRede: itemMelhorRede?.nm_unidade || '-',
+        unidadeMelhorCluster: itemMelhorCluster?.nm_unidade || '-'
       };
     });
   }, [itemSelecionado, dadosBrutos, filtroQuarter]);
@@ -355,18 +398,22 @@ export default function ResultadosPage() {
         showUnidade: true,
         showCluster: (user?.accessLevel ?? 0) >= 1,
         showConsultor: (user?.accessLevel ?? 0) >= 1,
+        showPerformanceComercial: (user?.accessLevel ?? 0) >= 1,
         filtroQuarter,
         filtroUnidade,
         filtroCluster,
         filtroConsultor,
+        filtroPerformanceComercial,
         onQuarterChange: setFiltroQuarter,
         onUnidadeChange: setFiltroUnidade,
         onClusterChange: setFiltroCluster,
         onConsultorChange: setFiltroConsultor,
+        onPerformanceComercialChange: setFiltroPerformanceComercial,
         listaQuarters,
         listaUnidades,
         listaClusters,
         listaConsultores,
+        listaPerformanceComercial,
       }}
     >
       <Head>
@@ -564,21 +611,11 @@ export default function ResultadosPage() {
                       <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado.cluster}</span>
                     </div>
                   )}
-                  {itemSelecionado['posicao_grupo'] && (
+                  {itemSelecionado['performance_comercial'] && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição no Grupo:</span>
-                      <span style={{ 
-                        fontWeight: 600,
-                        ...((itemSelecionado['posicao_grupo'].toString().toUpperCase() === 'UTI')
-                          ? { color: '#FF4444' }
-                          : (itemSelecionado['posicao_grupo'].toString().toUpperCase().includes('ATENC'))
-                            ? { color: '#FFC107' }
-                            : (itemSelecionado['posicao_grupo'].toString().toUpperCase().includes('SAUD'))
-                              ? { color: '#00C853' }
-                              : { color: '#F8F9FA' }
-                        )
-                      }}>
-                        {itemSelecionado['posicao_grupo']}
+                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Performance Comercial:</span>
+                      <span style={{ fontWeight: 600, color: '#F8F9FA' }}>
+                        {itemSelecionado['performance_comercial']}
                       </span>
                     </div>
                   )}
@@ -594,20 +631,20 @@ export default function ResultadosPage() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
                     <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Pontuação no Quarter Selecionado:</span>
-                    <span style={{ fontWeight: 600, fontSize: '1.1rem', color: '#FF6600' }}>
-                      {itemSelecionado['pontuacao_com_bonus'] || '0'}
+                    <span style={{ fontWeight: 600, fontSize: '1.1rem', color: posicoesQuarter.ativo ? '#FF6600' : '#888' }}>
+                      {posicoesQuarter.ativo ? (itemSelecionado['pontuacao_com_bonus'] || '0') : '0'}
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
                     <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição na Rede:</span>
-                    <span style={{ fontWeight: 700, color: '#F8F9FA' }}>
-                      {posicoesQuarter.posicaoRede}º de {posicoesQuarter.totalRede}
+                    <span style={{ fontWeight: 700, color: posicoesQuarter.ativo ? '#F8F9FA' : '#888' }}>
+                      {posicoesQuarter.ativo ? `${posicoesQuarter.posicaoRede}º de ${posicoesQuarter.totalRede}` : '-'}
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                     <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição no Cluster:</span>
-                    <span style={{ fontWeight: 700, color: '#F8F9FA' }}>
-                      {posicoesQuarter.posicaoCluster}º de {posicoesQuarter.totalCluster}
+                    <span style={{ fontWeight: 700, color: posicoesQuarter.ativo ? '#F8F9FA' : '#888' }}>
+                      {posicoesQuarter.ativo ? `${posicoesQuarter.posicaoCluster}º de ${posicoesQuarter.totalCluster}` : '-'}
                     </span>
                   </div>
                 </div>

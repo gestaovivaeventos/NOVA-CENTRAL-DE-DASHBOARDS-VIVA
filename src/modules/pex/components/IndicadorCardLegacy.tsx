@@ -9,6 +9,8 @@ interface IndicadorCardProps {
   titulo: string;
   notaGeral: string;
   pontuacao: number;
+  percentualAtingimento?: number;
+  tetoMaximo?: number;
   melhorPontuacaoRede: number;
   melhorPontuacaoCluster: number;
   unidadeMelhorRede?: string;
@@ -19,6 +21,8 @@ export default function IndicadorCard({
   titulo,
   notaGeral,
   pontuacao,
+  percentualAtingimento,
+  tetoMaximo,
   melhorPontuacaoRede,
   melhorPontuacaoCluster,
   unidadeMelhorRede,
@@ -50,7 +54,7 @@ export default function IndicadorCard({
         {notaGeral}
       </p>
 
-      {/* Pontuação da Unidade */}
+      {/* Pontuação da Unidade com Percentual */}
       <div className="mb-2" style={{ flex: 1 }}>
         <div className="flex items-baseline gap-1">
           <span 
@@ -66,6 +70,26 @@ export default function IndicadorCard({
             pontos
           </span>
         </div>
+        {/* Percentual de Atingimento */}
+        {tetoMaximo !== undefined && tetoMaximo > 0 && percentualAtingimento !== undefined && (
+          <div className="mt-1 flex items-center gap-1">
+            <span 
+              className="text-sm font-semibold"
+              style={{ 
+                color: percentualAtingimento >= 80 ? '#00C853' : 
+                       percentualAtingimento >= 50 ? '#FFC107' : '#FF4444'
+              }}
+            >
+              {percentualAtingimento.toFixed(1)}%
+            </span>
+            <span 
+              className="text-xs"
+              style={{ color: '#6c757d' }}
+            >
+              de {tetoMaximo.toFixed(0)} pts
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Melhor Pontuação - Rede */}

@@ -15,21 +15,25 @@ interface FilterConfig {
   showCluster?: boolean;
   showUnidade?: boolean;
   showConsultor?: boolean;
+  showPerformanceComercial?: boolean;
   
   filtroQuarter?: string;
   filtroCluster?: string;
   filtroUnidade?: string;
   filtroConsultor?: string;
+  filtroPerformanceComercial?: string;
   
   onQuarterChange?: (value: string) => void;
   onClusterChange?: (value: string) => void;
   onUnidadeChange?: (value: string) => void;
   onConsultorChange?: (value: string) => void;
+  onPerformanceComercialChange?: (value: string) => void;
   
   listaQuarters?: string[];
   listaClusters?: string[];
   listaUnidades?: string[];
   listaConsultores?: string[];
+  listaPerformanceComercial?: string[];
 }
 
 interface PexLayoutProps {
@@ -113,7 +117,8 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
     filters.showQuarter || 
     filters.showCluster || 
     filters.showUnidade || 
-    filters.showConsultor
+    filters.showConsultor ||
+    filters.showPerformanceComercial
   );
 
   // Fechar sidebar ao clicar em um link (mobile fecha menu, desktop colapsa)
@@ -511,6 +516,44 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                       <option value="">Todos os Consultores</option>
                       {filters.listaConsultores?.map((c) => (
                         <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Filtro Performance Comercial */}
+                {filters.showPerformanceComercial && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      color: '#adb5bd',
+                      fontSize: '0.8rem',
+                      marginBottom: '6px',
+                      fontWeight: 500,
+                    }}>
+                      Performance Comercial
+                    </label>
+                    <select
+                      value={filters.filtroPerformanceComercial || ''}
+                      onChange={(e) => filters.onPerformanceComercialChange?.(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: '#2a2f36',
+                        border: '1px solid #444',
+                        color: '#F8F9FA',
+                        fontSize: '0.85rem',
+                        cursor: 'pointer',
+                        appearance: 'auto',
+                        WebkitAppearance: 'menulist',
+                        position: 'relative',
+                        zIndex: 100,
+                      }}
+                    >
+                      <option value="">Todas</option>
+                      {filters.listaPerformanceComercial?.map((p) => (
+                        <option key={p} value={p}>{p}</option>
                       ))}
                     </select>
                   </div>
