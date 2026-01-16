@@ -139,11 +139,11 @@ export default function RankingPage() {
     }
     
     if (filtrosClusters.length > 0) {
-      dadosFiltrados = dadosFiltrados.filter(item => filtrosClusters.includes(item.cluster));
+      dadosFiltrados = dadosFiltrados.filter(item => item.cluster && filtrosClusters.includes(item.cluster));
     }
     
     if (filtrosConsultores.length > 0) {
-      dadosFiltrados = dadosFiltrados.filter(item => filtrosConsultores.includes(item[nomeColunaConsultor]));
+      dadosFiltrados = dadosFiltrados.filter(item => item[nomeColunaConsultor] && filtrosConsultores.includes(item[nomeColunaConsultor]));
     }
     
     const unidades = dadosFiltrados
@@ -236,7 +236,7 @@ export default function RankingPage() {
     let ranking = rankingMaduras;
 
     if (filtrosClusters.length > 0) {
-      ranking = ranking.filter(item => filtrosClusters.includes(item.cluster));
+      ranking = ranking.filter(item => item.cluster && filtrosClusters.includes(item.cluster));
       // Recalcular posições após filtro
       ranking = ranking.map((item, index) => ({
         ...item,
@@ -245,7 +245,7 @@ export default function RankingPage() {
     }
 
     if (filtrosConsultores.length > 0) {
-      ranking = ranking.filter(item => filtrosConsultores.includes(item.consultor));
+      ranking = ranking.filter(item => item.consultor && filtrosConsultores.includes(item.consultor));
       // Recalcular posições após filtro
       ranking = ranking.map((item, index) => ({
         ...item,

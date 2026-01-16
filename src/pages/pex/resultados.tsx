@@ -109,9 +109,9 @@ export default function ResultadosPage() {
     let dados = dadosBrutos;
     
     if (filtroQuarter) dados = dados.filter(item => item.quarter === filtroQuarter);
-    if (filtrosClusters.length > 0) dados = dados.filter(item => filtrosClusters.includes(item.cluster));
-    if (filtrosConsultores.length > 0) dados = dados.filter(item => filtrosConsultores.includes(item[nomeColunaConsultor]));
-    if (filtrosPerformanceComercial.length > 0) dados = dados.filter(item => filtrosPerformanceComercial.includes(item.performance_comercial));
+    if (filtrosClusters.length > 0) dados = dados.filter(item => item.cluster && filtrosClusters.includes(item.cluster));
+    if (filtrosConsultores.length > 0) dados = dados.filter(item => item[nomeColunaConsultor] && filtrosConsultores.includes(item[nomeColunaConsultor]));
+    if (filtrosPerformanceComercial.length > 0) dados = dados.filter(item => item.performance_comercial && filtrosPerformanceComercial.includes(item.performance_comercial));
     
     return dados
       .map(item => item.nm_unidade)
