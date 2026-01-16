@@ -48,9 +48,9 @@ export default function ResultadosPage() {
   // Estados para os filtros
   const [filtroQuarter, setFiltroQuarter] = useState<string>('');
   const [filtroUnidade, setFiltroUnidade] = useState<string>('');
-  const [filtroCluster, setFiltroCluster] = useState<string>('');
-  const [filtroConsultor, setFiltroConsultor] = useState<string>('');
-  const [filtroPerformanceComercial, setFiltroPerformanceComercial] = useState<string>('');
+  const [filtrosClusters, setFiltrosClusters] = useState<string[]>([]);
+  const [filtrosConsultores, setFiltrosConsultores] = useState<string[]>([]);
+  const [filtrosPerformanceComercial, setFiltrosPerformanceComercial] = useState<string[]>([]);
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
 
@@ -109,15 +109,15 @@ export default function ResultadosPage() {
     let dados = dadosBrutos;
     
     if (filtroQuarter) dados = dados.filter(item => item.quarter === filtroQuarter);
-    if (filtroCluster) dados = dados.filter(item => item.cluster === filtroCluster);
-    if (filtroConsultor) dados = dados.filter(item => item[nomeColunaConsultor] === filtroConsultor);
-    if (filtroPerformanceComercial) dados = dados.filter(item => item.performance_comercial === filtroPerformanceComercial);
+    if (filtrosClusters.length > 0) dados = dados.filter(item => filtrosClusters.includes(item.cluster));
+    if (filtrosConsultores.length > 0) dados = dados.filter(item => filtrosConsultores.includes(item[nomeColunaConsultor]));
+    if (filtrosPerformanceComercial.length > 0) dados = dados.filter(item => filtrosPerformanceComercial.includes(item.performance_comercial));
     
     return dados
       .map(item => item.nm_unidade)
       .filter((value, index, self) => value && self.indexOf(value) === index)
       .sort();
-  }, [dadosBrutos, filtroQuarter, filtroCluster, filtroConsultor, filtroPerformanceComercial, nomeColunaConsultor]);
+  }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, filtrosPerformanceComercial, nomeColunaConsultor]);
 
   // Inicializar filtros
   useEffect(() => {
@@ -388,14 +388,14 @@ export default function ResultadosPage() {
         showPerformanceComercial: (user?.accessLevel ?? 0) >= 1,
         filtroQuarter,
         filtroUnidade,
-        filtroCluster,
-        filtroConsultor,
-        filtroPerformanceComercial,
+        filtrosClusters,
+        filtrosConsultores,
+        filtrosPerformanceComercial,
         onQuarterChange: setFiltroQuarter,
         onUnidadeChange: setFiltroUnidade,
-        onClusterChange: setFiltroCluster,
-        onConsultorChange: setFiltroConsultor,
-        onPerformanceComercialChange: setFiltroPerformanceComercial,
+        onClustersChange: setFiltrosClusters,
+        onConsultoresChange: setFiltrosConsultores,
+        onPerformanceComercialMultiChange: setFiltrosPerformanceComercial,
         listaQuarters,
         listaUnidades,
         listaClusters,
@@ -754,8 +754,8 @@ export default function ResultadosPage() {
                   <TabelaResumo
                     dados={dadosBrutos || []}
                     quarterSelecionado={filtroQuarter}
-                    clusterSelecionado={filtroCluster}
-                    consultorSelecionado={filtroConsultor}
+                    clusterSelecionado={filtrosClusters.length === 1 ? filtrosClusters[0] : ''}
+                    consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
                     nomeColunaConsultor={nomeColunaConsultor}
                   />
                 </Card>
@@ -767,8 +767,8 @@ export default function ResultadosPage() {
               <GraficoEvolucao
                 dadosHistorico={dadosHistorico}
                 unidadeSelecionada={filtroUnidade}
-                clusterSelecionado={filtroCluster}
-                consultorSelecionado={filtroConsultor}
+                clusterSelecionado={filtrosClusters.length === 1 ? filtrosClusters[0] : ''}
+                consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
                 nomeColunaConsultor={nomeColunaConsultor}
               />
             </div>

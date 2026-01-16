@@ -11,6 +11,33 @@ import { useSheetsData, Card, PexLayout } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
 
+// Componente de Medalha Minimalista
+const PositionBadge = ({ position }: { position: number }) => {
+  if (position > 3) return null;
+  
+  const colors = {
+    1: '#FFD700', // Ouro
+    2: '#A8A8A8', // Prata
+    3: '#CD7F32', // Bronze
+  };
+  
+  const color = colors[position as 1 | 2 | 3];
+  
+  return (
+    <svg 
+      width="20" 
+      height="20" 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      style={{ marginLeft: '6px', display: 'inline-block', verticalAlign: 'middle' }}
+    >
+      <circle cx="12" cy="9" r="7" fill={color} />
+      <path d="M8 15L6 22L12 19L18 22L16 15" fill={color} opacity="0.8" />
+      <text x="12" y="12" textAnchor="middle" fill="#1a1a1a" fontSize="9" fontWeight="700" fontFamily="Arial">{position}</text>
+    </svg>
+  );
+};
+
 export default function RankingPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -45,8 +72,8 @@ export default function RankingPage() {
   // Estados para os filtros
   const [filtroQuarter, setFiltroQuarter] = useState<string>('');
   const [filtroUnidade, setFiltroUnidade] = useState<string>('');
-  const [filtroCluster, setFiltroCluster] = useState<string>('');
-  const [filtroConsultor, setFiltroConsultor] = useState<string>('');
+  const [filtrosClusters, setFiltrosClusters] = useState<string[]>([]);
+  const [filtrosConsultores, setFiltrosConsultores] = useState<string[]>([]);
   
   // Nome dinâmico da coluna do consultor
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
@@ -111,12 +138,12 @@ export default function RankingPage() {
       dadosFiltrados = dadosFiltrados.filter(item => item.quarter === filtroQuarter);
     }
     
-    if (filtroCluster) {
-      dadosFiltrados = dadosFiltrados.filter(item => item.cluster === filtroCluster);
+    if (filtrosClusters.length > 0) {
+      dadosFiltrados = dadosFiltrados.filter(item => filtrosClusters.includes(item.cluster));
     }
     
-    if (filtroConsultor) {
-      dadosFiltrados = dadosFiltrados.filter(item => item[nomeColunaConsultor] === filtroConsultor);
+    if (filtrosConsultores.length > 0) {
+      dadosFiltrados = dadosFiltrados.filter(item => filtrosConsultores.includes(item[nomeColunaConsultor]));
     }
     
     const unidades = dadosFiltrados
@@ -125,7 +152,7 @@ export default function RankingPage() {
       .sort();
 
     return unidades;
-  }, [dadosBrutos, filtroQuarter, filtroCluster, filtroConsultor, nomeColunaConsultor]);
+  }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, nomeColunaConsultor]);
 
   // Helper para verificar se é franquia iniciante (INCUBAÇÃO)
   const isIniciante = (cluster: string | undefined) => {
@@ -208,8 +235,8 @@ export default function RankingPage() {
   const rankingFiltrado = useMemo(() => {
     let ranking = rankingMaduras;
 
-    if (filtroCluster) {
-      ranking = ranking.filter(item => item.cluster === filtroCluster);
+    if (filtrosClusters.length > 0) {
+      ranking = ranking.filter(item => filtrosClusters.includes(item.cluster));
       // Recalcular posições após filtro
       ranking = ranking.map((item, index) => ({
         ...item,
@@ -217,8 +244,8 @@ export default function RankingPage() {
       }));
     }
 
-    if (filtroConsultor) {
-      ranking = ranking.filter(item => item.consultor === filtroConsultor);
+    if (filtrosConsultores.length > 0) {
+      ranking = ranking.filter(item => filtrosConsultores.includes(item.consultor));
       // Recalcular posições após filtro
       ranking = ranking.map((item, index) => ({
         ...item,
@@ -227,7 +254,7 @@ export default function RankingPage() {
     }
 
     return ranking;
-  }, [rankingMaduras, filtroCluster, filtroConsultor]);
+  }, [rankingMaduras, filtrosClusters, filtrosConsultores]);
 
   // Detectar o nome da coluna do consultor
   useEffect(() => {
@@ -304,10 +331,10 @@ export default function RankingPage() {
       filters={{
         showCluster: (user?.accessLevel ?? 0) >= 1,
         showConsultor: (user?.accessLevel ?? 0) >= 1,
-        filtroCluster,
-        filtroConsultor,
-        onClusterChange: setFiltroCluster,
-        onConsultorChange: setFiltroConsultor,
+        filtrosClusters,
+        filtrosConsultores,
+        onClustersChange: setFiltrosClusters,
+        onConsultoresChange: setFiltrosConsultores,
         listaClusters,
         listaConsultores,
       }}
@@ -794,10 +821,7 @@ export default function RankingPage() {
                           fontSize: '1rem',
                           fontWeight: 600
                         }}>
-                          {item.posicao === 1 && '🥇 '}
-                          {item.posicao === 2 && '🥈 '}
-                          {item.posicao === 3 && '🥉 '}
-                          {item.posicao}º
+                          {item.posicao}º<PositionBadge position={item.posicao} />
                         </td>
                         <td style={{ 
                           padding: '16px 10px',
@@ -852,7 +876,7 @@ export default function RankingPage() {
                     {rankingMaduras.filter(item => item.cluster === 'PADRÃO').slice(0, 3).map((item, index) => (
                       <tr key={item.unidade} style={{ borderBottom: '1px solid #343A40', backgroundColor: index % 2 === 0 ? '#2a2f36' : '#23272d' }}>
                         <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontSize: '0.9rem', fontWeight: 600, width: '40px' }}>
-                          {index === 0 && '🥇'}{index === 1 && '🥈'}{index === 2 && '🥉'}
+                          <PositionBadge position={index + 1} />
                         </td>
                         <td style={{ padding: '10px 6px', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontSize: '0.85rem', fontWeight: index === 0 ? 600 : 400 }}>{item.unidade}</td>
                         <td style={{ padding: '10px 6px', textAlign: 'right', color: '#FF6600', fontFamily: 'Poppins, sans-serif', fontSize: '0.95rem', fontWeight: 600, width: '65px' }}>{item.media.toFixed(2)}</td>
@@ -872,7 +896,7 @@ export default function RankingPage() {
                     {rankingMaduras.filter(item => item.cluster === 'MASTER').slice(0, 3).map((item, index) => (
                       <tr key={item.unidade} style={{ borderBottom: '1px solid #343A40', backgroundColor: index % 2 === 0 ? '#2a2f36' : '#23272d' }}>
                         <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontSize: '0.9rem', fontWeight: 600, width: '40px' }}>
-                          {index === 0 && '🥇'}{index === 1 && '🥈'}{index === 2 && '🥉'}
+                          <PositionBadge position={index + 1} />
                         </td>
                         <td style={{ padding: '10px 6px', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontSize: '0.85rem', fontWeight: index === 0 ? 600 : 400 }}>{item.unidade}</td>
                         <td style={{ padding: '10px 6px', textAlign: 'right', color: '#FF6600', fontFamily: 'Poppins, sans-serif', fontSize: '0.95rem', fontWeight: 600, width: '65px' }}>{item.media.toFixed(2)}</td>
@@ -892,7 +916,7 @@ export default function RankingPage() {
                     {rankingMaduras.filter(item => item.cluster === 'GIGA / MEGA').slice(0, 3).map((item, index) => (
                       <tr key={item.unidade} style={{ borderBottom: '1px solid #343A40', backgroundColor: index % 2 === 0 ? '#2a2f36' : '#23272d' }}>
                         <td style={{ padding: '10px 6px', textAlign: 'center', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontSize: '0.9rem', fontWeight: 600, width: '40px' }}>
-                          {index === 0 && '🥇'}{index === 1 && '🥈'}{index === 2 && '🥉'}
+                          <PositionBadge position={index + 1} />
                         </td>
                         <td style={{ padding: '10px 6px', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontSize: '0.85rem', fontWeight: index === 0 ? 600 : 400 }}>{item.unidade}</td>
                         <td style={{ padding: '10px 6px', textAlign: 'right', color: '#FF6600', fontFamily: 'Poppins, sans-serif', fontSize: '0.95rem', fontWeight: 600, width: '65px' }}>{item.media.toFixed(2)}</td>
@@ -941,10 +965,7 @@ export default function RankingPage() {
                       }}
                     >
                       <td style={{ padding: '12px', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontSize: '1.1rem', fontWeight: 600 }}>
-                        {item.posicao === 1 && '🥇 '}
-                        {item.posicao === 2 && '🥈 '}
-                        {item.posicao === 3 && '🥉 '}
-                        {item.posicao}º
+                        {item.posicao}º<PositionBadge position={item.posicao} />
                       </td>
                       <td style={{ padding: '12px', color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', fontWeight: item.posicao <= 3 ? 600 : 400 }}>
                         {item.unidade}

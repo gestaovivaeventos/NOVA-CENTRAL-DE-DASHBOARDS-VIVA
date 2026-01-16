@@ -10,6 +10,36 @@ interface TabelaRankingProps {
   limit?: number;
 }
 
+// Componente de Medalha Minimalista
+const PositionBadge = ({ position }: { position: number }) => {
+  if (position > 3) return <span>{position}</span>;
+  
+  const colors = {
+    1: '#FFD700', // Ouro
+    2: '#A8A8A8', // Prata
+    3: '#CD7F32', // Bronze
+  };
+  
+  const color = colors[position as 1 | 2 | 3];
+  
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center' }}>
+      <span>{position}</span>
+      <svg 
+        width="20" 
+        height="20" 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        style={{ marginLeft: '4px' }}
+      >
+        <circle cx="12" cy="9" r="7" fill={color} />
+        <path d="M8 15L6 22L12 19L18 22L16 15" fill={color} opacity="0.8" />
+        <text x="12" y="12" textAnchor="middle" fill="#1a1a1a" fontSize="9" fontWeight="700" fontFamily="Arial">{position}</text>
+      </svg>
+    </span>
+  );
+};
+
 export function TabelaRanking({ 
   franquias, 
   showCluster = true,
@@ -27,10 +57,7 @@ export function TabelaRanking({
   };
 
   const getRankingBadge = (ranking: number) => {
-    if (ranking === 1) return '🥇';
-    if (ranking === 2) return '🥈';
-    if (ranking === 3) return '🥉';
-    return ranking.toString();
+    return <PositionBadge position={ranking} />;
   };
 
   return (

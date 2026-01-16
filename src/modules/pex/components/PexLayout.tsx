@@ -9,6 +9,7 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { Trophy, BarChart3, Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Home, LogOut, Filter, Menu, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import MultiSelectFilter from './MultiSelectFilter';
 
 interface FilterConfig {
   showQuarter?: boolean;
@@ -17,17 +18,30 @@ interface FilterConfig {
   showConsultor?: boolean;
   showPerformanceComercial?: boolean;
   
+  // Suporte para valores únicos (retrocompatível)
   filtroQuarter?: string;
   filtroCluster?: string;
   filtroUnidade?: string;
   filtroConsultor?: string;
   filtroPerformanceComercial?: string;
   
+  // Suporte para valores múltiplos
+  filtrosClusters?: string[];
+  filtrosUnidades?: string[];
+  filtrosConsultores?: string[];
+  filtrosPerformanceComercial?: string[];
+  
   onQuarterChange?: (value: string) => void;
   onClusterChange?: (value: string) => void;
   onUnidadeChange?: (value: string) => void;
   onConsultorChange?: (value: string) => void;
   onPerformanceComercialChange?: (value: string) => void;
+  
+  // Callbacks para valores múltiplos
+  onClustersChange?: (values: string[]) => void;
+  onUnidadesChange?: (values: string[]) => void;
+  onConsultoresChange?: (values: string[]) => void;
+  onPerformanceComercialMultiChange?: (values: string[]) => void;
   
   listaQuarters?: string[];
   listaClusters?: string[];
@@ -365,13 +379,13 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
 
             {/* Conteúdo dos Filtros */}
             <div style={{
-              maxHeight: isFiltersExpanded ? '500px' : '0',
+              maxHeight: isFiltersExpanded ? '1000px' : '0',
               opacity: isFiltersExpanded ? 1 : 0,
               overflow: isFiltersExpanded ? 'visible' : 'hidden',
               transition: 'all 0.3s ease',
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Filtro Quarter */}
+                {/* Filtro Quarter - permanece como select único */}
                 {filters.showQuarter && (
                   <div>
                     <label style={{
@@ -408,7 +422,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                   </div>
                 )}
 
-                {/* Filtro Cluster */}
+                {/* Filtro Cluster - MultiSelect */}
                 {filters.showCluster && (
                   <div>
                     <label style={{
@@ -420,33 +434,42 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                     }}>
                       Cluster
                     </label>
-                    <select
-                      value={filters.filtroCluster || ''}
-                      onChange={(e) => filters.onClusterChange?.(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        backgroundColor: '#2a2f36',
-                        border: '1px solid #444',
-                        color: '#F8F9FA',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        appearance: 'auto',
-                        WebkitAppearance: 'menulist',
-                        position: 'relative',
-                        zIndex: 100,
-                      }}
-                    >
-                      <option value="">Todos os Clusters</option>
-                      {filters.listaClusters?.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                    {filters.onClustersChange ? (
+                      <MultiSelectFilter
+                        options={filters.listaClusters || []}
+                        selectedValues={filters.filtrosClusters || []}
+                        onChange={filters.onClustersChange}
+                        placeholder="Selecione clusters..."
+                      />
+                    ) : (
+                      <select
+                        value={filters.filtroCluster || ''}
+                        onChange={(e) => filters.onClusterChange?.(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: '#2a2f36',
+                          border: '1px solid #444',
+                          color: '#F8F9FA',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          appearance: 'auto',
+                          WebkitAppearance: 'menulist',
+                          position: 'relative',
+                          zIndex: 100,
+                        }}
+                      >
+                        <option value="">Todos os Clusters</option>
+                        {filters.listaClusters?.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 )}
 
-                {/* Filtro Unidade */}
+                {/* Filtro Unidade - MultiSelect */}
                 {filters.showUnidade && (
                   <div>
                     <label style={{
@@ -458,32 +481,41 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                     }}>
                       Franquia
                     </label>
-                    <select
-                      value={filters.filtroUnidade || ''}
-                      onChange={(e) => filters.onUnidadeChange?.(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        backgroundColor: '#2a2f36',
-                        border: '1px solid #444',
-                        color: '#F8F9FA',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        appearance: 'auto',
-                        WebkitAppearance: 'menulist',
-                        position: 'relative',
-                        zIndex: 100,
-                      }}
-                    >
-                      {filters.listaUnidades?.map((u) => (
-                        <option key={u} value={u}>{u}</option>
-                      ))}
-                    </select>
+                    {filters.onUnidadesChange ? (
+                      <MultiSelectFilter
+                        options={filters.listaUnidades || []}
+                        selectedValues={filters.filtrosUnidades || []}
+                        onChange={filters.onUnidadesChange}
+                        placeholder="Selecione franquias..."
+                      />
+                    ) : (
+                      <select
+                        value={filters.filtroUnidade || ''}
+                        onChange={(e) => filters.onUnidadeChange?.(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: '#2a2f36',
+                          border: '1px solid #444',
+                          color: '#F8F9FA',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          appearance: 'auto',
+                          WebkitAppearance: 'menulist',
+                          position: 'relative',
+                          zIndex: 100,
+                        }}
+                      >
+                        {filters.listaUnidades?.map((u) => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 )}
 
-                {/* Filtro Consultor */}
+                {/* Filtro Consultor - MultiSelect */}
                 {filters.showConsultor && (
                   <div>
                     <label style={{
@@ -495,33 +527,42 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                     }}>
                       Consultor
                     </label>
-                    <select
-                      value={filters.filtroConsultor || ''}
-                      onChange={(e) => filters.onConsultorChange?.(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        backgroundColor: '#2a2f36',
-                        border: '1px solid #444',
-                        color: '#F8F9FA',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        appearance: 'auto',
-                        WebkitAppearance: 'menulist',
-                        position: 'relative',
-                        zIndex: 100,
-                      }}
-                    >
-                      <option value="">Todos os Consultores</option>
-                      {filters.listaConsultores?.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
+                    {filters.onConsultoresChange ? (
+                      <MultiSelectFilter
+                        options={filters.listaConsultores || []}
+                        selectedValues={filters.filtrosConsultores || []}
+                        onChange={filters.onConsultoresChange}
+                        placeholder="Selecione consultores..."
+                      />
+                    ) : (
+                      <select
+                        value={filters.filtroConsultor || ''}
+                        onChange={(e) => filters.onConsultorChange?.(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: '#2a2f36',
+                          border: '1px solid #444',
+                          color: '#F8F9FA',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          appearance: 'auto',
+                          WebkitAppearance: 'menulist',
+                          position: 'relative',
+                          zIndex: 100,
+                        }}
+                      >
+                        <option value="">Todos os Consultores</option>
+                        {filters.listaConsultores?.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 )}
 
-                {/* Filtro Performance Comercial */}
+                {/* Filtro Performance Comercial - MultiSelect */}
                 {filters.showPerformanceComercial && (
                   <div>
                     <label style={{
@@ -533,29 +574,38 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                     }}>
                       Performance Comercial
                     </label>
-                    <select
-                      value={filters.filtroPerformanceComercial || ''}
-                      onChange={(e) => filters.onPerformanceComercialChange?.(e.target.value)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        backgroundColor: '#2a2f36',
-                        border: '1px solid #444',
-                        color: '#F8F9FA',
-                        fontSize: '0.85rem',
-                        cursor: 'pointer',
-                        appearance: 'auto',
-                        WebkitAppearance: 'menulist',
-                        position: 'relative',
-                        zIndex: 100,
-                      }}
-                    >
-                      <option value="">Todas</option>
-                      {filters.listaPerformanceComercial?.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
+                    {filters.onPerformanceComercialMultiChange ? (
+                      <MultiSelectFilter
+                        options={filters.listaPerformanceComercial || []}
+                        selectedValues={filters.filtrosPerformanceComercial || []}
+                        onChange={filters.onPerformanceComercialMultiChange}
+                        placeholder="Selecione performance..."
+                      />
+                    ) : (
+                      <select
+                        value={filters.filtroPerformanceComercial || ''}
+                        onChange={(e) => filters.onPerformanceComercialChange?.(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: '#2a2f36',
+                          border: '1px solid #444',
+                          color: '#F8F9FA',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          appearance: 'auto',
+                          WebkitAppearance: 'menulist',
+                          position: 'relative',
+                          zIndex: 100,
+                        }}
+                      >
+                        <option value="">Todas</option>
+                        {filters.listaPerformanceComercial?.map((p) => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 )}
               </div>
