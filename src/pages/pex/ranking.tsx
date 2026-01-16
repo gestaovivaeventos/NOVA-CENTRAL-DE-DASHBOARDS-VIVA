@@ -255,26 +255,13 @@ export default function RankingPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '100vh',
+          minHeight: '60vh',
           backgroundColor: '#212529',
         }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid #FF6600',
-              borderTopColor: 'transparent',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto',
-            }} />
-            <p style={{ marginTop: '16px', color: '#adb5bd' }}>Carregando...</p>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 mx-auto" style={{ borderColor: '#FF6600' }}></div>
+            <p className="mt-4" style={{ color: '#adb5bd' }}>Carregando dados...</p>
           </div>
-          <style jsx>{`
-            @keyframes spin {
-              to { transform: rotate(360deg); }
-            }
-          `}</style>
         </div>
       </PexLayout>
     );
