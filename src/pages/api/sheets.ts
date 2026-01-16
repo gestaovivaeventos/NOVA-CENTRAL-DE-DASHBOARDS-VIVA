@@ -23,7 +23,7 @@ export default async function handler(
   try {
     // Buscar dados com cache
     const data = await getSheetData(
-      'PONTUAÇÃO OFICIAL!A:AE',
+      'PONTUAÇÃO OFICIAL!A:AK',
       'sheets:pontuacao-oficial',
       CACHE_TTL.PONTUACAO_OFICIAL
     );

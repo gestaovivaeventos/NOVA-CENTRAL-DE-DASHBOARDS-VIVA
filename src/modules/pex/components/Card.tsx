@@ -10,9 +10,10 @@ interface CardProps {
   titulo?: string;
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export default function Card({ titulo, children, className = '' }: CardProps) {
+export default function Card({ titulo, children, className = '', style }: CardProps) {
   return (
     <div 
       className={`card ${className}`}
@@ -21,7 +22,8 @@ export default function Card({ titulo, children, className = '' }: CardProps) {
         borderRadius: '8px',
         padding: '20px',
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        ...style
       }}
     >
       {titulo && (

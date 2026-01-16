@@ -134,28 +134,38 @@ export default function ResultadosPage() {
     return dadosBrutos.find(item => item.quarter === filtroQuarter && item.nm_unidade === filtroUnidade);
   }, [dadosBrutos, filtroQuarter, filtroUnidade]);
 
-  // Pontuação total (média de todos os quarters)
+  // Pontuação total (média apenas de quarters ATIVOS)
   const pontuacaoTotal = useMemo(() => {
     if (!dadosBrutos || !filtroUnidade) return 0;
-    const dadosUnidade = dadosBrutos.filter(item => item.nm_unidade === filtroUnidade);
     
-    const total = dadosUnidade.reduce((sum, item) => {
+    // Filtrar apenas quarters ativos da unidade
+    const dadosUnidadeAtivos = dadosBrutos.filter(item => 
+      item.nm_unidade === filtroUnidade && 
+      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
+    );
+    
+    const total = dadosUnidadeAtivos.reduce((sum, item) => {
       const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
       return sum + (isNaN(pont) ? 0 : pont);
     }, 0);
     
-    return dadosUnidade.length > 0 ? total / dadosUnidade.length : 0;
+    return dadosUnidadeAtivos.length > 0 ? total / dadosUnidadeAtivos.length : 0;
   }, [dadosBrutos, filtroUnidade]);
 
-  // Posição na Rede e no Cluster (baseado na média total)
+  // Posição na Rede e no Cluster (baseado na média total de quarters ATIVOS)
   const posicoes = useMemo(() => {
     if (!dadosBrutos || !filtroUnidade) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
     
-    // Calcular média de cada unidade
-    const unidadesUnicas = Array.from(new Set(dadosBrutos.map(item => item.nm_unidade)));
+    // Filtrar apenas dados de quarters ativos
+    const dadosAtivos = dadosBrutos.filter(item => 
+      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
+    );
+    
+    // Calcular média de cada unidade (apenas quarters ativos)
+    const unidadesUnicas = Array.from(new Set(dadosAtivos.map(item => item.nm_unidade)));
     
     const mediasPorUnidade = unidadesUnicas.map(unidade => {
-      const dadosUnidade = dadosBrutos.filter(item => item.nm_unidade === unidade);
+      const dadosUnidade = dadosAtivos.filter(item => item.nm_unidade === unidade);
       const total = dadosUnidade.reduce((sum, item) => {
         const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
         return sum + (isNaN(pont) ? 0 : pont);
@@ -202,16 +212,19 @@ export default function ResultadosPage() {
     return { posicaoRede, totalRede, posicaoCluster, totalCluster };
   }, [dadosBrutos, filtroUnidade, filtroQuarter, itemSelecionado]);
 
-  // Pontuações por quarter
+  // Pontuações por quarter (apenas quarters ativos)
   const pontuacoesPorQuarter = useMemo(() => {
     if (!dadosBrutos || !filtroUnidade) return [];
     
     return ['1', '2', '3', '4'].map(quarter => {
-      const item = dadosBrutos.find(d => d.QUARTER === quarter && d.nm_unidade === filtroUnidade);
-      if (!item) return { quarter, pontuacao: 0 };
+      const item = dadosBrutos.find(d => d.quarter === quarter && d.nm_unidade === filtroUnidade);
+      if (!item) return { quarter, pontuacao: 0, ativo: false };
+      
+      // Verificar se o quarter está ativo
+      const quarterAtivo = (item.quarter_ativo || '').toString().toLowerCase() === 'ativo';
       
       const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
-      return { quarter, pontuacao: isNaN(pont) ? 0 : pont };
+      return { quarter, pontuacao: isNaN(pont) ? 0 : pont, ativo: quarterAtivo };
     });
   }, [dadosBrutos, filtroUnidade]);
 
@@ -623,14 +636,16 @@ export default function ResultadosPage() {
               marginBottom: '30px' 
             }}>
               {pontuacoesPorQuarter.map((quarterData) => {
+                // Se inativo, mostrar pontuação zerada
+                const pontuacaoExibir = quarterData.ativo ? quarterData.pontuacao : 0;
                 const dados = [
-                  { name: 'score', value: quarterData.pontuacao },
-                  { name: 'restante', value: Math.max(0, 100 - quarterData.pontuacao) }
+                  { name: 'score', value: pontuacaoExibir },
+                  { name: 'restante', value: Math.max(0, 100 - pontuacaoExibir) }
                 ];
 
                 return (
                   <Card key={quarterData.quarter} titulo={`${quarterData.quarter}º Quarter`}>
-                    <div style={{ width: '100%', overflow: 'hidden' }}>
+                    <div style={{ width: '100%', overflow: 'hidden', opacity: quarterData.ativo ? 1 : 0.5 }}>
                       <ResponsiveContainer width="100%" height={180}>
                         <PieChart>
                           <defs>
@@ -650,19 +665,19 @@ export default function ResultadosPage() {
                             dataKey="value"
                             stroke="none"
                           >
-                            <Cell fill={`url(#orangeGradient${quarterData.quarter})`} stroke="none" />
+                            <Cell fill={quarterData.ativo ? `url(#orangeGradient${quarterData.quarter})` : '#555'} stroke="none" />
                             <Cell fill="#3a3f47" stroke="none" />
                             <Label
-                              value={quarterData.pontuacao.toFixed(2)}
+                              value={pontuacaoExibir.toFixed(2)}
                               position="center"
-                              style={{ fontSize: '1.8rem', fontWeight: '300', fill: '#F8F9FA' }}
+                              style={{ fontSize: '1.8rem', fontWeight: '300', fill: quarterData.ativo ? '#F8F9FA' : '#888' }}
                             />
                           </Pie>
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
                     <div style={{ textAlign: 'center', marginTop: '8px' }}>
-                      <p style={{ fontSize: '13px', color: '#adb5bd' }}>Pontuação</p>
+                      <p style={{ fontSize: '13px', color: quarterData.ativo ? '#adb5bd' : '#666' }}>Pontuação</p>
                     </div>
                   </Card>
                 );

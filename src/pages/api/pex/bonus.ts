@@ -38,7 +38,7 @@ export default async function handler(
     if (req.method === 'GET') {
       try {
         // Usar cache para leitura
-        const data = await getSheetData('PONTUAÇÃO OFICIAL!A:AE', CACHE_KEY, CACHE_TTL.PONTUACAO_OFICIAL);
+        const data = await getSheetData('PONTUAÇÃO OFICIAL!A:AK', CACHE_KEY, CACHE_TTL.PONTUACAO_OFICIAL);
         res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
         return res.status(200).json(data);
       } catch (error: any) {
