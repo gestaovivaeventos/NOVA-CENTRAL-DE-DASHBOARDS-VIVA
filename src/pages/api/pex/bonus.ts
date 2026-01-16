@@ -1,13 +1,13 @@
 /**
  * API Handler para gerenciar bônus por unidade
- * Lê e escreve na aba DEVERIA - COM CACHE
+ * Lê e escreve na aba PONTUAÇÃO OFICIAL - COM CACHE
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 import { getSheetData, CACHE_TTL, invalidateCache } from '@/lib/sheets-client';
 
-const CACHE_KEY = 'pex:bonus';
+const CACHE_KEY = 'pex:pontuacao-oficial:bonus';
 
 export default async function handler(
   req: NextApiRequest,
@@ -38,7 +38,7 @@ export default async function handler(
     if (req.method === 'GET') {
       try {
         // Usar cache para leitura
-        const data = await getSheetData('DEVERIA!A:V', CACHE_KEY, CACHE_TTL.DEVERIA);
+        const data = await getSheetData('PONTUAÇÃO OFICIAL!A:AE', CACHE_KEY, CACHE_TTL.PONTUACAO_OFICIAL);
         res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
         return res.status(200).json(data);
       } catch (error: any) {
@@ -62,7 +62,7 @@ export default async function handler(
 
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: GOOGLE_SHEET_ID,
-        range: 'DEVERIA!A:V',
+        range: 'PONTUAÇÃO OFICIAL!A:AE',
       });
 
       const rows = response.data.values || [];
@@ -70,14 +70,14 @@ export default async function handler(
       if (rows.length === 0) {
         return res.status(404).json({
           error: 'Planilha vazia',
-          message: 'A planilha DEVERIA está vazia',
+          message: 'A planilha PONTUAÇÃO OFICIAL está vazia',
         });
       }
 
       let rowIndex = -1;
       for (let i = 1; i < rows.length; i++) {
         const nmUnidade = rows[i][0];
-        const quarterDaLinha = rows[i][23]; // Coluna X
+        const quarterDaLinha = rows[i][29]; // Coluna AD (quarter)
         
         if (nmUnidade === unidade && quarterDaLinha === quarter) {
           rowIndex = i;
@@ -93,7 +93,7 @@ export default async function handler(
       }
 
       const sheetRowNumber = rowIndex + 1;
-      const updateRange = `DEVERIA!D${sheetRowNumber}`;
+      const updateRange = `PONTUAÇÃO OFICIAL!D${sheetRowNumber}`;
 
       const numero = parseFloat(String(valor).replace(',', '.'));
       const valorFormatado = String(numero.toFixed(1)).replace('.', ',');

@@ -19,14 +19,18 @@ const MESES = [
 ];
 
 const INDICADORES = [
-  { codigo: 'VVR', nome: 'VVR' },
-  { codigo: 'MAC', nome: 'MAC' },
-  { codigo: 'Endividamento', nome: 'Endividamento' },
-  { codigo: 'NPS', nome: 'NPS' },
-  { codigo: 'MC % (entrega)', nome: 'MC % (entrega)' },
-  { codigo: 'Satisfação do colaborador - e-NPS', nome: 'Satisfação e-NPS' },
-  { codigo: '*Conformidades', nome: 'Conformidades' },
-  { codigo: 'Pontuação com bonus', nome: 'Pontuação no Mês' }
+  { codigo: 'vvr_12_meses', nome: 'VVR 12 Meses' },
+  { codigo: 'vvr_carteira', nome: 'VVR Carteira' },
+  { codigo: 'Indice_endividamento', nome: 'Endividamento' },
+  { codigo: 'nps_geral', nome: 'NPS Geral' },
+  { codigo: 'indice_margem_entrega', nome: 'Margem Entrega' },
+  { codigo: 'enps_rede', nome: 'eNPS Rede' },
+  { codigo: 'conformidades', nome: 'Conformidades' },
+  { codigo: 'reclame_aqui', nome: 'Reclame Aqui' },
+  { codigo: 'colaboradores_mais_1_ano', nome: 'Colab. +1 Ano' },
+  { codigo: 'estrutura_organizacioanl', nome: 'Estrutura Org.' },
+  { codigo: 'churn', nome: 'Churn' },
+  { codigo: 'pontuacao_com_bonus', nome: 'Pontuação no Mês' }
 ];
 
 export default function GraficoEvolucao({ 
@@ -34,9 +38,9 @@ export default function GraficoEvolucao({
   unidadeSelecionada, 
   clusterSelecionado, 
   consultorSelecionado,
-  nomeColunaConsultor = 'Consultor'
+  nomeColunaConsultor = 'consultor'
 }: GraficoEvolucaoProps) {
-  const [indicadorSelecionado, setIndicadorSelecionado] = useState('VVR');
+  const [indicadorSelecionado, setIndicadorSelecionado] = useState('vvr_12_meses');
   const [anoSelecionado, setAnoSelecionado] = useState('2025');
 
   // Extrair anos disponíveis
@@ -116,14 +120,18 @@ export default function GraficoEvolucao({
           
           if (mesIndex >= 0 && mesIndex < 12) {
             const variacoesNomes: { [key: string]: string[] } = {
-              'VVR': ['VVR'],
-              'MAC': ['MAC'],
-              'Endividamento': ['Endividamento'],
-              'NPS': ['NPS'],
-              'MC % (entrega)': ['MC %\n(entrega)', 'MC % (entrega)', 'MC %(entrega)', 'MC%'],
-              'Satisfação do colaborador - e-NPS': ['Satisfação do colaborador - e-NPS', 'Satisfacao do colaborador - e-NPS'],
-              '*Conformidades': ['*Conformidades', 'Conformidades', '%Conformidades'],
-              'Pontuação com bonus': ['Pontuação com bonus', 'Pontuação com Bonus']
+              'vvr_12_meses': ['vvr_12_meses'],
+              'vvr_carteira': ['vvr_carteira'],
+              'Indice_endividamento': ['Indice_endividamento', 'indice_endividamento'],
+              'nps_geral': ['nps_geral'],
+              'indice_margem_entrega': ['indice_margem_entrega'],
+              'enps_rede': ['enps_rede'],
+              'conformidades': ['conformidades'],
+              'reclame_aqui': ['reclame_aqui'],
+              'colaboradores_mais_1_ano': ['colaboradores_mais_1_ano'],
+              'estrutura_organizacioanl': ['estrutura_organizacioanl'],
+              'churn': ['churn'],
+              'pontuacao_com_bonus': ['pontuacao_com_bonus']
             };
             
             const variacoes = variacoesNomes[indicadorSelecionado] || [indicadorSelecionado];
@@ -165,14 +173,18 @@ export default function GraficoEvolucao({
     if (!dadosHistorico || dadosHistorico.length === 0) return 100;
 
     const variacoesNomes: { [key: string]: string[] } = {
-      'VVR': ['VVR'],
-      'MAC': ['MAC'],
-      'Endividamento': ['Endividamento'],
-      'NPS': ['NPS'],
-      'MC % (entrega)': ['MC %\n(entrega)', 'MC % (entrega)', 'MC %(entrega)', 'MC%'],
-      'Satisfação do colaborador - e-NPS': ['Satisfação do colaborador - e-NPS', 'Satisfacao do colaborador - e-NPS'],
-      '*Conformidades': ['*Conformidades', 'Conformidades', '%Conformidades'],
-      'Pontuação com bonus': ['Pontuação com bonus', 'Pontuação com Bonus']
+      'vvr_12_meses': ['vvr_12_meses'],
+      'vvr_carteira': ['vvr_carteira'],
+      'Indice_endividamento': ['Indice_endividamento', 'indice_endividamento'],
+      'nps_geral': ['nps_geral'],
+      'indice_margem_entrega': ['indice_margem_entrega'],
+      'enps_rede': ['enps_rede'],
+      'conformidades': ['conformidades'],
+      'reclame_aqui': ['reclame_aqui'],
+      'colaboradores_mais_1_ano': ['colaboradores_mais_1_ano'],
+      'estrutura_organizacioanl': ['estrutura_organizacioanl'],
+      'churn': ['churn'],
+      'pontuacao_com_bonus': ['pontuacao_com_bonus']
     };
 
     let valoresMaximos: number[] = [];

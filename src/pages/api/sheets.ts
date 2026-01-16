@@ -1,6 +1,6 @@
 /**
  * API Handler para buscar dados do Google Sheets
- * Busca dados da aba DEVERIA COM CACHE
+ * Busca dados da aba PONTUAÇÃO OFICIAL COM CACHE
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -23,9 +23,9 @@ export default async function handler(
   try {
     // Buscar dados com cache
     const data = await getSheetData(
-      'DEVERIA!A:Z',
-      'sheets:deveria',
-      CACHE_TTL.DEVERIA
+      'PONTUAÇÃO OFICIAL!A:AE',
+      'sheets:pontuacao-oficial',
+      CACHE_TTL.PONTUACAO_OFICIAL
     );
 
     // Headers de cache para o browser

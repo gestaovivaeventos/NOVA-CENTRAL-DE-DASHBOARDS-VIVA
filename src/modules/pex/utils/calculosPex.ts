@@ -6,40 +6,56 @@ import { ClusterType } from '../types';
 
 export const METAS_POR_CLUSTER: Record<ClusterType, Record<string, number>> = {
   CALOURO_INICIANTE: {
-    vvr: 70,
-    mac: 60,
-    endividamento: 50,
-    nps: 50,
-    mc: 15,
-    enps: 50,
+    vvr_12_meses: 70,
+    vvr_carteira: 70,
+    indice_endividamento: 50,
+    nps_geral: 50,
+    indice_margem_entrega: 15,
+    enps_rede: 50,
     conformidades: 70,
+    reclame_aqui: 70,
+    colaboradores_mais_1_ano: 50,
+    estrutura_organizacional: 70,
+    churn: 10,
   },
   CALOURO: {
-    vvr: 75,
-    mac: 65,
-    endividamento: 45,
-    nps: 60,
-    mc: 18,
-    enps: 55,
+    vvr_12_meses: 75,
+    vvr_carteira: 75,
+    indice_endividamento: 45,
+    nps_geral: 60,
+    indice_margem_entrega: 18,
+    enps_rede: 55,
     conformidades: 75,
+    reclame_aqui: 75,
+    colaboradores_mais_1_ano: 55,
+    estrutura_organizacional: 75,
+    churn: 8,
   },
   GRADUADO: {
-    vvr: 80,
-    mac: 70,
-    endividamento: 40,
-    nps: 70,
-    mc: 20,
-    enps: 60,
+    vvr_12_meses: 80,
+    vvr_carteira: 80,
+    indice_endividamento: 40,
+    nps_geral: 70,
+    indice_margem_entrega: 20,
+    enps_rede: 60,
     conformidades: 80,
+    reclame_aqui: 80,
+    colaboradores_mais_1_ano: 60,
+    estrutura_organizacional: 80,
+    churn: 6,
   },
   POS_GRADUADO: {
-    vvr: 85,
-    mac: 75,
-    endividamento: 35,
-    nps: 75,
-    mc: 22,
-    enps: 65,
+    vvr_12_meses: 85,
+    vvr_carteira: 85,
+    indice_endividamento: 35,
+    nps_geral: 75,
+    indice_margem_entrega: 22,
+    enps_rede: 65,
     conformidades: 85,
+    reclame_aqui: 85,
+    colaboradores_mais_1_ano: 65,
+    estrutura_organizacional: 85,
+    churn: 5,
   },
 };
 
@@ -48,13 +64,17 @@ export const METAS_POR_CLUSTER: Record<ClusterType, Record<string, number>> = {
 // ============================================
 
 export const PESOS_PADRAO: Record<string, number> = {
-  vvr: 2,
-  mac: 1.5,
-  endividamento: 1,
-  nps: 1.5,
-  mc: 2,
-  enps: 1,
+  vvr_12_meses: 2,
+  vvr_carteira: 2,
+  indice_endividamento: 1,
+  nps_geral: 1.5,
+  indice_margem_entrega: 2,
+  enps_rede: 1,
   conformidades: 1,
+  reclame_aqui: 1,
+  colaboradores_mais_1_ano: 1,
+  estrutura_organizacional: 1,
+  churn: 1.5,
 };
 
 // ============================================
@@ -106,7 +126,7 @@ export function calcularPontuacaoTotal(
   const porIndicador: Record<string, number> = {};
   let total = 0;
 
-  const indicadoresInversos = ['endividamento'];
+  const indicadoresInversos = ['indice_endividamento', 'churn'];
 
   for (const [indicador, peso] of Object.entries(pesos)) {
     const valor = valores[indicador] || 0;

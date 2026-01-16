@@ -50,13 +50,13 @@ export default function ResultadosPage() {
   const [filtroUnidade, setFiltroUnidade] = useState<string>('');
   const [filtroCluster, setFiltroCluster] = useState<string>('');
   const [filtroConsultor, setFiltroConsultor] = useState<string>('');
-  const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('Consultor');
+  const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
 
   // Detectar nome da coluna do consultor
   useEffect(() => {
     if (dadosBrutos && dadosBrutos.length > 0) {
-      const possiveisNomes = ['Consultor', 'CONSULTOR', 'consultor', 'CONSULTOR RESPONSAVEL'];
+      const possiveisNomes = ['consultor', 'Consultor', 'CONSULTOR', 'CONSULTOR RESPONSAVEL'];
       const nomeColuna = possiveisNomes.find(nome => dadosBrutos[0].hasOwnProperty(nome));
       if (nomeColuna) setNomeColunaConsultor(nomeColuna);
     }
@@ -74,7 +74,7 @@ export default function ResultadosPage() {
   const listaQuarters = useMemo(() => {
     if (!dadosBrutos || dadosBrutos.length === 0) return [];
     return dadosBrutos
-      .map(item => item.QUARTER)
+      .map(item => item.quarter)
       .filter((value, index, self) => value && self.indexOf(value) === index)
       .sort();
   }, [dadosBrutos]);
@@ -99,7 +99,7 @@ export default function ResultadosPage() {
     if (!dadosBrutos || dadosBrutos.length === 0) return [];
     let dados = dadosBrutos;
     
-    if (filtroQuarter) dados = dados.filter(item => item.QUARTER === filtroQuarter);
+    if (filtroQuarter) dados = dados.filter(item => item.quarter === filtroQuarter);
     if (filtroCluster) dados = dados.filter(item => item.cluster === filtroCluster);
     if (filtroConsultor) dados = dados.filter(item => item[nomeColunaConsultor] === filtroConsultor);
     
@@ -131,7 +131,7 @@ export default function ResultadosPage() {
   // Item selecionado
   const itemSelecionado = useMemo(() => {
     if (!dadosBrutos || !filtroQuarter || !filtroUnidade) return null;
-    return dadosBrutos.find(item => item.QUARTER === filtroQuarter && item.nm_unidade === filtroUnidade);
+    return dadosBrutos.find(item => item.quarter === filtroQuarter && item.nm_unidade === filtroUnidade);
   }, [dadosBrutos, filtroQuarter, filtroUnidade]);
 
   // Pontuação total (média de todos os quarters)
@@ -140,7 +140,7 @@ export default function ResultadosPage() {
     const dadosUnidade = dadosBrutos.filter(item => item.nm_unidade === filtroUnidade);
     
     const total = dadosUnidade.reduce((sum, item) => {
-      const pont = parseFloat((item['Pontuação com bonus'] || item['Pontuação com Bonus'] || '0').toString().replace(',', '.'));
+      const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
       return sum + (isNaN(pont) ? 0 : pont);
     }, 0);
     
@@ -157,7 +157,7 @@ export default function ResultadosPage() {
     const mediasPorUnidade = unidadesUnicas.map(unidade => {
       const dadosUnidade = dadosBrutos.filter(item => item.nm_unidade === unidade);
       const total = dadosUnidade.reduce((sum, item) => {
-        const pont = parseFloat((item['Pontuação com bonus'] || item['Pontuação com Bonus'] || '0').toString().replace(',', '.'));
+        const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
         return sum + (isNaN(pont) ? 0 : pont);
       }, 0);
       const media = dadosUnidade.length > 0 ? total / dadosUnidade.length : 0;
@@ -183,11 +183,11 @@ export default function ResultadosPage() {
   const posicoesQuarter = useMemo(() => {
     if (!dadosBrutos || !filtroUnidade || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
     
-    const dadosQuarter = dadosBrutos.filter(item => item.QUARTER === filtroQuarter);
+    const dadosQuarter = dadosBrutos.filter(item => item.quarter === filtroQuarter);
     
     const rankingRede = dadosQuarter.map(item => ({
       unidade: item.nm_unidade,
-      pontuacao: parseFloat((item['Pontuação com bonus'] || item['Pontuação com Bonus'] || '0').toString().replace(',', '.')),
+      pontuacao: parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.')),
       cluster: item.cluster
     })).sort((a, b) => b.pontuacao - a.pontuacao);
     
@@ -210,7 +210,7 @@ export default function ResultadosPage() {
       const item = dadosBrutos.find(d => d.QUARTER === quarter && d.nm_unidade === filtroUnidade);
       if (!item) return { quarter, pontuacao: 0 };
       
-      const pont = parseFloat((item['Pontuação com bonus'] || item['Pontuação com Bonus'] || '0').toString().replace(',', '.'));
+      const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
       return { quarter, pontuacao: isNaN(pont) ? 0 : pont };
     });
   }, [dadosBrutos, filtroUnidade]);
@@ -224,20 +224,23 @@ export default function ResultadosPage() {
       return parseFloat(valor.toString().replace(',', '.')) || 0;
     };
 
-    const dadosFiltrados = dadosBrutos.filter(item => item.QUARTER === filtroQuarter);
+    const dadosFiltrados = dadosBrutos.filter(item => item.quarter === filtroQuarter);
     const cluster = itemSelecionado.cluster;
     const dadosCluster = dadosFiltrados.filter(item => item.cluster === cluster);
 
     const listaIndicadores = [
-      { codigo: 'VVR', coluna: 'VVR', titulo: 'VVR', notaGeral: 'VALOR DE VENDAS REALIZADAS' },
-      { codigo: 'MAC', coluna: 'MAC', titulo: 'MAC', notaGeral: 'META DE ATINGIMENTO DE CONTRATO' },
-      { codigo: 'Endividamento', coluna: 'Endividamento', titulo: 'ENDIVIDAMENTO', notaGeral: 'PERCENTUAL DE ENDIVIDAMENTO' },
-      { codigo: 'NPS', coluna: 'NPS', titulo: 'NPS SEMESTRAL', notaGeral: 'NET PROMOTER SCORE' },
-      { codigo: 'MC_PERCENTUAL', coluna: 'MC %\n(entrega)', titulo: 'MC % (ENTREGA)', notaGeral: 'MARGEM DE CONTRIBUIÇÃO' },
-      { codigo: 'E_NPS', coluna: 'Satisfação do colaborador - e-NPS', titulo: 'SATISFAÇÃO DO COLABORADOR', notaGeral: 'E-NPS' },
-      { codigo: 'CONFORMIDADES', coluna: '*Conformidades', titulo: 'CONFORMIDADES', notaGeral: 'AUDITORIA DE CONFORMIDADES' },
-      { codigo: 'RECLAME_AQUI', coluna: 'RECLAME AQUI', titulo: 'RECLAME AQUI', notaGeral: 'ÍNDICE RECLAME AQUI' },
-      { codigo: 'BONUS', coluna: 'Bonus', titulo: 'BÔNUS', notaGeral: 'PONTOS DE BÔNUS' }
+      { codigo: 'VVR_12_MESES', coluna: 'vvr_12_meses', titulo: 'VVR 12 MESES', notaGeral: 'VALOR DE VENDAS REALIZADAS 12 MESES' },
+      { codigo: 'VVR_CARTEIRA', coluna: 'vvr_carteira', titulo: 'VVR CARTEIRA', notaGeral: 'VALOR DE VENDAS REALIZADAS CARTEIRA' },
+      { codigo: 'ENDIVIDAMENTO', coluna: 'Indice_endividamento', titulo: 'ENDIVIDAMENTO', notaGeral: 'ÍNDICE DE ENDIVIDAMENTO' },
+      { codigo: 'NPS', coluna: 'nps_geral', titulo: 'NPS GERAL', notaGeral: 'NET PROMOTER SCORE' },
+      { codigo: 'MARGEM_ENTREGA', coluna: 'indice_margem_entrega', titulo: 'MARGEM ENTREGA', notaGeral: 'ÍNDICE DE MARGEM DE ENTREGA' },
+      { codigo: 'ENPS', coluna: 'enps_rede', titulo: 'eNPS REDE', notaGeral: 'EMPLOYEE NET PROMOTER SCORE' },
+      { codigo: 'CONFORMIDADES', coluna: 'conformidades', titulo: 'CONFORMIDADES', notaGeral: 'AUDITORIA DE CONFORMIDADES' },
+      { codigo: 'RECLAME_AQUI', coluna: 'reclame_aqui', titulo: 'RECLAME AQUI', notaGeral: 'ÍNDICE RECLAME AQUI' },
+      { codigo: 'COLABORADORES', coluna: 'colaboradores_mais_1_ano', titulo: 'COLAB. +1 ANO', notaGeral: 'COLABORADORES COM MAIS DE 1 ANO' },
+      { codigo: 'ESTRUTURA', coluna: 'estrutura_organizacioanl', titulo: 'ESTRUTURA ORG.', notaGeral: 'ESTRUTURA ORGANIZACIONAL' },
+      { codigo: 'CHURN', coluna: 'churn', titulo: 'CHURN', notaGeral: 'ÍNDICE DE CHURN' },
+      { codigo: 'BONUS', coluna: 'bonus', titulo: 'BÔNUS', notaGeral: 'PONTOS DE BÔNUS' }
     ];
 
     return listaIndicadores.map(ind => {
@@ -548,21 +551,21 @@ export default function ResultadosPage() {
                       <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado.cluster}</span>
                     </div>
                   )}
-                  {itemSelecionado['saude_franquia'] && (
+                  {itemSelecionado['posicao_grupo'] && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Saúde da Franquia:</span>
+                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição no Grupo:</span>
                       <span style={{ 
                         fontWeight: 600,
-                        ...((itemSelecionado['saude_franquia'].toString().toUpperCase() === 'UTI')
+                        ...((itemSelecionado['posicao_grupo'].toString().toUpperCase() === 'UTI')
                           ? { color: '#FF4444' }
-                          : (itemSelecionado['saude_franquia'].toString().toUpperCase().includes('ATENC'))
+                          : (itemSelecionado['posicao_grupo'].toString().toUpperCase().includes('ATENC'))
                             ? { color: '#FFC107' }
-                            : (itemSelecionado['saude_franquia'].toString().toUpperCase().includes('SAUD'))
+                            : (itemSelecionado['posicao_grupo'].toString().toUpperCase().includes('SAUD'))
                               ? { color: '#00C853' }
                               : { color: '#F8F9FA' }
                         )
                       }}>
-                        {itemSelecionado['saude_franquia']}
+                        {itemSelecionado['posicao_grupo']}
                       </span>
                     </div>
                   )}
@@ -579,7 +582,7 @@ export default function ResultadosPage() {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
                     <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Pontuação no Quarter Selecionado:</span>
                     <span style={{ fontWeight: 600, fontSize: '1.1rem', color: '#FF6600' }}>
-                      {itemSelecionado['Pontuação com bonus'] || itemSelecionado['Pontuação com Bonus'] || '0'}
+                      {itemSelecionado['pontuacao_com_bonus'] || '0'}
                     </span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>

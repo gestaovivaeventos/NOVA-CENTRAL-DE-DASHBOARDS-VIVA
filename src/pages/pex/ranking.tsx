@@ -49,14 +49,14 @@ export default function RankingPage() {
   const [filtroConsultor, setFiltroConsultor] = useState<string>('');
   
   // Nome dinâmico da coluna do consultor
-  const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('Consultor');
+  const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
 
   // Listas para os filtros
   const listaQuarters = useMemo(() => {
     if (!dadosBrutos || dadosBrutos.length === 0) return [];
     
     const quarters = dadosBrutos
-      .map(item => item.QUARTER)
+      .map(item => item.quarter)
       .filter((value, index, self) => value && self.indexOf(value) === index)
       .sort();
     
@@ -77,7 +77,7 @@ export default function RankingPage() {
   const listaConsultores = useMemo(() => {
     if (!dadosBrutos || dadosBrutos.length === 0) return [];
     
-    const possiveisNomesConsultor = ['Consultor', 'CONSULTOR', 'consultor', 'CONSULTOR RESPONSAVEL', 'Consultor Responsável', 'Consultor Responsavel'];
+    const possiveisNomesConsultor = ['consultor', 'Consultor', 'CONSULTOR', 'CONSULTOR RESPONSAVEL', 'Consultor Responsável', 'Consultor Responsavel'];
     const nomeColuna = possiveisNomesConsultor.find(nome => dadosBrutos[0].hasOwnProperty(nome));
     
     if (!nomeColuna) return [];
@@ -96,7 +96,7 @@ export default function RankingPage() {
     let dadosFiltrados = dadosBrutos;
     
     if (filtroQuarter) {
-      dadosFiltrados = dadosFiltrados.filter(item => item.QUARTER === filtroQuarter);
+      dadosFiltrados = dadosFiltrados.filter(item => item.quarter === filtroQuarter);
     }
     
     if (filtroCluster) {
@@ -129,7 +129,7 @@ export default function RankingPage() {
 
     dadosBrutos.forEach(item => {
       const unidade = item.nm_unidade;
-      const pontos = parseFloat((item['Pontuação com bonus'] || item['Pontuação com Bonus'] || '0').toString().replace(',', '.')) || 0;
+      const pontos = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.')) || 0;
       
       if (!unidadesComMedia.has(unidade)) {
         unidadesComMedia.set(unidade, { 

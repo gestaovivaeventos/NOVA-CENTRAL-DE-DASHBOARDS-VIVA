@@ -22,7 +22,7 @@ export default function TabelaResumo({
   quarterSelecionado, 
   clusterSelecionado, 
   consultorSelecionado,
-  nomeColunaConsultor = 'Consultor'
+  nomeColunaConsultor = 'consultor'
 }: TabelaResumoProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoTipo>(null);
@@ -50,7 +50,7 @@ export default function TabelaResumo({
     let resultado = dados;
     
     if (quarterSelecionado) {
-      resultado = resultado.filter(item => item.QUARTER === quarterSelecionado);
+      resultado = resultado.filter(item => item.quarter === quarterSelecionado);
     }
     
     if (clusterSelecionado) {
@@ -123,19 +123,23 @@ export default function TabelaResumo({
   const colunas = [
     { key: 'nm_unidade', label: 'Unidade' },
     { key: 'cluster', label: 'Cluster' },
-    { key: 'saude_franquia', label: 'Saúde Franquia' },
-    { key: 'Bonus', label: 'Bônus' },
-    { key: 'Pontuação com bonus', label: 'Pont. c/ Bônus' },
-    { key: 'Pontuação sem bonus', label: 'Pont. s/ Bônus' },
-    { key: 'VVR', label: 'VVR' },
-    { key: 'MAC', label: 'MAC' },
-    { key: 'Endividamento', label: 'Endiv.' },
-    { key: 'NPS', label: 'NPS' },
-    { key: 'MC %\n(entrega)', label: 'MC %' },
-    { key: 'Satisfação do colaborador - e-NPS', label: 'Satisf. Colab.' },
-    { key: '*Conformidades', label: 'Conform.' },
-    { key: 'RECLAME AQUI', label: 'Reclame Aqui' },
-    { key: 'Consultor', label: 'Consultor' }
+    { key: 'posicao_grupo', label: 'Posição Grupo' },
+    { key: 'bonus', label: 'Bônus' },
+    { key: 'pontuacao_com_bonus', label: 'Pont. c/ Bônus' },
+    { key: 'pontuacao_sem_bonus', label: 'Pont. s/ Bônus' },
+    { key: 'vvr_12_meses', label: 'VVR 12M' },
+    { key: 'vvr_carteira', label: 'VVR Carteira' },
+    { key: 'Indice_endividamento', label: 'Endiv.' },
+    { key: 'nps_geral', label: 'NPS' },
+    { key: 'indice_margem_entrega', label: 'Margem Entrega' },
+    { key: 'enps_rede', label: 'eNPS' },
+    { key: 'conformidades', label: 'Conform.' },
+    { key: 'reclame_aqui', label: 'Reclame Aqui' },
+    { key: 'colaboradores_mais_1_ano', label: 'Colab. +1 Ano' },
+    { key: 'estrutura_organizacioanl', label: 'Estrutura Org.' },
+    { key: 'churn', label: 'Churn' },
+    { key: 'consultor', label: 'Consultor' },
+    { key: 'quarter', label: 'Quarter' }
   ];
 
   // Função para obter estilos de badge baseado no status
@@ -257,43 +261,43 @@ export default function TabelaResumo({
                   fontWeight: 600
                 }}>
                   <span style={{
-                    color: item['saude_franquia']?.toString().toLowerCase() === 'uti' ? '#FF4444' :
-                           item['saude_franquia']?.toString().toLowerCase().includes('atenc') || item['saude_franquia']?.toString().toLowerCase().includes('atenç') ? '#FFC107' :
-                           item['saude_franquia']?.toString().toLowerCase().includes('saudav') || item['saude_franquia']?.toString().toLowerCase().includes('saudáv') ? '#00C853' :
+                    color: item['posicao_grupo']?.toString().toLowerCase() === 'uti' ? '#FF4444' :
+                           item['posicao_grupo']?.toString().toLowerCase().includes('atenc') || item['posicao_grupo']?.toString().toLowerCase().includes('atenç') ? '#FFC107' :
+                           item['posicao_grupo']?.toString().toLowerCase().includes('saudav') || item['posicao_grupo']?.toString().toLowerCase().includes('saudáv') ? '#00C853' :
                            '#F8F9FA'
                   }}>
-                    {item['saude_franquia'] || '-'}
+                    {item['posicao_grupo'] || '-'}
                   </span>
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.Bonus}
+                  {item.bonus}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#FF6600', fontSize: '0.875rem', fontWeight: 600, borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item['Pontuação com bonus'] || item['Pontuação com Bonus']}
+                  {item['pontuacao_com_bonus']}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item['Pontuação sem bonus']}
+                  {item['pontuacao_sem_bonus']}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.VVR}
+                  {item.vvr_12_meses}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.MAC}
+                  {item.vvr_carteira}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.Endividamento}
+                  {item.Indice_endividamento}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.NPS}
+                  {item.nps_geral}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item['MC %\n(entrega)']}
+                  {item.indice_margem_entrega}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item['Satisfação do colaborador - e-NPS']}
+                  {item.enps_rede}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item['*Conformidades']}
+                  {item.conformidades}
                 </td>
                 <td style={{ 
                   padding: '12px 8px', 
@@ -301,14 +305,26 @@ export default function TabelaResumo({
                   borderBottom: '1px solid #444', 
                   textAlign: 'center'
                 }}>
-                  {item['RECLAME AQUI'] ? (
-                    <span style={getStatusBadgeStyle(item['RECLAME AQUI'])}>
-                      {item['RECLAME AQUI']}
+                  {item.reclame_aqui ? (
+                    <span style={getStatusBadgeStyle(item.reclame_aqui)}>
+                      {item.reclame_aqui}
                     </span>
                   ) : '-'}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.Consultor}
+                  {item.colaboradores_mais_1_ano}
+                </td>
+                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {item.estrutura_organizacioanl}
+                </td>
+                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {item.churn}
+                </td>
+                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {item.consultor}
+                </td>
+                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {item.quarter}
                 </td>
               </tr>
             ))}

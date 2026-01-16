@@ -9,7 +9,7 @@ import cache from './cache';
 // TTL para diferentes tipos de dados
 export const CACHE_TTL = {
   // PEX
-  DEVERIA: 2 * 60 * 1000,      // 2 minutos - dados principais
+  PONTUACAO_OFICIAL: 2 * 60 * 1000,      // 2 minutos - dados principais
   UNI_CONS: 5 * 60 * 1000,     // 5 minutos - consultores/clusters (mudam menos)
   CRITERIOS: 10 * 60 * 1000,   // 10 minutos - pesos (raramente mudam)
   // Vendas
@@ -81,7 +81,7 @@ export function getAuthenticatedClient() {
 export async function getSheetData(
   range: string, 
   cacheKey: string, 
-  ttl: number = CACHE_TTL.DEVERIA
+  ttl: number = CACHE_TTL.PONTUACAO_OFICIAL
 ): Promise<any[][]> {
   const config = getConfig();
   

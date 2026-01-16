@@ -34,16 +34,17 @@ export interface FranquiaRaw {
   consultor?: string;
   regiao?: string;
   // Indicadores atuais
-  vvr?: number;
-  mac?: number;
-  endividamento?: number;
-  nps?: number;
-  mc?: number;
-  enps?: number;
+  vvr_12_meses?: number;
+  vvr_carteira?: number;
+  indice_endividamento?: number;
+  nps_geral?: number;
+  indice_margem_entrega?: number;
+  enps_rede?: number;
   conformidades?: number;
-  // Históricos (últimos 12 meses)
-  vvrUltimos12Meses?: number[];
-  macUltimos12Meses?: number[];
+  reclame_aqui?: number;
+  colaboradores_mais_1_ano?: number;
+  estrutura_organizacional?: number;
+  churn?: number;
   // Bonus
   bonus1?: boolean;
   bonus2?: boolean;
