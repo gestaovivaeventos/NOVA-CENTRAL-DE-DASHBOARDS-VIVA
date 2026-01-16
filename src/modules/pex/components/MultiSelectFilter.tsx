@@ -46,7 +46,7 @@ const searchInputStyle: React.CSSProperties = {
 };
 
 interface MultiSelectFilterProps {
-  label: string;
+  label?: string;
   options: string[];
   selectedValues: string[];
   onChange: (values: string[]) => void;
