@@ -490,12 +490,16 @@ function ParametrosContent() {
         return {
           ...meta,
           vvr: alteracoesDoCluster.get('VVR') || meta.vvr,
-          percentualAtigimentoMac: alteracoesDoCluster.get('% ATIGIMENTO MAC') || meta.percentualAtigimentoMac,
+          vvrCarteira: alteracoesDoCluster.get('VVR CARTEIRA') || meta.vvrCarteira,
           percentualEndividamento: alteracoesDoCluster.get('% ENDIVIDAMENTO') || meta.percentualEndividamento,
           nps: alteracoesDoCluster.get('NPS') || meta.nps,
           percentualMcEntrega: alteracoesDoCluster.get('% MC ENTREGA') || meta.percentualMcEntrega,
           enps: alteracoesDoCluster.get('E-NPS') || meta.enps,
           conformidade: alteracoesDoCluster.get('CONFORMIDADE') || meta.conformidade,
+          reclameAqui: alteracoesDoCluster.get('RECLAME AQUI') || meta.reclameAqui,
+          colaboradoresMais1Ano: alteracoesDoCluster.get('%COLABORADORES COM MAIS DE 1 ANO') || meta.colaboradoresMais1Ano,
+          estruturaOrganizacional: alteracoesDoCluster.get('ESTRUTURA ORGANIZACIONAL') || meta.estruturaOrganizacional,
+          churn: alteracoesDoCluster.get('CHURN') || meta.churn,
         };
       });
       
@@ -1219,61 +1223,70 @@ function ParametrosContent() {
                 <p className="mt-4" style={{ color: '#adb5bd' }}>Carregando dados...</p>
               </div>
             ) : (
-              <div>
-                {/* Cabeçalho da tabela */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '2fr repeat(7, 1fr)',
-                  gap: '12px',
-                  padding: '12px 16px',
-                  backgroundColor: '#2a2f36',
-                  borderRadius: '8px 8px 0 0',
-                  fontWeight: 600,
-                  color: '#FF6600',
-                  fontFamily: 'Poppins, sans-serif',
-                  fontSize: '0.85rem'
-                }}>
-                  <div>CLUSTER</div>
-                  <div style={{ textAlign: 'center' }}>VVR</div>
-                  <div style={{ textAlign: 'center' }}>% ATINGIMENTO MAC</div>
-                  <div style={{ textAlign: 'center' }}>% ENDIVIDAMENTO</div>
-                  <div style={{ textAlign: 'center' }}>NPS</div>
-                  <div style={{ textAlign: 'center' }}>% MC ENTREGA</div>
-                  <div style={{ textAlign: 'center' }}>E-NPS</div>
-                  <div style={{ textAlign: 'center' }}>% CONFORMIDADES</div>
-                </div>
+              <div style={{ overflowX: 'auto' }}>
+                <div style={{ minWidth: '1200px' }}>
+                  {/* Cabeçalho da tabela */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '140px repeat(11, 1fr)',
+                    gap: '8px',
+                    padding: '12px 16px',
+                    backgroundColor: '#2a2f36',
+                    borderRadius: '8px 8px 0 0',
+                    fontWeight: 600,
+                    color: '#FF6600',
+                    fontFamily: 'Poppins, sans-serif',
+                    fontSize: '0.7rem'
+                  }}>
+                    <div>CLUSTER</div>
+                    <div style={{ textAlign: 'center' }}>VVR</div>
+                    <div style={{ textAlign: 'center' }}>VVR CARTEIRA</div>
+                    <div style={{ textAlign: 'center' }}>% ENDIV.</div>
+                    <div style={{ textAlign: 'center' }}>NPS</div>
+                    <div style={{ textAlign: 'center' }}>% MC ENTREGA</div>
+                    <div style={{ textAlign: 'center' }}>E-NPS</div>
+                    <div style={{ textAlign: 'center' }}>CONFORM.</div>
+                    <div style={{ textAlign: 'center' }}>RECLAME AQUI</div>
+                    <div style={{ textAlign: 'center' }}>COLAB. +1 ANO</div>
+                    <div style={{ textAlign: 'center' }}>ESTRUT. ORG.</div>
+                    <div style={{ textAlign: 'center' }}>CHURN</div>
+                  </div>
 
-                {/* Lista de metas */}
-                <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
-                  {metasClusters.length === 0 ? (
-                    <div style={{
-                      padding: '40px',
-                      textAlign: 'center',
-                      color: '#adb5bd',
-                      fontFamily: 'Poppins, sans-serif'
-                    }}>
-                      Nenhum dado disponível
-                    </div>
-                  ) : (
-                    metasClusters.map((meta, index) => {
-                      const alteracoesDaMeta = alteracoesMetas.get(meta.cluster);
-                      const foiAlterado = alteracoesDaMeta && alteracoesDaMeta.size > 0;
+                  {/* Lista de metas */}
+                  <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                    {metasClusters.length === 0 ? (
+                      <div style={{
+                        padding: '40px',
+                        textAlign: 'center',
+                        color: '#adb5bd',
+                        fontFamily: 'Poppins, sans-serif'
+                      }}>
+                        Nenhum dado disponível
+                      </div>
+                    ) : (
+                      metasClusters.map((meta, index) => {
+                        const alteracoesDaMeta = alteracoesMetas.get(meta.cluster);
+                        const foiAlterado = alteracoesDaMeta && alteracoesDaMeta.size > 0;
 
-                      const vvrAtual = alteracoesDaMeta?.get('VVR') || meta.vvr;
-                      const macAtual = alteracoesDaMeta?.get('% ATIGIMENTO MAC') || meta.percentualAtigimentoMac;
-                      const endivAtual = alteracoesDaMeta?.get('% ENDIVIDAMENTO') || meta.percentualEndividamento;
-                      const npsAtual = alteracoesDaMeta?.get('NPS') || meta.nps;
-                      const mcAtual = alteracoesDaMeta?.get('% MC ENTREGA') || meta.percentualMcEntrega;
-                      const enpsAtual = alteracoesDaMeta?.get('E-NPS') || meta.enps;
-                      const confAtual = alteracoesDaMeta?.get('CONFORMIDADE') || meta.conformidade;
+                        const vvrAtual = alteracoesDaMeta?.get('VVR') || meta.vvr;
+                        const vvrCarteiraAtual = alteracoesDaMeta?.get('VVR CARTEIRA') || meta.vvrCarteira;
+                        const endivAtual = alteracoesDaMeta?.get('% ENDIVIDAMENTO') || meta.percentualEndividamento;
+                        const npsAtual = alteracoesDaMeta?.get('NPS') || meta.nps;
+                        const mcAtual = alteracoesDaMeta?.get('% MC ENTREGA') || meta.percentualMcEntrega;
+                        const enpsAtual = alteracoesDaMeta?.get('E-NPS') || meta.enps;
+                        const confAtual = alteracoesDaMeta?.get('CONFORMIDADE') || meta.conformidade;
+                        const reclameAquiAtual = alteracoesDaMeta?.get('RECLAME AQUI') || meta.reclameAqui;
+                        const colaboradoresAtual = alteracoesDaMeta?.get('%COLABORADORES COM MAIS DE 1 ANO') || meta.colaboradoresMais1Ano;
+                        const estruturaAtual = alteracoesDaMeta?.get('ESTRUTURA ORGANIZACIONAL') || meta.estruturaOrganizacional;
+                      const churnAtual = alteracoesDaMeta?.get('CHURN') || meta.churn;
 
                       return (
                         <div 
                           key={meta.cluster}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr repeat(7, 1fr)',
-                            gap: '12px',
+                            gridTemplateColumns: '140px repeat(11, 1fr)',
+                            gap: '8px',
                             padding: '12px 16px',
                             borderBottom: '1px solid #343A40',
                             backgroundColor: foiAlterado 
@@ -1304,12 +1317,12 @@ function ParametrosContent() {
                               onChange={(e) => handleMetaChange(meta.cluster, 'VVR', e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '6px 8px',
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('VVR') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
                                 textAlign: 'center',
                                 outline: 'none'
@@ -1317,20 +1330,20 @@ function ParametrosContent() {
                             />
                           </div>
 
-                          {/* Input % ATIGIMENTO MAC */}
+                          {/* Input VVR CARTEIRA */}
                           <div>
                             <input
                               type="text"
-                              value={macAtual}
-                              onChange={(e) => handleMetaChange(meta.cluster, '% ATIGIMENTO MAC', e.target.value)}
+                              value={vvrCarteiraAtual}
+                              onChange={(e) => handleMetaChange(meta.cluster, 'VVR CARTEIRA', e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '6px 8px',
                                 backgroundColor: '#343A40',
                                 color: 'white',
-                                border: alteracoesDaMeta?.has('% ATIGIMENTO MAC') ? '2px solid #FF6600' : '1px solid #555',
+                                border: alteracoesDaMeta?.has('VVR CARTEIRA') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
                                 textAlign: 'center',
                                 outline: 'none'
@@ -1346,12 +1359,12 @@ function ParametrosContent() {
                               onChange={(e) => handleMetaChange(meta.cluster, '% ENDIVIDAMENTO', e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '6px 8px',
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('% ENDIVIDAMENTO') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
                                 textAlign: 'center',
                                 outline: 'none'
@@ -1367,12 +1380,12 @@ function ParametrosContent() {
                               onChange={(e) => handleMetaChange(meta.cluster, 'NPS', e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '6px 8px',
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('NPS') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
                                 textAlign: 'center',
                                 outline: 'none'
@@ -1388,12 +1401,12 @@ function ParametrosContent() {
                               onChange={(e) => handleMetaChange(meta.cluster, '% MC ENTREGA', e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '6px 8px',
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('% MC ENTREGA') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
                                 textAlign: 'center',
                                 outline: 'none'
@@ -1409,12 +1422,12 @@ function ParametrosContent() {
                               onChange={(e) => handleMetaChange(meta.cluster, 'E-NPS', e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '6px 8px',
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('E-NPS') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
                                 textAlign: 'center',
                                 outline: 'none'
@@ -1430,12 +1443,96 @@ function ParametrosContent() {
                               onChange={(e) => handleMetaChange(meta.cluster, 'CONFORMIDADE', e.target.value)}
                               style={{
                                 width: '100%',
-                                padding: '8px 12px',
+                                padding: '6px 8px',
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('CONFORMIDADE') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
-                                fontSize: '0.85rem',
+                                fontSize: '0.75rem',
+                                fontFamily: 'Poppins, sans-serif',
+                                textAlign: 'center',
+                                outline: 'none'
+                              }}
+                            />
+                          </div>
+
+                          {/* Input RECLAME AQUI */}
+                          <div>
+                            <input
+                              type="text"
+                              value={reclameAquiAtual}
+                              onChange={(e) => handleMetaChange(meta.cluster, 'RECLAME AQUI', e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                backgroundColor: '#343A40',
+                                color: 'white',
+                                border: alteracoesDaMeta?.has('RECLAME AQUI') ? '2px solid #FF6600' : '1px solid #555',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontFamily: 'Poppins, sans-serif',
+                                textAlign: 'center',
+                                outline: 'none'
+                              }}
+                            />
+                          </div>
+
+                          {/* Input %COLABORADORES COM MAIS DE 1 ANO */}
+                          <div>
+                            <input
+                              type="text"
+                              value={colaboradoresAtual}
+                              onChange={(e) => handleMetaChange(meta.cluster, '%COLABORADORES COM MAIS DE 1 ANO', e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                backgroundColor: '#343A40',
+                                color: 'white',
+                                border: alteracoesDaMeta?.has('%COLABORADORES COM MAIS DE 1 ANO') ? '2px solid #FF6600' : '1px solid #555',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontFamily: 'Poppins, sans-serif',
+                                textAlign: 'center',
+                                outline: 'none'
+                              }}
+                            />
+                          </div>
+
+                          {/* Input ESTRUTURA ORGANIZACIONAL */}
+                          <div>
+                            <input
+                              type="text"
+                              value={estruturaAtual}
+                              onChange={(e) => handleMetaChange(meta.cluster, 'ESTRUTURA ORGANIZACIONAL', e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                backgroundColor: '#343A40',
+                                color: 'white',
+                                border: alteracoesDaMeta?.has('ESTRUTURA ORGANIZACIONAL') ? '2px solid #FF6600' : '1px solid #555',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
+                                fontFamily: 'Poppins, sans-serif',
+                                textAlign: 'center',
+                                outline: 'none'
+                              }}
+                            />
+                          </div>
+
+                          {/* Input CHURN */}
+                          <div>
+                            <input
+                              type="text"
+                              value={churnAtual}
+                              onChange={(e) => handleMetaChange(meta.cluster, 'CHURN', e.target.value)}
+                              style={{
+                                width: '100%',
+                                padding: '6px 8px',
+                                backgroundColor: '#343A40',
+                                color: 'white',
+                                border: alteracoesDaMeta?.has('CHURN') ? '2px solid #FF6600' : '1px solid #555',
+                                borderRadius: '6px',
+                                fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
                                 textAlign: 'center',
                                 outline: 'none'
@@ -1446,6 +1543,7 @@ function ParametrosContent() {
                       );
                     })
                   )}
+                  </div>
                 </div>
 
                 {/* Botão de salvar */}

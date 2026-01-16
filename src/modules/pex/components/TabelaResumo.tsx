@@ -142,6 +142,36 @@ export default function TabelaResumo({
     { key: 'quarter', label: 'Quarter' }
   ];
 
+  // Pesos dos indicadores para calcular percentual (peso * 100 = teto máximo)
+  const pesosIndicadores: Record<string, number> = {
+    'vvr_12_meses': 2.5,
+    'vvr_carteira': 1.0,
+    'Indice_endividamento': 0.5,
+    'nps_geral': 1.0,
+    'indice_margem_entrega': 1.0,
+    'enps_rede': 0.5,
+    'conformidades': 1.0,
+    'reclame_aqui': 0.5,
+    'colaboradores_mais_1_ano': 0.5,
+    'estrutura_organizacioanl': 0.5,
+    'churn': 1.0
+  };
+
+  // Função para calcular percentual de atingimento
+  const calcularPercentual = (valor: any, key: string): { percentual: number; cor: string } | null => {
+    const peso = pesosIndicadores[key];
+    if (!peso) return null;
+    
+    const valorNum = parseFloat(valor?.toString().replace(',', '.') || '0');
+    const tetoMaximo = peso * 100;
+    const percentual = (valorNum / tetoMaximo) * 100;
+    
+    const cor = percentual >= 80 ? '#00C853' : 
+                percentual >= 50 ? '#FFC107' : '#FF4444';
+    
+    return { percentual, cor };
+  };
+
   // Função para obter estilos de badge baseado no status
   const getStatusBadgeStyle = (status: string): React.CSSProperties => {
     if (!status) return {};
@@ -278,26 +308,47 @@ export default function TabelaResumo({
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
                   {item['pontuacao_sem_bonus']}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.vvr_12_meses}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.vvr_12_meses, 'vvr_12_meses');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.vvr_carteira}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.vvr_carteira, 'vvr_carteira');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.Indice_endividamento}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.Indice_endividamento, 'Indice_endividamento');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.nps_geral}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.nps_geral, 'nps_geral');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.indice_margem_entrega}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.indice_margem_entrega, 'indice_margem_entrega');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.enps_rede}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.enps_rede, 'enps_rede');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.conformidades}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.conformidades, 'conformidades');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
                 <td style={{ 
                   padding: '12px 8px', 
@@ -305,20 +356,28 @@ export default function TabelaResumo({
                   borderBottom: '1px solid #444', 
                   textAlign: 'center'
                 }}>
-                  {item.reclame_aqui ? (
-                    <span style={getStatusBadgeStyle(item.reclame_aqui)}>
-                      {item.reclame_aqui}
-                    </span>
-                  ) : '-'}
+                  {(() => {
+                    const result = calcularPercentual(item.reclame_aqui, 'reclame_aqui');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.colaboradores_mais_1_ano}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.colaboradores_mais_1_ano, 'colaboradores_mais_1_ano');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.estrutura_organizacioanl}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.estrutura_organizacioanl, 'estrutura_organizacioanl');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.churn}
+                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                  {(() => {
+                    const result = calcularPercentual(item.churn, 'churn');
+                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
+                  })()}
                 </td>
                 <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
                   {item.consultor}

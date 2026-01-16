@@ -35,12 +35,16 @@ interface IndicadorPeso {
 interface MetaCluster {
   cluster: string;
   vvr: string;
-  percentualAtigimentoMac: string;
+  vvrCarteira: string;
   percentualEndividamento: string;
   nps: string;
   percentualMcEntrega: string;
   enps: string;
   conformidade: string;
+  reclameAqui: string;
+  colaboradoresMais1Ano: string;
+  estruturaOrganizacional: string;
+  churn: string;
 }
 
 interface BonusUnidade {
@@ -111,11 +115,28 @@ const formatarPeso = (valor: any): string => {
 
 const formatarValorMeta = (valor: any): string => {
   if (valor === undefined || valor === null || valor === '') return '0';
-  let valorStr = String(valor);
+  let valorStr = String(valor).trim();
+  
+  // Remover símbolo de moeda
   valorStr = valorStr.replace(/R\$\s*/g, '');
+  
+  // Remover símbolo de percentual
   valorStr = valorStr.replace(/%/g, '');
-  valorStr = valorStr.replace(/\./g, '');
-  valorStr = valorStr.replace(',', '.');
+  
+  // Verificar se é formato brasileiro (ex: 1.000,50) ou americano (ex: 1,000.50)
+  // Se tem vírgula e ponto, verificar qual é o separador decimal
+  const temVirgula = valorStr.includes(',');
+  const temPonto = valorStr.includes('.');
+  
+  if (temVirgula && temPonto) {
+    // Formato brasileiro: 1.000,50 -> remover pontos de milhar, trocar vírgula por ponto
+    valorStr = valorStr.replace(/\./g, '').replace(',', '.');
+  } else if (temVirgula && !temPonto) {
+    // Apenas vírgula: pode ser 1,00 (decimal brasileiro) -> trocar vírgula por ponto
+    valorStr = valorStr.replace(',', '.');
+  }
+  // Se tem apenas ponto, já está no formato correto
+  
   valorStr = valorStr.trim();
   if (valorStr === '' || isNaN(parseFloat(valorStr))) return '0';
   return valorStr;
@@ -305,12 +326,17 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
             .map((row: any[]) => ({
               cluster: row[0] || '',
               vvr: formatarValorMeta(row[1]),
-              percentualAtigimentoMac: formatarValorMeta(row[2]),
+              vvrCarteira: formatarValorMeta(row[2]),
               percentualEndividamento: formatarValorMeta(row[3]),
               nps: formatarValorMeta(row[4]),
               percentualMcEntrega: formatarValorMeta(row[5]),
               enps: formatarValorMeta(row[6]),
-              conformidade: formatarValorMeta(row[7])
+              conformidade: formatarValorMeta(row[7]),
+              // row[8] é VVR GERAL (não usado)
+              reclameAqui: formatarValorMeta(row[9]),
+              colaboradoresMais1Ano: formatarValorMeta(row[10]),
+              estruturaOrganizacional: formatarValorMeta(row[11]),
+              churn: formatarValorMeta(row[12])
             }));
           
           const clustersDisponiveis = metas.map(m => m.cluster);
