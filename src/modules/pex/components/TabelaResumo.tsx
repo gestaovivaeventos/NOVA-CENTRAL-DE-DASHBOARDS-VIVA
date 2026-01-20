@@ -23,6 +23,8 @@ interface TabelaResumoProps {
   nomeColunaConsultor?: string;
   pesosIndicadores?: IndicadorPeso[];
   unidadesSelecionadas?: string[];
+  clustersSelecionados?: string[];
+  consultoresSelecionados?: string[];
 }
 
 // Mapeamento dos nomes de indicadores da planilha para as colunas dos dados
@@ -45,11 +47,13 @@ type OrdenacaoTipo = 'asc' | 'desc' | null;
 export default function TabelaResumo({ 
   dados, 
   quarterSelecionado, 
-  clusterSelecionado, 
+  clusterSelecionado,
   consultorSelecionado,
   nomeColunaConsultor = 'consultor',
   pesosIndicadores = [],
-  unidadesSelecionadas = []
+  unidadesSelecionadas = [],
+  clustersSelecionados = [],
+  consultoresSelecionados = []
 }: TabelaResumoProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoTipo>(null);
@@ -80,11 +84,17 @@ export default function TabelaResumo({
       resultado = resultado.filter(item => item.quarter === quarterSelecionado);
     }
     
-    if (clusterSelecionado) {
+    // Filtrar por cluster (suporta único ou múltiplos)
+    if (clustersSelecionados && clustersSelecionados.length > 0) {
+      resultado = resultado.filter(item => clustersSelecionados.includes(item.cluster));
+    } else if (clusterSelecionado) {
       resultado = resultado.filter(item => item.cluster === clusterSelecionado);
     }
     
-    if (consultorSelecionado && nomeColunaConsultor) {
+    // Filtrar por consultor (suporta único ou múltiplos)
+    if (consultoresSelecionados && consultoresSelecionados.length > 0 && nomeColunaConsultor) {
+      resultado = resultado.filter(item => consultoresSelecionados.includes(item[nomeColunaConsultor]));
+    } else if (consultorSelecionado && nomeColunaConsultor) {
       resultado = resultado.filter(item => item[nomeColunaConsultor] === consultorSelecionado);
     }
     
@@ -94,7 +104,7 @@ export default function TabelaResumo({
     }
     
     return resultado;
-  }, [dados, quarterSelecionado, clusterSelecionado, consultorSelecionado, nomeColunaConsultor, unidadesSelecionadas]);
+  }, [dados, quarterSelecionado, clusterSelecionado, clustersSelecionados, consultorSelecionado, consultoresSelecionados, nomeColunaConsultor, unidadesSelecionadas]);
 
   // Ordenar dados
   const dadosOrdenados = useMemo(() => {

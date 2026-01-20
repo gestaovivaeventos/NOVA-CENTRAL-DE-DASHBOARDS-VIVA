@@ -574,8 +574,8 @@ export default function ResultadosPage() {
                   <TabelaResumo
                     dados={dadosBrutos || []}
                     quarterSelecionado={filtroQuarter}
-                    clusterSelecionado={filtrosClusters.length === 1 ? filtrosClusters[0] : ''}
-                    consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
+                    clustersSelecionados={filtrosClusters}
+                    consultoresSelecionados={filtrosConsultores}
                     nomeColunaConsultor={nomeColunaConsultor}
                     pesosIndicadores={parametrosData?.pesos || []}
                     unidadesSelecionadas={filtrosUnidades}
@@ -873,8 +873,8 @@ export default function ResultadosPage() {
                   <TabelaResumo
                     dados={dadosBrutos || []}
                     quarterSelecionado={filtroQuarter}
-                    clusterSelecionado={filtrosClusters.length === 1 ? filtrosClusters[0] : ''}
-                    consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
+                    clustersSelecionados={filtrosClusters}
+                    consultoresSelecionados={filtrosConsultores}
                     nomeColunaConsultor={nomeColunaConsultor}
                     pesosIndicadores={parametrosData?.pesos || []}
                     unidadesSelecionadas={filtrosUnidades}
