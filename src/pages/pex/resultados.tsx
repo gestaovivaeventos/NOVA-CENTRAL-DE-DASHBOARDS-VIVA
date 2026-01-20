@@ -73,6 +73,7 @@ export default function ResultadosPage() {
   // Estados para os filtros
   const [filtroQuarter, setFiltroQuarter] = useState<string>('');
   const [filtroUnidade, setFiltroUnidade] = useState<string>('');
+  const [filtrosUnidades, setFiltrosUnidades] = useState<string[]>([]);
   const [filtrosClusters, setFiltrosClusters] = useState<string[]>([]);
   const [filtrosConsultores, setFiltrosConsultores] = useState<string[]>([]);
   const [filtrosPerformanceComercial, setFiltrosPerformanceComercial] = useState<string[]>([]);
@@ -161,21 +162,35 @@ export default function ResultadosPage() {
         setFiltroUnidade(listaUnidades[0]);
       }
     }
+    // Limpar filtros de unidades múltiplas quando a lista muda
+    setFiltrosUnidades(prev => prev.filter(u => listaUnidades.includes(u)));
   }, [listaUnidades, filtroUnidade, user?.accessLevel, user?.unitNames]);
+
+  // Determinar a unidade efetiva para os cards de detalhes
+  // Se houver exatamente 1 unidade no multi-select, usa ela
+  // Se não houver seleção no multi-select, usa a unidade do select simples
+  // Se houver mais de 1, mostra mensagem
+  const unidadeEfetiva = useMemo(() => {
+    if (filtrosUnidades.length === 1) return filtrosUnidades[0];
+    if (filtrosUnidades.length === 0) return filtroUnidade;
+    return null; // mais de uma unidade selecionada
+  }, [filtrosUnidades, filtroUnidade]);
+  
+  const multiplaUnidadesSelecionadas = filtrosUnidades.length > 1;
 
   // Item selecionado
   const itemSelecionado = useMemo(() => {
-    if (!dadosBrutos || !filtroQuarter || !filtroUnidade) return null;
-    return dadosBrutos.find(item => item.quarter === filtroQuarter && item.nm_unidade === filtroUnidade);
-  }, [dadosBrutos, filtroQuarter, filtroUnidade]);
+    if (!dadosBrutos || !filtroQuarter || !unidadeEfetiva) return null;
+    return dadosBrutos.find(item => item.quarter === filtroQuarter && item.nm_unidade === unidadeEfetiva);
+  }, [dadosBrutos, filtroQuarter, unidadeEfetiva]);
 
   // Pontuação total (média apenas de quarters ATIVOS)
   const pontuacaoTotal = useMemo(() => {
-    if (!dadosBrutos || !filtroUnidade) return 0;
+    if (!dadosBrutos || !unidadeEfetiva) return 0;
     
     // Filtrar apenas quarters ativos da unidade
     const dadosUnidadeAtivos = dadosBrutos.filter(item => 
-      item.nm_unidade === filtroUnidade && 
+      item.nm_unidade === unidadeEfetiva && 
       (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
     );
     
@@ -185,11 +200,11 @@ export default function ResultadosPage() {
     }, 0);
     
     return dadosUnidadeAtivos.length > 0 ? total / dadosUnidadeAtivos.length : 0;
-  }, [dadosBrutos, filtroUnidade]);
+  }, [dadosBrutos, unidadeEfetiva]);
 
   // Posição na Rede e no Cluster (baseado na média total de quarters ATIVOS)
   const posicoes = useMemo(() => {
-    if (!dadosBrutos || !filtroUnidade) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
+    if (!dadosBrutos || !unidadeEfetiva) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
     
     // Filtrar apenas dados de quarters ativos
     const dadosAtivos = dadosBrutos.filter(item => 
@@ -212,26 +227,26 @@ export default function ResultadosPage() {
     
     // Ordenar por média (maior primeiro)
     const rankingRede = [...mediasPorUnidade].sort((a, b) => b.media - a.media);
-    const posicaoRede = rankingRede.findIndex(item => item.unidade === filtroUnidade) + 1;
+    const posicaoRede = rankingRede.findIndex(item => item.unidade === unidadeEfetiva) + 1;
     const totalRede = rankingRede.length;
     
     // Cluster da unidade selecionada
-    const clusterUnidade = mediasPorUnidade.find(item => item.unidade === filtroUnidade)?.cluster || '';
+    const clusterUnidade = mediasPorUnidade.find(item => item.unidade === unidadeEfetiva)?.cluster || '';
     const rankingCluster = rankingRede.filter(item => item.cluster === clusterUnidade);
-    const posicaoCluster = rankingCluster.findIndex(item => item.unidade === filtroUnidade) + 1;
+    const posicaoCluster = rankingCluster.findIndex(item => item.unidade === unidadeEfetiva) + 1;
     const totalCluster = rankingCluster.length;
     
     return { posicaoRede, totalRede, posicaoCluster, totalCluster };
-  }, [dadosBrutos, filtroUnidade]);
+  }, [dadosBrutos, unidadeEfetiva]);
 
   // Posição no Quarter selecionado (respeita quarter ativo)
   const posicoesQuarter = useMemo(() => {
-    if (!dadosBrutos || !filtroUnidade || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
+    if (!dadosBrutos || !unidadeEfetiva || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
     
     const dadosQuarter = dadosBrutos.filter(item => item.quarter === filtroQuarter);
     
     // Verificar se o quarter selecionado está ativo para a unidade selecionada
-    const itemUnidade = dadosQuarter.find(item => item.nm_unidade === filtroUnidade);
+    const itemUnidade = dadosQuarter.find(item => item.nm_unidade === unidadeEfetiva);
     const quarterAtivo = itemUnidade ? (itemUnidade.quarter_ativo || '').toString().toLowerCase() === 'ativo' : false;
     
     // Se quarter inativo, retornar zeros
@@ -250,23 +265,23 @@ export default function ResultadosPage() {
       cluster: item.cluster
     })).sort((a, b) => b.pontuacao - a.pontuacao);
     
-    const posicaoRede = rankingRede.findIndex(item => item.unidade === filtroUnidade) + 1;
+    const posicaoRede = rankingRede.findIndex(item => item.unidade === unidadeEfetiva) + 1;
     const totalRede = rankingRede.length;
     
     const clusterUnidade = itemSelecionado?.cluster || '';
     const rankingCluster = rankingRede.filter(item => item.cluster === clusterUnidade);
-    const posicaoCluster = rankingCluster.findIndex(item => item.unidade === filtroUnidade) + 1;
+    const posicaoCluster = rankingCluster.findIndex(item => item.unidade === unidadeEfetiva) + 1;
     const totalCluster = rankingCluster.length;
     
     return { posicaoRede, totalRede, posicaoCluster, totalCluster, ativo: true };
-  }, [dadosBrutos, filtroUnidade, filtroQuarter, itemSelecionado]);
+  }, [dadosBrutos, unidadeEfetiva, filtroQuarter, itemSelecionado]);
 
   // Pontuações por quarter (apenas quarters ativos)
   const pontuacoesPorQuarter = useMemo(() => {
-    if (!dadosBrutos || !filtroUnidade) return [];
+    if (!dadosBrutos || !unidadeEfetiva) return [];
     
     return ['1', '2', '3', '4'].map(quarter => {
-      const item = dadosBrutos.find(d => d.quarter === quarter && d.nm_unidade === filtroUnidade);
+      const item = dadosBrutos.find(d => d.quarter === quarter && d.nm_unidade === unidadeEfetiva);
       if (!item) return { quarter, pontuacao: 0, ativo: false };
       
       // Verificar se o quarter está ativo
@@ -275,7 +290,7 @@ export default function ResultadosPage() {
       const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
       return { quarter, pontuacao: isNaN(pont) ? 0 : pont, ativo: quarterAtivo };
     });
-  }, [dadosBrutos, filtroUnidade]);
+  }, [dadosBrutos, unidadeEfetiva]);
 
   // Indicadores
   const indicadores = useMemo(() => {
@@ -438,11 +453,13 @@ export default function ResultadosPage() {
         showPerformanceComercial: (user?.accessLevel ?? 0) >= 1,
         filtroQuarter,
         filtroUnidade,
+        filtrosUnidades,
         filtrosClusters,
         filtrosConsultores,
         filtrosPerformanceComercial,
         onQuarterChange: setFiltroQuarter,
         onUnidadeChange: setFiltroUnidade,
+        onUnidadesChange: setFiltrosUnidades,
         onClustersChange: setFiltrosClusters,
         onConsultoresChange: setFiltrosConsultores,
         onPerformanceComercialMultiChange: setFiltrosPerformanceComercial,
@@ -515,7 +532,59 @@ export default function ResultadosPage() {
         </div>
 
         {/* Conteúdo Principal */}
-        {itemSelecionado ? (
+        {multiplaUnidadesSelecionadas ? (
+          <>
+            {/* Mensagem quando múltiplas unidades estão selecionadas */}
+            <Card>
+              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: '64px', marginBottom: '16px' }}>📊</div>
+                <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: '#FF6600' }}>
+                  Múltiplas Franquias Selecionadas
+                </h3>
+                <p style={{ color: '#adb5bd', marginBottom: '12px' }}>
+                  Você selecionou <strong style={{ color: '#FF6600' }}>{filtrosUnidades.length} franquias</strong>.
+                </p>
+                <p style={{ color: '#adb5bd', marginBottom: '24px' }}>
+                  Para visualizar os detalhes de pontuação, cards de indicadores e gráficos, selecione apenas uma franquia.
+                </p>
+                <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>
+                  A <strong>Tabela Resumo</strong> abaixo exibe as franquias selecionadas.
+                </p>
+              </div>
+            </Card>
+
+            {/* Tabela Resumo - Sempre visível para franqueadora */}
+            {isFranchiser && (
+              <>
+                <h2 style={{
+                  color: '#adb5bd',
+                  fontFamily: 'Poppins, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  borderBottom: '2px solid #FF6600',
+                  paddingBottom: '8px',
+                  fontSize: '1.4rem',
+                  fontWeight: 700,
+                  marginTop: '30px',
+                  marginBottom: '20px'
+                }}>
+                  Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+                </h2>
+                <Card>
+                  <TabelaResumo
+                    dados={dadosBrutos || []}
+                    quarterSelecionado={filtroQuarter}
+                    clusterSelecionado={filtrosClusters.length === 1 ? filtrosClusters[0] : ''}
+                    consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
+                    nomeColunaConsultor={nomeColunaConsultor}
+                    pesosIndicadores={parametrosData?.pesos || []}
+                    unidadesSelecionadas={filtrosUnidades}
+                  />
+                </Card>
+              </>
+            )}
+          </>
+        ) : itemSelecionado ? (
           <>
             {/* Grid Principal - Gráfico e Detalhes */}
             <div style={{ 
@@ -537,7 +606,7 @@ export default function ResultadosPage() {
                   borderBottom: '1px solid #555',
                   fontFamily: 'Poppins, sans-serif'
                 }}>
-                  PONTUAÇÃO TOTAL <span style={{ color: '#FF6600' }}>({filtroUnidade})</span>
+                  PONTUAÇÃO TOTAL <span style={{ color: '#FF6600' }}>({unidadeEfetiva})</span>
                 </h3>
                 <div style={{ width: '100%', overflow: 'hidden' }}>
                   <ResponsiveContainer width="100%" height={180}>
@@ -573,7 +642,7 @@ export default function ResultadosPage() {
                 </div>
                 <div style={{ textAlign: 'center', marginTop: '12px', marginBottom: '16px' }}>
                   <p style={{ fontSize: '14px', color: '#adb5bd' }}>
-                    Média de <strong style={{ color: '#F8F9FA' }}>{filtroUnidade}</strong> em <span style={{ color: '#FF6600' }}>todos os quarters</span>
+                    Média de <strong style={{ color: '#F8F9FA' }}>{unidadeEfetiva}</strong> em <span style={{ color: '#FF6600' }}>todos os quarters</span>
                   </p>
                 </div>
                 
@@ -640,7 +709,7 @@ export default function ResultadosPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
                     <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Unidade:</span>
-                    <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{filtroUnidade}</span>
+                    <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{unidadeEfetiva}</span>
                   </div>
                   {itemSelecionado.cluster && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
@@ -808,6 +877,7 @@ export default function ResultadosPage() {
                     consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
                     nomeColunaConsultor={nomeColunaConsultor}
                     pesosIndicadores={parametrosData?.pesos || []}
+                    unidadesSelecionadas={filtrosUnidades}
                   />
                 </Card>
               </>
@@ -817,7 +887,7 @@ export default function ResultadosPage() {
             <div style={{ marginTop: '30px' }}>
               <GraficoEvolucao
                 dadosHistorico={dadosHistorico}
-                unidadeSelecionada={filtroUnidade}
+                unidadeSelecionada={unidadeEfetiva || ''}
                 clusterSelecionado={filtrosClusters.length === 1 ? filtrosClusters[0] : ''}
                 consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
                 nomeColunaConsultor={nomeColunaConsultor}
@@ -829,7 +899,7 @@ export default function ResultadosPage() {
             <div style={{ textAlign: 'center', padding: '60px 20px' }}>
               <div style={{ fontSize: '64px', marginBottom: '16px', color: '#555' }}>📊</div>
               <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: '#F8F9FA' }}>
-                Selecione um Quarter e Unidade
+                Selecione um Quarter e Franquia
               </h3>
               <p style={{ color: '#adb5bd' }}>Use os filtros na sidebar para visualizar os resultados</p>
             </div>

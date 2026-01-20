@@ -22,6 +22,7 @@ interface TabelaResumoProps {
   consultorSelecionado?: string;
   nomeColunaConsultor?: string;
   pesosIndicadores?: IndicadorPeso[];
+  unidadesSelecionadas?: string[];
 }
 
 // Mapeamento dos nomes de indicadores da planilha para as colunas dos dados
@@ -47,7 +48,8 @@ export default function TabelaResumo({
   clusterSelecionado, 
   consultorSelecionado,
   nomeColunaConsultor = 'consultor',
-  pesosIndicadores = []
+  pesosIndicadores = [],
+  unidadesSelecionadas = []
 }: TabelaResumoProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoTipo>(null);
@@ -86,8 +88,13 @@ export default function TabelaResumo({
       resultado = resultado.filter(item => item[nomeColunaConsultor] === consultorSelecionado);
     }
     
+    // Filtrar por unidades selecionadas (se houver)
+    if (unidadesSelecionadas && unidadesSelecionadas.length > 0) {
+      resultado = resultado.filter(item => unidadesSelecionadas.includes(item.nm_unidade));
+    }
+    
     return resultado;
-  }, [dados, quarterSelecionado, clusterSelecionado, consultorSelecionado, nomeColunaConsultor]);
+  }, [dados, quarterSelecionado, clusterSelecionado, consultorSelecionado, nomeColunaConsultor, unidadesSelecionadas]);
 
   // Ordenar dados
   const dadosOrdenados = useMemo(() => {
