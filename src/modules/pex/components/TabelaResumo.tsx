@@ -7,13 +7,37 @@ import React, { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 
+interface IndicadorPeso {
+  indicador: string;
+  quarter1: string;
+  quarter2: string;
+  quarter3: string;
+  quarter4: string;
+}
+
 interface TabelaResumoProps {
   dados: any[];
   quarterSelecionado?: string;
   clusterSelecionado?: string;
   consultorSelecionado?: string;
   nomeColunaConsultor?: string;
+  pesosIndicadores?: IndicadorPeso[];
 }
+
+// Mapeamento dos nomes de indicadores da planilha para as colunas dos dados
+const MAPA_INDICADORES: Record<string, string> = {
+  'VVR': 'vvr_12_meses',
+  'VVR CARTEIRA': 'vvr_carteira',
+  'ENDIVIDAMENTO': 'Indice_endividamento',
+  'NPS': 'nps_geral',
+  '% MC (ENTREGA)': 'indice_margem_entrega',
+  'E-NPS': 'enps_rede',
+  '% CONFORMIDADES OPERACIONAIS E FINANCEIRAS': 'conformidades',
+  'RECLAME AQUI': 'reclame_aqui',
+  '%COLABORADORES COM MAIS DE 1 ANO': 'colaboradores_mais_1_ano',
+  'ESTRUTURA ORGANIZACIONAL': 'estrutura_organizacioanl',
+  'CHURN': 'churn'
+};
 
 type OrdenacaoTipo = 'asc' | 'desc' | null;
 
@@ -22,7 +46,8 @@ export default function TabelaResumo({
   quarterSelecionado, 
   clusterSelecionado, 
   consultorSelecionado,
-  nomeColunaConsultor = 'consultor'
+  nomeColunaConsultor = 'consultor',
+  pesosIndicadores = []
 }: TabelaResumoProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoTipo>(null);
@@ -142,24 +167,34 @@ export default function TabelaResumo({
     { key: 'quarter', label: 'Quarter' }
   ];
 
-  // Pesos dos indicadores para calcular percentual (peso * 100 = teto máximo)
-  const pesosIndicadores: Record<string, number> = {
-    'vvr_12_meses': 2.5,
-    'vvr_carteira': 1.0,
-    'Indice_endividamento': 0.5,
-    'nps_geral': 1.0,
-    'indice_margem_entrega': 1.0,
-    'enps_rede': 0.5,
-    'conformidades': 1.0,
-    'reclame_aqui': 0.5,
-    'colaboradores_mais_1_ano': 0.5,
-    'estrutura_organizacioanl': 0.5,
-    'churn': 1.0
+  // Função para obter o peso de um indicador baseado no quarter selecionado
+  const obterPesoIndicador = (coluna: string): number => {
+    // Encontrar o nome do indicador correspondente à coluna
+    const nomeIndicador = Object.entries(MAPA_INDICADORES).find(([_, col]) => col === coluna)?.[0];
+    if (!nomeIndicador) return 0;
+    
+    // Buscar o indicador nos pesos
+    const indicadorPeso = pesosIndicadores.find(p => 
+      p.indicador.toUpperCase().trim() === nomeIndicador.toUpperCase().trim()
+    );
+    if (!indicadorPeso) return 0;
+    
+    // Selecionar o peso do quarter correto
+    let pesoStr = '0';
+    switch (quarterSelecionado) {
+      case '1': pesoStr = indicadorPeso.quarter1; break;
+      case '2': pesoStr = indicadorPeso.quarter2; break;
+      case '3': pesoStr = indicadorPeso.quarter3; break;
+      case '4': pesoStr = indicadorPeso.quarter4; break;
+      default: pesoStr = indicadorPeso.quarter1;
+    }
+    
+    return parseFloat(pesoStr.replace(',', '.')) || 0;
   };
 
   // Função para calcular percentual de atingimento
   const calcularPercentual = (valor: any, key: string): { percentual: number; cor: string } | null => {
-    const peso = pesosIndicadores[key];
+    const peso = obterPesoIndicador(key);
     if (!peso) return null;
     
     const valorNum = parseFloat(valor?.toString().replace(',', '.') || '0');

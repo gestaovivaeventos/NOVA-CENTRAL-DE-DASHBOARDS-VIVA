@@ -8,13 +8,38 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
-import { useSheetsData, Card, PexLayout, IndicadorCardLegacy as IndicadorCard, TabelaResumo, GraficoEvolucao } from '@/modules/pex';
+import { useSheetsData, Card, PexLayout, IndicadorCardLegacy as IndicadorCard, TabelaResumo, GraficoEvolucao, useParametrosData } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
+
+// Mapeamento dos nomes de indicadores da planilha para as colunas dos dados
+const MAPA_INDICADORES: Record<string, string> = {
+  'VVR': 'vvr_12_meses',
+  'VVR CARTEIRA': 'vvr_carteira',
+  'ENDIVIDAMENTO': 'Indice_endividamento',
+  'NPS': 'nps_geral',
+  '% MC (ENTREGA)': 'indice_margem_entrega',
+  'E-NPS': 'enps_rede',
+  '% CONFORMIDADES OPERACIONAIS E FINANCEIRAS': 'conformidades',
+  'RECLAME AQUI': 'reclame_aqui',
+  '%COLABORADORES COM MAIS DE 1 ANO': 'colaboradores_mais_1_ano',
+  'ESTRUTURA ORGANIZACIONAL': 'estrutura_organizacioanl',
+  'CHURN': 'churn'
+};
 
 export default function ResultadosPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // Buscar parâmetros (pesos) do contexto
+  const { data: parametrosData, fetchAll: fetchParametros, hasFetched: parametrosFetched } = useParametrosData();
+  
+  // Buscar parâmetros se ainda não foram carregados
+  useEffect(() => {
+    if (!parametrosFetched) {
+      fetchParametros();
+    }
+  }, [parametrosFetched, fetchParametros]);
   
   // Verificar autenticação
   useEffect(() => {
@@ -268,28 +293,53 @@ export default function ResultadosPage() {
     const cluster = itemSelecionado.cluster;
     const dadosCluster = dadosFiltrados.filter(item => item.cluster === cluster);
 
-    // Pesos dos indicadores (peso * 100 = teto máximo de pontos)
+    // Função para obter peso dinâmico do contexto de parâmetros
+    const obterPesoDinamico = (nomeIndicador: string): number => {
+      if (!parametrosData?.pesos || parametrosData.pesos.length === 0) return 0;
+      
+      const indicadorPeso = parametrosData.pesos.find(p => 
+        p.indicador.toUpperCase().trim() === nomeIndicador.toUpperCase().trim()
+      );
+      if (!indicadorPeso) return 0;
+      
+      // Selecionar o peso do quarter correto
+      let pesoStr = '0';
+      switch (filtroQuarter) {
+        case '1': pesoStr = indicadorPeso.quarter1; break;
+        case '2': pesoStr = indicadorPeso.quarter2; break;
+        case '3': pesoStr = indicadorPeso.quarter3; break;
+        case '4': pesoStr = indicadorPeso.quarter4; break;
+        default: pesoStr = indicadorPeso.quarter1;
+      }
+      
+      return parseFloat(pesoStr.replace(',', '.')) || 0;
+    };
+
+    // Lista de indicadores com mapeamento para a planilha
     const listaIndicadores = [
-      { codigo: 'VVR_12_MESES', coluna: 'vvr_12_meses', titulo: 'VVR 12 MESES', notaGeral: 'VALOR DE VENDAS REALIZADAS 12 MESES', peso: 2.5 },
-      { codigo: 'VVR_CARTEIRA', coluna: 'vvr_carteira', titulo: 'VVR CARTEIRA', notaGeral: 'VALOR DE VENDAS REALIZADAS CARTEIRA', peso: 1.0 },
-      { codigo: 'ENDIVIDAMENTO', coluna: 'Indice_endividamento', titulo: 'ENDIVIDAMENTO', notaGeral: 'ÍNDICE DE ENDIVIDAMENTO', peso: 0.5 },
-      { codigo: 'NPS', coluna: 'nps_geral', titulo: 'NPS GERAL', notaGeral: 'NET PROMOTER SCORE', peso: 1.0 },
-      { codigo: 'MARGEM_ENTREGA', coluna: 'indice_margem_entrega', titulo: 'MARGEM ENTREGA', notaGeral: 'ÍNDICE DE MARGEM DE ENTREGA', peso: 1.0 },
-      { codigo: 'ENPS', coluna: 'enps_rede', titulo: 'eNPS REDE', notaGeral: 'EMPLOYEE NET PROMOTER SCORE', peso: 0.5 },
-      { codigo: 'CONFORMIDADES', coluna: 'conformidades', titulo: 'CONFORMIDADES', notaGeral: 'AUDITORIA DE CONFORMIDADES', peso: 1.0 },
-      { codigo: 'RECLAME_AQUI', coluna: 'reclame_aqui', titulo: 'RECLAME AQUI', notaGeral: 'ÍNDICE RECLAME AQUI', peso: 0.5 },
-      { codigo: 'COLABORADORES', coluna: 'colaboradores_mais_1_ano', titulo: 'COLAB. +1 ANO', notaGeral: 'COLABORADORES COM MAIS DE 1 ANO', peso: 0.5 },
-      { codigo: 'ESTRUTURA', coluna: 'estrutura_organizacioanl', titulo: 'ESTRUTURA ORG.', notaGeral: 'ESTRUTURA ORGANIZACIONAL', peso: 0.5 },
-      { codigo: 'CHURN', coluna: 'churn', titulo: 'CHURN', notaGeral: 'ÍNDICE DE CHURN', peso: 1.0 },
-      { codigo: 'BONUS', coluna: 'bonus', titulo: 'BÔNUS', notaGeral: 'PONTOS DE BÔNUS', peso: 0 }
+      { codigo: 'VVR_12_MESES', coluna: 'vvr_12_meses', titulo: 'VVR 12 MESES', notaGeral: 'VALOR DE VENDAS REALIZADAS 12 MESES', indicadorPlanilha: 'VVR' },
+      { codigo: 'VVR_CARTEIRA', coluna: 'vvr_carteira', titulo: 'VVR CARTEIRA', notaGeral: 'VALOR DE VENDAS REALIZADAS CARTEIRA', indicadorPlanilha: 'VVR CARTEIRA' },
+      { codigo: 'ENDIVIDAMENTO', coluna: 'Indice_endividamento', titulo: 'ENDIVIDAMENTO', notaGeral: 'ÍNDICE DE ENDIVIDAMENTO', indicadorPlanilha: 'ENDIVIDAMENTO' },
+      { codigo: 'NPS', coluna: 'nps_geral', titulo: 'NPS GERAL', notaGeral: 'NET PROMOTER SCORE', indicadorPlanilha: 'NPS' },
+      { codigo: 'MARGEM_ENTREGA', coluna: 'indice_margem_entrega', titulo: 'MARGEM ENTREGA', notaGeral: 'ÍNDICE DE MARGEM DE ENTREGA', indicadorPlanilha: '% MC (ENTREGA)' },
+      { codigo: 'ENPS', coluna: 'enps_rede', titulo: 'eNPS REDE', notaGeral: 'EMPLOYEE NET PROMOTER SCORE', indicadorPlanilha: 'E-NPS' },
+      { codigo: 'CONFORMIDADES', coluna: 'conformidades', titulo: 'CONFORMIDADES', notaGeral: 'AUDITORIA DE CONFORMIDADES', indicadorPlanilha: '% CONFORMIDADES OPERACIONAIS E FINANCEIRAS' },
+      { codigo: 'RECLAME_AQUI', coluna: 'reclame_aqui', titulo: 'RECLAME AQUI', notaGeral: 'ÍNDICE RECLAME AQUI', indicadorPlanilha: 'RECLAME AQUI' },
+      { codigo: 'COLABORADORES', coluna: 'colaboradores_mais_1_ano', titulo: 'COLAB. +1 ANO', notaGeral: 'COLABORADORES COM MAIS DE 1 ANO', indicadorPlanilha: '%COLABORADORES COM MAIS DE 1 ANO' },
+      { codigo: 'ESTRUTURA', coluna: 'estrutura_organizacioanl', titulo: 'ESTRUTURA ORG.', notaGeral: 'ESTRUTURA ORGANIZACIONAL', indicadorPlanilha: 'ESTRUTURA ORGANIZACIONAL' },
+      { codigo: 'CHURN', coluna: 'churn', titulo: 'CHURN', notaGeral: 'ÍNDICE DE CHURN', indicadorPlanilha: 'CHURN' },
+      { codigo: 'BONUS', coluna: 'bonus', titulo: 'BÔNUS', notaGeral: 'PONTOS DE BÔNUS', indicadorPlanilha: '' }
     ];
 
     return listaIndicadores.map(ind => {
+      // Obter peso dinâmico da planilha
+      const peso = obterPesoDinamico(ind.indicadorPlanilha);
+      
       // Se quarter inativo, todos os valores zerados
       const pontuacaoUnidade = quarterAtivo ? parseValor(itemSelecionado[ind.coluna]) : 0;
       
       // Calcular percentual de atingimento (pontuação / (peso * 100) * 100)
-      const tetoMaximo = ind.peso * 100;
+      const tetoMaximo = peso * 100;
       const percentualAtingimento = tetoMaximo > 0 ? (pontuacaoUnidade / tetoMaximo) * 100 : 0;
       
       const valoresRede = quarterAtivo 
@@ -319,7 +369,7 @@ export default function ResultadosPage() {
         unidadeMelhorCluster: itemMelhorCluster?.nm_unidade || '-'
       };
     });
-  }, [itemSelecionado, dadosBrutos, filtroQuarter]);
+  }, [itemSelecionado, dadosBrutos, filtroQuarter, parametrosData?.pesos]);
 
   // Loading
   if (loading) {
@@ -757,6 +807,7 @@ export default function ResultadosPage() {
                     clusterSelecionado={filtrosClusters.length === 1 ? filtrosClusters[0] : ''}
                     consultorSelecionado={filtrosConsultores.length === 1 ? filtrosConsultores[0] : ''}
                     nomeColunaConsultor={nomeColunaConsultor}
+                    pesosIndicadores={parametrosData?.pesos || []}
                   />
                 </Card>
               </>
