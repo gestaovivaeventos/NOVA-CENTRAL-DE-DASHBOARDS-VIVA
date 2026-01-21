@@ -77,8 +77,17 @@ export default function ResultadosPage() {
   const [filtrosClusters, setFiltrosClusters] = useState<string[]>([]);
   const [filtrosConsultores, setFiltrosConsultores] = useState<string[]>([]);
   const [filtrosPerformanceComercial, setFiltrosPerformanceComercial] = useState<string[]>([]);
+  const [filtrosMaturidades, setFiltrosMaturidades] = useState<string[]>([]);
+  const [filtrosMercados, setFiltrosMercados] = useState<string[]>([]);
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
+
+  // Helper para verificar se é franquia de incubação (baseado no cluster)
+  const isIncubacao = (cluster: string | undefined) => {
+    if (!cluster) return false;
+    const clusterUpper = cluster.toUpperCase();
+    return clusterUpper.includes('INCUBA');
+  };
 
   // Detectar nome da coluna do consultor
   useEffect(() => {
@@ -130,6 +139,14 @@ export default function ResultadosPage() {
       .sort();
   }, [dadosBrutos]);
 
+  const listaMercados = useMemo(() => {
+    if (!dadosBrutos || dadosBrutos.length === 0) return [];
+    return dadosBrutos
+      .map(item => item.mercado)
+      .filter((value, index, self) => value && self.indexOf(value) === index)
+      .sort();
+  }, [dadosBrutos]);
+
   const listaUnidades = useMemo(() => {
     if (!dadosBrutos || dadosBrutos.length === 0) return [];
     let dados = dadosBrutos;
@@ -139,11 +156,33 @@ export default function ResultadosPage() {
     if (filtrosConsultores.length > 0) dados = dados.filter(item => item[nomeColunaConsultor] && filtrosConsultores.includes(item[nomeColunaConsultor]));
     if (filtrosPerformanceComercial.length > 0) dados = dados.filter(item => item.performance_comercial && filtrosPerformanceComercial.includes(item.performance_comercial));
     
+    // Aplicar filtro de maturidade (multi-select)
+    if (filtrosMaturidades.length > 0) {
+      dados = dados.filter(item => {
+        const isFranquiaIncubacao = isIncubacao(item.cluster);
+        if (filtrosMaturidades.includes('Maduras') && filtrosMaturidades.includes('Incubação')) {
+          return true;
+        }
+        if (filtrosMaturidades.includes('Maduras')) {
+          return !isFranquiaIncubacao;
+        }
+        if (filtrosMaturidades.includes('Incubação')) {
+          return isFranquiaIncubacao;
+        }
+        return true;
+      });
+    }
+    
+    // Aplicar filtro de mercado (multi-select)
+    if (filtrosMercados.length > 0) {
+      dados = dados.filter(item => item.mercado && filtrosMercados.includes(item.mercado));
+    }
+    
     return dados
       .map(item => item.nm_unidade)
       .filter((value, index, self) => value && self.indexOf(value) === index)
       .sort();
-  }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, filtrosPerformanceComercial, nomeColunaConsultor]);
+  }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, filtrosPerformanceComercial, filtrosMaturidades, filtrosMercados, nomeColunaConsultor]);
 
   // Inicializar filtros
   useEffect(() => {
@@ -589,17 +628,25 @@ export default function ResultadosPage() {
         filtrosClusters,
         filtrosConsultores,
         filtrosPerformanceComercial,
+        filtrosMaturidades,
+        filtrosMercados,
         onQuarterChange: setFiltroQuarter,
         onUnidadeChange: setFiltroUnidade,
         onUnidadesChange: setFiltrosUnidades,
         onClustersChange: setFiltrosClusters,
         onConsultoresChange: setFiltrosConsultores,
         onPerformanceComercialMultiChange: setFiltrosPerformanceComercial,
+        onMaturidadesChange: setFiltrosMaturidades,
+        onMercadosChange: setFiltrosMercados,
         listaQuarters,
         listaUnidades,
         listaClusters,
         listaConsultores,
         listaPerformanceComercial,
+        listaMaturidades: ['Maduras', 'Incubação'],
+        listaMercados,
+        showMaturidade: true,
+        showMercado: true,
       }}
     >
       <Head>
@@ -711,6 +758,8 @@ export default function ResultadosPage() {
                     nomeColunaConsultor={nomeColunaConsultor}
                     pesosIndicadores={parametrosData?.pesos || []}
                     unidadesSelecionadas={filtrosUnidades}
+                    filtrosMaturidades={filtrosMaturidades}
+                    filtrosMercados={filtrosMercados}
                   />
                 </Card>
               </>
@@ -1147,6 +1196,8 @@ export default function ResultadosPage() {
                     nomeColunaConsultor={nomeColunaConsultor}
                     pesosIndicadores={parametrosData?.pesos || []}
                     unidadesSelecionadas={filtrosUnidades}
+                    filtrosMaturidades={filtrosMaturidades}
+                    filtrosMercados={filtrosMercados}
                   />
                 </Card>
               </>

@@ -25,6 +25,8 @@ interface TabelaResumoProps {
   unidadesSelecionadas?: string[];
   clustersSelecionados?: string[];
   consultoresSelecionados?: string[];
+  filtrosMaturidades?: string[];
+  filtrosMercados?: string[];
 }
 
 // Mapeamento dos nomes de indicadores da planilha para as colunas dos dados
@@ -53,10 +55,19 @@ export default function TabelaResumo({
   pesosIndicadores = [],
   unidadesSelecionadas = [],
   clustersSelecionados = [],
-  consultoresSelecionados = []
+  consultoresSelecionados = [],
+  filtrosMaturidades = [],
+  filtrosMercados = []
 }: TabelaResumoProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoTipo>(null);
+
+  // Helper para verificar se é franquia de incubação (baseado no cluster)
+  const isIncubacao = (cluster: string | undefined) => {
+    if (!cluster) return false;
+    const clusterUpper = cluster.toUpperCase();
+    return clusterUpper.includes('INCUBA');
+  };
 
   // Função para exportar para Excel
   const exportarParaExcel = () => {
@@ -103,8 +114,30 @@ export default function TabelaResumo({
       resultado = resultado.filter(item => unidadesSelecionadas.includes(item.nm_unidade));
     }
     
+    // Filtrar por maturidade (multi-select)
+    if (filtrosMaturidades && filtrosMaturidades.length > 0) {
+      resultado = resultado.filter(item => {
+        const isFranquiaIncubacao = isIncubacao(item.cluster);
+        if (filtrosMaturidades.includes('Maduras') && filtrosMaturidades.includes('Incubação')) {
+          return true; // Ambos selecionados = todos
+        }
+        if (filtrosMaturidades.includes('Maduras')) {
+          return !isFranquiaIncubacao;
+        }
+        if (filtrosMaturidades.includes('Incubação')) {
+          return isFranquiaIncubacao;
+        }
+        return true;
+      });
+    }
+    
+    // Filtrar por mercado (multi-select)
+    if (filtrosMercados && filtrosMercados.length > 0) {
+      resultado = resultado.filter(item => item.mercado && filtrosMercados.includes(item.mercado));
+    }
+    
     return resultado;
-  }, [dados, quarterSelecionado, clusterSelecionado, clustersSelecionados, consultorSelecionado, consultoresSelecionados, nomeColunaConsultor, unidadesSelecionadas]);
+  }, [dados, quarterSelecionado, clusterSelecionado, clustersSelecionados, consultorSelecionado, consultoresSelecionados, nomeColunaConsultor, unidadesSelecionadas, filtrosMaturidades, filtrosMercados]);
 
   // Ordenar dados
   const dadosOrdenados = useMemo(() => {

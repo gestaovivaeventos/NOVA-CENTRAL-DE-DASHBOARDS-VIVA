@@ -17,6 +17,8 @@ interface FilterConfig {
   showUnidade?: boolean;
   showConsultor?: boolean;
   showPerformanceComercial?: boolean;
+  showMaturidade?: boolean;
+  showMercado?: boolean;
   
   // Suporte para valores únicos (retrocompatível)
   filtroQuarter?: string;
@@ -24,30 +26,40 @@ interface FilterConfig {
   filtroUnidade?: string;
   filtroConsultor?: string;
   filtroPerformanceComercial?: string;
+  filtroMaturidade?: string;
+  filtroMercado?: string;
   
   // Suporte para valores múltiplos
   filtrosClusters?: string[];
   filtrosUnidades?: string[];
   filtrosConsultores?: string[];
   filtrosPerformanceComercial?: string[];
+  filtrosMaturidades?: string[];
+  filtrosMercados?: string[];
   
   onQuarterChange?: (value: string) => void;
   onClusterChange?: (value: string) => void;
   onUnidadeChange?: (value: string) => void;
   onConsultorChange?: (value: string) => void;
   onPerformanceComercialChange?: (value: string) => void;
+  onMaturidadeChange?: (value: string) => void;
+  onMercadoChange?: (value: string) => void;
   
   // Callbacks para valores múltiplos
   onClustersChange?: (values: string[]) => void;
   onUnidadesChange?: (values: string[]) => void;
   onConsultoresChange?: (values: string[]) => void;
   onPerformanceComercialMultiChange?: (values: string[]) => void;
+  onMaturidadesChange?: (values: string[]) => void;
+  onMercadosChange?: (values: string[]) => void;
   
   listaQuarters?: string[];
   listaClusters?: string[];
   listaUnidades?: string[];
   listaConsultores?: string[];
   listaPerformanceComercial?: string[];
+  listaMaturidades?: string[];
+  listaMercados?: string[];
 }
 
 interface PexLayoutProps {
@@ -419,6 +431,48 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                         <option key={q} value={q}>{q}º Quarter</option>
                       ))}
                     </select>
+                  </div>
+                )}
+
+                {/* Filtro Maturidade */}
+                {filters.showMaturidade && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      color: '#adb5bd',
+                      fontSize: '0.8rem',
+                      marginBottom: '6px',
+                      fontWeight: 500,
+                    }}>
+                      Maturidade
+                    </label>
+                    <MultiSelectFilter
+                      options={filters.listaMaturidades || ['Maduras', 'Incubação']}
+                      selectedValues={filters.filtrosMaturidades || []}
+                      onChange={filters.onMaturidadesChange || (() => {})}
+                      placeholder="Selecione maturidade..."
+                    />
+                  </div>
+                )}
+
+                {/* Filtro Mercado */}
+                {filters.showMercado && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      color: '#adb5bd',
+                      fontSize: '0.8rem',
+                      marginBottom: '6px',
+                      fontWeight: 500,
+                    }}>
+                      Mercado
+                    </label>
+                    <MultiSelectFilter
+                      options={filters.listaMercados || []}
+                      selectedValues={filters.filtrosMercados || []}
+                      onChange={filters.onMercadosChange || (() => {})}
+                      placeholder="Selecione mercados..."
+                    />
                   </div>
                 )}
 
