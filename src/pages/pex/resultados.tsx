@@ -330,60 +330,56 @@ export default function ResultadosPage() {
     return { posicaoRede, totalRede, posicaoCluster, totalCluster };
   }, [dadosRedeCompleta, unidadeEfetiva]);
 
-  // Posição no Quarter selecionado (respeita quarter ativo)
-  // Usa dados completos da rede para calcular a posição real
-  const posicoesQuarter = useMemo(() => {
-    if (!dadosRedeCompleta || dadosRedeCompleta.length === 0 || !unidadeEfetiva || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
-    
-    // Usar dados completos da rede para o ranking
-    const dadosQuarter = dadosRedeCompleta.filter(item => item.quarter === filtroQuarter);
-    
-    // Verificar se o quarter selecionado está ativo para a unidade selecionada
-    const itemUnidade = dadosQuarter.find(item => item.nm_unidade === unidadeEfetiva);
-    const quarterAtivo = itemUnidade ? (itemUnidade.quarter_ativo || '').toString().toLowerCase() === 'ativo' : false;
-    
-    // Se quarter inativo, retornar zeros
-    if (!quarterAtivo) {
-      return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
-    }
-    
-    // Filtrar apenas itens com quarter ativo para o ranking
-    const dadosQuarterAtivo = dadosQuarter.filter(item => 
-      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
-    );
-    
-    const rankingRede = dadosQuarterAtivo.map(item => ({
-      unidade: item.nm_unidade,
-      pontuacao: parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.')),
-      cluster: item.cluster
-    })).sort((a, b) => b.pontuacao - a.pontuacao);
-    
-    const posicaoRede = rankingRede.findIndex(item => item.unidade === unidadeEfetiva) + 1;
-    const totalRede = rankingRede.length;
-    
-    const clusterUnidade = itemSelecionado?.cluster || '';
-    const rankingCluster = rankingRede.filter(item => item.cluster === clusterUnidade);
-    const posicaoCluster = rankingCluster.findIndex(item => item.unidade === unidadeEfetiva) + 1;
-    const totalCluster = rankingCluster.length;
-    
-    return { posicaoRede, totalRede, posicaoCluster, totalCluster, ativo: true };
-  }, [dadosRedeCompleta, unidadeEfetiva, filtroQuarter, itemSelecionado]);
-
-  // Pontuações por quarter (apenas quarters ativos)
+  // Pontuações por quarter (apenas quarters ativos) com posições
   const pontuacoesPorQuarter = useMemo(() => {
     if (!dadosBrutos || !unidadeEfetiva) return [];
     
     return ['1', '2', '3', '4'].map(quarter => {
       const item = dadosBrutos.find(d => d.quarter === quarter && d.nm_unidade === unidadeEfetiva);
-      if (!item) return { quarter, pontuacao: 0, ativo: false };
+      if (!item) return { quarter, pontuacao: 0, ativo: false, posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
       
       // Verificar se o quarter está ativo
       const quarterAtivo = (item.quarter_ativo || '').toString().toLowerCase() === 'ativo';
       
       const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
-      return { quarter, pontuacao: isNaN(pont) ? 0 : pont, ativo: quarterAtivo };
+      
+      // Calcular posições para este quarter usando dados completos da rede
+      let posicaoRede = 0, totalRede = 0, posicaoCluster = 0, totalCluster = 0;
+      
+      if (quarterAtivo && dadosRedeCompleta && dadosRedeCompleta.length > 0) {
+        const dadosQuarter = dadosRedeCompleta.filter(d => d.quarter === quarter);
+        
+        // Filtrar apenas itens com quarter ativo para o ranking
+        const dadosQuarterAtivo = dadosQuarter.filter(d => 
+          (d.quarter_ativo || '').toString().toLowerCase() === 'ativo'
+        );
+        
+        const rankingRede = dadosQuarterAtivo.map(d => ({
+          unidade: d.nm_unidade,
+          pontuacao: parseFloat((d['pontuacao_com_bonus'] || '0').toString().replace(',', '.')),
+          cluster: d.cluster
+        })).sort((a, b) => b.pontuacao - a.pontuacao);
+        
+        posicaoRede = rankingRede.findIndex(d => d.unidade === unidadeEfetiva) + 1;
+        totalRede = rankingRede.length;
+        
+        const clusterUnidade = item.cluster || '';
+        const rankingCluster = rankingRede.filter(d => d.cluster === clusterUnidade);
+        posicaoCluster = rankingCluster.findIndex(d => d.unidade === unidadeEfetiva) + 1;
+        totalCluster = rankingCluster.length;
+      }
+      
+      return { 
+        quarter, 
+        pontuacao: isNaN(pont) ? 0 : pont, 
+        ativo: quarterAtivo,
+        posicaoRede,
+        totalRede,
+        posicaoCluster,
+        totalCluster
+      };
     });
-  }, [dadosBrutos, unidadeEfetiva]);
+  }, [dadosBrutos, unidadeEfetiva, dadosRedeCompleta]);
 
   // Indicadores
   const indicadores = useMemo(() => {
@@ -921,17 +917,27 @@ export default function ResultadosPage() {
                   borderBottom: '1px solid #555',
                   fontFamily: 'Poppins, sans-serif'
                 }}>
-                  DETALHES DA UNIDADE <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+                  DETALHES DA UNIDADE
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
                     <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Unidade:</span>
                     <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{unidadeEfetiva}</span>
                   </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
+                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Maturidade:</span>
+                    <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{isIncubacao(itemSelecionado.cluster) ? 'Incubação' : 'Madura'}</span>
+                  </div>
                   {itemSelecionado.cluster && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
                       <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Cluster:</span>
                       <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado.cluster}</span>
+                    </div>
+                  )}
+                  {itemSelecionado['mercado'] && (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
+                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Mercado:</span>
+                      <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado['mercado']}</span>
                     </div>
                   )}
                   {itemSelecionado['performance_comercial'] && (
@@ -944,32 +950,10 @@ export default function ResultadosPage() {
                   )}
                   {itemSelecionado[nomeColunaConsultor] && (
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Consultor Responsável:</span>
+                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Consultor:</span>
                       <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado[nomeColunaConsultor]}</span>
                     </div>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Quarter:</span>
-                    <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{filtroQuarter}º Quarter</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Pontuação no Quarter Selecionado:</span>
-                    <span style={{ fontWeight: 600, fontSize: '1.1rem', color: posicoesQuarter.ativo ? '#FF6600' : '#888' }}>
-                      {posicoesQuarter.ativo ? (itemSelecionado['pontuacao_com_bonus'] || '0') : '0'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição na Rede:</span>
-                    <span style={{ fontWeight: 700, color: posicoesQuarter.ativo ? '#F8F9FA' : '#888' }}>
-                      {posicoesQuarter.ativo ? `${posicoesQuarter.posicaoRede}º de ${posicoesQuarter.totalRede}` : '-'}
-                    </span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição no Cluster:</span>
-                    <span style={{ fontWeight: 700, color: posicoesQuarter.ativo ? '#F8F9FA' : '#888' }}>
-                      {posicoesQuarter.ativo ? `${posicoesQuarter.posicaoCluster}º de ${posicoesQuarter.totalCluster}` : '-'}
-                    </span>
-                  </div>
                 </div>
               </Card>
             </div>
@@ -1006,7 +990,7 @@ export default function ResultadosPage() {
                 return (
                   <Card key={quarterData.quarter} titulo={`${quarterData.quarter}º Quarter`}>
                     <div style={{ width: '100%', overflow: 'hidden', opacity: quarterData.ativo ? 1 : 0.5 }}>
-                      <ResponsiveContainer width="100%" height={180}>
+                      <ResponsiveContainer width="100%" height={140}>
                         <PieChart>
                           <defs>
                             <radialGradient id={`orangeGradient${quarterData.quarter}`}>
@@ -1036,8 +1020,38 @@ export default function ResultadosPage() {
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    <div style={{ textAlign: 'center', marginTop: '8px' }}>
-                      <p style={{ fontSize: '13px', color: quarterData.ativo ? '#adb5bd' : '#666' }}>Pontuação</p>
+                    
+                    {/* Posições - Rede e Cluster */}
+                    <div style={{ 
+                      backgroundColor: '#2a2d31',
+                      borderRadius: '6px',
+                      marginTop: '12px',
+                      overflow: 'hidden',
+                      opacity: quarterData.ativo ? 1 : 0.5
+                    }}>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '10px 12px',
+                        borderBottom: '1px solid #3a3d41'
+                      }}>
+                        <span style={{ color: '#adb5bd', fontSize: '0.8rem' }}>Posição na Rede:</span>
+                        <span style={{ color: quarterData.ativo ? '#FF6600' : '#666', fontWeight: 700, fontSize: '0.85rem' }}>
+                          {quarterData.ativo ? `${quarterData.posicaoRede}º` : '-'} <span style={{ color: quarterData.ativo ? '#F8F9FA' : '#666', fontWeight: 400 }}>{quarterData.ativo ? `de ${quarterData.totalRede}` : ''}</span>
+                        </span>
+                      </div>
+                      <div style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
+                        padding: '10px 12px'
+                      }}>
+                        <span style={{ color: '#adb5bd', fontSize: '0.8rem' }}>Posição no Cluster:</span>
+                        <span style={{ color: quarterData.ativo ? '#FF6600' : '#666', fontWeight: 700, fontSize: '0.85rem' }}>
+                          {quarterData.ativo ? `${quarterData.posicaoCluster}º` : '-'} <span style={{ color: quarterData.ativo ? '#F8F9FA' : '#666', fontWeight: 400 }}>{quarterData.ativo ? `de ${quarterData.totalCluster}` : ''}</span>
+                        </span>
+                      </div>
                     </div>
                   </Card>
                 );
