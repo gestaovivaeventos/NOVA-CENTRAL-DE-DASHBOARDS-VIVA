@@ -161,25 +161,29 @@ export default function TabelaResumo({
     return null;
   };
 
-  // Definir colunas
+  // Definir colunas - Ordem e nomenclatura seguindo os blocos de indicadores
   const colunas = [
     { key: 'nm_unidade', label: 'Unidade' },
     { key: 'cluster', label: 'Cluster' },
-    { key: 'posicao_grupo', label: 'Posição Grupo' },
-    { key: 'bonus', label: 'Bônus' },
     { key: 'pontuacao_com_bonus', label: 'Pont. c/ Bônus' },
     { key: 'pontuacao_sem_bonus', label: 'Pont. s/ Bônus' },
-    { key: 'vvr_12_meses', label: 'VVR 12M' },
-    { key: 'vvr_carteira', label: 'VVR Carteira' },
-    { key: 'Indice_endividamento', label: 'Endiv.' },
-    { key: 'nps_geral', label: 'NPS' },
-    { key: 'indice_margem_entrega', label: 'Margem Entrega' },
-    { key: 'enps_rede', label: 'eNPS' },
-    { key: 'conformidades', label: 'Conform.' },
-    { key: 'reclame_aqui', label: 'Reclame Aqui' },
-    { key: 'colaboradores_mais_1_ano', label: 'Colab. +1 Ano' },
-    { key: 'estrutura_organizacioanl', label: 'Estrutura Org.' },
+    // BLOCO 1: RESULTADO ECONÔMICO
+    { key: 'vvr_12_meses', label: 'VVR (Novas Vendas)' },
+    { key: 'vvr_carteira', label: 'VVR Carteira (Lastro)' },
+    { key: 'indice_margem_entrega', label: 'Margem (% MC)' },
+    { key: 'Indice_endividamento', label: 'Endiv. Fundos' },
     { key: 'churn', label: 'Churn' },
+    // BLOCO 2: EXPERIÊNCIA DO CLIENTE
+    { key: 'nps_geral', label: 'NPS' },
+    { key: 'reclame_aqui', label: 'Reclame Aqui' },
+    // BLOCO 3: GESTÃO & CONFORMIDADE
+    { key: 'conformidades', label: 'Conform. Op. Fin.' },
+    { key: 'estrutura_organizacioanl', label: 'Conform. Soc. + Estrut.' },
+    // BLOCO 4: PESSOAS & SUSTENTABILIDADE
+    { key: 'enps_rede', label: 'e-NPS Franquia' },
+    { key: 'colaboradores_mais_1_ano', label: 'Retenção (> 1 ano)' },
+    // BÔNUS
+    { key: 'bonus', label: 'Bônus' },
     { key: 'consultor', label: 'Consultor' },
     { key: 'quarter', label: 'Quarter' }
   ];
@@ -287,158 +291,148 @@ export default function TabelaResumo({
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch'
       }}>
-        <table style={{ width: '100%', minWidth: '900px', borderCollapse: 'separate', borderSpacing: 0 }}>
+        <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'separate', borderSpacing: 0 }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
             <tr style={{ backgroundColor: '#2a2f36' }}>
-              {colunas.map((coluna) => (
-                <th
-                  key={coluna.key}
-                  onClick={() => handleOrdenar(coluna.key)}
-                  style={{
-                    color: '#adb5bd',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    padding: '12px 8px',
-                    textAlign: 'center',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    borderBottom: '2px solid #FF6600',
-                    whiteSpace: 'nowrap',
-                    lineHeight: '1.2',
-                    transition: 'background-color 0.2s',
-                    backgroundColor: '#2a2f36'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#343a40'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2a2f36'}
-                >
-                  {coluna.label}
-                  <IconeOrdenacao coluna={coluna.key} />
-                </th>
-              ))}
+              {colunas.map((coluna) => {
+                // Definir larguras específicas por tipo de coluna
+                const isUnidade = coluna.key === 'nm_unidade';
+                const isCluster = coluna.key === 'cluster';
+                const isConsultor = coluna.key === 'consultor';
+                const isPontuacao = coluna.key.includes('pontuacao');
+                
+                return (
+                  <th
+                    key={coluna.key}
+                    onClick={() => handleOrdenar(coluna.key)}
+                    style={{
+                      color: '#adb5bd',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      padding: '8px 4px',
+                      textAlign: 'center',
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      borderBottom: '2px solid #FF6600',
+                      whiteSpace: 'normal',
+                      lineHeight: '1.3',
+                      transition: 'background-color 0.2s',
+                      backgroundColor: '#2a2f36',
+                      minWidth: isUnidade ? '120px' : isCluster || isConsultor ? '80px' : isPontuacao ? '70px' : '55px',
+                      maxWidth: isUnidade ? '150px' : isCluster || isConsultor ? '100px' : isPontuacao ? '80px' : '65px',
+                      verticalAlign: 'bottom'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#343a40'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2a2f36'}
+                  >
+                    {coluna.label}
+                    <IconeOrdenacao coluna={coluna.key} />
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
-            {dadosOrdenados.map((item, index) => (
+            {dadosOrdenados.map((item, index) => {
+              // Verificar se o quarter está ativo para este item
+              const quarterAtivo = (item.quarter_ativo || '').toString().toLowerCase() === 'ativo';
+              
+              return (
               <tr
                 key={index}
                 style={{
                   backgroundColor: index % 2 === 0 ? '#343A40' : '#2c3136',
-                  transition: 'background-color 0.2s'
+                  transition: 'background-color 0.2s',
+                  opacity: quarterAtivo ? 1 : 0.5
                 }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d4349'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = index % 2 === 0 ? '#343A40' : '#2c3136'}
               >
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.nm_unidade}
-                </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.cluster}
-                </td>
-                <td style={{ 
-                  padding: '12px 8px', 
-                  fontSize: '0.875rem', 
-                  borderBottom: '1px solid #444', 
-                  textAlign: 'center',
-                  fontWeight: 600
-                }}>
-                  <span style={{
-                    color: item['posicao_grupo']?.toString().toLowerCase() === 'uti' ? '#FF4444' :
-                           item['posicao_grupo']?.toString().toLowerCase().includes('atenc') || item['posicao_grupo']?.toString().toLowerCase().includes('atenç') ? '#FFC107' :
-                           item['posicao_grupo']?.toString().toLowerCase().includes('saudav') || item['posicao_grupo']?.toString().toLowerCase().includes('saudáv') ? '#00C853' :
-                           '#F8F9FA'
-                  }}>
-                    {item['posicao_grupo'] || '-'}
-                  </span>
-                </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.bonus}
-                </td>
-                <td style={{ padding: '12px 8px', color: '#FF6600', fontSize: '0.875rem', fontWeight: 600, borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item['pontuacao_com_bonus']}
-                </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item['pontuacao_sem_bonus']}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.vvr_12_meses, 'vvr_12_meses');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.vvr_carteira, 'vvr_carteira');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.Indice_endividamento, 'Indice_endividamento');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.nps_geral, 'nps_geral');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.indice_margem_entrega, 'indice_margem_entrega');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.enps_rede, 'enps_rede');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.conformidades, 'conformidades');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ 
-                  padding: '12px 8px', 
-                  fontSize: '0.875rem', 
-                  borderBottom: '1px solid #444', 
-                  textAlign: 'center'
-                }}>
-                  {(() => {
-                    const result = calcularPercentual(item.reclame_aqui, 'reclame_aqui');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.colaboradores_mais_1_ano, 'colaboradores_mais_1_ano');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.estrutura_organizacioanl, 'estrutura_organizacioanl');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {(() => {
-                    const result = calcularPercentual(item.churn, 'churn');
-                    return result ? <span style={{ color: result.cor, fontWeight: 600 }}>{result.percentual.toFixed(1)}%</span> : '-';
-                  })()}
-                </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.consultor}
-                </td>
-                <td style={{ padding: '12px 8px', color: '#F8F9FA', fontSize: '0.875rem', borderBottom: '1px solid #444', textAlign: 'center' }}>
-                  {item.quarter}
-                </td>
+                {colunas.map((coluna) => {
+                  const key = coluna.key;
+                  const valorOriginal = item[key];
+                  
+                  // Colunas que mostram percentual de atingimento
+                  const colunasPercentual = [
+                    'vvr_12_meses', 'vvr_carteira', 'indice_margem_entrega', 
+                    'Indice_endividamento', 'churn', 'nps_geral', 'reclame_aqui',
+                    'conformidades', 'estrutura_organizacioanl', 'enps_rede', 
+                    'colaboradores_mais_1_ano'
+                  ];
+                  
+                  // Colunas que devem ser zeradas quando quarter inativo
+                  const colunasZeraveis = [
+                    ...colunasPercentual,
+                    'pontuacao_com_bonus', 'pontuacao_sem_bonus', 'bonus'
+                  ];
+                  
+                  const isPercentual = colunasPercentual.includes(key);
+                  const isPontuacaoComBonus = key === 'pontuacao_com_bonus';
+                  const deveZerar = colunasZeraveis.includes(key) && !quarterAtivo;
+                  
+                  // Se quarter inativo e coluna zerável, mostrar 0 ou -
+                  const valor = deveZerar ? 0 : valorOriginal;
+                  
+                  // Estilo base da célula
+                  const cellStyle = {
+                    padding: '8px 4px',
+                    fontSize: '0.75rem',
+                    borderBottom: '1px solid #444',
+                    textAlign: 'center' as const,
+                    color: quarterAtivo ? '#F8F9FA' : '#6c757d'
+                  };
+                  
+                  if (isPercentual) {
+                    if (!quarterAtivo) {
+                      return (
+                        <td key={key} style={cellStyle}>
+                          <span style={{ color: '#6c757d' }}>-</span>
+                        </td>
+                      );
+                    }
+                    const result = calcularPercentual(valor, key);
+                    return (
+                      <td key={key} style={cellStyle}>
+                        {result ? (
+                          <span style={{ color: result.cor, fontWeight: 600 }}>
+                            {result.percentual.toFixed(1)}%
+                          </span>
+                        ) : '-'}
+                      </td>
+                    );
+                  }
+                  
+                  if (isPontuacaoComBonus) {
+                    return (
+                      <td key={key} style={{ 
+                        ...cellStyle, 
+                        color: quarterAtivo ? '#FF6600' : '#6c757d', 
+                        fontWeight: 600 
+                      }}>
+                        {quarterAtivo ? (valor ?? '-') : '-'}
+                      </td>
+                    );
+                  }
+                  
+                  // Para pontuacao_sem_bonus e bonus
+                  if (deveZerar) {
+                    return (
+                      <td key={key} style={cellStyle}>
+                        <span style={{ color: '#6c757d' }}>-</span>
+                      </td>
+                    );
+                  }
+                  
+                  return (
+                    <td key={key} style={cellStyle}>
+                      {valor ?? '-'}
+                    </td>
+                  );
+                })}
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

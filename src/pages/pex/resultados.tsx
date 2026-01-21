@@ -184,14 +184,27 @@ export default function ResultadosPage() {
     return dadosBrutos.find(item => item.quarter === filtroQuarter && item.nm_unidade === unidadeEfetiva);
   }, [dadosBrutos, filtroQuarter, unidadeEfetiva]);
 
-  // Pontuação total (média apenas de quarters ATIVOS)
+  // Pontuação total (média de quarters válidos para premiação)
+  // Regra: Q4 do ano anterior + Q1, Q2, Q3 do ano atual
+  // Exceção 2026 (primeiro ano): apenas Q1, Q2, Q3
   const pontuacaoTotal = useMemo(() => {
     if (!dadosBrutos || !unidadeEfetiva) return 0;
     
-    // Filtrar apenas quarters ativos da unidade
+    const anoAtual = new Date().getFullYear();
+    const primeiroAnoPrograma = 2026;
+    
+    // Quarters válidos para premiação
+    // Se for o primeiro ano (2026), considera apenas Q1, Q2, Q3
+    // Nos próximos anos, considerará Q4 do ano anterior + Q1, Q2, Q3 do ano atual
+    const quartersValidos = anoAtual === primeiroAnoPrograma 
+      ? ['1', '2', '3'] 
+      : ['1', '2', '3']; // TODO: Implementar lógica para incluir Q4 do ano anterior quando houver dados
+    
+    // Filtrar dados da unidade que estão ativos E são quarters válidos
     const dadosUnidadeAtivos = dadosBrutos.filter(item => 
       item.nm_unidade === unidadeEfetiva && 
-      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
+      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo' &&
+      quartersValidos.includes(item.quarter?.toString())
     );
     
     const total = dadosUnidadeAtivos.reduce((sum, item) => {
@@ -199,19 +212,29 @@ export default function ResultadosPage() {
       return sum + (isNaN(pont) ? 0 : pont);
     }, 0);
     
+    // Divisor é a quantidade de quarters ativos da unidade
     return dadosUnidadeAtivos.length > 0 ? total / dadosUnidadeAtivos.length : 0;
   }, [dadosBrutos, unidadeEfetiva]);
 
-  // Posição na Rede e no Cluster (baseado na média total de quarters ATIVOS)
+  // Posição na Rede e no Cluster (baseado na média de quarters válidos para premiação)
   const posicoes = useMemo(() => {
     if (!dadosBrutos || !unidadeEfetiva) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
     
-    // Filtrar apenas dados de quarters ativos
+    const anoAtual = new Date().getFullYear();
+    const primeiroAnoPrograma = 2026;
+    
+    // Quarters válidos para premiação (mesma regra da pontuação total)
+    const quartersValidos = anoAtual === primeiroAnoPrograma 
+      ? ['1', '2', '3'] 
+      : ['1', '2', '3']; // TODO: Implementar Q4 do ano anterior
+    
+    // Filtrar dados de quarters ativos E válidos
     const dadosAtivos = dadosBrutos.filter(item => 
-      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
+      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo' &&
+      quartersValidos.includes(item.quarter?.toString())
     );
     
-    // Calcular média de cada unidade (apenas quarters ativos)
+    // Calcular média de cada unidade (dividindo pela qtd de quarters ativos de cada unidade)
     const unidadesUnicas = Array.from(new Set(dadosAtivos.map(item => item.nm_unidade)));
     
     const mediasPorUnidade = unidadesUnicas.map(unidade => {
@@ -343,7 +366,7 @@ export default function ResultadosPage() {
         titulo: 'VVR (Novas Vendas)', 
         notaGeral: 'Capacidade comercial vs. Meta do segmento', 
         indicadorPlanilha: 'VVR',
-        tooltip: 'Mede a capacidade comercial da franquia em relação à meta do segmento. Indica o potencial de geração de novas vendas.',
+        tooltip: 'Mede a capacidade comercial da franquia em relação à meta do segmento, considerando as vendas realizadas nos últimos 12 meses. Indica o potencial de geração de novas vendas.',
         bloco: 1
       },
       { 
