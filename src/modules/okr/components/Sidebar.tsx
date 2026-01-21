@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   lineHeight: '1.2',
                 }}
               >
-                {user?.unitNames?.[0] || 'Franquia'}
+                {user?.unitPrincipal || user?.unitNames?.[0] || 'Franquia'}
               </p>
               <p
                 style={{

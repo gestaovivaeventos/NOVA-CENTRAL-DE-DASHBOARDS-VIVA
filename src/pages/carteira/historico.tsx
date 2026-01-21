@@ -43,12 +43,16 @@ export default function HistoricoPage() {
     updateFiltros(novosFiltros);
   };
 
-  // Verificar autenticação
+  // Verificar autenticação e nível de acesso
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, authLoading, router]);
+    // Franqueados (accessLevel = 0) só podem acessar o PEX
+    if (!authLoading && user && user.accessLevel === 0) {
+      router.push('/pex');
+    }
+  }, [isAuthenticated, authLoading, router, user]);
 
   // Marcar cliente e carregar estado da sidebar
   useEffect(() => {

@@ -26,8 +26,22 @@ interface DashboardGroup {
   dashboards: Dashboard[];
 }
 
-// Grupos de dashboards
+// Grupos de dashboards - filtrado por nível de acesso
 const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
+  // Franqueado (accessLevel = 0) só tem acesso ao PEX
+  if (accessLevel === 0) {
+    return [
+      {
+        id: 'gestao-resultados',
+        name: 'Gestão por Resultados',
+        dashboards: [
+          { id: 'pex', label: 'Dashboard PEX', path: '/pex', icon: 'dashboard' },
+        ],
+      },
+    ];
+  }
+
+  // Franqueadora (accessLevel >= 1) tem acesso a todos os dashboards
   const groups: DashboardGroup[] = [
     {
       id: 'gestao-resultados',
@@ -37,6 +51,7 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
         { id: 'okr', label: 'Dashboard OKRs', path: '/okr', icon: 'target' },
         { id: 'gerencial', label: 'Painel Gerencial', path: '/gerencial', icon: 'trophy' },
         { id: 'gestao-rede', label: 'Gestão Rede', path: '/gestao-rede', icon: 'network' },
+        { id: 'pex', label: 'Dashboard PEX', path: '/pex', icon: 'dashboard' },
       ],
     },
     {
@@ -44,7 +59,6 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
       name: 'Dashboards Gerais',
       dashboards: [
         { id: 'vendas', label: 'Dashboard Vendas', path: '/vendas', icon: 'money' },
-        { id: 'pex', label: 'Dashboard PEX', path: '/pex', icon: 'dashboard' },
         { id: 'carteira', label: 'Dashboard Carteira', path: '/carteira', icon: 'wallet' },
       ],
     },

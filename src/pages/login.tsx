@@ -78,7 +78,8 @@ export default function LoginPage() {
           username: data.user.username,
           firstName: data.user.firstName,
           accessLevel: data.user.accessLevel,
-          unitNames: data.user.unitNames || []
+          unitNames: data.user.unitNames || [],
+          unitPrincipal: data.user.unitPrincipal || ''
         };
         localStorage.setItem('auth_user', JSON.stringify(userObj));
         
@@ -88,6 +89,9 @@ export default function LoginPage() {
         localStorage.setItem('accessLevel', String(data.user.accessLevel));
         if (data.user.unitNames && data.user.unitNames.length > 0) {
           localStorage.setItem('unitNames', JSON.stringify(data.user.unitNames));
+        }
+        if (data.user.unitPrincipal) {
+          localStorage.setItem('unitPrincipal', data.user.unitPrincipal);
         }
         
         // Redirecionar para página principal usando window.location

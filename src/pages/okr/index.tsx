@@ -5,6 +5,7 @@ import { Target } from 'lucide-react';
 import { Sidebar, Header, OkrKrCard, Loader } from '@/modules/okr/components';
 import { fetchOkrData } from '@/modules/okr/hooks/useOkrData';
 import { OkrData } from '@/modules/okr/types';
+import { useAuth } from '@/context/AuthContext';
 
 // Lista de todos os times possíveis (para mapeamento de ícones)
 const ALL_TEAMS = [
@@ -364,6 +365,20 @@ const OkrPageContent: React.FC = () => {
 
 // Página principal
 export default function OkrPage() {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Verificar autenticação e nível de acesso
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+    // Franqueados (accessLevel = 0) só podem acessar o PEX
+    if (!authLoading && user && user.accessLevel === 0) {
+      router.push('/pex');
+    }
+  }, [isAuthenticated, authLoading, router, user]);
+
   return (
     <>
       <Head>

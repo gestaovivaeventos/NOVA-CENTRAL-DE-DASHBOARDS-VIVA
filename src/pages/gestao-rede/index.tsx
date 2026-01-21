@@ -41,12 +41,16 @@ export default function GestaoRedeDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
-  // Verificar autenticação
+  // Verificar autenticação e nível de acesso
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated, authLoading, router]);
+    // Franqueados (accessLevel = 0) só podem acessar o PEX
+    if (!authLoading && user && user.accessLevel === 0) {
+      router.push('/pex');
+    }
+  }, [isAuthenticated, authLoading, router, user]);
 
   // Dados mockados
   const franquias = FRANQUIAS_MOCK;

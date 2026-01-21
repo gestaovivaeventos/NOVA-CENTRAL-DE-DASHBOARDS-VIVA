@@ -21,6 +21,7 @@ export interface User {
   email?: string;
   accessLevel: AccessLevel;
   unitNames?: string[];
+  unitPrincipal?: string;
   modules?: string[];
   createdAt?: string;
 }

@@ -257,7 +257,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                   textOverflow: 'ellipsis',
                   lineHeight: '1.2',
                 }}>
-                  {user?.unitNames?.[0] || 'Franquia'}
+                  {user?.unitPrincipal || user?.unitNames?.[0] || 'Franquia'}
                 </p>
                 <p style={{
                   color: '#4a5568',

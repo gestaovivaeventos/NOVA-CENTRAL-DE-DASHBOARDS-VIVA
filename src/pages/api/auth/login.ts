@@ -11,6 +11,7 @@ interface SheetUser {
   name: string;
   accessLevel: 0 | 1;
   unitNames: string[];
+  unitPrincipal: string;
   enabled: boolean;
 }
 
@@ -56,6 +57,7 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
       name: string;
       accessLevel: 0 | 1;
       unitNames: Set<string>;
+      unitPrincipal: string;
       enabled: boolean;
     }>();
 
@@ -81,14 +83,15 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
               name,
               accessLevel,
               unitNames: new Set(),
+              unitPrincipal: unitPrincipalDesc || '',
               enabled
             });
           }
 
           const user = userMap.get(username)!;
-          if (unitPrincipalDesc) {
-            // Usar nm_unidade_principal_desc para todos os tipos de usuário
-            user.unitNames.add(unitPrincipalDesc);
+          // Usar nm_unidade (coluna B) para vincular as franquias corretas do usuário
+          if (unitName) {
+            user.unitNames.add(unitName);
           }
         }
       }
@@ -102,6 +105,7 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
         name: user.name,
         accessLevel: user.accessLevel,
         unitNames: Array.from(user.unitNames).sort(),
+        unitPrincipal: user.unitPrincipal,
         enabled: user.enabled
       });
     });
@@ -311,6 +315,7 @@ export default async function handler(
       firstName: firstName,
       accessLevel: sheetUser.accessLevel,
       unitNames: sheetUser.unitNames,
+      unitPrincipal: sheetUser.unitPrincipal,
     };
 
     console.log(`[Login] Sucesso: ${username} (nível ${sheetUser.accessLevel})`);

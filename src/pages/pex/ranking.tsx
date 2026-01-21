@@ -49,25 +49,18 @@ export default function RankingPage() {
     }
   }, [isAuthenticated, authLoading, router]);
   
+  // Verificar se é franqueador (accessLevel >= 1)
+  const isFranchiser = (user?.accessLevel ?? 0) >= 1;
+  
   // Buscar dados do Google Sheets
   const { dados: dadosBrutosOriginal, loading, error } = useSheetsData();
   
-  // Filtrar dados por permissão do usuário
-  const dadosBrutos = useMemo(() => {
-    if (!dadosBrutosOriginal || !user) return [];
-    
-    // Na página de ranking, usuários nível 0 veem tudo normalmente
-    // Apenas franqueadora (1) pode realmente filtrar por unidade
-    if (user.accessLevel === 0) {
-      return dadosBrutosOriginal;
-    }
-    
-    // Aplicar filtro de permissão: franqueadora (1) vê tudo (sem filtro)
-    return filterDataByPermission(dadosBrutosOriginal, {
-      accessLevel: user.accessLevel as 0 | 1,
-      unitNames: user.unitNames || []
-    });
-  }, [dadosBrutosOriginal, user]);
+  // Para a página de ranking, mostramos TODOS os dados para que o franqueado
+  // possa ver sua posição real na rede. Os filtros de agrupamento são ocultados.
+  const dadosBrutos = dadosBrutosOriginal || [];
+  
+  // Unidades do usuário (para destacar no ranking)
+  const unidadesDoUsuario = user?.unitNames || [];
 
   // Estados para os filtros
   const [filtroQuarter, setFiltroQuarter] = useState<string>('');

@@ -95,6 +95,7 @@ export function useAuth() {
       const firstName = localStorage.getItem('firstName');
       const accessLevelStr = localStorage.getItem('accessLevel');
       const unitNamesStr = localStorage.getItem('unitNames');
+      const unitPrincipal = localStorage.getItem('unitPrincipal');
       
       if (username && firstName && accessLevelStr) {
         const accessLevel = parseInt(accessLevelStr, 10) as 0 | 1;
@@ -103,7 +104,8 @@ export function useAuth() {
           username,
           firstName,
           accessLevel,
-          unitNames
+          unitNames,
+          unitPrincipal: unitPrincipal || undefined
         });
       }
     }
@@ -117,6 +119,7 @@ export function useAuth() {
       localStorage.removeItem('firstName');
       localStorage.removeItem('accessLevel');
       localStorage.removeItem('unitNames');
+      localStorage.removeItem('unitPrincipal');
       window.location.href = '/login';
     }
   };

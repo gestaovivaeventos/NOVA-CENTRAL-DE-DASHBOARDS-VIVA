@@ -13,6 +13,7 @@ export interface UserPermissions {
   firstName: string;
   accessLevel: AccessLevel;
   unitNames?: string[]; // Unidades/Franquias do usuário (preenchida quando accessLevel = 0, pode ter múltiplas)
+  unitPrincipal?: string; // Unidade principal do usuário (coluna C - nm_unidade_principal_desc)
 }
 
 export interface PermissionContext {

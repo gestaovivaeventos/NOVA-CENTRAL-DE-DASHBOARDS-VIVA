@@ -2,7 +2,7 @@
  * GraficoEvolucao - Gráfico de linhas para evolução mensal por indicador
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface GraficoEvolucaoProps {
@@ -18,18 +18,24 @@ const MESES = [
   'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
 ];
 
+// Indicadores com nomes consistentes com TabelaResumo e Cards
 const INDICADORES = [
-  { codigo: 'vvr_12_meses', nome: 'VVR 12 Meses' },
-  { codigo: 'vvr_carteira', nome: 'VVR Carteira' },
-  { codigo: 'Indice_endividamento', nome: 'Endividamento' },
-  { codigo: 'nps_geral', nome: 'NPS Geral' },
-  { codigo: 'indice_margem_entrega', nome: 'Margem Entrega' },
-  { codigo: 'enps_rede', nome: 'eNPS Rede' },
-  { codigo: 'conformidades', nome: 'Conformidades' },
-  { codigo: 'reclame_aqui', nome: 'Reclame Aqui' },
-  { codigo: 'colaboradores_mais_1_ano', nome: 'Colab. +1 Ano' },
-  { codigo: 'estrutura_organizacioanl', nome: 'Estrutura Org.' },
+  // BLOCO 1: RESULTADO ECONÔMICO
+  { codigo: 'vvr_12_meses', nome: 'VVR (Novas Vendas)' },
+  { codigo: 'vvr_carteira', nome: 'VVR Carteira (Lastro)' },
+  { codigo: 'indice_margem_entrega', nome: 'Margem (% MC)' },
+  { codigo: 'Indice_endividamento', nome: 'Endiv. Fundos' },
   { codigo: 'churn', nome: 'Churn' },
+  // BLOCO 2: EXPERIÊNCIA DO CLIENTE
+  { codigo: 'nps_geral', nome: 'NPS' },
+  { codigo: 'reclame_aqui', nome: 'Reclame Aqui' },
+  // BLOCO 3: GESTÃO & CONFORMIDADE
+  { codigo: 'conformidades', nome: 'Conform. Op. Fin.' },
+  { codigo: 'estrutura_organizacioanl', nome: 'Conform. Soc. + Estrut.' },
+  // BLOCO 4: PESSOAS & SUSTENTABILIDADE
+  { codigo: 'enps_rede', nome: 'e-NPS Franquia' },
+  { codigo: 'colaboradores_mais_1_ano', nome: 'Retenção (> 1 ano)' },
+  // PONTUAÇÃO
   { codigo: 'pontuacao_com_bonus', nome: 'Pontuação no Mês' }
 ];
 
@@ -41,11 +47,11 @@ export default function GraficoEvolucao({
   nomeColunaConsultor = 'consultor'
 }: GraficoEvolucaoProps) {
   const [indicadorSelecionado, setIndicadorSelecionado] = useState('vvr_12_meses');
-  const [anoSelecionado, setAnoSelecionado] = useState('2025');
+  const [anoSelecionado, setAnoSelecionado] = useState('2026');
 
   // Extrair anos disponíveis
   const anosDisponiveis = useMemo(() => {
-    if (!dadosHistorico || dadosHistorico.length === 0) return ['2025'];
+    if (!dadosHistorico || dadosHistorico.length === 0) return ['2026'];
     
     const anos = dadosHistorico
       .map(item => {
@@ -60,8 +66,15 @@ export default function GraficoEvolucao({
       .filter((ano, index, self) => ano && self.indexOf(ano) === index)
       .sort((a, b) => (b || '').localeCompare(a || ''));
     
-    return anos.length > 0 ? anos : ['2025'];
+    return anos.length > 0 ? anos : ['2026'];
   }, [dadosHistorico]);
+
+  // Selecionar automaticamente o ano mais recente disponível
+  useEffect(() => {
+    if (anosDisponiveis.length > 0 && !anosDisponiveis.includes(anoSelecionado)) {
+      setAnoSelecionado(anosDisponiveis[0]);
+    }
+  }, [anosDisponiveis, anoSelecionado]);
 
   // Processar dados para o gráfico
   const dadosGrafico = useMemo(() => {

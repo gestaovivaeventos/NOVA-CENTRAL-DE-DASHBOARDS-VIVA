@@ -54,16 +54,16 @@ export default function ResultadosPage() {
   // Buscar dados do Google Sheets
   const { dados: dadosBrutosOriginal, loading, error } = useSheetsData();
   
-  // Filtrar dados por permissão do usuário
+  // Dados completos da rede (para comparações de melhor da rede/cluster)
+  // Franqueados precisam ver comparações reais, não apenas com suas unidades
+  const dadosRedeCompleta = dadosBrutosOriginal || [];
+  
+  // Filtrar dados por permissão do usuário (para visualização/seleção)
   const dadosBrutos = useMemo(() => {
     if (!dadosBrutosOriginal || !user) return [];
     
-    // Usuários nível 0 veem todos os dados normalmente (sem filtros)
-    if (user.accessLevel === 0) {
-      return dadosBrutosOriginal;
-    }
-    
-    // Aplicar filtro de permissão: franqueadora (1) vê tudo
+    // Aplicar filtro de permissão baseado no nível de acesso
+    // Nível 1 (franqueadora) vê tudo, nível 0 (franqueado) vê apenas suas unidades
     return filterDataByPermission(dadosBrutosOriginal, {
       accessLevel: user.accessLevel as 0 | 1,
       unitNames: user.unitNames || []
@@ -284,8 +284,9 @@ export default function ResultadosPage() {
   }, [dadosBrutos, unidadeEfetiva]);
 
   // Posição na Rede e no Cluster (baseado na média de quarters válidos para premiação)
+  // Usa dados completos da rede para calcular a posição real
   const posicoes = useMemo(() => {
-    if (!dadosBrutos || !unidadeEfetiva) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
+    if (!dadosRedeCompleta || dadosRedeCompleta.length === 0 || !unidadeEfetiva) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
     
     const anoAtual = new Date().getFullYear();
     const primeiroAnoPrograma = 2026;
@@ -295,8 +296,8 @@ export default function ResultadosPage() {
       ? ['1', '2', '3'] 
       : ['1', '2', '3']; // TODO: Implementar Q4 do ano anterior
     
-    // Filtrar dados de quarters ativos E válidos
-    const dadosAtivos = dadosBrutos.filter(item => 
+    // Filtrar dados de quarters ativos E válidos (usando dados completos da rede)
+    const dadosAtivos = dadosRedeCompleta.filter(item => 
       (item.quarter_ativo || '').toString().toLowerCase() === 'ativo' &&
       quartersValidos.includes(item.quarter?.toString())
     );
@@ -327,13 +328,15 @@ export default function ResultadosPage() {
     const totalCluster = rankingCluster.length;
     
     return { posicaoRede, totalRede, posicaoCluster, totalCluster };
-  }, [dadosBrutos, unidadeEfetiva]);
+  }, [dadosRedeCompleta, unidadeEfetiva]);
 
   // Posição no Quarter selecionado (respeita quarter ativo)
+  // Usa dados completos da rede para calcular a posição real
   const posicoesQuarter = useMemo(() => {
-    if (!dadosBrutos || !unidadeEfetiva || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
+    if (!dadosRedeCompleta || dadosRedeCompleta.length === 0 || !unidadeEfetiva || !filtroQuarter) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0, ativo: false };
     
-    const dadosQuarter = dadosBrutos.filter(item => item.quarter === filtroQuarter);
+    // Usar dados completos da rede para o ranking
+    const dadosQuarter = dadosRedeCompleta.filter(item => item.quarter === filtroQuarter);
     
     // Verificar se o quarter selecionado está ativo para a unidade selecionada
     const itemUnidade = dadosQuarter.find(item => item.nm_unidade === unidadeEfetiva);
@@ -364,7 +367,7 @@ export default function ResultadosPage() {
     const totalCluster = rankingCluster.length;
     
     return { posicaoRede, totalRede, posicaoCluster, totalCluster, ativo: true };
-  }, [dadosBrutos, unidadeEfetiva, filtroQuarter, itemSelecionado]);
+  }, [dadosRedeCompleta, unidadeEfetiva, filtroQuarter, itemSelecionado]);
 
   // Pontuações por quarter (apenas quarters ativos)
   const pontuacoesPorQuarter = useMemo(() => {
@@ -394,9 +397,13 @@ export default function ResultadosPage() {
       return parseFloat(valor.toString().replace(',', '.')) || 0;
     };
 
+    // Dados filtrados do usuário (para sua visualização)
     const dadosFiltrados = dadosBrutos.filter(item => item.quarter === filtroQuarter);
+    
+    // Dados completos da rede (para comparações reais de melhor da rede/cluster)
+    const dadosRedeFiltradosQuarter = dadosRedeCompleta.filter(item => item.quarter === filtroQuarter);
     const cluster = itemSelecionado.cluster;
-    const dadosCluster = dadosFiltrados.filter(item => item.cluster === cluster);
+    const dadosClusterCompleto = dadosRedeFiltradosQuarter.filter(item => item.cluster === cluster);
 
     // Função para obter peso dinâmico do contexto de parâmetros
     const obterPesoDinamico = (nomeIndicador: string): number => {
@@ -556,20 +563,22 @@ export default function ResultadosPage() {
       const tetoMaximo = peso * 100;
       const percentualAtingimento = tetoMaximo > 0 ? (pontuacaoUnidade / tetoMaximo) * 100 : 0;
       
+      // Usar dados completos da rede para comparações (não os filtrados por permissão)
       const valoresRede = quarterAtivo 
-        ? dadosFiltrados.map(item => parseValor(item[ind.coluna])) 
+        ? dadosRedeFiltradosQuarter.map(item => parseValor(item[ind.coluna])) 
         : [];
       const melhorRede = valoresRede.length > 0 ? Math.max(...valoresRede) : 0;
       const itemMelhorRede = quarterAtivo 
-        ? dadosFiltrados.find(item => parseValor(item[ind.coluna]) === melhorRede) 
+        ? dadosRedeFiltradosQuarter.find(item => parseValor(item[ind.coluna]) === melhorRede) 
         : null;
       
+      // Usar dados completos do cluster para comparações
       const valoresCluster = quarterAtivo 
-        ? dadosCluster.map(item => parseValor(item[ind.coluna])) 
+        ? dadosClusterCompleto.map(item => parseValor(item[ind.coluna])) 
         : [];
       const melhorCluster = valoresCluster.length > 0 ? Math.max(...valoresCluster) : 0;
       const itemMelhorCluster = quarterAtivo 
-        ? dadosCluster.find(item => parseValor(item[ind.coluna]) === melhorCluster) 
+        ? dadosClusterCompleto.find(item => parseValor(item[ind.coluna]) === melhorCluster) 
         : null;
 
       return {
@@ -583,7 +592,7 @@ export default function ResultadosPage() {
         unidadeMelhorCluster: itemMelhorCluster?.nm_unidade || '-'
       };
     });
-  }, [itemSelecionado, dadosBrutos, filtroQuarter, parametrosData?.pesos]);
+  }, [itemSelecionado, dadosBrutos, dadosRedeCompleta, filtroQuarter, parametrosData?.pesos]);
 
   // Loading
   if (loading) {
@@ -647,9 +656,9 @@ export default function ResultadosPage() {
       filters={{
         showQuarter: true,
         showUnidade: true,
-        showCluster: (user?.accessLevel ?? 0) >= 1,
-        showConsultor: (user?.accessLevel ?? 0) >= 1,
-        showPerformanceComercial: (user?.accessLevel ?? 0) >= 1,
+        showCluster: isFranchiser,
+        showConsultor: isFranchiser,
+        showPerformanceComercial: isFranchiser,
         filtroQuarter,
         filtroUnidade,
         filtrosUnidades,
@@ -673,8 +682,8 @@ export default function ResultadosPage() {
         listaPerformanceComercial,
         listaMaturidades: ['Maduras', 'Incubação'],
         listaMercados,
-        showMaturidade: true,
-        showMercado: true,
+        showMaturidade: isFranchiser,
+        showMercado: isFranchiser,
       }}
     >
       <Head>
@@ -760,39 +769,37 @@ export default function ResultadosPage() {
               </div>
             </Card>
 
-            {/* Tabela Resumo - Sempre visível para franqueadora */}
-            {isFranchiser && (
-              <>
-                <h2 style={{
-                  color: '#adb5bd',
-                  fontFamily: 'Poppins, sans-serif',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  borderBottom: '2px solid #FF6600',
-                  paddingBottom: '8px',
-                  fontSize: '1.4rem',
-                  fontWeight: 700,
-                  marginTop: '30px',
-                  marginBottom: '20px'
-                }}>
-                  Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
-                </h2>
-                <Card>
-                  <TabelaResumo
-                    dados={dadosBrutos || []}
-                    quarterSelecionado={filtroQuarter}
-                    clustersSelecionados={filtrosClusters}
-                    consultoresSelecionados={filtrosConsultores}
-                    nomeColunaConsultor={nomeColunaConsultor}
-                    pesosIndicadores={parametrosData?.pesos || []}
-                    unidadesSelecionadas={filtrosUnidades}
-                    filtrosMaturidades={filtrosMaturidades}
-                    filtrosMercados={filtrosMercados}
-                    filtrosPerformanceComercial={filtrosPerformanceComercial}
-                  />
-                </Card>
-              </>
-            )}
+            {/* Tabela Resumo - Visível para todos (dados filtrados por permissão) */}
+            <>
+              <h2 style={{
+                color: '#adb5bd',
+                fontFamily: 'Poppins, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                borderBottom: '2px solid #FF6600',
+                paddingBottom: '8px',
+                fontSize: '1.4rem',
+                fontWeight: 700,
+                marginTop: '30px',
+                marginBottom: '20px'
+              }}>
+                Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+              </h2>
+              <Card>
+                <TabelaResumo
+                  dados={dadosBrutos || []}
+                  quarterSelecionado={filtroQuarter}
+                  clustersSelecionados={filtrosClusters}
+                  consultoresSelecionados={filtrosConsultores}
+                  nomeColunaConsultor={nomeColunaConsultor}
+                  pesosIndicadores={parametrosData?.pesos || []}
+                  unidadesSelecionadas={filtrosUnidades}
+                  filtrosMaturidades={filtrosMaturidades}
+                  filtrosMercados={filtrosMercados}
+                  filtrosPerformanceComercial={filtrosPerformanceComercial}
+                />
+              </Card>
+            </>
           </>
         ) : itemSelecionado ? (
           <>
@@ -1200,38 +1207,36 @@ export default function ResultadosPage() {
               </div>
             </div>
 
-            {/* Tabela Resumo - Apenas para Franqueadora */}
-            {isFranchiser && (
-              <>
-                <h2 style={{
-                  color: '#adb5bd',
-                  fontFamily: 'Poppins, sans-serif',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  borderBottom: '2px solid #FF6600',
-                  paddingBottom: '8px',
-                  fontSize: '1.4rem',
-                  fontWeight: 700,
-                  marginBottom: '20px'
-                }}>
-                  Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
-                </h2>
-                <Card>
-                  <TabelaResumo
-                    dados={dadosBrutos || []}
-                    quarterSelecionado={filtroQuarter}
-                    clustersSelecionados={filtrosClusters}
-                    consultoresSelecionados={filtrosConsultores}
-                    nomeColunaConsultor={nomeColunaConsultor}
-                    pesosIndicadores={parametrosData?.pesos || []}
-                    unidadesSelecionadas={filtrosUnidades}
-                    filtrosMaturidades={filtrosMaturidades}
-                    filtrosMercados={filtrosMercados}
-                    filtrosPerformanceComercial={filtrosPerformanceComercial}
-                  />
-                </Card>
-              </>
-            )}
+            {/* Tabela Resumo - Visível para todos (dados filtrados por permissão) */}
+            <>
+              <h2 style={{
+                color: '#adb5bd',
+                fontFamily: 'Poppins, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                borderBottom: '2px solid #FF6600',
+                paddingBottom: '8px',
+                fontSize: '1.4rem',
+                fontWeight: 700,
+                marginBottom: '20px'
+              }}>
+                Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+              </h2>
+              <Card>
+                <TabelaResumo
+                  dados={dadosBrutos || []}
+                  quarterSelecionado={filtroQuarter}
+                  clustersSelecionados={filtrosClusters}
+                  consultoresSelecionados={filtrosConsultores}
+                  nomeColunaConsultor={nomeColunaConsultor}
+                  pesosIndicadores={parametrosData?.pesos || []}
+                  unidadesSelecionadas={filtrosUnidades}
+                  filtrosMaturidades={filtrosMaturidades}
+                  filtrosMercados={filtrosMercados}
+                  filtrosPerformanceComercial={filtrosPerformanceComercial}
+                />
+              </Card>
+            </>
 
             {/* Gráfico de Evolução Mensal */}
             <div style={{ marginTop: '30px' }}>

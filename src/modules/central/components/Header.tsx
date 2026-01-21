@@ -143,7 +143,7 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
                 margin: 0,
                 fontFamily: "'Poppins', sans-serif",
               }}>
-                {user.unitNames?.[0] || 'Unidade'}
+                {user.unitPrincipal || user.unitNames?.[0] || 'Unidade'}
               </p>
             </div>
           </div>

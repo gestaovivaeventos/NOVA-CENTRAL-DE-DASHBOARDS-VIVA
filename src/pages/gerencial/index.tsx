@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
+import { useAuth } from '@/context/AuthContext';
 import {
   Header,
   Sidebar,
@@ -17,7 +19,20 @@ import {
 import { useDashboardData } from '../../modules/painel-gerencial/hooks';
 
 export default function GerencialPage() {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Verificar autenticação e nível de acesso
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+    // Franqueados (accessLevel = 0) só podem acessar o PEX
+    if (!authLoading && user && user.accessLevel === 0) {
+      router.push('/pex');
+    }
+  }, [isAuthenticated, authLoading, router, user]);
   
   const { 
     data, 

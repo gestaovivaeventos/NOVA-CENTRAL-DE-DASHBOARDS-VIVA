@@ -52,10 +52,14 @@ export default function KpiPage() {
   // FEAT usa rosa, outros usam laranja
   const accentColor = selectedTeam === 'FEAT' ? '#EA2B82' : '#ff6600';
 
-  // Verificar autenticação
+  // Verificar autenticação e nível de acesso
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/login');
+    }
+    // Franqueados (accessLevel = 0) só podem acessar o PEX
+    if (!authLoading && user && user.accessLevel === 0) {
+      router.push('/pex');
     }
   }, [user, authLoading, router]);
 
