@@ -1105,10 +1105,10 @@ export default function ResultadosPage() {
               gridTemplateColumns: 'repeat(2, 1fr)', 
               gap: '24px',
               marginBottom: '24px',
-              alignItems: 'start'
+              alignItems: 'stretch'
             }}>
               {/* BLOCO 2: EXPERIÊNCIA DO CLIENTE */}
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <h3 style={{
                   color: '#adb5bd',
                   fontFamily: 'Poppins, sans-serif',
@@ -1125,7 +1125,9 @@ export default function ResultadosPage() {
                 <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: 'repeat(2, 1fr)', 
-                  gap: '16px'
+                  gap: '16px',
+                  gridAutoRows: '1fr',
+                  flex: 1
                 }}>
                   {indicadores.filter(ind => ind.bloco === 2).map((indicador, index) => (
                     <IndicadorCard key={index} {...indicador} />
@@ -1134,7 +1136,7 @@ export default function ResultadosPage() {
               </div>
 
               {/* BLOCO 3: GESTÃO & CONFORMIDADE */}
-              <div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <h3 style={{
                   color: '#adb5bd',
                   fontFamily: 'Poppins, sans-serif',
@@ -1151,7 +1153,9 @@ export default function ResultadosPage() {
                 <div style={{ 
                   display: 'grid', 
                   gridTemplateColumns: 'repeat(2, 1fr)', 
-                  gap: '16px'
+                  gap: '16px',
+                  gridAutoRows: '1fr',
+                  flex: 1
                 }}>
                   {indicadores.filter(ind => ind.bloco === 3).map((indicador, index) => (
                     <IndicadorCard key={index} {...indicador} />

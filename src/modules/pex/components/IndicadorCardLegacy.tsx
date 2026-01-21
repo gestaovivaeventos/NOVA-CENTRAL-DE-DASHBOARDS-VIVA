@@ -37,7 +37,8 @@ export default function IndicadorCard({
       className="p-3 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
       style={{ 
         backgroundColor: '#343A40',
-        minHeight: '180px',
+        minHeight: '160px',
+        height: '100%',
         display: 'flex',
         flexDirection: 'column',
         position: 'relative',
@@ -79,115 +80,90 @@ export default function IndicadorCard({
         {titulo}
       </h3>
 
-      {/* Pontuação da Unidade com Percentual */}
-      <div className="mb-1" style={{ flex: 1, minWidth: 0 }}>
-        <div className="flex items-center justify-between gap-1" style={{ flexWrap: 'wrap' }}>
-          {/* Percentual de Atingimento */}
-          {tetoMaximo !== undefined && tetoMaximo > 0 && percentualAtingimento !== undefined ? (
-            <div className="flex items-baseline gap-1">
-              <span 
-                className="text-2xl font-bold"
-                style={{ 
-                  color: percentualAtingimento >= 80 ? '#00C853' : 
-                         percentualAtingimento >= 50 ? '#FFC107' : '#FF4444'
-                }}
-              >
-                {percentualAtingimento.toFixed(1)}%
-              </span>
-              <span 
-                className="text-xs"
-                style={{ color: '#6c757d' }}
-              >
-                do resultado
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-baseline gap-1">
-              <span 
-                className="text-2xl font-bold"
-                style={{ color: '#FF6600' }}
-              >
-                {pontuacao.toFixed(1)}
-              </span>
-              <span 
-                className="text-xs"
-                style={{ color: '#6c757d' }}
-              >
-                pontos
-              </span>
-            </div>
-          )}
-          
-          {/* Pontuação */}
-          {tetoMaximo !== undefined && tetoMaximo > 0 && (
-            <div className="flex items-baseline gap-1">
-              <span 
-                className="text-lg font-semibold"
-                style={{ color: '#FF6600' }}
-              >
-                {pontuacao.toFixed(1)}
-              </span>
-              <span 
-                className="text-xs"
-                style={{ color: '#6c757d' }}
-              >
-                pts
-              </span>
-            </div>
-          )}
-        </div>
+      {/* Percentual de Atingimento */}
+      <div className="mb-2">
+        <span 
+          className="text-2xl font-bold"
+          style={{ 
+            color: percentualAtingimento !== undefined && percentualAtingimento >= 80 ? '#00C853' : 
+                   percentualAtingimento !== undefined && percentualAtingimento >= 50 ? '#FFC107' : '#FF4444'
+          }}
+        >
+          {percentualAtingimento !== undefined ? `${percentualAtingimento.toFixed(1)}%` : `${pontuacao.toFixed(1)}%`}
+        </span>
       </div>
 
-      {/* Melhor Pontuação - Rede */}
-      <div className="pb-1" style={{ borderBottom: '1px solid #495057' }}>
-        <div className="flex justify-between items-center">
-          <span 
-            className="text-xs uppercase tracking-wide"
-            style={{ color: '#F8F9FA', fontSize: '0.6rem' }}
-          >
-            Melhor Pont. - Rede
-          </span>
-          <span 
-            className="text-xs font-semibold"
-            style={{ color: '#F8F9FA', fontSize: '0.7rem' }}
-          >
-            {melhorPontuacaoRede.toFixed(1)}
-          </span>
-        </div>
-        {unidadeMelhorRede && (
-          <p 
-            className="text-xs"
-            style={{ color: '#adb5bd', fontSize: '0.55rem', marginTop: '1px' }}
-          >
-            {unidadeMelhorRede}
-          </p>
-        )}
+      {/* Pontuação / Teto */}
+      <div className="mb-3">
+        <span 
+          className="text-base font-semibold"
+          style={{ color: '#FF6600' }}
+        >
+          {pontuacao.toFixed(1)}
+        </span>
+        <span style={{ color: '#6c757d', fontSize: '0.85rem' }}> / </span>
+        <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>
+          {tetoMaximo !== undefined ? tetoMaximo.toFixed(1) : '0'} ptos
+        </span>
       </div>
 
-      {/* Melhor Pontuação - Cluster */}
-      <div style={{ marginTop: '4px' }}>
-        <div className="flex justify-between items-center">
-          <span 
-            className="text-xs uppercase tracking-wide"
-            style={{ color: '#F8F9FA', fontSize: '0.6rem' }}
-          >
-            Melhor Pont. - Cluster
-          </span>
-          <span 
-            className="text-xs font-semibold"
-            style={{ color: '#F8F9FA', fontSize: '0.7rem' }}
-          >
-            {melhorPontuacaoCluster.toFixed(1)}
-          </span>
+      {/* Comparações lado a lado */}
+      <div 
+        style={{ 
+          display: 'flex', 
+          gap: '8px',
+          borderTop: '1px solid #495057',
+          paddingTop: '8px',
+          marginTop: 'auto'
+        }}
+      >
+        {/* Melhor Pontuação - Rede */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span 
+              style={{ color: '#F8F9FA', fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}
+            >
+              Melhor Rede
+            </span>
+            <span 
+              style={{ color: '#F8F9FA', fontSize: '0.7rem', fontWeight: 600 }}
+            >
+              {melhorPontuacaoRede.toFixed(1)}
+            </span>
+          </div>
+          {unidadeMelhorRede && (
+            <p 
+              style={{ color: '#adb5bd', fontSize: '0.5rem', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              title={unidadeMelhorRede}
+            >
+              {unidadeMelhorRede}
+            </p>
+          )}
         </div>
-        {unidadeMelhorCluster && (
-          <p 
-            className="text-xs"
-            style={{ color: '#adb5bd', fontSize: '0.55rem', marginTop: '1px' }}
-          >
-            {unidadeMelhorCluster}
-          </p>
-        )}
+
+        {/* Melhor Pontuação - Cluster */}
+        <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #495057', paddingLeft: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span 
+              style={{ color: '#F8F9FA', fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}
+            >
+              Melhor Cluster
+            </span>
+            <span 
+              style={{ color: '#F8F9FA', fontSize: '0.7rem', fontWeight: 600 }}
+            >
+              {melhorPontuacaoCluster.toFixed(1)}
+            </span>
+          </div>
+          {unidadeMelhorCluster && (
+            <p 
+              style={{ color: '#adb5bd', fontSize: '0.5rem', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              title={unidadeMelhorCluster}
+            >
+              {unidadeMelhorCluster}
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
