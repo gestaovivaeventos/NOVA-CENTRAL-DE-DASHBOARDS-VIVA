@@ -699,6 +699,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
               marginBottom: '8px',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
               width: '100%',
+              whiteSpace: 'nowrap',
             }}
             title={(isCollapsed && !isMobile) ? 'Central de Dashboards' : undefined}
             onMouseEnter={(e) => {
@@ -708,7 +709,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
               e.currentTarget.style.backgroundColor = 'transparent';
             }}
           >
-            <Home size={20} strokeWidth={2} />
+            <Home size={20} strokeWidth={2} style={{ flexShrink: 0 }} />
             {(!isCollapsed || isMobile) && <span>Central de Dashboards</span>}
           </Link>
 
