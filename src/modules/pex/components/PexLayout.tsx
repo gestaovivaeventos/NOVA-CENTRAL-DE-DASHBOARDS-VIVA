@@ -660,19 +660,6 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                       </select>
                     )}
                   </div>
-                }}
-                          WebkitAppearance: 'menulist',
-                          position: 'relative',
-                          zIndex: 100,
-                        }}
-                      >
-                        <option value="">Todas</option>
-                        {filters.listaPerformanceComercial?.map((p) => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
                 )}
               </div>
             </div>
