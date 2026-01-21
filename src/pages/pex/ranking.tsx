@@ -322,8 +322,8 @@ export default function RankingPage() {
     <PexLayout 
       currentPage="ranking"
       filters={{
-        showCluster: (user?.accessLevel ?? 0) >= 1,
-        showConsultor: (user?.accessLevel ?? 0) >= 1,
+        showCluster: false,
+        showConsultor: false,
         filtrosClusters,
         filtrosConsultores,
         onClustersChange: setFiltrosClusters,

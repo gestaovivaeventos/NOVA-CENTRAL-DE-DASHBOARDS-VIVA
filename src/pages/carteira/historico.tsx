@@ -20,7 +20,7 @@ import { PaginaCarteiraAtiva, FiltrosCarteira } from '@/modules/carteira/types';
 
 export default function HistoricoPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
   // Usar filtros do Context (compartilhado entre páginas)
   const { filtros, updateFiltros } = useFiltrosCarteira();

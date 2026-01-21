@@ -147,13 +147,12 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
     filters.showPerformanceComercial
   );
 
-  // Fechar sidebar ao clicar em um link (mobile fecha menu, desktop colapsa)
+  // Fechar menu mobile ao clicar em um link (desktop mantém estado da sidebar)
   const handleNavClick = () => {
     if (isMobile) {
       setIsMobileMenuOpen(false);
-    } else {
-      setIsCollapsed(true);
     }
+    // Desktop: não altera o estado da sidebar ao navegar
   };
 
   return (
@@ -434,6 +433,52 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                   </div>
                 )}
 
+                {/* Filtro Unidade/Franquia - MultiSelect */}
+                {filters.showUnidade && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      color: '#adb5bd',
+                      fontSize: '0.8rem',
+                      marginBottom: '6px',
+                      fontWeight: 500,
+                    }}>
+                      Franquia
+                    </label>
+                    {filters.onUnidadesChange ? (
+                      <MultiSelectFilter
+                        options={filters.listaUnidades || []}
+                        selectedValues={filters.filtrosUnidades || []}
+                        onChange={filters.onUnidadesChange}
+                        placeholder="Selecione franquias..."
+                      />
+                    ) : (
+                      <select
+                        value={filters.filtroUnidade || ''}
+                        onChange={(e) => filters.onUnidadeChange?.(e.target.value)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          borderRadius: '6px',
+                          backgroundColor: '#2a2f36',
+                          border: '1px solid #444',
+                          color: '#F8F9FA',
+                          fontSize: '0.85rem',
+                          cursor: 'pointer',
+                          appearance: 'auto',
+                          WebkitAppearance: 'menulist',
+                          position: 'relative',
+                          zIndex: 100,
+                        }}
+                      >
+                        {filters.listaUnidades?.map((u) => (
+                          <option key={u} value={u}>{u}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
+
                 {/* Filtro Maturidade */}
                 {filters.showMaturidade && (
                   <div>
@@ -451,27 +496,6 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                       selectedValues={filters.filtrosMaturidades || []}
                       onChange={filters.onMaturidadesChange || (() => {})}
                       placeholder="Selecione maturidade..."
-                    />
-                  </div>
-                )}
-
-                {/* Filtro Mercado */}
-                {filters.showMercado && (
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      color: '#adb5bd',
-                      fontSize: '0.8rem',
-                      marginBottom: '6px',
-                      fontWeight: 500,
-                    }}>
-                      Mercado
-                    </label>
-                    <MultiSelectFilter
-                      options={filters.listaMercados || []}
-                      selectedValues={filters.filtrosMercados || []}
-                      onChange={filters.onMercadosChange || (() => {})}
-                      placeholder="Selecione mercados..."
                     />
                   </div>
                 )}
@@ -523,8 +547,8 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                   </div>
                 )}
 
-                {/* Filtro Unidade - MultiSelect */}
-                {filters.showUnidade && (
+                {/* Filtro Mercado */}
+                {filters.showMercado && (
                   <div>
                     <label style={{
                       display: 'block',
@@ -533,19 +557,40 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                       marginBottom: '6px',
                       fontWeight: 500,
                     }}>
-                      Franquia
+                      Mercado
                     </label>
-                    {filters.onUnidadesChange ? (
+                    <MultiSelectFilter
+                      options={filters.listaMercados || []}
+                      selectedValues={filters.filtrosMercados || []}
+                      onChange={filters.onMercadosChange || (() => {})}
+                      placeholder="Selecione mercados..."
+                    />
+                  </div>
+                )}
+
+                {/* Filtro Performance Comercial - MultiSelect */}
+                {filters.showPerformanceComercial && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      color: '#adb5bd',
+                      fontSize: '0.8rem',
+                      marginBottom: '6px',
+                      fontWeight: 500,
+                    }}>
+                      Performance Comercial
+                    </label>
+                    {filters.onPerformanceComercialMultiChange ? (
                       <MultiSelectFilter
-                        options={filters.listaUnidades || []}
-                        selectedValues={filters.filtrosUnidades || []}
-                        onChange={filters.onUnidadesChange}
-                        placeholder="Selecione franquias..."
+                        options={filters.listaPerformanceComercial || []}
+                        selectedValues={filters.filtrosPerformanceComercial || []}
+                        onChange={filters.onPerformanceComercialMultiChange}
+                        placeholder="Selecione performance..."
                       />
                     ) : (
                       <select
-                        value={filters.filtroUnidade || ''}
-                        onChange={(e) => filters.onUnidadeChange?.(e.target.value)}
+                        value={filters.filtroPerformanceComercial || ''}
+                        onChange={(e) => filters.onPerformanceComercialChange?.(e.target.value)}
                         style={{
                           width: '100%',
                           padding: '10px 12px',
@@ -561,8 +606,9 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                           zIndex: 100,
                         }}
                       >
-                        {filters.listaUnidades?.map((u) => (
-                          <option key={u} value={u}>{u}</option>
+                        <option value="">Todas as Performances</option>
+                        {filters.listaPerformanceComercial?.map((p) => (
+                          <option key={p} value={p}>{p}</option>
                         ))}
                       </select>
                     )}
@@ -614,41 +660,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                       </select>
                     )}
                   </div>
-                )}
-
-                {/* Filtro Performance Comercial - MultiSelect */}
-                {filters.showPerformanceComercial && (
-                  <div>
-                    <label style={{
-                      display: 'block',
-                      color: '#adb5bd',
-                      fontSize: '0.8rem',
-                      marginBottom: '6px',
-                      fontWeight: 500,
-                    }}>
-                      Performance Comercial
-                    </label>
-                    {filters.onPerformanceComercialMultiChange ? (
-                      <MultiSelectFilter
-                        options={filters.listaPerformanceComercial || []}
-                        selectedValues={filters.filtrosPerformanceComercial || []}
-                        onChange={filters.onPerformanceComercialMultiChange}
-                        placeholder="Selecione performance..."
-                      />
-                    ) : (
-                      <select
-                        value={filters.filtroPerformanceComercial || ''}
-                        onChange={(e) => filters.onPerformanceComercialChange?.(e.target.value)}
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          borderRadius: '6px',
-                          backgroundColor: '#2a2f36',
-                          border: '1px solid #444',
-                          color: '#F8F9FA',
-                          fontSize: '0.85rem',
-                          cursor: 'pointer',
-                          appearance: 'auto',
+                }}
                           WebkitAppearance: 'menulist',
                           position: 'relative',
                           zIndex: 100,
