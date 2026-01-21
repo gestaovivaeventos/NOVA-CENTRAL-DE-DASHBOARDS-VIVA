@@ -27,6 +27,7 @@ interface TabelaResumoProps {
   consultoresSelecionados?: string[];
   filtrosMaturidades?: string[];
   filtrosMercados?: string[];
+  filtrosPerformanceComercial?: string[];
 }
 
 // Mapeamento dos nomes de indicadores da planilha para as colunas dos dados
@@ -57,7 +58,8 @@ export default function TabelaResumo({
   clustersSelecionados = [],
   consultoresSelecionados = [],
   filtrosMaturidades = [],
-  filtrosMercados = []
+  filtrosMercados = [],
+  filtrosPerformanceComercial = []
 }: TabelaResumoProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoTipo>(null);
@@ -97,7 +99,13 @@ export default function TabelaResumo({
     
     // Filtrar por cluster (suporta único ou múltiplos)
     if (clustersSelecionados && clustersSelecionados.length > 0) {
-      resultado = resultado.filter(item => clustersSelecionados.includes(item.cluster));
+      resultado = resultado.filter(item => {
+        if (!item.cluster) return false;
+        // Comparação case-insensitive
+        return clustersSelecionados.some(c => 
+          c.toUpperCase().trim() === item.cluster.toUpperCase().trim()
+        );
+      });
     } else if (clusterSelecionado) {
       resultado = resultado.filter(item => item.cluster === clusterSelecionado);
     }
@@ -136,8 +144,18 @@ export default function TabelaResumo({
       resultado = resultado.filter(item => item.mercado && filtrosMercados.includes(item.mercado));
     }
     
+    // Filtrar por performance comercial (multi-select)
+    if (filtrosPerformanceComercial && filtrosPerformanceComercial.length > 0) {
+      resultado = resultado.filter(item => {
+        if (!item.performance_comercial) return false;
+        return filtrosPerformanceComercial.some(p => 
+          p.toUpperCase().trim() === item.performance_comercial.toUpperCase().trim()
+        );
+      });
+    }
+    
     return resultado;
-  }, [dados, quarterSelecionado, clusterSelecionado, clustersSelecionados, consultorSelecionado, consultoresSelecionados, nomeColunaConsultor, unidadesSelecionadas, filtrosMaturidades, filtrosMercados]);
+  }, [dados, quarterSelecionado, clusterSelecionado, clustersSelecionados, consultorSelecionado, consultoresSelecionados, nomeColunaConsultor, unidadesSelecionadas, filtrosMaturidades, filtrosMercados, filtrosPerformanceComercial]);
 
   // Ordenar dados
   const dadosOrdenados = useMemo(() => {

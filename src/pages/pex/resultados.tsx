@@ -216,6 +216,34 @@ export default function ResultadosPage() {
   }, [filtrosUnidades, filtroUnidade]);
   
   const multiplaUnidadesSelecionadas = filtrosUnidades.length > 1;
+  
+  // Verifica se há filtros de agrupamento ativos (esses filtros agrupam múltiplas unidades)
+  // Mesmo com 1 valor selecionado, eles trazem várias unidades, então não faz sentido mostrar cards individuais
+  const temFiltroConsultor = filtrosConsultores.length > 0;
+  const temFiltroCluster = filtrosClusters.length > 0;
+  const temFiltroPerformance = filtrosPerformanceComercial.length > 0;
+  const temFiltroMaturidade = filtrosMaturidades.length > 0;
+  const temFiltroMercado = filtrosMercados.length > 0;
+  
+  // Se qualquer filtro de agrupamento estiver ativo OU múltiplas unidades, mostra apenas a Tabela Resumo
+  const temFiltrosAgrupamento = multiplaUnidadesSelecionadas || 
+    temFiltroConsultor || 
+    temFiltroCluster || 
+    temFiltroPerformance ||
+    temFiltroMaturidade ||
+    temFiltroMercado;
+  
+  // Gera descrição dos filtros de agrupamento ativos
+  const descricaoFiltrosAgrupamento = useMemo(() => {
+    const filtros: string[] = [];
+    if (multiplaUnidadesSelecionadas) filtros.push(`${filtrosUnidades.length} franquias`);
+    if (temFiltroConsultor) filtros.push(`${filtrosConsultores.length} consultor${filtrosConsultores.length > 1 ? 'es' : ''}`);
+    if (temFiltroCluster) filtros.push(`${filtrosClusters.length} cluster${filtrosClusters.length > 1 ? 's' : ''}`);
+    if (temFiltroPerformance) filtros.push(`${filtrosPerformanceComercial.length} performance${filtrosPerformanceComercial.length > 1 ? 's' : ''} comercial`);
+    if (temFiltroMaturidade) filtros.push(`${filtrosMaturidades.length} maturidade${filtrosMaturidades.length > 1 ? 's' : ''}`);
+    if (temFiltroMercado) filtros.push(`${filtrosMercados.length} mercado${filtrosMercados.length > 1 ? 's' : ''}`);
+    return filtros.join(', ');
+  }, [multiplaUnidadesSelecionadas, temFiltroConsultor, temFiltroCluster, temFiltroPerformance, temFiltroMaturidade, temFiltroMercado, filtrosUnidades.length, filtrosConsultores.length, filtrosClusters.length, filtrosPerformanceComercial.length, filtrosMaturidades.length, filtrosMercados.length]);
 
   // Item selecionado
   const itemSelecionado = useMemo(() => {
@@ -711,23 +739,23 @@ export default function ResultadosPage() {
         </div>
 
         {/* Conteúdo Principal */}
-        {multiplaUnidadesSelecionadas ? (
+        {temFiltrosAgrupamento ? (
           <>
-            {/* Mensagem quando múltiplas unidades estão selecionadas */}
+            {/* Mensagem quando filtros de agrupamento estão ativos */}
             <Card>
               <div style={{ textAlign: 'center', padding: '60px 20px' }}>
                 <div style={{ fontSize: '64px', marginBottom: '16px' }}>📊</div>
                 <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: '#FF6600' }}>
-                  Múltiplas Franquias Selecionadas
+                  Filtros de Agrupamento Ativos
                 </h3>
                 <p style={{ color: '#adb5bd', marginBottom: '12px' }}>
-                  Você selecionou <strong style={{ color: '#FF6600' }}>{filtrosUnidades.length} franquias</strong>.
+                  Filtros aplicados: <strong style={{ color: '#FF6600' }}>{descricaoFiltrosAgrupamento}</strong>
                 </p>
                 <p style={{ color: '#adb5bd', marginBottom: '24px' }}>
-                  Para visualizar os detalhes de pontuação, cards de indicadores e gráficos, selecione apenas uma franquia.
+                  Para visualizar os detalhes de pontuação, cards de indicadores e gráficos de uma franquia específica, remova os filtros de agrupamento e selecione apenas uma franquia.
                 </p>
                 <p style={{ color: '#6c757d', fontSize: '0.875rem' }}>
-                  A <strong>Tabela Resumo</strong> abaixo exibe as franquias selecionadas.
+                  A <strong>Tabela Resumo</strong> abaixo exibe todas as franquias que correspondem aos filtros selecionados.
                 </p>
               </div>
             </Card>
@@ -760,6 +788,7 @@ export default function ResultadosPage() {
                     unidadesSelecionadas={filtrosUnidades}
                     filtrosMaturidades={filtrosMaturidades}
                     filtrosMercados={filtrosMercados}
+                    filtrosPerformanceComercial={filtrosPerformanceComercial}
                   />
                 </Card>
               </>
@@ -1198,6 +1227,7 @@ export default function ResultadosPage() {
                     unidadesSelecionadas={filtrosUnidades}
                     filtrosMaturidades={filtrosMaturidades}
                     filtrosMercados={filtrosMercados}
+                    filtrosPerformanceComercial={filtrosPerformanceComercial}
                   />
                 </Card>
               </>
