@@ -111,29 +111,30 @@ export default function IndicadorCard({
       <div 
         style={{ 
           display: 'flex', 
-          gap: '8px',
+          gap: '4px',
           borderTop: '1px solid #495057',
           paddingTop: '8px',
-          marginTop: 'auto'
+          marginTop: 'auto',
+          overflow: 'hidden'
         }}
       >
         {/* Melhor Pontuação - Rede */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ flex: 1, minWidth: 0, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexWrap: 'nowrap' }}>
             <span 
-              style={{ color: '#F8F9FA', fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}
+              style={{ color: '#adb5bd', fontSize: '0.5rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
             >
               Melhor Rede
             </span>
             <span 
-              style={{ color: '#F8F9FA', fontSize: '0.7rem', fontWeight: 600 }}
+              style={{ color: '#F8F9FA', fontSize: '0.65rem', fontWeight: 600 }}
             >
               {melhorPontuacaoRede.toFixed(1)}
             </span>
           </div>
           {unidadeMelhorRede && (
             <p 
-              style={{ color: '#adb5bd', fontSize: '0.5rem', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              style={{ color: '#6c757d', fontSize: '0.45rem', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               title={unidadeMelhorRede}
             >
               {unidadeMelhorRede}
@@ -142,22 +143,22 @@ export default function IndicadorCard({
         </div>
 
         {/* Melhor Pontuação - Cluster */}
-        <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #495057', paddingLeft: '8px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #495057', paddingLeft: '4px', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexWrap: 'nowrap' }}>
             <span 
-              style={{ color: '#F8F9FA', fontSize: '0.55rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}
+              style={{ color: '#adb5bd', fontSize: '0.5rem', textTransform: 'uppercase', whiteSpace: 'nowrap' }}
             >
               Melhor Cluster
             </span>
             <span 
-              style={{ color: '#F8F9FA', fontSize: '0.7rem', fontWeight: 600 }}
+              style={{ color: '#F8F9FA', fontSize: '0.65rem', fontWeight: 600 }}
             >
               {melhorPontuacaoCluster.toFixed(1)}
             </span>
           </div>
           {unidadeMelhorCluster && (
             <p 
-              style={{ color: '#adb5bd', fontSize: '0.5rem', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+              style={{ color: '#6c757d', fontSize: '0.45rem', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
               title={unidadeMelhorCluster}
             >
               {unidadeMelhorCluster}
