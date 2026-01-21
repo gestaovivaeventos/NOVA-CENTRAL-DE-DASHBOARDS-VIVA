@@ -330,20 +330,129 @@ export default function ResultadosPage() {
       return parseFloat(pesoStr.replace(',', '.')) || 0;
     };
 
-    // Lista de indicadores com mapeamento para a planilha
+    // Lista de indicadores organizados por blocos com mapeamento para a planilha
+    // BLOCO 1: Resultado Econômico (Verde)
+    // BLOCO 2: Experiência do Cliente (Azul)
+    // BLOCO 3: Gestão & Conformidade (Roxo)
+    // BLOCO 4: Pessoas & Sustentabilidade (Laranja)
     const listaIndicadores = [
-      { codigo: 'VVR_12_MESES', coluna: 'vvr_12_meses', titulo: 'VVR 12 MESES', notaGeral: 'VALOR DE VENDAS REALIZADAS 12 MESES', indicadorPlanilha: 'VVR' },
-      { codigo: 'VVR_CARTEIRA', coluna: 'vvr_carteira', titulo: 'VVR CARTEIRA', notaGeral: 'VALOR DE VENDAS REALIZADAS CARTEIRA', indicadorPlanilha: 'VVR CARTEIRA' },
-      { codigo: 'ENDIVIDAMENTO', coluna: 'Indice_endividamento', titulo: 'ENDIVIDAMENTO', notaGeral: 'ÍNDICE DE ENDIVIDAMENTO', indicadorPlanilha: 'ENDIVIDAMENTO' },
-      { codigo: 'NPS', coluna: 'nps_geral', titulo: 'NPS GERAL', notaGeral: 'NET PROMOTER SCORE', indicadorPlanilha: 'NPS' },
-      { codigo: 'MARGEM_ENTREGA', coluna: 'indice_margem_entrega', titulo: 'MARGEM ENTREGA', notaGeral: 'ÍNDICE DE MARGEM DE ENTREGA', indicadorPlanilha: '% MC (ENTREGA)' },
-      { codigo: 'ENPS', coluna: 'enps_rede', titulo: 'eNPS REDE', notaGeral: 'EMPLOYEE NET PROMOTER SCORE', indicadorPlanilha: 'E-NPS' },
-      { codigo: 'CONFORMIDADES', coluna: 'conformidades', titulo: 'CONFORMIDADES', notaGeral: 'AUDITORIA DE CONFORMIDADES', indicadorPlanilha: '% CONFORMIDADES OPERACIONAIS E FINANCEIRAS' },
-      { codigo: 'RECLAME_AQUI', coluna: 'reclame_aqui', titulo: 'RECLAME AQUI', notaGeral: 'ÍNDICE RECLAME AQUI', indicadorPlanilha: 'RECLAME AQUI' },
-      { codigo: 'COLABORADORES', coluna: 'colaboradores_mais_1_ano', titulo: 'COLAB. +1 ANO', notaGeral: 'COLABORADORES COM MAIS DE 1 ANO', indicadorPlanilha: '%COLABORADORES COM MAIS DE 1 ANO' },
-      { codigo: 'ESTRUTURA', coluna: 'estrutura_organizacioanl', titulo: 'ESTRUTURA ORG.', notaGeral: 'ESTRUTURA ORGANIZACIONAL', indicadorPlanilha: 'ESTRUTURA ORGANIZACIONAL' },
-      { codigo: 'CHURN', coluna: 'churn', titulo: 'CHURN', notaGeral: 'ÍNDICE DE CHURN', indicadorPlanilha: 'CHURN' },
-      { codigo: 'BONUS', coluna: 'bonus', titulo: 'BÔNUS', notaGeral: 'PONTOS DE BÔNUS', indicadorPlanilha: '' }
+      // === BLOCO 1: RESULTADO ECONÔMICO ===
+      { 
+        codigo: 'VVR_12_MESES', 
+        coluna: 'vvr_12_meses', 
+        titulo: 'VVR (Novas Vendas)', 
+        notaGeral: 'Capacidade comercial vs. Meta do segmento', 
+        indicadorPlanilha: 'VVR',
+        tooltip: 'Mede a capacidade comercial da franquia em relação à meta do segmento. Indica o potencial de geração de novas vendas.',
+        bloco: 1
+      },
+      { 
+        codigo: 'VVR_CARTEIRA', 
+        coluna: 'vvr_carteira', 
+        titulo: 'VVR Carteira (Lastro)', 
+        notaGeral: 'Massa crítica de contratos ativos', 
+        indicadorPlanilha: 'VVR CARTEIRA',
+        tooltip: 'O principal indicador estruturante. Representa a massa crítica de contratos ativos que sustenta a operação.',
+        bloco: 1
+      },
+      { 
+        codigo: 'MARGEM_ENTREGA', 
+        coluna: 'indice_margem_entrega', 
+        titulo: 'Margem (% MC)', 
+        notaGeral: 'Eficiência de negociação e execução', 
+        indicadorPlanilha: '% MC (ENTREGA)',
+        tooltip: 'Indica a eficiência de negociação e execução. Quanto maior, melhor a margem de contribuição nas entregas.',
+        bloco: 1
+      },
+      { 
+        codigo: 'ENDIVIDAMENTO', 
+        coluna: 'Indice_endividamento', 
+        titulo: 'Endividamento dos Fundos', 
+        notaGeral: 'Risco financeiro e inadimplência', 
+        indicadorPlanilha: 'ENDIVIDAMENTO',
+        tooltip: 'Mede o risco financeiro e nível de inadimplência. Quanto menor o endividamento, mais saudável a operação.',
+        bloco: 1
+      },
+      { 
+        codigo: 'CHURN', 
+        coluna: 'churn', 
+        titulo: 'Churn', 
+        notaGeral: 'Perda de receita', 
+        indicadorPlanilha: 'CHURN',
+        tooltip: 'Mede a perda de receita por cancelamentos. Quanto menor o churn, maior a retenção de clientes.',
+        bloco: 1
+      },
+      
+      // === BLOCO 2: EXPERIÊNCIA DO CLIENTE ===
+      { 
+        codigo: 'NPS', 
+        coluna: 'nps_geral', 
+        titulo: 'NPS (Net Promoter Score)', 
+        notaGeral: 'Satisfação dos formandos na jornada e na entrega', 
+        indicadorPlanilha: 'NPS',
+        tooltip: 'Mede a satisfação dos formandos em toda a jornada e na entrega final. Indica a probabilidade de recomendação.',
+        bloco: 2
+      },
+      { 
+        codigo: 'RECLAME_AQUI', 
+        coluna: 'reclame_aqui', 
+        titulo: 'Reclame Aqui', 
+        notaGeral: 'Risco reputacional e recorrência de problemas', 
+        indicadorPlanilha: 'RECLAME AQUI',
+        tooltip: 'Mede o risco reputacional e a recorrência de problemas reportados. Quanto melhor a nota, menor o risco à marca.',
+        bloco: 2
+      },
+      
+      // === BLOCO 3: GESTÃO & CONFORMIDADE ===
+      { 
+        codigo: 'CONFORMIDADES', 
+        coluna: 'conformidades', 
+        titulo: 'Conformidades Operacionais e Financeiras', 
+        notaGeral: 'Aderência aos padrões e cumprimento das regras', 
+        indicadorPlanilha: '% CONFORMIDADES OPERACIONAIS E FINANCEIRAS',
+        tooltip: 'Mede a aderência aos padrões e disciplina no cumprimento das regras operacionais e financeiras da rede.',
+        bloco: 3
+      },
+      { 
+        codigo: 'ESTRUTURA', 
+        coluna: 'estrutura_organizacioanl', 
+        titulo: 'Conformidade Societária + Estrutural', 
+        notaGeral: 'Estrutura mínima exigida e time de acordo com o porte', 
+        indicadorPlanilha: 'ESTRUTURA ORGANIZACIONAL',
+        tooltip: 'Avalia a estrutura mínima exigida (sócio/gestor vendas + sócio/gestor pós-vendas) e o time mínimo de acordo com o porte da franquia.',
+        bloco: 3
+      },
+      
+      // === BLOCO 4: PESSOAS & SUSTENTABILIDADE ===
+      { 
+        codigo: 'ENPS', 
+        coluna: 'enps_rede', 
+        titulo: 'e-NPS da Franquia', 
+        notaGeral: 'Engajamento e satisfação do time local', 
+        indicadorPlanilha: 'E-NPS',
+        tooltip: 'Mede o engajamento e satisfação do time local. Colaboradores satisfeitos entregam melhores resultados.',
+        bloco: 4
+      },
+      { 
+        codigo: 'COLABORADORES', 
+        coluna: 'colaboradores_mais_1_ano', 
+        titulo: 'Retenção (> 1 ano)', 
+        notaGeral: '% de colaboradores com mais de um ano de casa', 
+        indicadorPlanilha: '%COLABORADORES COM MAIS DE 1 ANO',
+        tooltip: 'Mede a estabilidade e retenção de conhecimento. Maior retenção significa menor rotatividade e mais eficiência operacional.',
+        bloco: 4
+      },
+      
+      // === BÔNUS ===
+      { 
+        codigo: 'BONUS', 
+        coluna: 'bonus', 
+        titulo: 'Bônus', 
+        notaGeral: 'Pontos de Bônus', 
+        indicadorPlanilha: '',
+        tooltip: 'Pontos adicionais conquistados por ações especiais ou desempenho excepcional.',
+        bloco: 5
+      }
     ];
 
     return listaIndicadores.map(ind => {
@@ -827,7 +936,7 @@ export default function ResultadosPage() {
               })}
             </div>
 
-            {/* Performance por Indicador */}
+            {/* Performance por Indicador - Dividido em Blocos */}
             <h2 style={{
               color: '#adb5bd',
               fontFamily: 'Poppins, sans-serif',
@@ -842,15 +951,152 @@ export default function ResultadosPage() {
               Performance por Indicador <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
             </h2>
 
+            {/* BLOCO 1: RESULTADO ECONÔMICO */}
+            <div style={{ marginBottom: '24px' }}>
+              <h3 style={{
+                color: '#adb5bd',
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '1rem',
+                fontWeight: 600,
+                marginBottom: '12px',
+                paddingLeft: '12px',
+                borderLeft: '4px solid #FF6600',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Bloco 1 — Resultado Econômico
+              </h3>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                gap: '16px'
+              }}>
+                {indicadores.filter(ind => ind.bloco === 1).map((indicador, index) => (
+                  <IndicadorCard key={index} {...indicador} />
+                ))}
+              </div>
+            </div>
+
+            {/* BLOCOS 2 e 3 lado a lado */}
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(4, 1fr)', 
-              gap: '16px', 
-              marginBottom: '30px' 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '24px',
+              marginBottom: '24px',
+              alignItems: 'start'
             }}>
-              {indicadores.map((indicador, index) => (
-                <IndicadorCard key={index} {...indicador} />
-              ))}
+              {/* BLOCO 2: EXPERIÊNCIA DO CLIENTE */}
+              <div>
+                <h3 style={{
+                  color: '#adb5bd',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                  paddingLeft: '12px',
+                  borderLeft: '4px solid #FF6600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Bloco 2 — Experiência do Cliente
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '16px'
+                }}>
+                  {indicadores.filter(ind => ind.bloco === 2).map((indicador, index) => (
+                    <IndicadorCard key={index} {...indicador} />
+                  ))}
+                </div>
+              </div>
+
+              {/* BLOCO 3: GESTÃO & CONFORMIDADE */}
+              <div>
+                <h3 style={{
+                  color: '#adb5bd',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                  paddingLeft: '12px',
+                  borderLeft: '4px solid #FF6600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Bloco 3 — Gestão & Conformidade
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '16px'
+                }}>
+                  {indicadores.filter(ind => ind.bloco === 3).map((indicador, index) => (
+                    <IndicadorCard key={index} {...indicador} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* BLOCO 4 e BÔNUS lado a lado */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(2, 1fr)', 
+              gap: '24px',
+              marginBottom: '30px',
+              alignItems: 'start'
+            }}>
+              {/* BLOCO 4: PESSOAS & SUSTENTABILIDADE */}
+              <div>
+                <h3 style={{
+                  color: '#adb5bd',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                  paddingLeft: '12px',
+                  borderLeft: '4px solid #FF6600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Bloco 4 — Pessoas & Sustentabilidade
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '16px'
+                }}>
+                  {indicadores.filter(ind => ind.bloco === 4).map((indicador, index) => (
+                    <IndicadorCard key={index} {...indicador} />
+                  ))}
+                </div>
+              </div>
+
+              {/* BÔNUS */}
+              <div>
+                <h3 style={{
+                  color: '#adb5bd',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  marginBottom: '12px',
+                  paddingLeft: '12px',
+                  borderLeft: '4px solid #FF6600',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em'
+                }}>
+                  Bônus
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(2, 1fr)', 
+                  gap: '16px'
+                }}>
+                  {indicadores.filter(ind => ind.bloco === 5).map((indicador, index) => (
+                    <IndicadorCard key={index} {...indicador} />
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Tabela Resumo - Apenas para Franqueadora */}
