@@ -114,29 +114,10 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Carregar filtros do localStorage após montagem (evita erro de hidratação)
+  // Não carregar filtros do localStorage - sempre iniciar com valores padrão (mês vigente)
   useEffect(() => {
-    // Carregar filtros
-    try {
-      const savedFilters = localStorage.getItem('dashboardFilters');
-      if (savedFilters) {
-        const parsed = JSON.parse(savedFilters);
-        // Normalizar nomes de unidades salvos para corrigir inconsistências
-        const unidadesNormalizadas = parsed.unidades 
-          ? parsed.unidades.map((u: string) => normalizarNomeUnidade(u))
-          : [];
-        setFiltros(prev => ({
-          ...prev,
-          periodoSelecionado: parsed.periodoSelecionado || prev.periodoSelecionado,
-          dataInicio: parsed.dataInicio || prev.dataInicio,
-          dataFim: parsed.dataFim || prev.dataFim,
-          isMetaInterna: parsed.isMetaInterna ?? prev.isMetaInterna,
-          unidades: unidadesNormalizadas.length > 0 ? unidadesNormalizadas : prev.unidades,
-        }));
-      }
-    } catch (e) {
-      // Ignorar erros de parse
-    }
+    // Limpar filtros salvos anteriormente para garantir início limpo
+    localStorage.removeItem('dashboardFilters');
     // Marcar que os filtros foram carregados
     setFiltrosCarregados(true);
   }, []);
@@ -156,19 +137,6 @@ export default function Dashboard() {
 
   // Salvar filtros de período e unidades no localStorage quando mudarem
   // Só salvar APÓS o carregamento inicial para evitar sobrescrever com valores vazios
-  useEffect(() => {
-    if (typeof window !== 'undefined' && filtrosCarregados) {
-      const filtersToSave = {
-        periodoSelecionado: filtros.periodoSelecionado,
-        dataInicio: filtros.dataInicio,
-        dataFim: filtros.dataFim,
-        isMetaInterna: filtros.isMetaInterna,
-        unidades: filtros.unidades,
-      };
-      localStorage.setItem('dashboardFilters', JSON.stringify(filtersToSave));
-    }
-  }, [filtros.periodoSelecionado, filtros.dataInicio, filtros.dataFim, filtros.isMetaInterna, filtros.unidades, filtrosCarregados]);
-
   // Salvar estado da sidebar no localStorage quando mudar
   useEffect(() => {
     if (typeof window !== 'undefined') {
