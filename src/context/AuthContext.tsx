@@ -99,6 +99,13 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // ============================================
+// Constantes
+// ============================================
+
+// Tempo de expiração por inatividade: 10 horas em milissegundos
+const SESSION_TIMEOUT_MS = 10 * 60 * 60 * 1000; // 10 horas
+
+// ============================================
 // Provider
 // ============================================
 
@@ -109,6 +116,25 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  // Função para atualizar timestamp de última atividade
+  const updateLastActivity = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_last_activity', Date.now().toString());
+    }
+  }, []);
+
+  // Verificar se a sessão expirou por inatividade
+  const isSessionExpired = useCallback((): boolean => {
+    const lastActivity = localStorage.getItem('auth_last_activity');
+    if (!lastActivity) return false; // Se não há registro, não expirou
+    
+    const lastActivityTime = parseInt(lastActivity, 10);
+    const now = Date.now();
+    const elapsed = now - lastActivityTime;
+    
+    return elapsed > SESSION_TIMEOUT_MS;
+  }, []);
+
   // Restaurar sessão do localStorage ao montar
   useEffect(() => {
     const restoreSession = () => {
@@ -117,7 +143,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const storedUser = localStorage.getItem('auth_user');
 
         if (storedToken && storedUser) {
+          // Verificar se a sessão expirou por inatividade
+          if (isSessionExpired()) {
+            console.log('Sessão expirada por inatividade (10 horas)');
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('auth_user');
+            localStorage.removeItem('auth_last_activity');
+            dispatch({ type: 'SET_LOADING', payload: false });
+            return;
+          }
+
           const user: User = JSON.parse(storedUser);
+          // Atualizar timestamp de atividade ao restaurar sessão
+          updateLastActivity();
           dispatch({
             type: 'RESTORE_SESSION',
             payload: { user, token: storedToken },
@@ -129,12 +167,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         console.error('Erro ao restaurar sessão:', error);
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_last_activity');
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
 
     restoreSession();
-  }, []);
+  }, [isSessionExpired, updateLastActivity]);
 
   // Login
   const login = useCallback(async (credentials: LoginCredentials): Promise<boolean> => {
@@ -156,6 +195,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Salvar no localStorage
         localStorage.setItem('auth_token', data.token);
         localStorage.setItem('auth_user', JSON.stringify(data.user));
+        // Registrar timestamp de atividade no login
+        updateLastActivity();
 
         dispatch({
           type: 'LOGIN_SUCCESS',
@@ -178,14 +219,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
       return false;
     }
-  }, []);
+  }, [updateLastActivity]);
 
   // Logout
   const logout = useCallback(() => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('auth_last_activity');
     dispatch({ type: 'LOGOUT' });
   }, []);
+
+  // Atualizar atividade ao navegar/interagir (apenas quando autenticado)
+  useEffect(() => {
+    if (!state.isAuthenticated) return;
+
+    // Atualizar atividade em eventos de navegação e interação
+    const handleActivity = () => {
+      updateLastActivity();
+    };
+
+    // Eventos que indicam atividade do usuário
+    window.addEventListener('focus', handleActivity);
+    window.addEventListener('click', handleActivity);
+    
+    // Atualizar também periodicamente a cada 5 minutos se houver atividade
+    const interval = setInterval(() => {
+      if (document.hasFocus()) {
+        updateLastActivity();
+      }
+    }, 5 * 60 * 1000); // 5 minutos
+
+    return () => {
+      window.removeEventListener('focus', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      clearInterval(interval);
+    };
+  }, [state.isAuthenticated, updateLastActivity]);
 
   // Limpar erro
   const clearError = useCallback(() => {
