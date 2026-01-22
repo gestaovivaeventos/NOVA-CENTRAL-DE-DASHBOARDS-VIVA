@@ -39,11 +39,34 @@ import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
 
-// Estado inicial dos filtros
+// Função para calcular datas do período "Este mês"
+function getInitialDates(): { dataInicio: string; dataFim: string } {
+  const hoje = new Date();
+  const year = hoje.getFullYear();
+  const month = hoje.getMonth();
+  
+  const inicioMes = new Date(year, month, 1);
+  const fimMes = new Date(year, month + 1, 0);
+  
+  const formatDate = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const y = date.getFullYear();
+    return `${y}-${m}-${day}`;
+  };
+  
+  return {
+    dataInicio: formatDate(inicioMes),
+    dataFim: formatDate(fimMes),
+  };
+}
+
+// Estado inicial dos filtros com datas do mês atual
+const initialDates = getInitialDates();
 const INITIAL_FILTERS: FiltrosState = {
   periodoSelecionado: 'estemes',
-  dataInicio: '',
-  dataFim: '',
+  dataInicio: initialDates.dataInicio,
+  dataFim: initialDates.dataFim,
   isMetaInterna: false,
   unidades: [],
   regionais: [],
