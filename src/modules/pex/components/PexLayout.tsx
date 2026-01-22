@@ -227,7 +227,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
           borderBottom: '1px solid #333',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: (isCollapsed && !isMobile) ? 'center' : 'space-between',
           gap: '10px',
         }}>
           {(!isCollapsed || isMobile) && (

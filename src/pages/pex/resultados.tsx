@@ -8,6 +8,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
+import { ChevronDown, ChevronRight, Building2, MapPin, Users, TrendingUp, Briefcase } from 'lucide-react';
 import { useSheetsData, Card, PexLayout, IndicadorCardLegacy as IndicadorCard, TabelaResumo, GraficoEvolucao, useParametrosData } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
@@ -27,9 +28,175 @@ const MAPA_INDICADORES: Record<string, string> = {
   'CHURN': 'churn'
 };
 
+// Componente de Item Expansível para detalhes da unidade
+interface ExpandableItemProps {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  isExpanded?: boolean;
+  onToggle?: () => void;
+  children?: React.ReactNode;
+}
+
+function ExpandableItem({ icon, label, value, isExpanded, onToggle, children }: ExpandableItemProps) {
+  const hasChildren = !!children;
+  
+  return (
+    <div style={{ borderBottom: '1px solid #3a3d41' }}>
+      <div 
+        onClick={hasChildren ? onToggle : undefined}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px',
+          padding: '12px 16px',
+          cursor: hasChildren ? 'pointer' : 'default',
+          transition: 'background-color 0.2s',
+          backgroundColor: isExpanded ? 'rgba(255, 102, 0, 0.1)' : 'transparent'
+        }}
+        onMouseEnter={(e) => hasChildren && (e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.05)')}
+        onMouseLeave={(e) => hasChildren && (e.currentTarget.style.backgroundColor = isExpanded ? 'rgba(255, 102, 0, 0.1)' : 'transparent')}
+      >
+        {hasChildren && (
+          <span style={{ color: '#FF6600', display: 'flex', alignItems: 'center' }}>
+            {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
+          </span>
+        )}
+        <span style={{ color: '#FF6600', display: 'flex', alignItems: 'center' }}>
+          {icon}
+        </span>
+        <span style={{ color: '#adb5bd', fontSize: '0.9rem', flex: 1 }}>{label}</span>
+        <span style={{ fontWeight: 600, color: '#F8F9FA', fontSize: '0.95rem' }}>{value}</span>
+      </div>
+      {isExpanded && children && (
+        <div style={{ 
+          paddingLeft: '48px', 
+          backgroundColor: 'rgba(0, 0, 0, 0.15)',
+          borderTop: '1px solid #3a3d41'
+        }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Componente de Card de Quarter Compacto
+interface QuarterCardProps {
+  quarter: string;
+  pontuacao: number;
+  ativo: boolean;
+  posicaoRede: number;
+  totalRede: number;
+  posicaoCluster: number;
+  totalCluster: number;
+}
+
+function QuarterCard({ quarter, pontuacao, ativo, posicaoRede, totalRede, posicaoCluster, totalCluster }: QuarterCardProps) {
+  const pontuacaoExibir = ativo ? pontuacao : 0;
+  const dados = [
+    { name: 'score', value: pontuacaoExibir },
+    { name: 'restante', value: Math.max(0, 100 - pontuacaoExibir) }
+  ];
+
+  return (
+    <div style={{
+      backgroundColor: '#2a2d31',
+      borderRadius: '8px',
+      padding: '14px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      opacity: ativo ? 1 : 0.5,
+      border: '1px solid #3a3d41'
+    }}>
+      <span style={{ 
+        color: ativo ? '#FF6600' : '#666', 
+        fontSize: '0.85rem', 
+        fontWeight: 600, 
+        marginBottom: '6px',
+        textTransform: 'uppercase'
+      }}>
+        Q{quarter}
+      </span>
+      
+      <ResponsiveContainer width={90} height={90}>
+        <PieChart>
+          <defs>
+            <radialGradient id={`qGrad${quarter}`}>
+              <stop offset="0%" stopColor="#ff7a33" stopOpacity={1} />
+              <stop offset="100%" stopColor="#cc4400" stopOpacity={1} />
+            </radialGradient>
+          </defs>
+          <Pie
+            data={dados}
+            cx="50%"
+            cy="50%"
+            innerRadius={28}
+            outerRadius={40}
+            startAngle={90}
+            endAngle={-270}
+            dataKey="value"
+            stroke="none"
+          >
+            <Cell fill={ativo ? `url(#qGrad${quarter})` : '#555'} stroke="none" />
+            <Cell fill="#3a3f47" stroke="none" />
+            <Label
+              value={pontuacaoExibir.toFixed(1)}
+              position="center"
+              style={{ fontSize: '1rem', fontWeight: '600', fill: ativo ? '#F8F9FA' : '#666' }}
+            />
+          </Pie>
+        </PieChart>
+      </ResponsiveContainer>
+      
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '4px', 
+        marginTop: '8px',
+        width: '100%',
+        fontSize: '0.8rem'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          padding: '6px 10px',
+          backgroundColor: 'rgba(255, 102, 0, 0.1)',
+          borderRadius: '4px'
+        }}>
+          <span style={{ color: '#adb5bd' }}>Rede:</span>
+          <span style={{ fontWeight: 600 }}>
+            {ativo ? (
+              <><span style={{ color: '#FF6600' }}>{posicaoRede}º</span> <span style={{ color: '#F8F9FA', fontWeight: 400 }}>/ {totalRede}</span></>
+            ) : '-'}
+          </span>
+        </div>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between',
+          padding: '6px 10px',
+          backgroundColor: 'rgba(255, 102, 0, 0.1)',
+          borderRadius: '4px'
+        }}>
+          <span style={{ color: '#adb5bd' }}>Cluster:</span>
+          <span style={{ fontWeight: 600 }}>
+            {ativo ? (
+              <><span style={{ color: '#FF6600' }}>{posicaoCluster}º</span> <span style={{ color: '#F8F9FA', fontWeight: 400 }}>/ {totalCluster}</span></>
+            ) : '-'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ResultadosPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // Estado para expansão dos detalhes da unidade (começa fechado)
+  const [detalhesExpandidos, setDetalhesExpandidos] = useState(false);
   
   // Buscar parâmetros (pesos) do contexto
   const { data: parametrosData, fetchAll: fetchParametros, hasFetched: parametrosFetched } = useParametrosData();
@@ -799,33 +966,70 @@ export default function ResultadosPage() {
           </>
         ) : itemSelecionado ? (
           <>
-            {/* Grid Principal - Gráfico e Detalhes */}
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 400px), 1fr))', 
-              gap: '24px', 
-              marginBottom: '30px' 
+            {/* ========================================= */}
+            {/* LAYOUT UNIFICADO - Container Único */}
+            {/* ========================================= */}
+            <div style={{
+              backgroundColor: '#343A40',
+              borderRadius: '12px',
+              padding: '24px',
+              marginBottom: '30px',
+              border: '1px solid #3a3d41',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
             }}>
-              {/* Card do Gráfico de Pontuação Total */}
-              <Card>
-                <h3 style={{
-                  color: '#adb5bd',
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
+              {/* Título do Container */}
+              <div style={{
+                marginBottom: '24px',
+                paddingBottom: '16px',
+                borderBottom: '2px solid #FF6600'
+              }}>
+                <h2 style={{
+                  color: '#F8F9FA',
+                  fontSize: '1.4rem',
+                  fontWeight: 700,
+                  fontFamily: 'Poppins, sans-serif',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
-                  marginBottom: '16px',
-                  paddingBottom: '8px',
-                  borderBottom: '1px solid #555',
-                  fontFamily: 'Poppins, sans-serif'
+                  margin: 0
                 }}>
-                  PONTUAÇÃO TOTAL <span style={{ color: '#FF6600' }}>({unidadeEfetiva})</span>
-                </h3>
-                <div style={{ width: '100%', overflow: 'hidden' }}>
+                  Resumo de Performance <span style={{ color: '#FF6600' }}>({unidadeEfetiva})</span>
+                </h2>
+              </div>
+
+              {/* Grid Principal: Pontuação Total + Quarters + Detalhes */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '320px 1fr 260px',
+                gap: '20px',
+                alignItems: 'stretch'
+              }}>
+                {/* Coluna 1: Pontuação Total em Destaque */}
+                <div style={{
+                  backgroundColor: '#2a2d31',
+                  borderRadius: '10px',
+                  padding: '20px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid #FF6600',
+                  boxShadow: '0 0 20px rgba(255, 102, 0, 0.2)'
+                }}>
+                  <span style={{
+                    color: '#adb5bd',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    marginBottom: '16px'
+                  }}>
+                    Pontuação Total
+                  </span>
+                  
                   <ResponsiveContainer width="100%" height={180}>
                     <PieChart>
                       <defs>
-                        <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <linearGradient id="mainOrangeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
                           <stop offset="0%" stopColor="#ff7a33" stopOpacity={1} />
                           <stop offset="50%" stopColor="#ff6000" stopOpacity={1} />
                           <stop offset="100%" stopColor="#cc4d00" stopOpacity={1} />
@@ -842,220 +1046,159 @@ export default function ResultadosPage() {
                         dataKey="value"
                         stroke="none"
                       >
-                        <Cell fill="url(#orangeGradient)" stroke="none" />
+                        <Cell fill="url(#mainOrangeGradient)" stroke="none" />
                         <Cell fill="#3a3f47" stroke="none" />
                         <Label
                           value={pontuacaoTotal.toFixed(2)}
                           position="center"
-                          style={{ fontSize: '2.4rem', fontWeight: '300', fill: '#F8F9FA' }}
+                          style={{ fontSize: '2.2rem', fontWeight: '700', fill: '#F8F9FA' }}
                         />
                       </Pie>
                     </PieChart>
                   </ResponsiveContainer>
-                </div>
-                <div style={{ textAlign: 'center', marginTop: '12px', marginBottom: '16px' }}>
-                  <p style={{ fontSize: '14px', color: '#adb5bd' }}>
+                  
+                  {/* Mensagem */}
+                  <p style={{ 
+                    fontSize: '0.85rem', 
+                    color: '#adb5bd', 
+                    textAlign: 'center', 
+                    marginTop: '8px',
+                    marginBottom: '16px'
+                  }}>
                     Média de <strong style={{ color: '#F8F9FA' }}>{unidadeEfetiva}</strong> em <span style={{ color: '#FF6600' }}>todos os quarters</span>
                   </p>
-                </div>
-                
-                {/* Posições - Rede e Cluster - Visual igual à imagem */}
-                <div style={{ 
-                  backgroundColor: '#2a2d31',
-                  borderRadius: '6px',
-                  marginTop: '16px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '12px 16px',
-                    borderBottom: '1px solid #3a3d41'
-                  }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição na Rede:</span>
-                    <span style={{ color: '#FF6600', fontWeight: 700, fontSize: '0.95rem' }}>
-                      {posicoes.posicaoRede}º <span style={{ color: '#F8F9FA', fontWeight: 400 }}>de {posicoes.totalRede}</span>
-                    </span>
-                  </div>
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center',
-                    padding: '12px 16px'
-                  }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Posição no Cluster:</span>
-                    <span style={{ color: '#FF6600', fontWeight: 700, fontSize: '0.95rem' }}>
-                      {posicoes.posicaoCluster}º <span style={{ color: '#F8F9FA', fontWeight: 400 }}>de {posicoes.totalCluster}</span>
-                    </span>
-                  </div>
-                </div>
                   
-                {/* Legenda */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginTop: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ width: '12px', height: '12px', backgroundColor: '#FF6600', borderRadius: '2px' }}></div>
-                    <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Atingido: {pontuacaoTotal.toFixed(2)}%</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <div style={{ width: '12px', height: '12px', backgroundColor: '#3a3f47', borderRadius: '2px' }}></div>
-                    <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Restante: {(100 - pontuacaoTotal).toFixed(2)}%</span>
-                  </div>
-                </div>
-              </Card>
-
-              {/* Card de Detalhes da Unidade */}
-              <Card>
-                <h3 style={{
-                  color: '#adb5bd',
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  marginBottom: '16px',
-                  paddingBottom: '8px',
-                  borderBottom: '1px solid #555',
-                  fontFamily: 'Poppins, sans-serif'
-                }}>
-                  DETALHES DA UNIDADE
-                </h3>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Unidade:</span>
-                    <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{unidadeEfetiva}</span>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                    <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Maturidade:</span>
-                    <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{isIncubacao(itemSelecionado.cluster) ? 'Incubação' : 'Madura'}</span>
-                  </div>
-                  {itemSelecionado.cluster && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Cluster:</span>
-                      <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado.cluster}</span>
-                    </div>
-                  )}
-                  {itemSelecionado['mercado'] && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Mercado:</span>
-                      <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado['mercado']}</span>
-                    </div>
-                  )}
-                  {itemSelecionado['performance_comercial'] && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Performance Comercial:</span>
-                      <span style={{ fontWeight: 600, color: '#F8F9FA' }}>
-                        {itemSelecionado['performance_comercial']}
+                  {/* Posições */}
+                  <div style={{ 
+                    width: '100%',
+                    marginTop: '16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      backgroundColor: 'rgba(255, 102, 0, 0.1)',
+                      borderRadius: '6px'
+                    }}>
+                      <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>Posição Rede:</span>
+                      <span style={{ color: '#FF6600', fontWeight: 700, fontSize: '1rem' }}>
+                        {posicoes.posicaoRede}º <span style={{ color: '#888', fontWeight: 400 }}>/ {posicoes.totalRede}</span>
                       </span>
                     </div>
-                  )}
-                  {itemSelecionado[nomeColunaConsultor] && (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', paddingBottom: '10px', borderBottom: '1px solid #444' }}>
-                      <span style={{ color: '#adb5bd', fontSize: '0.9rem' }}>Consultor:</span>
-                      <span style={{ fontWeight: 600, color: '#F8F9FA' }}>{itemSelecionado[nomeColunaConsultor]}</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </div>
-
-            {/* Pontuação por Quarter */}
-            <h2 style={{
-              color: '#adb5bd',
-              fontFamily: 'Poppins, sans-serif',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              borderBottom: '2px solid #FF6600',
-              paddingBottom: '8px',
-              fontSize: '1.4rem',
-              fontWeight: 700,
-              marginBottom: '20px'
-            }}>
-              Pontuação por Quarter
-            </h2>
-            
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-              gap: '20px', 
-              marginBottom: '30px' 
-            }}>
-              {pontuacoesPorQuarter.map((quarterData) => {
-                // Se inativo, mostrar pontuação zerada
-                const pontuacaoExibir = quarterData.ativo ? quarterData.pontuacao : 0;
-                const dados = [
-                  { name: 'score', value: pontuacaoExibir },
-                  { name: 'restante', value: Math.max(0, 100 - pontuacaoExibir) }
-                ];
-
-                return (
-                  <Card key={quarterData.quarter} titulo={`${quarterData.quarter}º Quarter`}>
-                    <div style={{ width: '100%', overflow: 'hidden', opacity: quarterData.ativo ? 1 : 0.5 }}>
-                      <ResponsiveContainer width="100%" height={140}>
-                        <PieChart>
-                          <defs>
-                            <radialGradient id={`orangeGradient${quarterData.quarter}`}>
-                              <stop offset="0%" stopColor="#ff7a33" stopOpacity={1} />
-                              <stop offset="100%" stopColor="#cc4400" stopOpacity={1} />
-                            </radialGradient>
-                          </defs>
-                          <Pie
-                            data={dados}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={50}
-                            outerRadius={70}
-                            startAngle={90}
-                            endAngle={-270}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            <Cell fill={quarterData.ativo ? `url(#orangeGradient${quarterData.quarter})` : '#555'} stroke="none" />
-                            <Cell fill="#3a3f47" stroke="none" />
-                            <Label
-                              value={pontuacaoExibir.toFixed(2)}
-                              position="center"
-                              style={{ fontSize: '1.8rem', fontWeight: '300', fill: quarterData.ativo ? '#F8F9FA' : '#888' }}
-                            />
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    
-                    {/* Posições - Rede e Cluster */}
                     <div style={{ 
-                      backgroundColor: '#2a2d31',
-                      borderRadius: '6px',
-                      marginTop: '12px',
-                      overflow: 'hidden',
-                      opacity: quarterData.ativo ? 1 : 0.5
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      backgroundColor: 'rgba(255, 102, 0, 0.1)',
+                      borderRadius: '6px'
                     }}>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        padding: '10px 12px',
-                        borderBottom: '1px solid #3a3d41'
-                      }}>
-                        <span style={{ color: '#adb5bd', fontSize: '0.8rem' }}>Posição na Rede:</span>
-                        <span style={{ color: quarterData.ativo ? '#FF6600' : '#666', fontWeight: 700, fontSize: '0.85rem' }}>
-                          {quarterData.ativo ? `${quarterData.posicaoRede}º` : '-'} <span style={{ color: quarterData.ativo ? '#F8F9FA' : '#666', fontWeight: 400 }}>{quarterData.ativo ? `de ${quarterData.totalRede}` : ''}</span>
-                        </span>
-                      </div>
-                      <div style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        alignItems: 'center',
-                        padding: '10px 12px'
-                      }}>
-                        <span style={{ color: '#adb5bd', fontSize: '0.8rem' }}>Posição no Cluster:</span>
-                        <span style={{ color: quarterData.ativo ? '#FF6600' : '#666', fontWeight: 700, fontSize: '0.85rem' }}>
-                          {quarterData.ativo ? `${quarterData.posicaoCluster}º` : '-'} <span style={{ color: quarterData.ativo ? '#F8F9FA' : '#666', fontWeight: 400 }}>{quarterData.ativo ? `de ${quarterData.totalCluster}` : ''}</span>
-                        </span>
-                      </div>
+                      <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>Posição Cluster:</span>
+                      <span style={{ color: '#FF6600', fontWeight: 700, fontSize: '1rem' }}>
+                        {posicoes.posicaoCluster}º <span style={{ color: '#888', fontWeight: 400 }}>/ {posicoes.totalCluster}</span>
+                      </span>
                     </div>
-                  </Card>
-                );
-              })}
+                  </div>
+                </div>
+
+                {/* Coluna 2: Cards de Quarters - 2x2 */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gridTemplateRows: 'repeat(2, 1fr)',
+                  gap: '12px',
+                  alignContent: 'center'
+                }}>
+                  {pontuacoesPorQuarter.map((quarterData) => (
+                    <QuarterCard
+                      key={quarterData.quarter}
+                      {...quarterData}
+                    />
+                  ))}
+                </div>
+
+                {/* Coluna 3: Detalhes da Unidade - Expansível */}
+                <div style={{
+                  backgroundColor: '#2a2d31',
+                  borderRadius: '10px',
+                  overflow: 'hidden',
+                  border: '1px solid #3a3d41',
+                  maxWidth: '280px'
+                }}>
+                  {/* Header clicável */}
+                  <div 
+                    onClick={() => setDetalhesExpandidos(!detalhesExpandidos)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '16px',
+                      cursor: 'pointer',
+                      backgroundColor: detalhesExpandidos ? 'rgba(255, 102, 0, 0.1)' : 'transparent',
+                      transition: 'background-color 0.2s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Building2 size={20} style={{ color: '#FF6600' }} />
+                      <span style={{ 
+                        color: '#F8F9FA', 
+                        fontWeight: 600, 
+                        fontSize: '1rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em'
+                      }}>
+                        Detalhes da Unidade
+                      </span>
+                    </div>
+                    <span style={{ color: '#FF6600' }}>
+                      {detalhesExpandidos ? <ChevronDown size={22} /> : <ChevronRight size={22} />}
+                    </span>
+                  </div>
+                  
+                  {/* Conteúdo expansível */}
+                  <div style={{
+                    maxHeight: detalhesExpandidos ? '500px' : '0',
+                    overflow: 'hidden',
+                    transition: 'max-height 0.3s ease-in-out'
+                  }}>
+                    <ExpandableItem
+                      icon={<Building2 size={16} />}
+                      label="Unidade"
+                      value={unidadeEfetiva || '-'}
+                    />
+                    <ExpandableItem
+                      icon={<TrendingUp size={16} />}
+                      label="Maturidade"
+                      value={isIncubacao(itemSelecionado.cluster) ? 'Incubação' : 'Madura'}
+                    />
+                    {itemSelecionado['mercado'] && (
+                      <ExpandableItem
+                        icon={<MapPin size={16} />}
+                        label="Mercado"
+                        value={itemSelecionado['mercado']}
+                      />
+                    )}
+                    {itemSelecionado['performance_comercial'] && (
+                      <ExpandableItem
+                        icon={<TrendingUp size={16} />}
+                        label="Performance Comercial"
+                        value={itemSelecionado['performance_comercial']}
+                      />
+                    )}
+                    {itemSelecionado[nomeColunaConsultor] && (
+                      <ExpandableItem
+                        icon={<Briefcase size={16} />}
+                        label="Consultor"
+                        value={itemSelecionado[nomeColunaConsultor]}
+                      />
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Performance por Indicador - Dividido em Blocos */}
