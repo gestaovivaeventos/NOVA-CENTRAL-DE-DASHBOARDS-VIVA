@@ -818,7 +818,7 @@ export default function ResultadosPage() {
     <PexLayout 
       currentPage="resultados"
       filters={{
-        showQuarter: true,
+        showQuarter: false,
         showUnidade: true,
         showCluster: isFranchiser,
         showConsultor: isFranchiser,
@@ -1202,19 +1202,84 @@ export default function ResultadosPage() {
             </div>
 
             {/* Performance por Indicador - Dividido em Blocos */}
-            <h2 style={{
-              color: '#adb5bd',
-              fontFamily: 'Poppins, sans-serif',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '16px',
               borderBottom: '2px solid #FF6600',
-              paddingBottom: '8px',
-              fontSize: '1.4rem',
-              fontWeight: 700,
+              paddingBottom: '12px',
               marginBottom: '20px'
             }}>
-              Performance por Indicador <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
-            </h2>
+              <h2 style={{
+                color: '#adb5bd',
+                fontFamily: 'Poppins, sans-serif',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                fontSize: '1.4rem',
+                fontWeight: 700,
+                margin: 0
+              }}>
+                Performance por Indicador <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+              </h2>
+              
+              {/* Seletor de Quarter */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ 
+                  color: '#6c757d', 
+                  fontSize: '0.85rem',
+                  fontWeight: 500,
+                  marginRight: '4px'
+                }}>
+                  Quarter:
+                </span>
+                <div style={{
+                  display: 'flex',
+                  backgroundColor: '#1a1d21',
+                  borderRadius: '8px',
+                  padding: '4px',
+                  gap: '4px'
+                }}>
+                  {listaQuarters.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setFiltroQuarter(q)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        backgroundColor: filtroQuarter === q ? '#FF6600' : 'transparent',
+                        color: filtroQuarter === q ? '#fff' : '#adb5bd',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        fontFamily: 'Poppins, sans-serif'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (filtroQuarter !== q) {
+                          e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
+                          e.currentTarget.style.color = '#FF6600';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (filtroQuarter !== q) {
+                          e.currentTarget.style.backgroundColor = 'transparent';
+                          e.currentTarget.style.color = '#adb5bd';
+                        }
+                      }}
+                    >
+                      {q}º
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* BLOCO 1: RESULTADO ECONÔMICO */}
             <div style={{ marginBottom: '24px' }}>
