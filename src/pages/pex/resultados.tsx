@@ -47,9 +47,9 @@ function ExpandableItem({ icon, label, value, isExpanded, onToggle, children }: 
         onClick={hasChildren ? onToggle : undefined}
         style={{ 
           display: 'flex', 
-          alignItems: 'center', 
+          alignItems: 'flex-start', 
           gap: '12px',
-          padding: '12px 16px',
+          padding: '14px 16px',
           cursor: hasChildren ? 'pointer' : 'default',
           transition: 'background-color 0.2s',
           backgroundColor: isExpanded ? 'rgba(255, 102, 0, 0.1)' : 'transparent'
@@ -58,15 +58,17 @@ function ExpandableItem({ icon, label, value, isExpanded, onToggle, children }: 
         onMouseLeave={(e) => hasChildren && (e.currentTarget.style.backgroundColor = isExpanded ? 'rgba(255, 102, 0, 0.1)' : 'transparent')}
       >
         {hasChildren && (
-          <span style={{ color: '#FF6600', display: 'flex', alignItems: 'center' }}>
+          <span style={{ color: '#FF6600', display: 'flex', alignItems: 'center', marginTop: '2px' }}>
             {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
           </span>
         )}
-        <span style={{ color: '#FF6600', display: 'flex', alignItems: 'center' }}>
+        <span style={{ color: '#FF6600', display: 'flex', alignItems: 'center', marginTop: '2px', flexShrink: 0 }}>
           {icon}
         </span>
-        <span style={{ color: '#adb5bd', fontSize: '0.9rem', flex: 1 }}>{label}</span>
-        <span style={{ fontWeight: 600, color: '#F8F9FA', fontSize: '0.95rem' }}>{value}</span>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', flex: 1, minWidth: 0 }}>
+          <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>{label}</span>
+          <span style={{ fontWeight: 600, color: '#F8F9FA', fontSize: '0.95rem', textAlign: 'left', wordBreak: 'break-word' }}>{value}</span>
+        </div>
       </div>
       {isExpanded && children && (
         <div style={{ 
@@ -111,16 +113,15 @@ function QuarterCard({ quarter, pontuacao, ativo, posicaoRede, totalRede, posica
       border: '1px solid #3a3d41'
     }}>
       <span style={{ 
-        color: ativo ? '#FF6600' : '#666', 
+        color: ativo ? '#adb5bd' : '#666', 
         fontSize: '0.85rem', 
         fontWeight: 600, 
-        marginBottom: '6px',
-        textTransform: 'uppercase'
+        marginBottom: '6px'
       }}>
-        Q{quarter}
+        {quarter}º Quarter
       </span>
       
-      <ResponsiveContainer width={90} height={90}>
+      <ResponsiveContainer width={120} height={120}>
         <PieChart>
           <defs>
             <radialGradient id={`qGrad${quarter}`}>
@@ -132,8 +133,8 @@ function QuarterCard({ quarter, pontuacao, ativo, posicaoRede, totalRede, posica
             data={dados}
             cx="50%"
             cy="50%"
-            innerRadius={28}
-            outerRadius={40}
+            innerRadius={38}
+            outerRadius={52}
             startAngle={90}
             endAngle={-270}
             dataKey="value"
@@ -144,7 +145,7 @@ function QuarterCard({ quarter, pontuacao, ativo, posicaoRede, totalRede, posica
             <Label
               value={pontuacaoExibir.toFixed(1)}
               position="center"
-              style={{ fontSize: '1rem', fontWeight: '600', fill: ativo ? '#F8F9FA' : '#666' }}
+              style={{ fontSize: '1.1rem', fontWeight: '600', fill: ativo ? '#F8F9FA' : '#666' }}
             />
           </Pie>
         </PieChart>
@@ -999,7 +1000,7 @@ export default function ResultadosPage() {
               {/* Grid Principal: Pontuação Total + Quarters + Detalhes */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '320px 1fr 260px',
+                gridTemplateColumns: '380px 1fr 360px',
                 gap: '20px',
                 alignItems: 'stretch'
               }}>
@@ -1017,16 +1018,16 @@ export default function ResultadosPage() {
                 }}>
                   <span style={{
                     color: '#adb5bd',
-                    fontSize: '0.9rem',
+                    fontSize: '1.1rem',
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '0.08em',
-                    marginBottom: '16px'
+                    marginBottom: '12px'
                   }}>
                     Pontuação Total
                   </span>
                   
-                  <ResponsiveContainer width="100%" height={180}>
+                  <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
                       <defs>
                         <linearGradient id="mainOrangeGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -1039,8 +1040,8 @@ export default function ResultadosPage() {
                         data={dadosGrafico}
                         cx="50%"
                         cy="50%"
-                        innerRadius={55}
-                        outerRadius={75}
+                        innerRadius={60}
+                        outerRadius={85}
                         startAngle={90}
                         endAngle={-270}
                         dataKey="value"
@@ -1051,7 +1052,7 @@ export default function ResultadosPage() {
                         <Label
                           value={pontuacaoTotal.toFixed(2)}
                           position="center"
-                          style={{ fontSize: '2.2rem', fontWeight: '700', fill: '#F8F9FA' }}
+                          style={{ fontSize: '2.4rem', fontWeight: '700', fill: '#F8F9FA' }}
                         />
                       </Pie>
                     </PieChart>
@@ -1062,7 +1063,7 @@ export default function ResultadosPage() {
                     fontSize: '0.85rem', 
                     color: '#adb5bd', 
                     textAlign: 'center', 
-                    marginTop: '8px',
+                    marginTop: '12px',
                     marginBottom: '16px'
                   }}>
                     Média de <strong style={{ color: '#F8F9FA' }}>{unidadeEfetiva}</strong> em <span style={{ color: '#FF6600' }}>todos os quarters</span>
@@ -1126,8 +1127,7 @@ export default function ResultadosPage() {
                   backgroundColor: '#2a2d31',
                   borderRadius: '10px',
                   overflow: 'hidden',
-                  border: '1px solid #3a3d41',
-                  maxWidth: '280px'
+                  border: '1px solid #3a3d41'
                 }}>
                   {/* Header clicável */}
                   <div 
