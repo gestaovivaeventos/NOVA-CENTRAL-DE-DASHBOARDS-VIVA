@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Download } from 'lucide-react';
+import { exportToExcel } from '@/modules/vendas/utils/exportExcel';
 
 interface MotivoItem {
   motivo: string;
@@ -306,30 +307,26 @@ export const MotivosPerdaDescarteTable: React.FC<MotivosPerdaDescarteTableProps>
   motivosDescarte,
   concorrentes,
 }) => {
-  // Exportar para CSV
-  const exportarCSV = (dados: Array<MotivoItem | ConcorrenteItem>, nomeArquivo: string, colunaNome: string) => {
+  // Exportar para Excel
+  const exportarExcel = (dados: Array<MotivoItem | ConcorrenteItem>, nomeArquivo: string, colunaNome: string, sheetName: string) => {
     if (dados.length === 0) return;
     
     const headers = [colunaNome, '%', 'Total'];
-    const rows = dados.map(item => {
+    const data = dados.map(item => {
       const nome = 'motivo' in item ? item.motivo : item.concorrente;
       return [
         nome,
-        item.percentual.toFixed(1),
-        item.total.toString()
+        `${item.percentual.toFixed(1)}%`,
+        item.total
       ];
     });
     
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-    
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${nomeArquivo}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`;
-    link.click();
+    exportToExcel({
+      filename: nomeArquivo,
+      sheetName,
+      headers,
+      data
+    });
   };
 
   // Converter concorrentes para o formato da tabela
@@ -350,13 +347,13 @@ export const MotivosPerdaDescarteTable: React.FC<MotivosPerdaDescarteTableProps>
           titulo="Motivos de Perda"
           colunaNome="Motivo de Perda"
           dados={motivosPerda}
-          onExport={() => exportarCSV(motivosPerda, 'Relatorio_Motivos_Perda', 'Motivo de Perda')}
+          onExport={() => exportarExcel(motivosPerda, 'Relatorio_Motivos_Perda', 'Motivo de Perda', 'Motivos Perda')}
         />
         <TabelaMotivos
           titulo="Motivos do Descarte"
           colunaNome="Motivo do Descarte"
           dados={motivosDescarte}
-          onExport={() => exportarCSV(motivosDescarte, 'Relatorio_Descartes', 'Motivo do Descarte')}
+          onExport={() => exportarExcel(motivosDescarte, 'Relatorio_Descartes', 'Motivo do Descarte', 'Descartes')}
         />
       </div>
 
@@ -365,7 +362,7 @@ export const MotivosPerdaDescarteTable: React.FC<MotivosPerdaDescarteTableProps>
         titulo="Concorrentes (Leads Perdidos)"
         colunaNome="Concorrente"
         dados={concorrentesParaTabela}
-        onExport={() => exportarCSV(concorrentes, 'Relatorio_Concorrentes', 'Concorrente')}
+        onExport={() => exportarExcel(concorrentes, 'Relatorio_Concorrentes', 'Concorrente', 'Concorrentes')}
       />
     </div>
   );

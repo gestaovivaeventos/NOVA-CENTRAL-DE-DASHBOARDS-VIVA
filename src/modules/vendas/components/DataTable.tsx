@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Download } from 'lucide-react';
+import { exportToExcel } from '@/modules/vendas/utils/exportExcel';
 
 interface Column {
   key: string;
@@ -73,24 +74,22 @@ export const DataTable: React.FC<DataTableProps> = ({
     return sortedData.slice(start, start + pageSize);
   }, [sortedData, currentPage, pageSize]);
 
-  // Exportar para Excel/CSV
+  // Exportar para Excel
   const handleExport = () => {
-    const headers = columns.map(c => c.title).join('\t');
-    const rows = sortedData.map(row =>
+    const headers = columns.map(c => c.title);
+    const data = sortedData.map(row =>
       columns.map(col => {
         const value = row[col.key];
-        return col.format ? col.format(value) : String(value || '');
-      }).join('\t')
-    ).join('\n');
+        return col.format ? col.format(value) : (value ?? '');
+      })
+    );
     
-    const content = `${headers}\n${rows}`;
-    const blob = new Blob([content], { type: 'text/tab-separated-values;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${title || 'dados'}_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.tsv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    exportToExcel({
+      filename: title || 'dados',
+      sheetName: title || 'Dados',
+      headers,
+      data
+    });
   };
 
   const handleSort = (columnKey: string) => {

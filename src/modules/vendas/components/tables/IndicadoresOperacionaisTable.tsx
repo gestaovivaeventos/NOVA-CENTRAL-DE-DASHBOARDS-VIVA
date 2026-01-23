@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Download } from 'lucide-react';
+import { exportToExcel } from '@/modules/vendas/utils/exportExcel';
 
 interface IndicadorItem {
   unidade: string;
@@ -82,10 +83,10 @@ export const IndicadoresOperacionaisTable: React.FC<IndicadoresOperacionaisTable
     setPaginaAtual(1);
   };
 
-  // Exportar para CSV
-  const exportarCSV = () => {
+  // Exportar para Excel
+  const exportarExcel = () => {
     const headers = ['Unidade', 'Leads (%)', 'Reuniões (%)', 'Contratos (%)', 'Adesões (%)'];
-    const linhas = dadosFiltrados.map(item => [
+    const data = dadosFiltrados.map(item => [
       item.unidade,
       formatPercent(item.leadsPercent),
       formatPercent(item.reunioesPercent),
@@ -93,14 +94,12 @@ export const IndicadoresOperacionaisTable: React.FC<IndicadoresOperacionaisTable
       formatPercent(item.adesoesPercent),
     ]);
 
-    const csv = [headers.join(';'), ...linhas.map(l => l.join(';'))].join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `indicadores_operacionais_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    exportToExcel({
+      filename: 'indicadores_operacionais',
+      sheetName: 'Indicadores',
+      headers,
+      data
+    });
   };
 
   // Renderizar ícone de ordenação
@@ -145,7 +144,7 @@ export const IndicadoresOperacionaisTable: React.FC<IndicadoresOperacionaisTable
       {/* Barra de ferramentas */}
       <div className="flex items-center justify-between gap-4">
         <button
-          onClick={exportarCSV}
+          onClick={exportarExcel}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-dark-tertiary border border-gray-600 text-gray-400 hover:bg-orange-500/10 hover:border-orange-500 hover:text-orange-500"
           style={{ fontFamily: 'Poppins, sans-serif' }}
         >

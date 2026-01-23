@@ -1248,12 +1248,23 @@ export default function ResultadosPage() {
                       label="Maturidade"
                       value={isIncubacao(itemSelecionado.cluster) ? 'Incubação' : 'Madura'}
                     />
-                    {itemSelecionado['mercado'] && (
-                      <ExpandableItem
-                        icon={<MapPin size={16} />}
-                        label="Mercado"
-                        value={itemSelecionado['mercado']}
-                      />
+                    {/* Mercado: para Maduras mostra Cluster, para Incubação mostra Mercado */}
+                    {isIncubacao(itemSelecionado.cluster) ? (
+                      itemSelecionado['mercado'] && (
+                        <ExpandableItem
+                          icon={<MapPin size={16} />}
+                          label="Mercado"
+                          value={itemSelecionado['mercado']}
+                        />
+                      )
+                    ) : (
+                      itemSelecionado.cluster && (
+                        <ExpandableItem
+                          icon={<MapPin size={16} />}
+                          label="Mercado"
+                          value={itemSelecionado.cluster}
+                        />
+                      )
                     )}
                     {itemSelecionado['performance_comercial'] && (
                       <ExpandableItem

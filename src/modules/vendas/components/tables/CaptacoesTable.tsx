@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Download } from 'lucide-react';
+import { exportToExcel } from '@/modules/vendas/utils/exportExcel';
 
 interface CaptacaoData {
   origem: string;
@@ -92,24 +93,22 @@ export const CaptacoesTable: React.FC<CaptacoesTableProps> = ({
     setPaginaAtual(1);
   };
 
-  // Exportar para CSV
-  const exportarCSV = () => {
+  // Exportar para Excel
+  const exportarExcel = () => {
     const headers = ['Origem do Lead', 'Tipo de Captação', '%', 'Total'];
-    const linhas = dadosFiltrados.map(item => [
+    const data = dadosFiltrados.map(item => [
       item.origem,
       item.tipo,
       `${item.percentual}%`,
-      item.total.toString(),
+      item.total,
     ]);
 
-    const csv = [headers.join(';'), ...linhas.map(l => l.join(';'))].join('\n');
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `captacoes_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '-')}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    exportToExcel({
+      filename: 'captacoes',
+      sheetName: 'Captações',
+      headers,
+      data
+    });
   };
 
   // Renderizar ícone de ordenação
@@ -141,7 +140,7 @@ export const CaptacoesTable: React.FC<CaptacoesTableProps> = ({
       {/* Header com busca e exportação */}
       <div className="flex items-center justify-between gap-4">
         <button
-          onClick={exportarCSV}
+          onClick={exportarExcel}
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-dark-tertiary border border-gray-600 text-gray-400 hover:bg-orange-500/10 hover:border-orange-500 hover:text-orange-500"
           style={{ fontFamily: 'Poppins, sans-serif' }}
         >
