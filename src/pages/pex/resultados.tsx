@@ -720,6 +720,11 @@ export default function ResultadosPage() {
       // Obter peso dinâmico da planilha
       const peso = obterPesoDinamico(ind.indicadorPlanilha);
       
+      // Obter resumo e cálculo da planilha (se disponível)
+      const indicadorInfo = parametrosData?.indicadoresInfo?.find(
+        info => info.indicador.toUpperCase().trim() === ind.indicadorPlanilha.toUpperCase().trim()
+      );
+      
       // Se quarter inativo, todos os valores zerados
       const pontuacaoUnidade = quarterAtivo ? parseValor(itemSelecionado[ind.coluna]) : 0;
       
@@ -753,10 +758,13 @@ export default function ResultadosPage() {
         melhorPontuacaoRede: melhorRede,
         melhorPontuacaoCluster: melhorCluster,
         unidadeMelhorRede: itemMelhorRede?.nm_unidade || '-',
-        unidadeMelhorCluster: itemMelhorCluster?.nm_unidade || '-'
+        unidadeMelhorCluster: itemMelhorCluster?.nm_unidade || '-',
+        // Usar dados da planilha se disponíveis, senão usar tooltip padrão
+        resumo: indicadorInfo?.resumo || '',
+        calculo: indicadorInfo?.calculo || ''
       };
     });
-  }, [itemSelecionado, dadosBrutos, dadosRedeCompleta, filtroQuarter, parametrosData?.pesos]);
+  }, [itemSelecionado, dadosBrutos, dadosRedeCompleta, filtroQuarter, parametrosData?.pesos, parametrosData?.indicadoresInfo]);
 
   // Loading
   if (loading) {

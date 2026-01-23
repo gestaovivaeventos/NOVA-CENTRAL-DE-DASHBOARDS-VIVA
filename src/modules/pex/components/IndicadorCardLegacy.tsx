@@ -1,11 +1,12 @@
 /**
  * Card de Indicador - Exibe a pontuação do indicador
  * e compara com as melhores pontuações da rede e cluster
- * Com tooltip explicativo do indicador
+ * Com tooltip explicativo do indicador (abre ao clicar)
  */
 
-import React from 'react';
-import { Info } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import ReactDOM from 'react-dom';
+import { Info, X } from 'lucide-react';
 
 interface IndicadorCardProps {
   titulo: string;
@@ -17,7 +18,9 @@ interface IndicadorCardProps {
   melhorPontuacaoCluster: number;
   unidadeMelhorRede?: string;
   unidadeMelhorCluster?: string;
-  tooltip?: string; // Explicação do indicador
+  tooltip?: string; // Explicação do indicador (legacy - será substituído por resumo/calculo)
+  resumo?: string; // O que é o indicador
+  calculo?: string; // Como é calculado
 }
 
 export default function IndicadorCard({
@@ -30,8 +33,96 @@ export default function IndicadorCard({
   melhorPontuacaoCluster,
   unidadeMelhorRede,
   unidadeMelhorCluster,
-  tooltip
+  tooltip,
+  resumo,
+  calculo
 }: IndicadorCardProps) {
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Calcular posição do tooltip quando abre
+  const handleOpenTooltip = () => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const tooltipWidth = 300;
+      const tooltipHeight = 280;
+      const margin = 10;
+      
+      // Calcular posição inicial (abaixo e à esquerda do botão)
+      let left = rect.right - tooltipWidth + 8;
+      let top = rect.bottom + 8;
+      
+      // Se o tooltip sair da tela pela direita, ajustar
+      if (left + tooltipWidth > window.innerWidth - margin) {
+        left = window.innerWidth - tooltipWidth - margin;
+      }
+      
+      // Se o tooltip sair da tela pela esquerda, ajustar
+      if (left < margin) {
+        left = margin;
+      }
+      
+      // Se o tooltip sair da tela por baixo, abrir acima do botão
+      if (top + tooltipHeight > window.innerHeight - margin) {
+        top = rect.top - tooltipHeight - 8;
+      }
+      
+      // Se ainda sair por cima, centralizar verticalmente
+      if (top < margin) {
+        top = margin;
+      }
+      
+      setTooltipPosition({ top, left });
+    }
+    setIsTooltipOpen(!isTooltipOpen);
+  };
+
+  // Fechar tooltip ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        tooltipRef.current && 
+        !tooltipRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsTooltipOpen(false);
+      }
+    }
+
+    if (isTooltipOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isTooltipOpen]);
+
+  // Fechar tooltip ao rolar a página (exceto se rolar dentro do tooltip)
+  useEffect(() => {
+    function handleScroll(event: Event) {
+      // Ignorar scroll dentro do tooltip
+      if (tooltipRef.current && tooltipRef.current.contains(event.target as Node)) {
+        return;
+      }
+      if (isTooltipOpen) {
+        setIsTooltipOpen(false);
+      }
+    }
+
+    if (isTooltipOpen) {
+      window.addEventListener('scroll', handleScroll, true); // true para capturar em qualquer elemento
+    }
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isTooltipOpen]);
+
+  // Verificar se tem conteúdo para mostrar no tooltip
+  const hasTooltipContent = resumo || calculo || tooltip;
+
   return (
     <div 
       className="p-3 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
@@ -45,31 +136,161 @@ export default function IndicadorCard({
         minWidth: 0
       }}
     >
-      {/* Ícone de informação com tooltip */}
-      {tooltip && (
+      {/* Ícone de informação com tooltip (clique para abrir) */}
+      {hasTooltipContent && (
         <div 
-          className="absolute group"
-          style={{ top: '8px', right: '8px', zIndex: 10 }}
+          className="absolute"
+          style={{ top: '8px', right: '8px', zIndex: isTooltipOpen ? 1 : 10 }}
         >
-          <Info 
-            size={16} 
-            style={{ color: '#6b7280', cursor: 'help' }} 
-          />
-          <div 
-            className="absolute right-0 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none"
+          <button
+            ref={buttonRef}
+            onClick={handleOpenTooltip}
+            className="flex items-center justify-center transition-all duration-200 hover:scale-110"
             style={{ 
-              minWidth: '220px', 
-              whiteSpace: 'normal', 
-              textAlign: 'left',
-              bottom: '100%',
-              zIndex: 100,
-              boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+              background: 'none', 
+              border: 'none', 
+              cursor: 'pointer',
+              padding: '2px'
+            }}
+            title="Ver informações"
+          >
+            <Info 
+              size={18} 
+              style={{ 
+                color: isTooltipOpen ? '#FF6600' : '#FFFFFF',
+                transition: 'color 0.2s'
+              }} 
+            />
+          </button>
+        </div>
+      )}
+      
+      {/* Tooltip renderizado via Portal para ficar sobre a sidebar */}
+      {isTooltipOpen && hasTooltipContent && typeof document !== 'undefined' && ReactDOM.createPortal(
+        <div 
+          ref={tooltipRef}
+          style={{ 
+            position: 'fixed',
+            top: tooltipPosition.top,
+            left: tooltipPosition.left,
+            width: '300px',
+            maxHeight: '280px',
+            backgroundColor: '#1a1d21',
+            borderRadius: '12px',
+            padding: '16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            border: '1px solid #FF6600',
+            zIndex: 99999,
+            animation: 'fadeIn 0.2s ease-out',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden'
+          }}
+        >
+          {/* Header do tooltip */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'flex-start',
+              marginBottom: '12px',
+              paddingBottom: '12px',
+              borderBottom: '1px solid #3a3d41'
             }}
           >
-            {tooltip}
-            <div className="absolute top-full right-2 border-4 border-transparent border-t-gray-900"></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+              <span style={{ 
+                color: '#FF6600', 
+                fontSize: '0.9rem', 
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                lineHeight: 1.3
+              }}>
+                {titulo}
+              </span>
+            </div>
+            <button
+              onClick={() => setIsTooltipOpen(false)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                cursor: 'pointer',
+                padding: '2px',
+                color: '#6c757d',
+                transition: 'color 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#FF6600'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#6c757d'}
+            >
+              <X size={18} />
+            </button>
           </div>
-        </div>
+
+          {/* Conteúdo do tooltip com scroll */}
+          <div 
+            className="tooltip-scroll"
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: '10px',
+              flex: 1,
+              overflowY: 'auto',
+              paddingRight: '6px'
+            }}
+          >
+            {/* O que é */}
+            {(resumo || tooltip) && (
+              <div>
+                <p style={{ 
+                  color: '#adb5bd', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600, 
+                  marginBottom: '4px',
+                  textTransform: 'uppercase'
+                }}>
+                  O que é:
+                </p>
+                <p style={{ 
+                  color: '#E0E0E0', 
+                  fontSize: '0.75rem', 
+                  lineHeight: 1.6,
+                  margin: 0,
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>
+                  {resumo || tooltip}
+                </p>
+              </div>
+            )}
+
+            {/* Cálculo */}
+            {calculo && (
+              <div>
+                <p style={{ 
+                  color: '#adb5bd', 
+                  fontSize: '0.7rem', 
+                  fontWeight: 600, 
+                  marginBottom: '4px',
+                  textTransform: 'uppercase'
+                }}>
+                  Cálculo:
+                </p>
+                <p style={{ 
+                  color: '#E0E0E0', 
+                  fontSize: '0.75rem', 
+                  lineHeight: 1.6,
+                  margin: 0,
+                  fontStyle: 'italic',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>
+                  {calculo}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>,
+        document.body
       )}
 
       {/* Título do Indicador */}

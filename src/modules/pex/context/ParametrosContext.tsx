@@ -55,6 +55,12 @@ interface BonusUnidade {
   quarter4: string;
 }
 
+interface IndicadorInfo {
+  indicador: string;
+  resumo: string;
+  calculo: string;
+}
+
 interface ParametrosData {
   consultores: UnidadeConsultor[];
   consultoresAtivos: string[];
@@ -64,6 +70,7 @@ interface ParametrosData {
   metas: MetaCluster[];
   clustersDisponiveis: string[];
   bonus: BonusUnidade[];
+  indicadoresInfo: IndicadorInfo[];
 }
 
 interface ParametrosContextType {
@@ -74,6 +81,7 @@ interface ParametrosContextType {
     pesos: boolean;
     metas: boolean;
     bonus: boolean;
+    indicadoresInfo: boolean;
   };
   errors: {
     consultores: string | null;
@@ -81,6 +89,7 @@ interface ParametrosContextType {
     pesos: string | null;
     metas: string | null;
     bonus: string | null;
+    indicadoresInfo: string | null;
   };
   hasFetched: boolean;
   fetchAll: () => Promise<void>;
@@ -90,6 +99,7 @@ interface ParametrosContextType {
   refetchPesos: () => Promise<void>;
   refetchMetas: () => Promise<void>;
   refetchBonus: () => Promise<void>;
+  refetchIndicadoresInfo: () => Promise<void>;
   updateData: (key: keyof ParametrosData, value: any) => void;
   invalidateCache: () => void;
 }
@@ -103,6 +113,7 @@ const defaultData: ParametrosData = {
   metas: [],
   clustersDisponiveis: [],
   bonus: [],
+  indicadoresInfo: [],
 };
 
 const ParametrosContext = createContext<ParametrosContextType | undefined>(undefined);
@@ -152,6 +163,7 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
     pesos: false,
     metas: false,
     bonus: false,
+    indicadoresInfo: false,
   });
   const [errors, setErrors] = useState({
     consultores: null as string | null,
@@ -159,6 +171,7 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
     pesos: null as string | null,
     metas: null as string | null,
     bonus: null as string | null,
+    indicadoresInfo: null as string | null,
   });
 
   const fetchConsultores = useCallback(async (forceRefresh: boolean = false) => {
@@ -398,6 +411,26 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const fetchIndicadoresInfo = useCallback(async () => {
+    setLoading(prev => ({ ...prev, indicadoresInfo: true }));
+    try {
+      const response = await fetch('/api/pex/indicadores-info');
+      if (response.ok) {
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setData(prev => ({ ...prev, indicadoresInfo: result.data }));
+        }
+        setErrors(prev => ({ ...prev, indicadoresInfo: null }));
+      }
+    } catch (err: any) {
+      console.error('[ParametrosContext] Erro ao buscar indicadores info:', err);
+      setErrors(prev => ({ ...prev, indicadoresInfo: err.message }));
+    } finally {
+      setLoading(prev => ({ ...prev, indicadoresInfo: false }));
+    }
+  }, []);
+
   const fetchAll = useCallback(async () => {
     if (hasFetched || isFetching) {
       console.log('[ParametrosContext] Dados já em cache ou fetch em andamento');
@@ -413,12 +446,13 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
       fetchPesos(),
       fetchMetas(),
       fetchBonus(),
+      fetchIndicadoresInfo(),
     ]);
 
     setHasFetched(true);
     setIsFetching(false);
     console.log('[ParametrosContext] Todos os dados carregados em cache');
-  }, [hasFetched, isFetching, fetchConsultores, fetchClusters, fetchPesos, fetchMetas, fetchBonus]);
+  }, [hasFetched, isFetching, fetchConsultores, fetchClusters, fetchPesos, fetchMetas, fetchBonus, fetchIndicadoresInfo]);
 
   // Força busca de todos os dados ignorando cache (tanto cliente quanto servidor)
   const forceRefetchAll = useCallback(async () => {
@@ -436,12 +470,13 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
       fetchPesos(),
       fetchMetas(),
       fetchBonus(),
+      fetchIndicadoresInfo(),
     ]);
 
     setHasFetched(true);
     setIsFetching(false);
     console.log('[ParametrosContext] Dados atualizados do banco');
-  }, [isFetching, fetchConsultores, fetchClusters, fetchPesos, fetchMetas, fetchBonus]);
+  }, [isFetching, fetchConsultores, fetchClusters, fetchPesos, fetchMetas, fetchBonus, fetchIndicadoresInfo]);
 
   // Invalida o cache para forçar nova busca
   const invalidateCache = useCallback(() => {
@@ -465,6 +500,7 @@ export function ParametrosProvider({ children }: { children: ReactNode }) {
     refetchPesos: fetchPesos,
     refetchMetas: fetchMetas,
     refetchBonus: fetchBonus,
+    refetchIndicadoresInfo: fetchIndicadoresInfo,
     updateData,
     invalidateCache,
   };

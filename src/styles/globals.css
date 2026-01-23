@@ -6,6 +6,37 @@
    Global Styles - Projeto Central
    ============================================ */
 
+/* Animação para tooltips */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Scrollbar customizada para tooltips */
+.tooltip-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tooltip-scroll::-webkit-scrollbar-track {
+  background: #2a2d31;
+  border-radius: 3px;
+}
+
+.tooltip-scroll::-webkit-scrollbar-thumb {
+  background: #4a4d51;
+  border-radius: 3px;
+}
+
+.tooltip-scroll::-webkit-scrollbar-thumb:hover {
+  background: #FF6600;
+}
+
 /* CSS Variables para módulo Vendas */
 :root {
   --bg-primary: #212529;
