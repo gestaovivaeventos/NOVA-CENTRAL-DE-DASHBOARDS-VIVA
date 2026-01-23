@@ -60,8 +60,33 @@ export default function Sidebar({
   }, [user]);
   
   useEffect(() => {
-    const hoje = new Date();
-    setDataAtual(`${hoje.toLocaleDateString('pt-BR')}, ${hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
+    // Bases de vendas são atualizadas de seg a sex às 08h
+    const agora = new Date();
+    const hora = agora.getHours();
+    const diaSemana = agora.getDay(); // 0 = domingo, 6 = sábado
+    
+    let dataAtualizacao = new Date(agora);
+    
+    // Se for fim de semana ou antes das 08h, pegar o último dia útil
+    if (diaSemana === 0) {
+      // Domingo: última atualização foi sexta
+      dataAtualizacao.setDate(dataAtualizacao.getDate() - 2);
+    } else if (diaSemana === 6) {
+      // Sábado: última atualização foi sexta
+      dataAtualizacao.setDate(dataAtualizacao.getDate() - 1);
+    } else if (hora < 8) {
+      // Antes das 08h em dia útil: última atualização foi no dia útil anterior
+      if (diaSemana === 1) {
+        // Segunda antes das 08h: última atualização foi sexta
+        dataAtualizacao.setDate(dataAtualizacao.getDate() - 3);
+      } else {
+        // Outros dias úteis antes das 08h: dia anterior
+        dataAtualizacao.setDate(dataAtualizacao.getDate() - 1);
+      }
+    }
+    // Após 08h em dia útil: atualização é do próprio dia
+    
+    setDataAtual(`${dataAtualizacao.toLocaleDateString('pt-BR')} às 08:00`);
   }, []);
 
   const getIcon = (pageId: string) => {
