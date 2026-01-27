@@ -274,10 +274,10 @@ function CardSimulacao({ resultado, isFirst, parametros, parametrosEfetivos, par
           </div>
         </div>
 
-        {/* Despesas */}
+        {/* Despesas Anual */}
         <div className="py-2 border-b border-gray-700/30">
           <div className="flex flex-col">
-            <span className="text-[10px] text-gray-400 uppercase tracking-wide">Despesas</span>
+            <span className="text-[10px] text-gray-400 uppercase tracking-wide">Despesas Anual</span>
             <span className="text-sm font-semibold text-red-400 tabular-nums">
               {formatarMoeda(resultado.despesas)}
             </span>
@@ -335,19 +335,24 @@ export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia,
     despesaAnual: 0,
   });
 
-  // Busca VVR da aba NOVAS VENDAS - CALCULADORA FRANQUEADO
-  React.useEffect(() => {
-    if (franquia) {
-      fetch(`/api/fluxo-projetado/vvr-calculadora?franquia=${encodeURIComponent(franquia.toUpperCase())}&refresh=${Date.now()}`)
-        .then(res => res.json())
-        .then(result => {
-          if (result.success && result.data) {
-            setVvrPorAno(result.data.map((d: { ano: number; vvr: number }) => ({ ano: d.ano, vvr: d.vvr })));
-          }
-        })
-        .catch(err => console.error('[Calculadora] Erro ao buscar VVR:', err));
+  // Função para buscar VVR da aba NOVAS VENDAS - CALCULADORA FRANQUEADO
+  const fetchVvrCalculadora = React.useCallback(async () => {
+    if (!franquia) return;
+    try {
+      const res = await fetch(`/api/fluxo-projetado/vvr-calculadora?franquia=${encodeURIComponent(franquia.toUpperCase())}&refresh=${Date.now()}`);
+      const result = await res.json();
+      if (result.success && result.data) {
+        setVvrPorAno(result.data.map((d: { ano: number; vvr: number }) => ({ ano: d.ano, vvr: d.vvr })));
+      }
+    } catch (err) {
+      console.error('[Calculadora] Erro ao buscar VVR:', err);
     }
   }, [franquia]);
+
+  // Busca VVR quando franquia muda
+  React.useEffect(() => {
+    fetchVvrCalculadora();
+  }, [fetchVvrCalculadora]);
 
   // Atualiza parâmetros quando "Usar Parâmetros Padrão" está selecionado
   React.useEffect(() => {
@@ -1021,10 +1026,16 @@ export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia,
                     // Sempre salva os parâmetros personalizados (Definir Parâmetros está sempre selecionado)
                     await handleSalvarParametros();
                     
+                    // Pequeno delay para permitir que as fórmulas da planilha recalculem
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
                     // Recarrega os dados da planilha (sem perder os valores preenchidos)
                     if (onRefresh) {
                       await onRefresh();
                     }
+                    
+                    // Recarrega o VVR da calculadora
+                    await fetchVvrCalculadora();
                     
                     setSimulacaoVisivel(true);
                     setModalAberto(false);
