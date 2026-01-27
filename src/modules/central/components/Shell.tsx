@@ -81,6 +81,11 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas de Fluxo Projetado são independentes (layout próprio)
+  if (router.pathname.startsWith('/fluxo-projetado')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 

@@ -36,6 +36,7 @@ const allDashboards: Dashboard[] = [
   { id: 'vendas', name: 'Dashboard Vendas', description: 'Visão geral de vendas', path: '/vendas', icon: 'money' },
   { id: 'pex', name: 'Dashboard PEX', description: 'Visão geral do PEX', path: '/pex', icon: 'dashboard' },
   { id: 'carteira', name: 'Dashboard Carteira', description: 'Análise de fundos e franquias', path: '/carteira', icon: 'wallet' },
+  { id: 'fluxo-projetado', name: 'Fluxo Projetado', description: 'Projeção de fluxo de caixa', path: '/fluxo-projetado', icon: 'fluxo' },
 ];
 
 // Ícones SVG inline (mesmos da Sidebar)
@@ -68,6 +69,11 @@ const dashboardIcons: Record<string, JSX.Element> = {
   wallet: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  fluxo: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
     </svg>
   ),
 };
