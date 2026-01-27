@@ -27,8 +27,8 @@ export default function FluxoProjetadoDashboard() {
   // Estado para o ano selecionado (default: ano atual 2026)
   const [anoSelecionado, setAnoSelecionado] = useState<number>(2026);
 
-  // Estado para a franquia selecionada
-  const [franquiaSelecionada, setFranquiaSelecionada] = useState<string>('Juiz de Fora');
+  // Estado para a franquia selecionada (inicia vazio para forçar seleção)
+  const [franquiaSelecionada, setFranquiaSelecionada] = useState<string>('');
 
   // Buscar parâmetros da franquia
   const fetchParametros = useCallback(async (franquia: string) => {
@@ -184,10 +184,16 @@ export default function FluxoProjetadoDashboard() {
     setDespesasPorAno({});
   }, [franquiaSelecionada]);
 
-  // Buscar dados quando a franquia mudar
+  // Buscar dados quando a franquia mudar (só se tiver franquia selecionada)
   useEffect(() => {
-    fetchDados(franquiaSelecionada);
-    fetchParametros(franquiaSelecionada);
+    if (franquiaSelecionada) {
+      setLoading(true);
+      fetchDados(franquiaSelecionada);
+      fetchParametros(franquiaSelecionada);
+    } else {
+      setLoading(false);
+      setDadosFluxoAnual([]);
+    }
   }, [franquiaSelecionada, fetchDados, fetchParametros]);
 
   // Handler para atualizar despesa (local e no estado separado)
@@ -246,7 +252,20 @@ export default function FluxoProjetadoDashboard() {
             </div>
 
             {/* Grid de Cards Anuais */}
-            {loading ? (
+            {!franquiaSelecionada ? (
+              <div className="flex flex-col items-center justify-center py-24">
+                <div className="w-20 h-20 rounded-full bg-orange-500/10 flex items-center justify-center mb-6">
+                  <svg className="w-10 h-10 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Selecione uma Franquia</h3>
+                <p className="text-gray-400 text-center max-w-md">
+                  Utilize o filtro na barra lateral para selecionar uma franquia e visualizar os dados de projeção.
+                </p>
+              </div>
+            ) : loading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
                 <span className="ml-3 text-gray-400">Carregando dados...</span>
@@ -280,46 +299,50 @@ export default function FluxoProjetadoDashboard() {
               </div>
             )}
 
-            {/* Calculadora de Projeção */}
-            <div className="mt-8">
-              <CalculadoraProjecao 
-                anoSelecionado={anoSelecionado} 
-                parametrosFranquia={parametrosFranquia}
-                vvrAnual={dadosFluxoAnual.find(d => d.ano === anoSelecionado)?.somaVVR || 0}
-                franquia={franquiaSelecionada}
-                dadosProjecao={dadosFluxoAnual.map(d => ({
-                  ano: d.ano,
-                  projCarteira: d.receitaCarteira,                                      // D + E + F
-                  projNovasVendas: d.receitaNovosVendas,                                // G + H + I
-                  somaAntecipacaoCarteira: d.somaAntecipacaoCarteira || 0,              // D
-                  somaExecucaoCarteira: d.somaExecucaoCarteira || 0,                    // E
-                  somaDemaisReceitasCarteira: d.somaDemaisReceitasCarteira || 0,        // F
-                  somaAntecipacaoNovasVendas: d.somaAntecipacaoNovasVendas || 0,        // G
-                  somaExecucaoNovasVendas: d.somaExecucaoNovasVendas || 0,              // H
-                  somaDemaisReceitasNovasVendas: d.somaDemaisReceitasNovasVendas || 0,  // I
-                  somaVVR: d.somaVVR || 0,
-                  // Dados calculadora franqueado (J + K + L da aba FLUXO PROJETADO)
-                  somaAntecipacaoCalcFranqueado: d.somaAntecipacaoCalcFranqueado || 0,    // J
-                  somaFechamentoCalcFranqueado: d.somaFechamentoCalcFranqueado || 0,     // K
-                  somaDemaisReceitasCalcFranqueado: d.somaDemaisReceitasCalcFranqueado || 0, // L
-                  receitaCalcFranqueado: d.receitaCalcFranqueado || 0,                   // J + K + L
-                }))}
-                onRefresh={async () => {
-                  // Recarrega os dados da planilha sem perder valores preenchidos
-                  await fetchDados(franquiaSelecionada);
-                  await fetchParametros(franquiaSelecionada);
-                }}
-              />
-            </div>
+            {/* Calculadora de Projeção - só aparece quando há franquia selecionada */}
+            {franquiaSelecionada && (
+              <div className="mt-8">
+                <CalculadoraProjecao 
+                  anoSelecionado={anoSelecionado} 
+                  parametrosFranquia={parametrosFranquia}
+                  vvrAnual={dadosFluxoAnual.find(d => d.ano === anoSelecionado)?.somaVVR || 0}
+                  franquia={franquiaSelecionada}
+                  dadosProjecao={dadosFluxoAnual.map(d => ({
+                    ano: d.ano,
+                    projCarteira: d.receitaCarteira,                                      // D + E + F
+                    projNovasVendas: d.receitaNovosVendas,                                // G + H + I
+                    somaAntecipacaoCarteira: d.somaAntecipacaoCarteira || 0,              // D
+                    somaExecucaoCarteira: d.somaExecucaoCarteira || 0,                    // E
+                    somaDemaisReceitasCarteira: d.somaDemaisReceitasCarteira || 0,        // F
+                    somaAntecipacaoNovasVendas: d.somaAntecipacaoNovasVendas || 0,        // G
+                    somaExecucaoNovasVendas: d.somaExecucaoNovasVendas || 0,              // H
+                    somaDemaisReceitasNovasVendas: d.somaDemaisReceitasNovasVendas || 0,  // I
+                    somaVVR: d.somaVVR || 0,
+                    // Dados calculadora franqueado (J + K + L da aba FLUXO PROJETADO)
+                    somaAntecipacaoCalcFranqueado: d.somaAntecipacaoCalcFranqueado || 0,    // J
+                    somaFechamentoCalcFranqueado: d.somaFechamentoCalcFranqueado || 0,     // K
+                    somaDemaisReceitasCalcFranqueado: d.somaDemaisReceitasCalcFranqueado || 0, // L
+                    receitaCalcFranqueado: d.receitaCalcFranqueado || 0,                   // J + K + L
+                  }))}
+                  onRefresh={async () => {
+                    // Recarrega os dados da planilha sem perder valores preenchidos
+                    await fetchDados(franquiaSelecionada);
+                    await fetchParametros(franquiaSelecionada);
+                  }}
+                />
+              </div>
+            )}
 
-            {/* Detalhamento Mensal do Ano Selecionado */}
-            <div className="mt-6">
-              <DetalhamentoMensal 
-                anoSelecionado={anoSelecionado}
-                franquia={franquiaSelecionada.toUpperCase()}
-                despesaAnual={dadosFluxoAnual.find(d => d.ano === anoSelecionado)?.custo || 0}
-              />
-            </div>
+            {/* Detalhamento Mensal do Ano Selecionado - só aparece quando há franquia selecionada */}
+            {franquiaSelecionada && (
+              <div className="mt-6">
+                <DetalhamentoMensal 
+                  anoSelecionado={anoSelecionado}
+                  franquia={franquiaSelecionada.toUpperCase()}
+                  despesaAnual={dadosFluxoAnual.find(d => d.ano === anoSelecionado)?.custo || 0}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

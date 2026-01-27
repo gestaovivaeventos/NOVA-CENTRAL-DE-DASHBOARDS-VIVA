@@ -62,8 +62,11 @@ export default function FiltroFranquia({ franquiaSelecionada, onFranquiaChange, 
         <select
           value={franquiaSelecionada}
           onChange={(e) => onFranquiaChange(e.target.value)}
-          className={`bg-transparent text-sm text-white font-semibold focus:outline-none cursor-pointer ${fullWidth ? 'flex-1' : 'pr-2'}`}
+          className={`bg-transparent text-sm text-white font-semibold focus:outline-none cursor-pointer ${fullWidth ? 'flex-1' : 'pr-2'} ${!franquiaSelecionada ? 'text-gray-400' : ''}`}
         >
+          <option value="" className="bg-[#1e2028] text-gray-400">
+            Selecione uma franquia
+          </option>
           {franquias.map((franquia) => (
             <option key={franquia} value={franquia} className="bg-[#1e2028] text-white">
               {franquia}
