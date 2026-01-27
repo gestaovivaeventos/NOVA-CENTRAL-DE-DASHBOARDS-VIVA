@@ -17,6 +17,9 @@ export default function FluxoProjetadoDashboard() {
   const [dadosFluxoAnual, setDadosFluxoAnual] = useState<DadosFluxoAnual[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Estado separado para despesas por ano (preservado durante reloads)
+  const [despesasPorAno, setDespesasPorAno] = useState<Record<number, number>>({});
 
   // Estado para parâmetros da franquia
   const [parametrosFranquia, setParametrosFranquia] = useState<ParametrosFranquiaCard | null>(null);
@@ -101,13 +104,17 @@ export default function FluxoProjetadoDashboard() {
         const somaDemaisReceitasCalcFranqueado = item.semestres?.reduce((acc: number, sem: any) => acc + (sem.somaDemaisReceitasCalcFranqueado || 0), 0) || 0;
         const receitaCalcFranqueado = somaAntecipacaoCalcFranqueado + somaFechamentoCalcFranqueado + somaDemaisReceitasCalcFranqueado;
         
+        // Preserva despesa existente ou inicia em 0
+        const despesaExistente = despesasPorAno[item.ano] || 0;
+        const saldoComDespesa = saldoSemDespesa + despesaExistente;
+        
         return {
           ano: item.ano,
           receitaCarteira,
           receitaNovosVendas,
           subtotal: item.subtotal,
-          custo: 0, // Despesa inicia em 0 - editável manualmente
-          saldo: saldoSemDespesa, // Saldo sem despesa
+          custo: despesaExistente, // Usa despesa preservada
+          saldo: saldoComDespesa, // Saldo com despesa preservada
           isAtual: item.ano === anoAtualMap,
           somaAntecipacaoCarteira,
           somaExecucaoCarteira,
@@ -131,14 +138,17 @@ export default function FluxoProjetadoDashboard() {
         const dadoExistente = dados.find((d: DadosFluxoAnual) => d.ano === ano);
         if (dadoExistente) return dadoExistente;
         
+        // Preserva despesa existente ou inicia em 0
+        const despesaExistente = despesasPorAno[ano] || 0;
+        
         // Se não existe na base, cria registro zerado
         return {
           ano,
           receitaCarteira: 0,
           receitaNovosVendas: 0,
           subtotal: 0,
-          custo: 0,
-          saldo: 0,
+          custo: despesaExistente, // Usa despesa preservada
+          saldo: despesaExistente, // Saldo com despesa preservada
           isAtual: ano === anoAtual,
           somaAntecipacaoCarteira: 0,
           somaExecucaoCarteira: 0,
@@ -167,7 +177,12 @@ export default function FluxoProjetadoDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [anoSelecionado]);
+  }, [anoSelecionado, despesasPorAno]);
+
+  // Limpa despesas quando a franquia mudar (são específicas de cada franquia)
+  useEffect(() => {
+    setDespesasPorAno({});
+  }, [franquiaSelecionada]);
 
   // Buscar dados quando a franquia mudar
   useEffect(() => {
@@ -175,8 +190,12 @@ export default function FluxoProjetadoDashboard() {
     fetchParametros(franquiaSelecionada);
   }, [franquiaSelecionada, fetchDados, fetchParametros]);
 
-  // Handler para atualizar despesa (local)
+  // Handler para atualizar despesa (local e no estado separado)
   const handleDespesaChange = useCallback((ano: number, novoValor: number) => {
+    // Atualiza o estado separado de despesas por ano (preservado durante reloads)
+    setDespesasPorAno(prev => ({ ...prev, [ano]: novoValor }));
+    
+    // Atualiza também o estado dos dados para refletir imediatamente na UI
     setDadosFluxoAnual((prev) => 
       prev.map((dados) => {
         if (dados.ano !== ano) return dados;

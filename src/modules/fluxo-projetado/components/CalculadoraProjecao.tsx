@@ -380,6 +380,9 @@ export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia,
 
   // Estado de salvamento
   const [salvando, setSalvando] = useState(false);
+  
+  // Estado para mensagem de status
+  const [mensagemStatus, setMensagemStatus] = useState<{ tipo: 'salvando' | 'sucesso' | 'erro'; texto: string } | null>(null);
 
   // Busca parâmetros da calculadora franqueado quando a franquia muda
   React.useEffect(() => {
@@ -1011,40 +1014,85 @@ export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia,
               </div>
 
               {/* Footer do Modal */}
-              <div className="flex items-center justify-between px-5 py-4 border-t border-gray-700 sticky bottom-0 bg-gray-800">
-                <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-3 px-5 py-4 border-t border-gray-700 sticky bottom-0 bg-gray-800">
+                {/* Mensagem de Status */}
+                {mensagemStatus && (
+                  <div className={`flex items-center justify-center gap-2 py-2 px-4 rounded-lg text-sm font-medium ${
+                    mensagemStatus.tipo === 'salvando' 
+                      ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' 
+                      : mensagemStatus.tipo === 'sucesso'
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                  }`}>
+                    {mensagemStatus.tipo === 'salvando' && (
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    )}
+                    {mensagemStatus.tipo === 'sucesso' && (
+                      <Check size={16} />
+                    )}
+                    {mensagemStatus.texto}
+                  </div>
+                )}
+                
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleLimpar}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors"
+                    >
+                      <RotateCcw size={14} />
+                      Limpar
+                    </button>
+                  </div>
                   <button
-                    onClick={handleLimpar}
-                    className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-colors"
+                    onClick={async () => {
+                      try {
+                        // Mostra mensagem de salvando
+                        setMensagemStatus({ tipo: 'salvando', texto: 'Salvando parâmetros na planilha...' });
+                        
+                        // Sempre salva os parâmetros personalizados (Definir Parâmetros está sempre selecionado)
+                        await handleSalvarParametros();
+                        
+                        // Atualiza mensagem
+                        setMensagemStatus({ tipo: 'salvando', texto: 'Aguardando recálculo da planilha...' });
+                        
+                        // Delay para permitir que as fórmulas da planilha recalculem
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // Atualiza mensagem
+                        setMensagemStatus({ tipo: 'salvando', texto: 'Carregando dados atualizados...' });
+                        
+                        // Recarrega os dados da planilha (sem perder os valores preenchidos)
+                        if (onRefresh) {
+                          await onRefresh();
+                        }
+                        
+                        // Recarrega o VVR da calculadora
+                        await fetchVvrCalculadora();
+                        
+                        // Mostra mensagem de sucesso
+                        setMensagemStatus({ tipo: 'sucesso', texto: 'Parâmetros salvos com sucesso!' });
+                        
+                        // Aguarda 1.5s para mostrar mensagem de sucesso
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        
+                        setMensagemStatus(null);
+                        setSimulacaoVisivel(true);
+                        setModalAberto(false);
+                      } catch (error) {
+                        setMensagemStatus({ tipo: 'erro', texto: 'Erro ao salvar. Tente novamente.' });
+                        setTimeout(() => setMensagemStatus(null), 3000);
+                      }
+                    }}
+                    disabled={salvando || copiandoPadrao || mensagemStatus?.tipo === 'salvando'}
+                    className="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors disabled:opacity-50"
                   >
-                    <RotateCcw size={14} />
-                    Limpar
+                    {mensagemStatus?.tipo === 'salvando' ? 'Processando...' : 'Aparecer Simulação'}
                   </button>
                 </div>
-                <button
-                  onClick={async () => {
-                    // Sempre salva os parâmetros personalizados (Definir Parâmetros está sempre selecionado)
-                    await handleSalvarParametros();
-                    
-                    // Pequeno delay para permitir que as fórmulas da planilha recalculem
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                    // Recarrega os dados da planilha (sem perder os valores preenchidos)
-                    if (onRefresh) {
-                      await onRefresh();
-                    }
-                    
-                    // Recarrega o VVR da calculadora
-                    await fetchVvrCalculadora();
-                    
-                    setSimulacaoVisivel(true);
-                    setModalAberto(false);
-                  }}
-                  disabled={salvando || copiandoPadrao}
-                  className="flex items-center gap-2 px-6 py-2 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {salvando || copiandoPadrao ? 'Aplicando...' : 'Aparecer Simulação'}
-                </button>
               </div>
             </div>
           </div>
