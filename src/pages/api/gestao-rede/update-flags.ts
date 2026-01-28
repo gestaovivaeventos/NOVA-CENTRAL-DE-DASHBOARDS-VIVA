@@ -15,9 +15,9 @@ interface FlagsEstruturais {
   socioOperador: boolean;
 }
 
-// Planilha específica de Gestão Rede
-const SPREADSHEET_ID = '1FV_1PjlaVk2RZJpJGDJx2x1NzvydBYb4T3j1Gd2Jk_I';
-const SHEET_NAME = 'BASE GESTAO REDE';
+// Planilha específica de Gestão Rede - via variáveis de ambiente
+const SPREADSHEET_ID = process.env.GESTAO_REDE_SPREADSHEET_ID || '';
+const SHEET_NAME = process.env.GESTAO_REDE_SHEET_NAME || 'BASE GESTAO REDE';
 const CACHE_KEY = 'gestao-rede:data';
 
 // Coluna de flags é a coluna J (índice 9, ou seja, coluna 10)

@@ -64,7 +64,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
         a => a.chaveData === f.chaveData && a.tipo === 'flags'
       );
 
-      let franquiaModificada = { ...f };
+      const franquiaModificada = { ...f };
       
       if (alteracaoSaude && typeof alteracaoSaude.novoValor === 'string') {
         franquiaModificada.saude = alteracaoSaude.novoValor as SaudeFranquia;
@@ -168,7 +168,8 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
     });
   };
 
-  // Remover uma alteração pendente
+  // Remover uma alteração pendente (para uso futuro)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRemoverPendente = (chaveData: string, tipo: 'saude' | 'flags') => {
     setAlteracoesPendentes(prev => 
       prev.filter(a => !(a.chaveData === chaveData && a.tipo === tipo))
