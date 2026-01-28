@@ -406,8 +406,36 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="p-3 overflow-y-auto h-[calc(100vh-4rem)] lg:h-[calc(100vh-80px)]">
+        {/* Navigation - Altura responsiva considerando header mobile (64px) e footer (60px) */}
+        <nav 
+          className="p-3 overflow-y-auto overflow-x-hidden"
+          style={{
+            height: 'calc(100vh - 64px - 60px)', // Mobile: header + footer
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#FF6600 #1a1d21',
+          }}
+        >
+          <style jsx>{`
+            nav::-webkit-scrollbar {
+              width: 6px;
+            }
+            nav::-webkit-scrollbar-track {
+              background: #1a1d21;
+              border-radius: 3px;
+            }
+            nav::-webkit-scrollbar-thumb {
+              background: #FF6600;
+              border-radius: 3px;
+            }
+            nav::-webkit-scrollbar-thumb:hover {
+              background: #e55a00;
+            }
+            @media (min-width: 1024px) {
+              nav {
+                height: calc(100vh - 80px - 60px) !important; /* Desktop: header (80px) + footer (60px) */
+              }
+            }
+          `}</style>
           {/* Barra de Pesquisa */}
           <div style={{ position: 'relative', marginBottom: '20px' }}>
             <div style={{
@@ -514,15 +542,22 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               Nenhum dashboard encontrado
             </div>
           )}
+          
+          {/* Espaçador para garantir que o último item fique visível */}
+          <div style={{ height: '16px' }} />
         </nav>
 
-        {/* Footer */}
+        {/* Footer - Posição fixa na parte inferior */}
         <div 
           style={{ 
             backgroundColor: '#1a1d21',
             borderTop: '1px solid #333',
+            height: '60px',
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
           }}
-          className="absolute bottom-0 left-0 right-0 p-4"
+          className="absolute bottom-0 left-0 right-0 px-4"
         >
           <p style={{
             fontSize: '0.75rem',
