@@ -25,7 +25,6 @@ interface GestaoRedeLayoutProps {
   currentPage: 'dashboard';
   filtros?: FiltrosGestaoRede;
   onFiltrosChange?: (filtros: FiltrosGestaoRede) => void;
-  consultoresDisponiveis?: string[];
 }
 
 const SIDEBAR_WIDTH_EXPANDED = 300;
@@ -35,11 +34,10 @@ export default function GestaoRedeLayout({
   children, 
   currentPage, 
   filtros, 
-  onFiltrosChange, 
-  consultoresDisponiveis = [] 
+  onFiltrosChange
 }: GestaoRedeLayoutProps) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('gestao_rede_sidebar_collapsed');
@@ -246,7 +244,7 @@ export default function GestaoRedeLayout({
           })}
         </nav>
 
-        {/* Seção de Filtros - Igual ao Vendas */}
+        {/* Seção de Filtros */}
         {(!isCollapsed || isMobile) && onFiltrosChange && filtros && (
           <>
             <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '0 16px' }} />
@@ -254,7 +252,6 @@ export default function GestaoRedeLayout({
               <FilterPanel
                 filtros={filtros}
                 onFiltrosChange={handleFiltrosChange}
-                consultoresDisponiveis={consultoresDisponiveis}
               />
             </div>
           </>

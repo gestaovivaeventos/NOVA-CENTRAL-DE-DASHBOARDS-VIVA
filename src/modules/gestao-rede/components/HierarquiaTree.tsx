@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { ChevronRight, ChevronDown, Building2, CheckCircle, AlertCircle, Clock, Zap } from 'lucide-react';
-import { TreeNode, Franquia } from '../types';
+import { TreeNode } from '../types';
 
 interface HierarquiaTreeProps {
   data: TreeNode;

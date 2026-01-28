@@ -9,12 +9,12 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { 
   Building2, 
-  CheckCircle, 
   XCircle, 
   Clock, 
   Zap, 
   TrendingUp,
-  Users
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -30,8 +30,8 @@ import {
   Footer,
   FiltrosGestaoRede,
 } from '@/modules/gestao-rede';
+import { useGestaoRede } from '@/modules/gestao-rede/hooks';
 import { 
-  FRANQUIAS_MOCK, 
   calcularResumoRede, 
   montarArvoreHierarquica,
   CORES 
@@ -40,6 +40,9 @@ import {
 export default function GestaoRedeDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  // Hook para buscar dados reais da API
+  const { franquias, dataReferencia, isLoading, error, refetch } = useGestaoRede();
   
   // Verificar autenticação e nível de acesso
   useEffect(() => {
@@ -52,8 +55,7 @@ export default function GestaoRedeDashboard() {
     }
   }, [isAuthenticated, authLoading, router, user]);
 
-  // Dados mockados
-  const franquias = FRANQUIAS_MOCK;
+  // Calcular resumo e árvore hierárquica baseado nos dados
   const resumo = useMemo(() => calcularResumoRede(franquias), [franquias]);
   const arvoreHierarquica = useMemo(() => montarArvoreHierarquica(franquias), [franquias]);
 
@@ -64,15 +66,8 @@ export default function GestaoRedeDashboard() {
   const [filtros, setFiltros] = useState<FiltrosGestaoRede>({
     maturidade: [],
     classificacao: [],
-    consultor: [],
     flags: [],
   });
-
-  // Lista de consultores disponíveis
-  const consultoresDisponiveis = useMemo(() => {
-    const consultores = [...new Set(franquias.map(f => f.responsavel))];
-    return consultores.sort();
-  }, [franquias]);
   
   // Franquias filtradas (para cards KPI)
   const franquiasFiltradas = useMemo(() => {
@@ -84,11 +79,6 @@ export default function GestaoRedeDashboard() {
   const dadosStatusGeral = [
     { nome: 'Ativas', valor: resumo.ativas, cor: CORES.ativas },
     { nome: 'Inativas', valor: resumo.inativas, cor: CORES.inativas },
-  ];
-
-  const dadosOperacao = [
-    { nome: 'Em Implantação', valor: resumo.emImplantacao, cor: CORES.implantacao },
-    { nome: 'Em Operação', valor: resumo.emOperacao, cor: CORES.operacao },
   ];
 
   const dadosMaturidade = [
@@ -107,18 +97,21 @@ export default function GestaoRedeDashboard() {
 
   // Dados para gráfico de classificação PEX
   const franquiasEmOperacao = franquias.filter(
-    f => f.status === 'ATIVA' && f.statusOperacao === 'OPERACAO'
+    f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'
   );
   
   const dadosClassificacaoPEX = [
-    { nome: 'TOP Performance', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'TOP_PERFORMANCE').length, cor: '#28a745' },
-    { nome: 'Performando', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'PERFORMANDO').length, cor: '#20c997' },
-    { nome: 'Atenção', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'ATENCAO').length, cor: '#ffc107' },
-    { nome: 'UTI Recuperação', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'UTI_RECUPERACAO').length, cor: '#dc3545' },
-    { nome: 'UTI Repasse', valor: franquiasEmOperacao.filter(f => f.classificacaoPEX === 'UTI_REPASSE').length, cor: '#c0392b' },
-  ];
+    { nome: 'TOP Performance', valor: franquiasEmOperacao.filter(f => f.saude === 'TOP_PERFORMANCE').length, cor: '#28a745' },
+    { nome: 'Performando', valor: franquiasEmOperacao.filter(f => f.saude === 'PERFORMANDO').length, cor: '#20c997' },
+    { nome: 'Em Evolução', valor: franquiasEmOperacao.filter(f => f.saude === 'EM_EVOLUCAO').length, cor: '#17a2b8' },
+    { nome: 'Atenção', valor: franquiasEmOperacao.filter(f => f.saude === 'ATENCAO').length, cor: '#ffc107' },
+    { nome: 'UTI', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI').length, cor: '#dc3545' },
+    { nome: 'UTI Recuperação', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_RECUPERACAO').length, cor: '#e67e22' },
+    { nome: 'UTI Repasse', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_REPASSE').length, cor: '#8e44ad' },
+    { nome: 'Sem Avaliação', valor: franquiasEmOperacao.filter(f => f.saude === 'SEM_AVALIACAO').length, cor: '#6c757d' },
+  ].filter(d => d.valor > 0);
 
-  if (authLoading) {
+  if (authLoading || isLoading) {
     return (
       <div style={{
         minHeight: '100vh',
@@ -165,7 +158,6 @@ export default function GestaoRedeDashboard() {
         currentPage="dashboard"
         filtros={filtros}
         onFiltrosChange={setFiltros}
-        consultoresDisponiveis={consultoresDisponiveis}
       >
         {/* Header */}
         <div style={{ backgroundColor: '#212529' }}>
@@ -219,20 +211,66 @@ export default function GestaoRedeDashboard() {
                 </div>
               </div>
 
-              {/* Info badge */}
-              <div style={{
-                backgroundColor: '#FF660020',
-                border: '1px solid #FF6600',
-                borderRadius: '8px',
-                padding: '8px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}>
-                <Building2 size={18} style={{ color: '#FF6600' }} />
-                <span style={{ color: '#FF6600', fontWeight: 600, fontSize: '0.9rem' }}>
-                  Dados Mockados para Validação
-                </span>
+              {/* Info badge com data de referência e botão refresh */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {error && (
+                  <div style={{
+                    backgroundColor: '#dc354520',
+                    border: '1px solid #dc3545',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}>
+                    <AlertCircle size={18} style={{ color: '#dc3545' }} />
+                    <span style={{ color: '#dc3545', fontSize: '0.85rem' }}>
+                      Erro ao carregar dados
+                    </span>
+                  </div>
+                )}
+                
+                <div style={{
+                  backgroundColor: '#FF660020',
+                  border: '1px solid #FF6600',
+                  borderRadius: '8px',
+                  padding: '8px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                }}>
+                  <Building2 size={18} style={{ color: '#FF6600' }} />
+                  <span style={{ color: '#FF6600', fontWeight: 600, fontSize: '0.9rem' }}>
+                    {dataReferencia ? `Dados de ${dataReferencia}` : 'Carregando...'}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => refetch()}
+                  style={{
+                    backgroundColor: '#343A40',
+                    border: '1px solid #555',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    color: '#adb5bd',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = '#FF6600';
+                    e.currentTarget.style.color = '#FF6600';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = '#555';
+                    e.currentTarget.style.color = '#adb5bd';
+                  }}
+                  title="Atualizar dados"
+                >
+                  <RefreshCw size={16} />
+                </button>
               </div>
             </div>
           </div>
@@ -364,7 +402,7 @@ export default function GestaoRedeDashboard() {
 
           {/* Tabela Kanban - Classificação PEX */}
           <div style={{ marginBottom: '24px' }}>
-            <TabelaClassificacaoPEX franquias={franquias} />
+            <TabelaClassificacaoPEX franquias={franquias} onRefresh={refetch} />
           </div>
 
           {/* Tabela - Segmento de Mercado */}

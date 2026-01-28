@@ -1,5 +1,6 @@
 // ============================================
 // Helpers - Gestão Rede
+// Atualizado para novos tipos da planilha BASE GESTAO REDE
 // ============================================
 
 import { Franquia, ResumoRede, TreeNode } from '../types';
@@ -10,15 +11,21 @@ import { Franquia, ResumoRede, TreeNode } from '../types';
 export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
   const ativas = franquias.filter(f => f.status === 'ATIVA');
   const inativas = franquias.filter(f => f.status === 'INATIVA');
-  const encerradasOperacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_OPERACAO');
-  const encerradasImplantacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_IMPLANTACAO');
-  const emImplantacao = ativas.filter(f => f.statusOperacao === 'IMPLANTACAO');
-  const emOperacao = ativas.filter(f => f.statusOperacao === 'OPERACAO');
-  const emIncubacao = emOperacao.filter(f => f.maturidade === 'INCUBACAO');
-  const maduras = emOperacao.filter(f => f.maturidade === 'MADURA');
-  const incubacao1 = emIncubacao.filter(f => f.faseIncubacao === 1);
-  const incubacao2 = emIncubacao.filter(f => f.faseIncubacao === 2);
-  const incubacao3 = emIncubacao.filter(f => f.faseIncubacao === 3);
+  const encerradasOperacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_OPERACAO');
+  const encerradasImplantacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_IMPLANTACAO');
+  
+  // Baseado na maturidade
+  const emImplantacao = ativas.filter(f => f.maturidade === 'IMPLANTACAO');
+  const emOperacao = ativas.filter(f => f.maturidade !== 'IMPLANTACAO');
+  
+  // Incubação = 1º, 2º ou 3º ano de operação
+  const incubacao1 = ativas.filter(f => f.maturidade === '1º ANO OP.');
+  const incubacao2 = ativas.filter(f => f.maturidade === '2º ANO OP.');
+  const incubacao3 = ativas.filter(f => f.maturidade === '3º ANO OP.');
+  const emIncubacao = [...incubacao1, ...incubacao2, ...incubacao3];
+  
+  const maduras = ativas.filter(f => f.maturidade === 'MADURA');
+  const postosAvancados = franquias.filter(f => f.postoAvancado);
 
   return {
     totalFranquias: franquias.length,
@@ -33,6 +40,7 @@ export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
     incubacao1: incubacao1.length,
     incubacao2: incubacao2.length,
     incubacao3: incubacao3.length,
+    postosAvancados: postosAvancados.length,
   };
 }
 
@@ -46,15 +54,17 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
   // Separar franquias por categoria
   const ativas = franquias.filter(f => f.status === 'ATIVA');
   const inativas = franquias.filter(f => f.status === 'INATIVA');
-  const encerradasOperacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_OPERACAO');
-  const encerradasImplantacao = inativas.filter(f => f.motivoEncerramento === 'ENCERRADA_IMPLANTACAO');
-  const emImplantacao = ativas.filter(f => f.statusOperacao === 'IMPLANTACAO');
-  const emOperacao = ativas.filter(f => f.statusOperacao === 'OPERACAO');
-  const emIncubacao = emOperacao.filter(f => f.maturidade === 'INCUBACAO');
-  const maduras = emOperacao.filter(f => f.maturidade === 'MADURA');
-  const incubacao1 = emIncubacao.filter(f => f.faseIncubacao === 1);
-  const incubacao2 = emIncubacao.filter(f => f.faseIncubacao === 2);
-  const incubacao3 = emIncubacao.filter(f => f.faseIncubacao === 3);
+  const encerradasOperacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_OPERACAO');
+  const encerradasImplantacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_IMPLANTACAO');
+  
+  const emImplantacao = ativas.filter(f => f.maturidade === 'IMPLANTACAO');
+  const emOperacao = ativas.filter(f => f.maturidade !== 'IMPLANTACAO');
+  
+  const incubacao1 = ativas.filter(f => f.maturidade === '1º ANO OP.');
+  const incubacao2 = ativas.filter(f => f.maturidade === '2º ANO OP.');
+  const incubacao3 = ativas.filter(f => f.maturidade === '3º ANO OP.');
+  const emIncubacao = [...incubacao1, ...incubacao2, ...incubacao3];
+  const maduras = ativas.filter(f => f.maturidade === 'MADURA');
 
   return {
     id: 'root',
@@ -178,4 +188,10 @@ export const CORES = {
   card: '#343A40',
   texto: '#F8F9FA',
   textoSecundario: '#adb5bd',
+  // Saúde PEX
+  topPerformance: '#28a745',
+  performando: '#20c997',
+  atencao: '#ffc107',
+  utiRecuperacao: '#fd7e14',
+  utiRepasse: '#dc3545',
 };

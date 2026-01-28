@@ -1,5 +1,7 @@
 // ============================================
 // Tipos Gestão Rede - Módulo de Gestão da Rede de Franquias
+// Atualizado para dados reais da planilha BASE GESTAO REDE
+// Colunas: chave_data, data, nm_unidade, status, status_inativacao, dt_inauguracao, maturidade, pontuacao_pex, saude, flags, posto_avancado
 // ============================================
 
 /**
@@ -8,71 +10,80 @@
 export type StatusFranquia = 'ATIVA' | 'INATIVA';
 
 /**
- * Status de operação para franquias ativas
+ * Status de inativação (para franquias inativas)
  */
-export type StatusOperacao = 'IMPLANTACAO' | 'OPERACAO';
+export type StatusInativacao = 'ENCERRADA_OPERACAO' | 'ENCERRADA_IMPLANTACAO' | null;
 
 /**
- * Maturidade da franquia em operação
+ * Maturidade da franquia
+ * Valores reais: IMPLANTACAO, 1º ANO OP., 2º ANO OP., 3º ANO OP., MADURA
  */
-export type MaturidadeFranquia = 'INCUBACAO' | 'MADURA';
+export type MaturidadeFranquia = 'IMPLANTACAO' | '1º ANO OP.' | '2º ANO OP.' | '3º ANO OP.' | 'MADURA';
 
 /**
- * Fase de incubação (1, 2 ou 3) - Anos de operação
+ * Classificação de Saúde baseada no PEX
+ * Fórmula: >= 95: TOP PERFORMANCE, >= 85: PERFORMANDO, >= 75: EM EVOLUÇÃO, >= 60: ATENÇÃO, < 60: UTI
+ * UTI pode ser alterado manualmente para UTI_RECUPERACAO ou UTI_REPASSE
  */
-export type FaseIncubacao = 1 | 2 | 3;
+export type SaudeFranquia = 
+  | 'TOP_PERFORMANCE'   // >= 95%
+  | 'PERFORMANDO'       // >= 85%
+  | 'EM_EVOLUCAO'       // >= 75%
+  | 'ATENCAO'           // >= 60%
+  | 'UTI'               // < 60%
+  | 'UTI_RECUPERACAO'   // UTI com plano de recuperação
+  | 'UTI_REPASSE'       // UTI em processo de repasse
+  | 'SEM_AVALIACAO';    // Sem dados
 
 /**
- * Motivo de encerramento para franquias inativas
- */
-export type MotivoEncerramento = 'ENCERRADA_OPERACAO' | 'ENCERRADA_IMPLANTACAO';
-
-/**
- * Classificação PEX baseada no score
- */
-export type ClassificacaoPEX = 'TOP_PERFORMANCE' | 'PERFORMANDO' | 'ATENCAO' | 'UTI_RECUPERACAO' | 'UTI_REPASSE';
-
-/**
- * Segmento de mercado da franquia
- */
-export type SegmentoMercado = 'PADRAO' | 'MASTER' | 'MEGA' | 'GIGA';
-
-/**
- * Flags estruturais - alertas críticos
+ * Flags estruturais da planilha (formato: "flag1, flag2, ...")
+ * Flags disponíveis: GOVERNANÇA, NECESSIDADE CAPITAL DE GIRO, TIME CRÍTICO, SÓCIO OPERADOR
  */
 export interface FlagsEstruturais {
   socioOperador: boolean;
   timeCritico: boolean;
   governanca: boolean;
+  necessidadeCapitalGiro: boolean;
 }
 
 /**
- * Interface para dados de uma franquia
+ * Tipo para as chaves de flags (útil para iteração)
+ */
+export type FlagKey = keyof FlagsEstruturais;
+
+/**
+ * Interface para dados brutos da planilha (raw data)
+ */
+export interface FranquiaRaw {
+  chave_data: string;
+  data: string;
+  nm_unidade: string;
+  status: string;
+  status_inativacao: string;
+  dt_inauguracao: string;
+  maturidade: string;
+  pontuacao_pex: string;
+  saude: string;
+  flags: string;
+  posto_avancado: string;
+}
+
+/**
+ * Interface para dados processados de uma franquia
  */
 export interface Franquia {
   id: string;
+  chaveData: string;
+  dataReferencia: string;
   nome: string;
-  cidade: string;
-  estado: string;
-  regiao: string;
   status: StatusFranquia;
-  statusOperacao?: StatusOperacao;
-  maturidade?: MaturidadeFranquia;
-  faseIncubacao?: FaseIncubacao;
-  motivoEncerramento?: MotivoEncerramento;
-  dataAbertura: string;
-  dataInicioOperacao?: string;
-  dataEncerramento?: string;
-  responsavel: string;
-  email: string;
-  telefone: string;
-  consultor?: string;
-  segmentoMercado: SegmentoMercado;
-  // Dados PEX
-  scorePEX: number;
-  classificacaoPEX: ClassificacaoPEX;
-  classificacaoPEXAnterior: ClassificacaoPEX;
+  statusInativacao: StatusInativacao;
+  dataInauguracao: string;
+  maturidade: MaturidadeFranquia;
+  pontuacaoPex: number;
+  saude: SaudeFranquia;
   flags: FlagsEstruturais;
+  postoAvancado: boolean;
 }
 
 /**
@@ -91,6 +102,7 @@ export interface ResumoRede {
   incubacao1: number;
   incubacao2: number;
   incubacao3: number;
+  postosAvancados: number;
 }
 
 /**
@@ -125,6 +137,16 @@ export interface KPICardProps {
 export interface FiltrosGestaoRede {
   maturidade: string[];
   classificacao: string[];
-  consultor: string[];
   flags: string[];
 }
+
+/**
+ * Resposta da API de dados
+ */
+export interface GestaoRedeApiResponse {
+  success: boolean;
+  data?: Franquia[];
+  dataReferencia?: string;
+  message?: string;
+}
+

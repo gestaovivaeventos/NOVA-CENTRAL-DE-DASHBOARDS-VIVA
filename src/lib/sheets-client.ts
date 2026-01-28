@@ -103,6 +103,32 @@ export async function getSheetData(
 }
 
 /**
+ * Busca dados de uma planilha específica (diferente da principal) com cache
+ */
+export async function getExternalSheetData(
+  spreadsheetId: string,
+  range: string, 
+  cacheKey: string, 
+  ttl: number = CACHE_TTL.PONTUACAO_OFICIAL
+): Promise<any[][]> {
+  return cache.getOrFetch(
+    cacheKey,
+    async () => {
+      const auth = getAuthenticatedClient();
+      const sheets = google.sheets({ version: 'v4', auth });
+      
+      const response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range,
+      });
+      
+      return response.data.values || [];
+    },
+    ttl
+  );
+}
+
+/**
  * Escreve dados em uma aba e invalida o cache relacionado
  */
 export async function updateSheetData(

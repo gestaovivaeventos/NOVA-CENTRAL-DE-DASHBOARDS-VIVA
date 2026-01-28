@@ -2,32 +2,35 @@
  * TabelaFlags - Tabela com análise de flags estruturais
  * Mostra total de franquias com cada flag ativa
  * Com funcionalidade de expansão para ver detalhes das franquias
+ * Atualizado para novos tipos da planilha
  */
 
 import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
-import { Franquia, ClassificacaoPEX } from '../types';
+import { Franquia, SaudeFranquia } from '../types';
 
 interface TabelaFlagsProps {
   franquias: Franquia[];
   titulo?: string;
 }
 
-// Cores para classificação PEX
-const CLASSIFICACAO_CORES: Record<string, string> = {
+// Cores para saúde (classificação PEX)
+const SAUDE_CORES: Record<SaudeFranquia, string> = {
   'TOP_PERFORMANCE': '#28a745',
   'PERFORMANDO': '#20c997',
   'ATENCAO': '#ffc107',
   'UTI_RECUPERACAO': '#dc3545',
   'UTI_REPASSE': '#c0392b',
+  'SEM_AVALIACAO': '#6c757d',
 };
 
-const CLASSIFICACAO_LABELS: Record<string, string> = {
+const SAUDE_LABELS: Record<SaudeFranquia, string> = {
   'TOP_PERFORMANCE': 'TOP',
   'PERFORMANDO': 'Performando',
   'ATENCAO': 'Atenção',
   'UTI_RECUPERACAO': 'UTI Recup.',
   'UTI_REPASSE': 'UTI Repasse',
+  'SEM_AVALIACAO': 'S/ Avaliação',
 };
 
 // Informações das flags
@@ -66,9 +69,9 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
       franquias: Franquia[];
     }> = [];
 
-    // Filtra apenas franquias ativas em operação
+    // Filtra apenas franquias ativas em operação (não em implantação)
     const franquiasAtivas = franquias.filter(
-      f => f.status === 'ATIVA' && f.statusOperacao === 'OPERACAO'
+      f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'
     );
 
     const totalFranquias = franquiasAtivas.length;
@@ -85,7 +88,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
         descricao: info.descricao,
         total: franquiasComFlag.length,
         percentual: totalFranquias > 0 ? (franquiasComFlag.length / totalFranquias) * 100 : 0,
-        franquias: franquiasComFlag.sort((a, b) => b.scorePEX - a.scorePEX), // Ordena por score decrescente
+        franquias: franquiasComFlag.sort((a, b) => b.pontuacaoPex - a.pontuacaoPex), // Ordena por pontuação decrescente
       });
     });
 
@@ -385,21 +388,21 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                                   display: 'inline-block',
                                   padding: '4px 12px',
                                   borderRadius: '16px',
-                                  backgroundColor: CLASSIFICACAO_CORES[franquia.classificacaoPEX] + '20',
-                                  border: `1px solid ${CLASSIFICACAO_CORES[franquia.classificacaoPEX]}`,
+                                  backgroundColor: SAUDE_CORES[franquia.saude] + '20',
+                                  border: `1px solid ${SAUDE_CORES[franquia.saude]}`,
                                 }}>
                                   <span style={{
                                     fontSize: '0.9rem',
                                     fontWeight: 700,
-                                    color: CLASSIFICACAO_CORES[franquia.classificacaoPEX],
+                                    color: SAUDE_CORES[franquia.saude],
                                     fontFamily: "'Orbitron', 'Poppins', sans-serif",
                                   }}>
-                                    {franquia.scorePEX.toFixed(1)}
+                                    {franquia.pontuacaoPex.toFixed(1)}
                                   </span>
                                 </div>
                               </div>
 
-                              {/* Classificação */}
+                              {/* Classificação (Saúde) */}
                               <div style={{
                                 textAlign: 'center',
                                 display: 'flex',
@@ -410,19 +413,19 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                                   display: 'inline-block',
                                   padding: '4px 10px',
                                   borderRadius: '4px',
-                                  backgroundColor: CLASSIFICACAO_CORES[franquia.classificacaoPEX],
-                                  color: franquia.classificacaoPEX === 'ATENCAO' ? '#000' : '#fff',
+                                  backgroundColor: SAUDE_CORES[franquia.saude],
+                                  color: franquia.saude === 'ATENCAO' ? '#000' : '#fff',
                                   fontSize: '0.7rem',
                                   fontWeight: 600,
                                   fontFamily: "'Poppins', sans-serif",
                                   textTransform: 'uppercase',
                                   whiteSpace: 'nowrap',
                                 }}>
-                                  {CLASSIFICACAO_LABELS[franquia.classificacaoPEX]}
+                                  {SAUDE_LABELS[franquia.saude]}
                                 </span>
                               </div>
 
-                              {/* Cidade/UF */}
+                              {/* Maturidade */}
                               <div style={{
                                 fontSize: '0.8rem',
                                 color: '#adb5bd',
@@ -430,7 +433,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                                 display: 'flex',
                                 alignItems: 'center',
                               }}>
-                                {franquia.cidade}/{franquia.estado}
+                                {franquia.maturidade}
                               </div>
                             </div>
                           ))}

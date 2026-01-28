@@ -8,23 +8,23 @@ import { ChevronUp, ChevronDown, Filter } from 'lucide-react';
 import MultiSelect from './MultiSelect';
 import { FiltrosGestaoRede } from '../../types';
 
-// Opções de filtro de maturidade
+// Opções de filtro de maturidade (atualizadas para novos valores da planilha)
 const OPCOES_MATURIDADE = [
   { key: 'MADURA', label: 'Madura', cor: '#28a745' },
-  { key: 'INCUBACAO_1', label: '1º Ano', cor: '#ffc107' },
-  { key: 'INCUBACAO_2', label: '2º Ano', cor: '#ffc107' },
-  { key: 'INCUBACAO_3', label: '3º Ano', cor: '#ffc107' },
+  { key: '3º ANO OP.', label: '3º Ano Op.', cor: '#ffc107' },
+  { key: '2º ANO OP.', label: '2º Ano Op.', cor: '#ffc107' },
+  { key: '1º ANO OP.', label: '1º Ano Op.', cor: '#ffc107' },
   { key: 'IMPLANTACAO', label: 'Implantação', cor: '#17a2b8' },
-  { key: 'INATIVA', label: 'Inativa', cor: '#dc3545' },
 ];
 
-// Opções de filtro de classificação PEX
+// Opções de filtro de classificação PEX (saúde)
 const OPCOES_CLASSIFICACAO = [
   { key: 'TOP_PERFORMANCE', label: 'TOP Performance', cor: '#28a745' },
   { key: 'PERFORMANDO', label: 'Performando', cor: '#20c997' },
   { key: 'ATENCAO', label: 'Atenção', cor: '#ffc107' },
   { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#dc3545' },
   { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#c0392b' },
+  { key: 'SEM_AVALIACAO', label: 'Sem Avaliação', cor: '#6c757d' },
 ];
 
 // Opções de filtro de flags
@@ -38,22 +38,14 @@ const OPCOES_FLAGS = [
 interface FilterPanelProps {
   filtros: FiltrosGestaoRede;
   onFiltrosChange: (filtros: Partial<FiltrosGestaoRede>) => void;
-  consultoresDisponiveis?: string[];
 }
 
 export default function FilterPanel({
   filtros,
   onFiltrosChange,
-  consultoresDisponiveis = [],
 }: FilterPanelProps) {
   // Estado para controlar se os filtros estão expandidos
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
-
-  // Converter lista de consultores para formato de opções
-  const opcoesConsultores = consultoresDisponiveis.map(c => ({
-    key: c,
-    label: c,
-  }));
 
   return (
     <div>
@@ -108,7 +100,7 @@ export default function FilterPanel({
             placeholder="Todas as maturidades"
           />
 
-          {/* Filtro de Classificação PEX */}
+          {/* Filtro de Classificação PEX (Saúde) */}
           <MultiSelect
             label="Classificação PEX"
             options={OPCOES_CLASSIFICACAO}
@@ -116,17 +108,6 @@ export default function FilterPanel({
             onChange={(classificacao) => onFiltrosChange({ classificacao })}
             placeholder="Todas as classificações"
           />
-
-          {/* Filtro de Consultor */}
-          {opcoesConsultores.length > 0 && (
-            <MultiSelect
-              label="Consultor"
-              options={opcoesConsultores}
-              selectedValues={filtros.consultor}
-              onChange={(consultor) => onFiltrosChange({ consultor })}
-              placeholder="Todos os consultores"
-            />
-          )}
 
           {/* Filtro de Flags */}
           <MultiSelect
