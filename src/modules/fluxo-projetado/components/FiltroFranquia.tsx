@@ -1,10 +1,12 @@
 /**
  * Filtro de Franquia
  * Dropdown para seleção de franquia
+ * Respeita o nível de acesso do usuário
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MapPin } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 interface FiltroFranquiaProps {
   franquiaSelecionada: string;
@@ -12,8 +14,8 @@ interface FiltroFranquiaProps {
   fullWidth?: boolean;
 }
 
-// Lista de franquias disponíveis (baseada na planilha FLUXO PROJETADO)
-const franquias = [
+// Lista completa de franquias disponíveis (baseada na planilha FLUXO PROJETADO)
+const todasFranquias = [
   'Barbacena',
   'Belo Horizonte',
   'Cacoal',
@@ -54,6 +56,21 @@ const franquias = [
 ];
 
 export default function FiltroFranquia({ franquiaSelecionada, onFranquiaChange, fullWidth = false }: FiltroFranquiaProps) {
+  const { user } = useAuth();
+  
+  // Franqueado (accessLevel = 0) só pode ver sua própria unidade
+  const isFranqueado = user?.accessLevel === 0;
+  const franquias = isFranqueado && user?.unitPrincipal 
+    ? [user.unitPrincipal] 
+    : todasFranquias;
+  
+  // Auto-selecionar a franquia do usuário se for franqueado
+  useEffect(() => {
+    if (isFranqueado && user?.unitPrincipal && !franquiaSelecionada) {
+      onFranquiaChange(user.unitPrincipal);
+    }
+  }, [isFranqueado, user?.unitPrincipal, franquiaSelecionada, onFranquiaChange]);
+  
   return (
     <div className={`flex items-center gap-2 ${fullWidth ? 'w-full' : ''}`}>
       <div className={`flex items-center gap-2 px-3 py-2 bg-[#252830] border border-gray-700 rounded-lg ${fullWidth ? 'w-full' : ''}`}>

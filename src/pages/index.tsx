@@ -33,11 +33,22 @@ const allDashboards: Dashboard[] = [
   { id: 'kpi', name: 'Dashboard KPIs', description: 'Indicadores de Performance', path: '/kpi', icon: 'chart' },
   { id: 'okr', name: 'Dashboard OKRs', description: 'Objetivos e Resultados-Chave', path: '/okr', icon: 'target' },
   { id: 'gerencial', name: 'Painel Gerencial', description: 'Visão consolidada de KPIs e OKRs', path: '/gerencial', icon: 'trophy' },
+  { id: 'gestao-rede', name: 'Gestão Rede', description: 'Gestão da rede de franquias', path: '/gestao-rede', icon: 'dashboard' },
   { id: 'vendas', name: 'Dashboard Vendas', description: 'Visão geral de vendas', path: '/vendas', icon: 'money' },
   { id: 'pex', name: 'Dashboard PEX', description: 'Visão geral do PEX', path: '/pex', icon: 'dashboard' },
   { id: 'carteira', name: 'Dashboard Carteira', description: 'Análise de fundos e franquias', path: '/carteira', icon: 'wallet' },
   { id: 'fluxo-projetado', name: 'Fluxo Projetado', description: 'Projeção de fluxo de caixa', path: '/fluxo-projetado', icon: 'fluxo' },
 ];
+
+// Dashboards permitidos por nível de acesso
+const getDashboardsPermitidos = (accessLevel: number): string[] => {
+  // Franqueado (accessLevel = 0) só tem acesso ao PEX e Fluxo Projetado
+  if (accessLevel === 0) {
+    return ['pex', 'fluxo-projetado'];
+  }
+  // Franqueadora (accessLevel >= 1) tem acesso a todos
+  return allDashboards.map(d => d.id);
+};
 
 // Ícones SVG inline (mesmos da Sidebar)
 const dashboardIcons: Record<string, JSX.Element> = {
@@ -218,10 +229,13 @@ export default function HomePage() {
     }
   }, [isAuthenticated, isLoading]);
 
-  // Dashboards favoritos
+  // Dashboards favoritos (filtrados pelo nível de acesso do usuário)
   const favoriteDashboards = useMemo(() => {
-    return allDashboards.filter(d => favorites.includes(d.id));
-  }, [favorites]);
+    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0);
+    return allDashboards.filter(d => 
+      favorites.includes(d.id) && dashboardsPermitidos.includes(d.id)
+    );
+  }, [favorites, user?.accessLevel]);
 
   // Mostrar loading enquanto verifica auth
   if (isLoading || !isAuthenticated) {
