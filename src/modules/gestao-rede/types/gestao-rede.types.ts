@@ -53,6 +53,8 @@ export type FlagKey = keyof FlagsEstruturais;
 
 /**
  * Interface para dados brutos da planilha (raw data)
+ * Colunas: chave_data, data, nm_unidade, status, status_inativacao, dt_inauguracao, 
+ *          maturidade, pontuacao_pex, saude, flags, posto_avancado, cidade, estado, latitude, longitude
  */
 export interface FranquiaRaw {
   chave_data: string;
@@ -66,6 +68,10 @@ export interface FranquiaRaw {
   saude: string;
   flags: string;
   posto_avancado: string;
+  cidade: string;
+  estado: string;
+  latitude: string;
+  longitude: string;
 }
 
 /**
@@ -84,6 +90,11 @@ export interface Franquia {
   saude: SaudeFranquia;
   flags: FlagsEstruturais;
   postoAvancado: boolean;
+  // Novos campos de localização
+  cidade: string;
+  estado: string;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 /**

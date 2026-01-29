@@ -330,10 +330,10 @@ export default function GestaoRedeDashboard() {
             />
           </div>
 
-          {/* Grid de 2 colunas */}
+          {/* Grid Principal - Hierarquia à esquerda, Gráficos Donut à direita */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', 
+            gridTemplateColumns: '1fr 1fr', 
             gap: '24px',
             marginBottom: '24px'
           }}>
@@ -343,7 +343,7 @@ export default function GestaoRedeDashboard() {
               expandirApenasAtivas={true}
             />
 
-            {/* Gráficos lado a lado */}
+            {/* Gráficos Donut empilhados */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               {/* Gráfico Donut - Status Geral */}
               <GraficoDonut

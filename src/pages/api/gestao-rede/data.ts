@@ -125,6 +125,12 @@ function processarDados(rows: string[][]): Franquia[] {
     const pontuacaoStr = getValue('pontuacao_pex').replace(',', '.').replace('%', '');
     const pontuacao = parseFloat(pontuacaoStr) || 0;
     
+    // Processar latitude e longitude
+    const latStr = getValue('latitude').replace(',', '.');
+    const lngStr = getValue('longitude').replace(',', '.');
+    const latitude = latStr ? parseFloat(latStr) : null;
+    const longitude = lngStr ? parseFloat(lngStr) : null;
+    
     const franquia: Franquia = {
       id: `fr-${i}`,
       chaveData: getValue('chave_data'),
@@ -138,6 +144,11 @@ function processarDados(rows: string[][]): Franquia[] {
       saude: mapSaude(getValue('saude')),
       flags: parseFlags(getValue('flags')),
       postoAvancado: getValue('posto_avancado')?.toUpperCase()?.trim() === 'SIM',
+      // Campos de localização
+      cidade: getValue('cidade')?.trim() || '',
+      estado: getValue('estado')?.trim() || '',
+      latitude: !isNaN(latitude!) ? latitude : null,
+      longitude: !isNaN(longitude!) ? longitude : null,
     };
     
     franquias.push(franquia);
@@ -165,9 +176,10 @@ export default async function handler(
     console.log('[API gestao-rede/data] Aba:', SHEET_NAME);
     
     // Buscar dados da planilha externa com cache
+    // Colunas: A-K (originais) + L (cidade) + M (estado) + N (latitude) + O (longitude)
     const rows = await getExternalSheetData(
       SPREADSHEET_ID,
-      `'${SHEET_NAME}'!A:K`, // Colunas A até K (com aspas simples para nomes com espaços)
+      `'${SHEET_NAME}'!A:O`, // Colunas A até O (incluindo localização)
       CACHE_KEY,
       CACHE_TTL.PONTUACAO_OFICIAL
     );
