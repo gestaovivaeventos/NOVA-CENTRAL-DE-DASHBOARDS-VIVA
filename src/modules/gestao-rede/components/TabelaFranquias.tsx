@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Search, ChevronLeft, ChevronRight, AlertTriangle, Users, Shield } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, ChevronLeft, ChevronRight, AlertTriangle, Users, Shield, DollarSign } from 'lucide-react';
 import { Franquia, SaudeFranquia } from '../types';
 
 interface TabelaFranquiasProps {
@@ -21,24 +21,37 @@ interface TabelaFranquiasProps {
 
 type CampoOrdenacao = 'nome' | 'dataInauguracao' | 'maturidade' | 'pontuacaoPex' | 'saude' | 'postoAvancado';
 
-// Cores e labels para saúde (classificação PEX)
-const SAUDE_CONFIG: Record<SaudeFranquia, { label: string; cor: string; bg: string }> = {
-  'TOP_PERFORMANCE': { label: 'TOP Performance', cor: '#000', bg: '#28a745' },
-  'PERFORMANDO': { label: 'Performando', cor: '#000', bg: '#20c997' },
-  'ATENCAO': { label: 'Atenção', cor: '#000', bg: '#ffc107' },
-  'UTI_RECUPERACAO': { label: 'UTI Recuperação', cor: '#fff', bg: '#dc3545' },
-  'UTI_REPASSE': { label: 'UTI Repasse', cor: '#fff', bg: '#c0392b' },
-  'SEM_AVALIACAO': { label: 'Sem Avaliação', cor: '#fff', bg: '#6c757d' },
+// Cores e labels para saúde (classificação PEX) - Paleta de cores definida pelo usuário
+const SAUDE_CONFIG: Record<SaudeFranquia, { label: string; cor: string; bg: string; borderColor: string }> = {
+  'TOP_PERFORMANCE': { label: 'TOP Performance', cor: '#FFFFFF', bg: '#1a4b6e', borderColor: '#2980b9' },
+  'PERFORMANDO': { label: 'Performando', cor: '#FFFFFF', bg: '#1e5631', borderColor: '#27ae60' },
+  'EM_CONSOLIDACAO': { label: 'Em Consolidação', cor: '#FFFFFF', bg: '#7a4a0a', borderColor: '#e67e22' },
+  'ATENCAO': { label: 'Atenção', cor: '#1a1a1a', bg: '#9a8a1a', borderColor: '#f1c40f' },
+  'UTI': { label: 'UTI', cor: '#FFFFFF', bg: '#7a1a1a', borderColor: '#c0392b' },
+  'UTI_RECUPERACAO': { label: 'UTI Recuperação', cor: '#FFFFFF', bg: '#5a2a2a', borderColor: '#943126' },
+  'UTI_REPASSE': { label: 'UTI Repasse', cor: '#FFFFFF', bg: '#4a1a2a', borderColor: '#6c2134' },
+  'SEM_AVALIACAO': { label: 'Sem Avaliação', cor: '#F8F9FA', bg: '#3a3d41', borderColor: '#6c757d' },
 };
 
-// Função para calcular tempo ativo
+// Função para calcular tempo ativo (formato DD/MM/YYYY)
 const calcularTempoAtivo = (dataInauguracao: string): string => {
-  if (!dataInauguracao) return '-';
+  if (!dataInauguracao || dataInauguracao === 'NULL') return '-';
   
-  const inicio = new Date(dataInauguracao);
+  // Converter de DD/MM/YYYY para Date
+  const partes = dataInauguracao.split('/');
+  if (partes.length !== 3) return '-';
+  
+  const dia = parseInt(partes[0], 10);
+  const mes = parseInt(partes[1], 10) - 1; // Mês começa em 0
+  const ano = parseInt(partes[2], 10);
+  
+  const inicio = new Date(ano, mes, dia);
   if (isNaN(inicio.getTime())) return '-';
   
   const hoje = new Date();
+  
+  // Se a data de inauguração é futura, retornar '-'
+  if (inicio > hoje) return '-';
   
   let anos = hoje.getFullYear() - inicio.getFullYear();
   let meses = hoje.getMonth() - inicio.getMonth();
@@ -75,10 +88,10 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
   };
 
   const getStatusCor = (franquia: Franquia): string => {
-    if (franquia.status === 'INATIVA') return '#dc3545';
-    if (franquia.maturidade === 'IMPLANTACAO') return '#17a2b8';
-    if (franquia.maturidade === 'MADURA') return '#28a745';
-    return '#ffc107'; // Anos de operação (1º, 2º, 3º)
+    if (franquia.status === 'INATIVA') return '#8b6b6b';
+    if (franquia.maturidade === 'IMPLANTACAO') return '#6b8fa8';
+    if (franquia.maturidade === 'MADURA') return '#5a9a7c';
+    return '#a8956b'; // Anos de operação (1º, 2º, 3º)
   };
 
   const franquiasFiltradas = useMemo(() => {
@@ -140,8 +153,8 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             valorB = b.saude;
             break;
           case 'postoAvancado':
-            valorA = a.postoAvancado ? 1 : 0;
-            valorB = b.postoAvancado ? 1 : 0;
+            valorA = a.postosAvancados.length;
+            valorB = b.postosAvancados.length;
             break;
         }
 
@@ -187,8 +200,9 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
           width: '22px',
           height: '22px',
           borderRadius: '4px',
-          backgroundColor: '#e74c3c',
-          color: '#fff',
+          backgroundColor: '#4a3838',
+          border: '1px solid #8b6b6b',
+          color: '#adb5bd',
           marginRight: '4px',
         }}>
           <Users size={12} />
@@ -204,8 +218,9 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
           width: '22px',
           height: '22px',
           borderRadius: '4px',
-          backgroundColor: '#f39c12',
-          color: '#fff',
+          backgroundColor: '#4a4538',
+          border: '1px solid #a8956b',
+          color: '#adb5bd',
           marginRight: '4px',
         }}>
           <AlertTriangle size={12} />
@@ -221,11 +236,32 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
           width: '22px',
           height: '22px',
           borderRadius: '4px',
-          backgroundColor: '#9b59b6',
-          color: '#fff',
+          backgroundColor: '#3d3545',
+          border: '1px solid #7b6b8b',
+          color: '#adb5bd',
           marginRight: '4px',
         }}>
           <Shield size={12} />
+        </span>
+      );
+    }
+    if (franquia.flags.necessidadeCapitalGiro) {
+      flags.push(
+        <span key="capital" title="Flag: Necessidade Capital de Giro" style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '22px',
+          height: '22px',
+          borderRadius: '4px',
+          backgroundColor: '#3d4a5a',
+          border: '1px solid #6b8fa8',
+          color: '#adb5bd',
+          marginRight: '4px',
+          fontSize: '10px',
+          fontWeight: 'bold',
+        }}>
+          $
         </span>
       );
     }
@@ -246,7 +282,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
         alignItems: 'center',
         marginBottom: '16px',
         paddingBottom: '12px',
-        borderBottom: '1px solid #555',
+        borderBottom: '2px solid #FF6600',
         flexWrap: 'wrap',
         gap: '12px'
       }}>
@@ -301,9 +337,9 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                 { campo: 'nome' as CampoOrdenacao, label: 'Franquia', width: '180px' },
                 { campo: 'dataInauguracao' as CampoOrdenacao, label: 'Inauguração', width: '120px' },
                 { campo: 'maturidade' as CampoOrdenacao, label: 'Maturidade', width: '120px' },
-                { campo: 'pontuacaoPex' as CampoOrdenacao, label: 'Score PEX', width: '100px' },
+                { campo: 'pontuacaoPex' as CampoOrdenacao, label: 'Pontuação PEX', width: '100px' },
                 { campo: 'saude' as CampoOrdenacao, label: 'Saúde', width: '130px' },
-                { campo: 'postoAvancado' as CampoOrdenacao, label: 'Posto Avançado', width: '110px' },
+                { campo: 'postoAvancado' as CampoOrdenacao, label: 'Posto Avançado', width: '130px' },
               ].map(col => (
                 <th 
                   key={col.campo}
@@ -344,22 +380,24 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             </tr>
           </thead>
           <tbody>
-            {franquiasPaginadas.map((franquia) => {
+            {franquiasPaginadas.map((franquia, index) => {
               const saudeConfig = SAUDE_CONFIG[franquia.saude] || SAUDE_CONFIG['SEM_AVALIACAO'];
               const isImplantacao = franquia.maturidade === 'IMPLANTACAO';
               const isInativa = franquia.status === 'INATIVA';
+              const isEven = index % 2 === 0;
               
               return (
                 <tr 
                   key={franquia.id}
                   style={{
+                    backgroundColor: isEven ? '#2d3035' : 'transparent',
                     transition: 'background-color 0.2s',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#3d4248';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.backgroundColor = isEven ? '#2d3035' : 'transparent';
                   }}
                 >
                   <td style={{ 
@@ -397,13 +435,9 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                     borderBottom: '1px solid #444',
                   }}>
                     <span style={{
-                      backgroundColor: getStatusCor(franquia),
-                      color: ['1º ANO OP.', '2º ANO OP.', '3º ANO OP.'].includes(franquia.maturidade) ? '#000' : '#fff',
-                      padding: '3px 8px',
-                      borderRadius: '10px',
-                      fontSize: '0.7rem',
-                      fontWeight: 600,
-                      whiteSpace: 'nowrap',
+                      color: '#adb5bd',
+                      fontSize: '0.8rem',
+                      fontWeight: 500,
                     }}>
                       {getStatusLabel(franquia)}
                     </span>
@@ -417,12 +451,12 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                       <span style={{ color: '#6c757d', fontSize: '0.85rem' }}>-</span>
                     ) : (
                       <span style={{
-                        color: franquia.pontuacaoPex > 70 ? '#28a745' : franquia.pontuacaoPex >= 50 ? '#ffc107' : '#dc3545',
+                        color: '#FF6600',
                         fontSize: '0.9rem',
                         fontWeight: 700,
                         fontFamily: "'Orbitron', sans-serif",
                       }}>
-                        {franquia.pontuacaoPex.toFixed(0)}%
+                        {franquia.pontuacaoPex.toFixed(2)}
                       </span>
                     )}
                   </td>
@@ -449,18 +483,14 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                   <td style={{ 
                     padding: '10px 8px',
                     borderBottom: '1px solid #444',
-                    textAlign: 'center',
+                    textAlign: 'left',
                   }}>
-                    {franquia.postoAvancado ? (
+                    {franquia.postosAvancados.length > 0 ? (
                       <span style={{
-                        backgroundColor: '#6f42c1',
-                        color: '#fff',
-                        padding: '3px 8px',
-                        borderRadius: '10px',
-                        fontSize: '0.7rem',
-                        fontWeight: 500,
+                        color: '#adb5bd',
+                        fontSize: '0.8rem',
                       }}>
-                        Sim
+                        {franquia.postosAvancados.join(', ')}
                       </span>
                     ) : (
                       <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>-</span>
@@ -579,8 +609,9 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             width: '18px',
             height: '18px',
             borderRadius: '4px',
-            backgroundColor: '#e74c3c',
-            color: '#fff',
+            backgroundColor: '#4a3838',
+            border: '1px solid #8b6b6b',
+            color: '#adb5bd',
           }}>
             <Users size={10} />
           </span>
@@ -594,8 +625,9 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             width: '18px',
             height: '18px',
             borderRadius: '4px',
-            backgroundColor: '#f39c12',
-            color: '#fff',
+            backgroundColor: '#4a4538',
+            border: '1px solid #a8956b',
+            color: '#adb5bd',
           }}>
             <AlertTriangle size={10} />
           </span>
@@ -609,12 +641,29 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             width: '18px',
             height: '18px',
             borderRadius: '4px',
-            backgroundColor: '#9b59b6',
-            color: '#fff',
+            backgroundColor: '#3d3545',
+            border: '1px solid #7b6b8b',
+            color: '#adb5bd',
           }}>
             <Shield size={10} />
           </span>
           <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Governança</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '18px',
+            height: '18px',
+            borderRadius: '4px',
+            backgroundColor: '#3d4a5a',
+            border: '1px solid #6b8fa8',
+            color: '#adb5bd',
+          }}>
+            <DollarSign size={10} />
+          </span>
+          <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Capital de Giro</span>
         </div>
       </div>
     </div>

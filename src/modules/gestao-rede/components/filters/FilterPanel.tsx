@@ -9,29 +9,32 @@ import MultiSelect from './MultiSelect';
 import { FiltrosGestaoRede } from '../../types';
 
 // Opções de filtro de maturidade (atualizadas para novos valores da planilha)
+// Paleta profissional
 const OPCOES_MATURIDADE = [
-  { key: 'MADURA', label: 'Madura', cor: '#28a745' },
-  { key: '3º ANO OP.', label: '3º Ano Op.', cor: '#ffc107' },
-  { key: '2º ANO OP.', label: '2º Ano Op.', cor: '#ffc107' },
-  { key: '1º ANO OP.', label: '1º Ano Op.', cor: '#ffc107' },
-  { key: 'IMPLANTACAO', label: 'Implantação', cor: '#17a2b8' },
+  { key: 'MADURA', label: 'Madura', cor: '#5a9a7c' },
+  { key: '3º ANO OP.', label: '3º Ano Op.', cor: '#988848' },
+  { key: '2º ANO OP.', label: '2º Ano Op.', cor: '#a89860' },
+  { key: '1º ANO OP.', label: '1º Ano Op.', cor: '#b8a878' },
+  { key: 'IMPLANTACAO', label: 'Implantação', cor: '#6b8fa8' },
 ];
 
-// Opções de filtro de classificação PEX (saúde)
+// Opções de filtro de classificação PEX (saúde) - Paleta profissional
 const OPCOES_CLASSIFICACAO = [
-  { key: 'TOP_PERFORMANCE', label: 'TOP Performance', cor: '#28a745' },
-  { key: 'PERFORMANDO', label: 'Performando', cor: '#20c997' },
-  { key: 'ATENCAO', label: 'Atenção', cor: '#ffc107' },
-  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#dc3545' },
-  { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#c0392b' },
+  { key: 'TOP_PERFORMANCE', label: 'TOP Performance', cor: '#5a9a7c' },
+  { key: 'PERFORMANDO', label: 'Performando', cor: '#6ba89a' },
+  { key: 'EM_CONSOLIDACAO', label: 'Em Consolidação', cor: '#6b8fa8' },
+  { key: 'ATENCAO', label: 'Atenção', cor: '#a8956b' },
+  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#a87b5a' },
+  { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#7b6b8b' },
   { key: 'SEM_AVALIACAO', label: 'Sem Avaliação', cor: '#6c757d' },
 ];
 
-// Opções de filtro de flags
+// Opções de filtro de flags - Paleta profissional
 const OPCOES_FLAGS = [
-  { key: 'socioOperador', label: 'Sócio Operador', cor: '#e74c3c' },
-  { key: 'timeCritico', label: 'Time Crítico', cor: '#f39c12' },
-  { key: 'governanca', label: 'Governança', cor: '#9b59b6' },
+  { key: 'socioOperador', label: 'Sócio Operador', cor: '#8b6b6b' },
+  { key: 'timeCritico', label: 'Time Crítico', cor: '#a8956b' },
+  { key: 'governanca', label: 'Governança', cor: '#7b6b8b' },
+  { key: 'necessidadeCapitalGiro', label: 'Capital de Giro', cor: '#6b8fa8' },
   { key: 'semFlags', label: 'Sem Flags', cor: '#6c757d' },
 ];
 

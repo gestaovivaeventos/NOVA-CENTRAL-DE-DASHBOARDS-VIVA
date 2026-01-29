@@ -26,22 +26,24 @@ interface TabelaClassificacaoPEXProps {
 }
 
 // Configuração das classificações (usando saude)
-// Fórmula: >= 95: TOP PERFORMANCE, >= 85: PERFORMANDO, >= 75: EM EVOLUÇÃO, >= 60: ATENÇÃO, < 60: UTI
+// Fórmula: >= 95: TOP PERFORMANCE, >= 85: PERFORMANDO, >= 75: EM CONSOLIDAÇÃO, >= 60: ATENÇÃO, < 60: UTI
+// Cores de saúde definidas pelo usuário
 const CLASSIFICACOES: { 
   key: SaudeFranquia; 
   label: string; 
   cor: string; 
   bg: string;
+  borderColor: string;
   icon: React.ReactNode;
   faixa?: string;
 }[] = [
-  { key: 'TOP_PERFORMANCE', label: 'TOP Performance', cor: '#000', bg: '#28a745', icon: <Award size={16} />, faixa: '≥ 95%' },
-  { key: 'PERFORMANDO', label: 'Performando', cor: '#000', bg: '#20c997', icon: <TrendingUp size={16} />, faixa: '≥ 85%' },
-  { key: 'EM_EVOLUCAO', label: 'Em Evolução', cor: '#000', bg: '#17a2b8', icon: <TrendingUp size={16} />, faixa: '≥ 75%' },
-  { key: 'ATENCAO', label: 'Atenção', cor: '#000', bg: '#ffc107', icon: <AlertCircle size={16} />, faixa: '≥ 60%' },
-  { key: 'UTI', label: 'UTI', cor: '#fff', bg: '#dc3545', icon: <HeartPulse size={16} />, faixa: '< 60%' },
-  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#fff', bg: '#e67e22', icon: <HeartPulse size={16} /> },
-  { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#fff', bg: '#8e44ad', icon: <HeartPulse size={16} /> },
+  { key: 'TOP_PERFORMANCE', label: 'TOP Performance', cor: '#FFFFFF', bg: '#1a4b6e', borderColor: '#2980b9', icon: <Award size={16} />, faixa: '≥ 95%' },
+  { key: 'PERFORMANDO', label: 'Performando', cor: '#FFFFFF', bg: '#1e5631', borderColor: '#27ae60', icon: <TrendingUp size={16} />, faixa: '≥ 85%' },
+  { key: 'EM_CONSOLIDACAO', label: 'Em Consolidação', cor: '#FFFFFF', bg: '#7a4a0a', borderColor: '#e67e22', icon: <TrendingUp size={16} />, faixa: '≥ 75%' },
+  { key: 'ATENCAO', label: 'Atenção', cor: '#1a1a1a', bg: '#9a8a1a', borderColor: '#f1c40f', icon: <AlertCircle size={16} />, faixa: '≥ 60%' },
+  { key: 'UTI', label: 'UTI', cor: '#FFFFFF', bg: '#7a1a1a', borderColor: '#c0392b', icon: <HeartPulse size={16} />, faixa: '< 60%' },
+  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#FFFFFF', bg: '#5a2a2a', borderColor: '#943126', icon: <HeartPulse size={16} /> },
+  { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#FFFFFF', bg: '#4a1a2a', borderColor: '#6c2134', icon: <HeartPulse size={16} /> },
 ];
 
 export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaClassificacaoPEXProps) {
@@ -248,8 +250,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
           width: '18px',
           height: '18px',
           borderRadius: '3px',
-          backgroundColor: '#e74c3c',
-          color: '#fff',
+          backgroundColor: '#4a3838',
+          border: '1px solid #8b6b6b',
+          color: '#adb5bd',
           marginRight: '3px',
         }}>
           <Users size={10} />
@@ -265,8 +268,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
           width: '18px',
           height: '18px',
           borderRadius: '3px',
-          backgroundColor: '#f39c12',
-          color: '#fff',
+          backgroundColor: '#4a4538',
+          border: '1px solid #a8956b',
+          color: '#adb5bd',
           marginRight: '3px',
         }}>
           <AlertTriangle size={10} />
@@ -282,8 +286,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
           width: '18px',
           height: '18px',
           borderRadius: '3px',
-          backgroundColor: '#9b59b6',
-          color: '#fff',
+          backgroundColor: '#3d3545',
+          border: '1px solid #7b6b8b',
+          color: '#adb5bd',
           marginRight: '3px',
         }}>
           <Shield size={10} />
@@ -299,8 +304,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
           width: '18px',
           height: '18px',
           borderRadius: '3px',
-          backgroundColor: '#3498db',
-          color: '#fff',
+          backgroundColor: '#3d4a5a',
+          border: '1px solid #6b8fa8',
+          color: '#adb5bd',
           marginRight: '3px',
         }}>
           <DollarSign size={10} />
@@ -330,7 +336,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
         alignItems: 'flex-start',
         marginBottom: '16px',
         paddingBottom: '12px',
-        borderBottom: '1px solid #555',
+        borderBottom: '2px solid #FF6600',
         flexWrap: 'wrap',
         gap: '12px',
       }}>
@@ -411,7 +417,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
                 padding: '8px 16px',
                 borderRadius: '6px',
                 border: 'none',
-                backgroundColor: '#28a745',
+                backgroundColor: '#FF6600',
                 color: '#fff',
                 fontSize: '0.85rem',
                 fontWeight: 600,
@@ -438,8 +444,8 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
       {/* Erro ao salvar */}
       {erroSalvar && (
         <div style={{
-          backgroundColor: 'rgba(220, 53, 69, 0.2)',
-          border: '1px solid #dc3545',
+          backgroundColor: 'rgba(139, 107, 107, 0.2)',
+          border: '1px solid #8b6b6b',
           borderRadius: '8px',
           padding: '12px 16px',
           marginBottom: '16px',
@@ -447,15 +453,15 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
           alignItems: 'center',
           gap: '8px',
         }}>
-          <AlertCircle size={18} color="#dc3545" />
-          <span style={{ color: '#dc3545', fontSize: '0.85rem' }}>{erroSalvar}</span>
+          <AlertCircle size={18} color="#adb5bd" />
+          <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>{erroSalvar}</span>
           <button
             onClick={() => setErroSalvar(null)}
             style={{
               marginLeft: 'auto',
               background: 'none',
               border: 'none',
-              color: '#dc3545',
+              color: '#adb5bd',
               cursor: 'pointer',
             }}
           >
@@ -543,7 +549,6 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
                       borderRadius: '6px',
                       padding: '10px',
                       marginBottom: '8px',
-                      borderLeft: `3px solid ${temAlteracaoPendente(franquia.chaveData) ? '#FF6600' : classificacao.bg}`,
                       position: 'relative',
                     }}
                   >
@@ -574,7 +579,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
                         {franquia.nome}
                       </span>
                       <span style={{
-                        color: classificacao.bg,
+                        color: classificacao.borderColor,
                         fontSize: '0.9rem',
                         fontWeight: 700,
                         fontFamily: "'Orbitron', sans-serif",
@@ -665,8 +670,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
             width: '18px',
             height: '18px',
             borderRadius: '3px',
-            backgroundColor: '#e74c3c',
-            color: '#fff',
+            backgroundColor: '#4a3838',
+            border: '1px solid #8b6b6b',
+            color: '#adb5bd',
           }}>
             <Users size={10} />
           </span>
@@ -680,8 +686,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
             width: '18px',
             height: '18px',
             borderRadius: '3px',
-            backgroundColor: '#f39c12',
-            color: '#fff',
+            backgroundColor: '#4a4538',
+            border: '1px solid #a8956b',
+            color: '#adb5bd',
           }}>
             <AlertTriangle size={10} />
           </span>
@@ -695,8 +702,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
             width: '18px',
             height: '18px',
             borderRadius: '3px',
-            backgroundColor: '#9b59b6',
-            color: '#fff',
+            backgroundColor: '#3d3545',
+            border: '1px solid #7b6b8b',
+            color: '#adb5bd',
           }}>
             <Shield size={10} />
           </span>
@@ -710,8 +718,9 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
             width: '18px',
             height: '18px',
             borderRadius: '3px',
-            backgroundColor: '#27ae60',
-            color: '#fff',
+            backgroundColor: '#3d4a5a',
+            border: '1px solid #6b8fa8',
+            color: '#adb5bd',
           }}>
             <DollarSign size={10} />
           </span>

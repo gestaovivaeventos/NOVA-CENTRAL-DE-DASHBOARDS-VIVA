@@ -15,13 +15,14 @@ interface ModalEditarFlagsProps {
   onSave: (franquia: Franquia, novasFlags: FlagsEstruturais) => Promise<void>;
 }
 
-// Configuração das flags disponíveis
+// Configuração das flags disponíveis - Paleta profissional
 const FLAGS_CONFIG: {
   key: FlagKey;
   label: string;
   labelPlanilha: string;
   icon: React.ReactNode;
   cor: string;
+  bg: string;
   descricao: string;
 }[] = [
   {
@@ -29,7 +30,8 @@ const FLAGS_CONFIG: {
     label: 'Governança',
     labelPlanilha: 'GOVERNANÇA',
     icon: <Shield size={20} />,
-    cor: '#9b59b6',
+    cor: '#7b6b8b',
+    bg: '#3d3545',
     descricao: 'Problemas de governança na franquia',
   },
   {
@@ -37,7 +39,8 @@ const FLAGS_CONFIG: {
     label: 'Necessidade Capital de Giro',
     labelPlanilha: 'NECESSIDADE CAPITAL DE GIRO',
     icon: <DollarSign size={20} />,
-    cor: '#3498db',
+    cor: '#6b8fa8',
+    bg: '#3d4a5a',
     descricao: 'Franquia com necessidade de capital de giro',
   },
   {
@@ -45,7 +48,8 @@ const FLAGS_CONFIG: {
     label: 'Time Crítico',
     labelPlanilha: 'TIME CRÍTICO',
     icon: <AlertTriangle size={20} />,
-    cor: '#f39c12',
+    cor: '#a8956b',
+    bg: '#4a4538',
     descricao: 'Time com situação crítica',
   },
   {
@@ -53,7 +57,8 @@ const FLAGS_CONFIG: {
     label: 'Sócio Operador',
     labelPlanilha: 'SÓCIO OPERADOR',
     icon: <Users size={20} />,
-    cor: '#e74c3c',
+    cor: '#8b6b6b',
+    bg: '#4a3838',
     descricao: 'Franquia com sócio operador',
   },
 ];
@@ -131,10 +136,10 @@ export default function ModalEditarFlags({ franquia, isOpen, onClose, onSave }: 
           alignItems: 'center',
           marginBottom: '20px',
           paddingBottom: '16px',
-          borderBottom: '1px solid #555',
+          borderBottom: '2px solid #FF6600',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Flag size={24} color="#ffc107" />
+            <Flag size={24} color="#FF6600" />
             <h3 style={{
               color: '#F8F9FA',
               fontSize: '1.1rem',
@@ -264,12 +269,12 @@ export default function ModalEditarFlags({ franquia, isOpen, onClose, onSave }: 
         {/* Erro */}
         {error && (
           <div style={{
-            backgroundColor: 'rgba(220, 53, 69, 0.2)',
-            border: '1px solid #dc3545',
+            backgroundColor: 'rgba(139, 107, 107, 0.2)',
+            border: '1px solid #8b6b6b',
             borderRadius: '8px',
             padding: '12px',
             marginBottom: '16px',
-            color: '#dc3545',
+            color: '#adb5bd',
             fontSize: '0.85rem',
           }}>
             {error}
@@ -323,10 +328,10 @@ export default function ModalEditarFlags({ franquia, isOpen, onClose, onSave }: 
               disabled={loading}
               style={{
                 padding: '10px 24px',
-                backgroundColor: '#ffc107',
+                backgroundColor: '#FF6600',
                 border: 'none',
                 borderRadius: '6px',
-                color: '#000',
+                color: '#fff',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 fontSize: '0.85rem',
                 fontWeight: 600,

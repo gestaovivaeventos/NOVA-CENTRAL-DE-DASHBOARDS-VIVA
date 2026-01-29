@@ -43,7 +43,7 @@ export default function GraficoBarras({
           letterSpacing: '0.06em',
           marginBottom: '20px',
           paddingBottom: '12px',
-          borderBottom: '1px solid #555',
+          borderBottom: '2px solid #FF6600',
           fontFamily: 'Poppins, sans-serif',
         }}>
           {titulo}

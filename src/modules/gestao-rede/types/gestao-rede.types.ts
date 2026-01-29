@@ -22,13 +22,13 @@ export type MaturidadeFranquia = 'IMPLANTACAO' | '1º ANO OP.' | '2º ANO OP.' |
 
 /**
  * Classificação de Saúde baseada no PEX
- * Fórmula: >= 95: TOP PERFORMANCE, >= 85: PERFORMANDO, >= 75: EM EVOLUÇÃO, >= 60: ATENÇÃO, < 60: UTI
+ * Fórmula: >= 95: TOP PERFORMANCE, >= 85: PERFORMANDO, >= 75: EM CONSOLIDAÇÃO, >= 60: ATENÇÃO, < 60: UTI
  * UTI pode ser alterado manualmente para UTI_RECUPERACAO ou UTI_REPASSE
  */
 export type SaudeFranquia = 
   | 'TOP_PERFORMANCE'   // >= 95%
   | 'PERFORMANDO'       // >= 85%
-  | 'EM_EVOLUCAO'       // >= 75%
+  | 'EM_CONSOLIDACAO'   // >= 75%
   | 'ATENCAO'           // >= 60%
   | 'UTI'               // < 60%
   | 'UTI_RECUPERACAO'   // UTI com plano de recuperação
@@ -69,6 +69,7 @@ export interface FranquiaRaw {
   flags: string;
   posto_avancado: string;
   cidade: string;
+  mercado: string;
   estado: string;
   latitude: string;
   longitude: string;
@@ -89,8 +90,9 @@ export interface Franquia {
   pontuacaoPex: number;
   saude: SaudeFranquia;
   flags: FlagsEstruturais;
-  postoAvancado: boolean;
-  // Novos campos de localização
+  postosAvancados: string[];  // Lista de postos avançados (separados por vírgula na planilha)
+  mercado: string;            // Segmento de mercado: Padrão, Master, Mega, Giga
+  // Campos de localização
   cidade: string;
   estado: string;
   latitude: number | null;

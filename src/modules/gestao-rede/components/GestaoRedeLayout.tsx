@@ -294,7 +294,7 @@ export default function GestaoRedeLayout({
               gap: '12px',
               padding: '12px',
               borderRadius: '8px',
-              color: '#dc3545',
+              color: '#adb5bd',
               backgroundColor: 'transparent',
               border: 'none',
               cursor: 'pointer',
@@ -317,9 +317,11 @@ export default function GestaoRedeLayout({
       <main style={{
         flex: 1,
         marginLeft: isMobile ? 0 : (isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
-        transition: 'margin-left 0.3s ease',
+        width: isMobile ? '100%' : `calc(100% - ${isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px)`,
+        transition: 'margin-left 0.3s ease, width 0.3s ease',
         minHeight: '100vh',
         backgroundColor: '#212529',
+        overflowX: 'hidden',
       }}>
         {children}
       </main>

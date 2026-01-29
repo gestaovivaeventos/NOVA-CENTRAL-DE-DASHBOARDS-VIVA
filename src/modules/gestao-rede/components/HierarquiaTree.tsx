@@ -181,7 +181,7 @@ export default function HierarquiaTree({ data, onNodeClick, expandido = false, e
         letterSpacing: '0.06em',
         marginBottom: '16px',
         paddingBottom: '12px',
-        borderBottom: '1px solid #555',
+        borderBottom: '2px solid #FF6600',
         fontFamily: 'Poppins, sans-serif',
       }}>
         Hierarquia da Rede

@@ -25,7 +25,7 @@ export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
   const emIncubacao = [...incubacao1, ...incubacao2, ...incubacao3];
   
   const maduras = ativas.filter(f => f.maturidade === 'MADURA');
-  const postosAvancados = franquias.filter(f => f.postoAvancado);
+  const postosAvancados = franquias.filter(f => f.postosAvancados && f.postosAvancados.length > 0);
 
   return {
     totalFranquias: franquias.length,
@@ -78,7 +78,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
         nome: 'Em Implantação',
         valor: resumo.emImplantacao,
         porcentagem: total > 0 ? (resumo.emImplantacao / total) * 100 : 0,
-        cor: '#17a2b8',
+        cor: '#FF6600',
         franquias: emImplantacao,
       },
       {
@@ -86,7 +86,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
         nome: 'Em Operação',
         valor: resumo.emOperacao,
         porcentagem: total > 0 ? (resumo.emOperacao / total) * 100 : 0,
-        cor: '#20c997',
+        cor: '#FF6600',
         franquias: emOperacao,
         children: [
           {
@@ -94,7 +94,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
             nome: 'Em Incubação',
             valor: resumo.emIncubacao,
             porcentagem: resumo.emOperacao > 0 ? (resumo.emIncubacao / resumo.emOperacao) * 100 : 0,
-            cor: '#ffc107',
+            cor: '#FF6600',
             franquias: emIncubacao,
             children: [
               {
@@ -102,7 +102,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
                 nome: '1º Ano de Operação',
                 valor: resumo.incubacao1,
                 porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao1 / resumo.emIncubacao) * 100 : 0,
-                cor: '#f8d568',
+                cor: '#FF6600',
                 franquias: incubacao1,
               },
               {
@@ -110,7 +110,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
                 nome: '2º Ano de Operação',
                 valor: resumo.incubacao2,
                 porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao2 / resumo.emIncubacao) * 100 : 0,
-                cor: '#f0c040',
+                cor: '#FF6600',
                 franquias: incubacao2,
               },
               {
@@ -118,7 +118,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
                 nome: '3º Ano de Operação',
                 valor: resumo.incubacao3,
                 porcentagem: resumo.emIncubacao > 0 ? (resumo.incubacao3 / resumo.emIncubacao) * 100 : 0,
-                cor: '#e8a800',
+                cor: '#FF6600',
                 franquias: incubacao3,
               },
             ],
@@ -128,7 +128,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
             nome: 'Maduras',
             valor: resumo.maduras,
             porcentagem: resumo.emOperacao > 0 ? (resumo.maduras / resumo.emOperacao) * 100 : 0,
-            cor: '#198754',
+            cor: '#FF6600',
             franquias: maduras,
           },
         ],
@@ -138,7 +138,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
         nome: 'Franquias Inativas',
         valor: resumo.inativas,
         porcentagem: resumo.totalFranquias > 0 ? (resumo.inativas / resumo.totalFranquias) * 100 : 0,
-        cor: '#dc3545',
+        cor: '#c0392b',
         franquias: inativas,
         children: [
           {
@@ -146,7 +146,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
             nome: 'Encerradas em Operação',
             valor: resumo.encerradasOperacao,
             porcentagem: resumo.inativas > 0 ? (resumo.encerradasOperacao / resumo.inativas) * 100 : 0,
-            cor: '#c0392b',
+            cor: '#943126',
             franquias: encerradasOperacao,
           },
           {
@@ -154,7 +154,7 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
             nome: 'Encerradas em Implantação',
             valor: resumo.encerradasImplantacao,
             porcentagem: resumo.inativas > 0 ? (resumo.encerradasImplantacao / resumo.inativas) * 100 : 0,
-            cor: '#e74c3c',
+            cor: '#6c2134',
             franquias: encerradasImplantacao,
           },
         ],
@@ -171,27 +171,38 @@ export function formatarPorcentagem(valor: number): string {
 }
 
 /**
- * Cores do tema
+ * Cores do tema - Cores de saúde definidas pelo usuário
+ * TOP Performance = azul, Performando = verde, Em Consolidação = laranja
+ * Atenção = amarelo, UTI = vermelho
  */
 export const CORES = {
-  ativas: '#28a745',
-  inativas: '#dc3545',
-  implantacao: '#17a2b8',
-  operacao: '#20c997',
-  incubacao: '#ffc107',
-  incubacao1: '#f8d568',
-  incubacao2: '#f0c040',
-  incubacao3: '#e8a800',
-  maduras: '#198754',
-  primaria: '#FF6600',
+  // Status - usar laranja como cor principal
+  ativas: '#27ae60',        // verde
+  inativas: '#c0392b',      // vermelho
+  implantacao: '#FF6600',   // laranja Viva
+  operacao: '#FF6600',      // laranja Viva
+  incubacao: '#FF6600',     // laranja Viva
+  incubacao1: '#FF6600',    // laranja Viva
+  incubacao2: '#FF6600',    // laranja Viva
+  incubacao3: '#FF6600',    // laranja Viva
+  maduras: '#FF6600',       // laranja Viva
+  
+  // Cores principais
+  primaria: '#FF6600',      // laranja Viva
   fundo: '#212529',
   card: '#343A40',
+  cardInterno: '#2a2d31',
+  borda: '#3a3d41',
   texto: '#F8F9FA',
   textoSecundario: '#adb5bd',
-  // Saúde PEX
-  topPerformance: '#28a745',
-  performando: '#20c997',
-  atencao: '#ffc107',
-  utiRecuperacao: '#fd7e14',
-  utiRepasse: '#dc3545',
+  textoTerciario: '#6c757d',
+  
+  // Saúde PEX - cores definidas pelo usuário
+  topPerformance: '#2980b9',   // azul
+  performando: '#27ae60',      // verde
+  emConsolidacao: '#e67e22',   // laranja
+  atencao: '#f1c40f',          // amarelo
+  uti: '#c0392b',              // vermelho
+  utiRecuperacao: '#943126',   // vermelho escuro
+  utiRepasse: '#6c2134',       // vermelho muito escuro
 };

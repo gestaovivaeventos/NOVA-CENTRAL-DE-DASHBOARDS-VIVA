@@ -6,7 +6,7 @@
  */
 
 import React, { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Franquia, SaudeFranquia } from '../types';
 
 interface TabelaFlagsProps {
@@ -14,41 +14,54 @@ interface TabelaFlagsProps {
   titulo?: string;
 }
 
-// Cores para saúde (classificação PEX)
+// Cores para saúde (classificação PEX) - Cores definidas pelo usuário
 const SAUDE_CORES: Record<SaudeFranquia, string> = {
-  'TOP_PERFORMANCE': '#28a745',
-  'PERFORMANDO': '#20c997',
-  'ATENCAO': '#ffc107',
-  'UTI_RECUPERACAO': '#dc3545',
-  'UTI_REPASSE': '#c0392b',
+  'TOP_PERFORMANCE': '#2980b9',
+  'PERFORMANDO': '#27ae60',
+  'EM_CONSOLIDACAO': '#e67e22',
+  'ATENCAO': '#f1c40f',
+  'UTI': '#c0392b',
+  'UTI_RECUPERACAO': '#943126',
+  'UTI_REPASSE': '#6c2134',
   'SEM_AVALIACAO': '#6c757d',
 };
 
 const SAUDE_LABELS: Record<SaudeFranquia, string> = {
   'TOP_PERFORMANCE': 'TOP',
   'PERFORMANDO': 'Performando',
+  'EM_CONSOLIDACAO': 'Em Consolid.',
   'ATENCAO': 'Atenção',
+  'UTI': 'UTI',
   'UTI_RECUPERACAO': 'UTI Recup.',
   'UTI_REPASSE': 'UTI Repasse',
   'SEM_AVALIACAO': 'S/ Avaliação',
 };
 
-// Informações das flags
+// Informações das flags - Paleta profissional com bordas
 const FLAGS_INFO = {
   socioOperador: {
     label: 'Sócio Operador',
-    cor: '#dc3545',
+    cor: '#8b6b6b',
+    bg: '#4a3838',
     descricao: 'Franquias com alerta de sócio operador',
   },
   timeCritico: {
     label: 'Time Crítico',
-    cor: '#ffc107',
+    cor: '#a8956b',
+    bg: '#4a4538',
     descricao: 'Franquias com time em situação crítica',
   },
   governanca: {
     label: 'Governança',
-    cor: '#fd7e14',
+    cor: '#7b6b8b',
+    bg: '#3d3545',
     descricao: 'Franquias com problemas de governança',
+  },
+  necessidadeCapitalGiro: {
+    label: 'Necessidade Capital de Giro',
+    cor: '#6b8fa8',
+    bg: '#3d4a5a',
+    descricao: 'Franquias com necessidade de capital de giro',
   },
 };
 
@@ -114,12 +127,10 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
     }}>
       {/* Título */}
       <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
         marginBottom: '20px',
+        paddingBottom: '12px',
+        borderBottom: '2px solid #FF6600',
       }}>
-        <AlertTriangle size={24} color="#ffc107" />
         <h2 style={{
           fontSize: '1.3rem',
           fontWeight: 700,
@@ -185,14 +196,16 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
 
           {/* Body */}
           <tbody>
-            {dadosFlags.map((item) => {
+            {dadosFlags.map((item, index) => {
               const isExpanded = expandedFlags.has(item.flag);
+              const isEven = index % 2 === 0;
               
               return (
                 <React.Fragment key={item.flag}>
                   <tr 
                     onClick={() => item.total > 0 && toggleFlag(item.flag)}
                     style={{
+                      backgroundColor: isEven ? '#2d3035' : 'transparent',
                       transition: 'background-color 0.2s',
                       cursor: item.total > 0 ? 'pointer' : 'default',
                     }}
@@ -202,7 +215,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                       }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.backgroundColor = isEven ? '#2d3035' : 'transparent';
                     }}
                   >
                     {/* Flag */}
@@ -320,7 +333,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                               fontFamily: "'Poppins', sans-serif",
                               textAlign: 'center',
                             }}>
-                              Score PEX
+                              Pontuação PEX
                             </div>
                             <div style={{
                               fontSize: '0.7rem',
@@ -341,12 +354,12 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                               letterSpacing: '0.05em',
                               fontFamily: "'Poppins', sans-serif",
                             }}>
-                              Cidade/UF
+                              Maturidade
                             </div>
                           </div>
 
                           {/* Lista de franquias */}
-                          {item.franquias.map((franquia) => (
+                          {item.franquias.map((franquia, idx) => (
                             <div
                               key={franquia.id}
                               style={{
@@ -356,13 +369,14 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                                 padding: '10px 12px',
                                 borderRadius: '6px',
                                 marginBottom: '4px',
+                                backgroundColor: idx % 2 === 0 ? '#252830' : 'transparent',
                                 transition: 'background-color 0.2s',
                               }}
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor = '#2a2f36';
                               }}
                               onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = 'transparent';
+                                e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#252830' : 'transparent';
                               }}
                             >
                               {/* Nome da Franquia */}
@@ -377,7 +391,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                                 {franquia.nome}
                               </div>
 
-                              {/* Score PEX */}
+                              {/* Pontuação PEX */}
                               <div style={{
                                 textAlign: 'center',
                                 display: 'flex',
@@ -397,7 +411,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                                     color: SAUDE_CORES[franquia.saude],
                                     fontFamily: "'Orbitron', 'Poppins', sans-serif",
                                   }}>
-                                    {franquia.pontuacaoPex.toFixed(1)}
+                                    {franquia.pontuacaoPex.toFixed(2)}
                                   </span>
                                 </div>
                               </div>

@@ -23,7 +23,7 @@ const CACHE_KEY = 'gestao-rede:data';
 
 /**
  * Mapeia o valor de saúde da planilha para o tipo
- * Baseado na fórmula: >= 95: TOP PERFORMANCE, >= 85: PERFORMANDO, >= 75: EM EVOLUÇÃO, >= 60: ATENÇÃO, < 60: UTI
+ * Baseado na fórmula: >= 95: TOP PERFORMANCE, >= 85: PERFORMANDO, >= 75: EM CONSOLIDAÇÃO, >= 60: ATENÇÃO, < 60: UTI
  */
 function mapSaude(valor: string): SaudeFranquia {
   const saude = valor?.toUpperCase()?.trim() || '';
@@ -35,7 +35,7 @@ function mapSaude(valor: string): SaudeFranquia {
   // Valores calculados pela fórmula
   if (saude.includes('TOP') || saude === 'TOP PERFORMANCE') return 'TOP_PERFORMANCE';
   if (saude.includes('PERFORMANDO') || saude === 'PERFORMANDO') return 'PERFORMANDO';
-  if (saude.includes('EVOLU') || saude === 'EM EVOLUÇÃO' || saude === 'EM EVOLUCAO') return 'EM_EVOLUCAO';
+  if (saude.includes('CONSOLIDA') || saude === 'EM CONSOLIDAÇÃO' || saude === 'EM CONSOLIDACAO') return 'EM_CONSOLIDACAO';
   if (saude.includes('ATEN') || saude === 'ATENÇÃO' || saude === 'ATENCAO') return 'ATENCAO';
   if (saude === 'UTI') return 'UTI';
   
@@ -131,6 +131,12 @@ function processarDados(rows: string[][]): Franquia[] {
     const latitude = latStr ? parseFloat(latStr) : null;
     const longitude = lngStr ? parseFloat(lngStr) : null;
     
+    // Processar postos avançados (lista separada por vírgula)
+    const postoAvancadoStr = getValue('posto_avancado')?.trim() || '';
+    const postosAvancados = postoAvancadoStr
+      ? postoAvancadoStr.split(',').map(p => p.trim()).filter(p => p.length > 0)
+      : [];
+    
     const franquia: Franquia = {
       id: `fr-${i}`,
       chaveData: getValue('chave_data'),
@@ -143,7 +149,8 @@ function processarDados(rows: string[][]): Franquia[] {
       pontuacaoPex: pontuacao,
       saude: mapSaude(getValue('saude')),
       flags: parseFlags(getValue('flags')),
-      postoAvancado: getValue('posto_avancado')?.toUpperCase()?.trim() === 'SIM',
+      postosAvancados: postosAvancados,
+      mercado: getValue('mercado')?.trim() || '',
       // Campos de localização
       cidade: getValue('cidade')?.trim() || '',
       estado: getValue('estado')?.trim() || '',
@@ -176,10 +183,10 @@ export default async function handler(
     console.log('[API gestao-rede/data] Aba:', SHEET_NAME);
     
     // Buscar dados da planilha externa com cache
-    // Colunas: A-K (originais) + L (cidade) + M (estado) + N (latitude) + O (longitude)
+    // Colunas: A-K (originais) + L (cidade) + M (mercado) + N (estado) + O (latitude) + P (longitude)
     const rows = await getExternalSheetData(
       SPREADSHEET_ID,
-      `'${SHEET_NAME}'!A:O`, // Colunas A até O (incluindo localização)
+      `'${SHEET_NAME}'!A:P`, // Colunas A até P (incluindo mercado e localização)
       CACHE_KEY,
       CACHE_TTL.PONTUACAO_OFICIAL
     );

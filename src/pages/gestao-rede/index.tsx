@@ -13,7 +13,6 @@ import {
   Clock, 
   Zap, 
   TrendingUp,
-  RefreshCw,
   AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -42,7 +41,7 @@ export default function GestaoRedeDashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
   // Hook para buscar dados reais da API
-  const { franquias, dataReferencia, isLoading, error, refetch } = useGestaoRede();
+  const { franquias, isLoading, error, refetch } = useGestaoRede();
   
   // Verificar autenticação e nível de acesso
   useEffect(() => {
@@ -77,15 +76,15 @@ export default function GestaoRedeDashboard() {
 
   // Dados para gráficos
   const dadosStatusGeral = [
-    { nome: 'Ativas', valor: resumo.ativas, cor: CORES.ativas },
-    { nome: 'Inativas', valor: resumo.inativas, cor: CORES.inativas },
+    { nome: 'Ativas', valor: resumo.ativas, cor: '#FF6600' },
+    { nome: 'Inativas', valor: resumo.inativas, cor: '#c0392b' },
   ];
 
   const dadosMaturidade = [
-    { nome: '1º Ano Op.', valor: resumo.incubacao1, cor: CORES.incubacao1 },
-    { nome: '2º Ano Op.', valor: resumo.incubacao2, cor: CORES.incubacao2 },
-    { nome: '3º Ano Op.', valor: resumo.incubacao3, cor: CORES.incubacao3 },
-    { nome: 'Maduras', valor: resumo.maduras, cor: CORES.maduras },
+    { nome: '1º Ano Op.', valor: resumo.incubacao1, cor: '#FF6600' },
+    { nome: '2º Ano Op.', valor: resumo.incubacao2, cor: '#cc5200' },
+    { nome: '3º Ano Op.', valor: resumo.incubacao3, cor: '#994d00' },
+    { nome: 'Maduras', valor: resumo.maduras, cor: '#663300' },
   ];
 
   const dadosBarrasStatus = [
@@ -95,19 +94,19 @@ export default function GestaoRedeDashboard() {
     { nome: 'Inativas', valor: resumo.inativas, cor: CORES.inativas },
   ];
 
-  // Dados para gráfico de classificação PEX
+  // Dados para gráfico de classificação PEX - Paleta profissional
   const franquiasEmOperacao = franquias.filter(
     f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'
   );
   
   const dadosClassificacaoPEX = [
-    { nome: 'TOP Performance', valor: franquiasEmOperacao.filter(f => f.saude === 'TOP_PERFORMANCE').length, cor: '#28a745' },
-    { nome: 'Performando', valor: franquiasEmOperacao.filter(f => f.saude === 'PERFORMANDO').length, cor: '#20c997' },
-    { nome: 'Em Evolução', valor: franquiasEmOperacao.filter(f => f.saude === 'EM_EVOLUCAO').length, cor: '#17a2b8' },
-    { nome: 'Atenção', valor: franquiasEmOperacao.filter(f => f.saude === 'ATENCAO').length, cor: '#ffc107' },
-    { nome: 'UTI', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI').length, cor: '#dc3545' },
-    { nome: 'UTI Recuperação', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_RECUPERACAO').length, cor: '#e67e22' },
-    { nome: 'UTI Repasse', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_REPASSE').length, cor: '#8e44ad' },
+    { nome: 'TOP Performance', valor: franquiasEmOperacao.filter(f => f.saude === 'TOP_PERFORMANCE').length, cor: '#2980b9' },
+    { nome: 'Performando', valor: franquiasEmOperacao.filter(f => f.saude === 'PERFORMANDO').length, cor: '#27ae60' },
+    { nome: 'Em Consolidação', valor: franquiasEmOperacao.filter(f => f.saude === 'EM_CONSOLIDACAO').length, cor: '#e67e22' },
+    { nome: 'Atenção', valor: franquiasEmOperacao.filter(f => f.saude === 'ATENCAO').length, cor: '#f1c40f' },
+    { nome: 'UTI', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI').length, cor: '#c0392b' },
+    { nome: 'UTI Recuperação', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_RECUPERACAO').length, cor: '#943126' },
+    { nome: 'UTI Repasse', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_REPASSE').length, cor: '#6c2134' },
     { nome: 'Sem Avaliação', valor: franquiasEmOperacao.filter(f => f.saude === 'SEM_AVALIACAO').length, cor: '#6c757d' },
   ].filter(d => d.valor > 0);
 
@@ -161,7 +160,7 @@ export default function GestaoRedeDashboard() {
       >
         {/* Header */}
         <div style={{ backgroundColor: '#212529' }}>
-          <div className="container mx-auto px-4 py-6">
+          <div style={{ padding: '24px 24px 24px 24px' }}>
             <div 
               style={{
                 backgroundColor: '#343A40',
@@ -211,73 +210,31 @@ export default function GestaoRedeDashboard() {
                 </div>
               </div>
 
-              {/* Info badge com data de referência e botão refresh */}
+              {/* Mensagem de erro, se houver */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {error && (
                   <div style={{
-                    backgroundColor: '#dc354520',
-                    border: '1px solid #dc3545',
+                    backgroundColor: '#c0392b20',
+                    border: '1px solid #c0392b',
                     borderRadius: '8px',
                     padding: '8px 16px',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
                   }}>
-                    <AlertCircle size={18} style={{ color: '#dc3545' }} />
-                    <span style={{ color: '#dc3545', fontSize: '0.85rem' }}>
+                    <AlertCircle size={18} style={{ color: '#c0392b' }} />
+                    <span style={{ color: '#c0392b', fontSize: '0.85rem' }}>
                       Erro ao carregar dados
                     </span>
                   </div>
                 )}
-                
-                <div style={{
-                  backgroundColor: '#FF660020',
-                  border: '1px solid #FF6600',
-                  borderRadius: '8px',
-                  padding: '8px 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}>
-                  <Building2 size={18} style={{ color: '#FF6600' }} />
-                  <span style={{ color: '#FF6600', fontWeight: 600, fontSize: '0.9rem' }}>
-                    {dataReferencia ? `Dados de ${dataReferencia}` : 'Carregando...'}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => refetch()}
-                  style={{
-                    backgroundColor: '#343A40',
-                    border: '1px solid #555',
-                    borderRadius: '8px',
-                    padding: '8px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    color: '#adb5bd',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#FF6600';
-                    e.currentTarget.style.color = '#FF6600';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#555';
-                    e.currentTarget.style.color = '#adb5bd';
-                  }}
-                  title="Atualizar dados"
-                >
-                  <RefreshCw size={16} />
-                </button>
               </div>
             </div>
           </div>
         </div>
 
         {/* Conteúdo Principal */}
-        <div className="container mx-auto px-4 py-6">
+        <div style={{ padding: '0 24px 24px 24px' }}>
           {/* KPIs Principais - Linha única */}
           <div style={{ 
             display: 'grid', 
@@ -365,41 +322,6 @@ export default function GestaoRedeDashboard() {
             </div>
           </div>
 
-          {/* Gráfico de Barras - Visão Geral */}
-          <div style={{ marginBottom: '24px' }}>
-            <GraficoBarras
-              dados={dadosBarrasStatus}
-              titulo="Visão Comparativa por Categoria"
-              mostrarValores={true}
-              mostrarPorcentagem={true}
-            />
-          </div>
-
-          {/* Seção Classificação PEX */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 2fr', 
-            gap: '24px',
-            marginBottom: '24px'
-          }}>
-            {/* Gráfico Donut - Classificação PEX */}
-            <GraficoDonut
-              dados={dadosClassificacaoPEX}
-              titulo="Distribuição por Classificação PEX"
-              valorCentral={franquiasEmOperacao.length}
-              labelCentral="Em Operação"
-              tamanho={200}
-            />
-
-            {/* Gráfico de Barras - Classificação PEX */}
-            <GraficoBarras
-              dados={dadosClassificacaoPEX}
-              titulo="Quantidade de Franquias por Classificação PEX"
-              mostrarValores={true}
-              mostrarPorcentagem={true}
-            />
-          </div>
-
           {/* Tabela Kanban - Classificação PEX */}
           <div style={{ marginBottom: '24px' }}>
             <TabelaClassificacaoPEX franquias={franquias} onRefresh={refetch} />
@@ -413,86 +335,6 @@ export default function GestaoRedeDashboard() {
           {/* Tabela - Flags Estruturais */}
           <div style={{ marginBottom: '24px' }}>
             <TabelaFlags franquias={franquias} />
-          </div>
-
-          {/* Cards de Anos de Operação */}
-          <div style={{
-            backgroundColor: '#343A40',
-            borderRadius: '12px',
-            padding: '20px',
-            marginBottom: '24px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-          }}>
-            <h3 style={{
-              color: '#adb5bd',
-              fontSize: '1rem',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              marginBottom: '16px',
-              paddingBottom: '12px',
-              borderBottom: '1px solid #555',
-              fontFamily: 'Poppins, sans-serif',
-            }}>
-              Franquias em Operação - Por Tempo de Atividade
-            </h3>
-            
-            <div style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
-              gap: '16px'
-            }}>
-              {[
-                { fase: 1, valor: resumo.incubacao1, cor: CORES.incubacao1, titulo: '1º Ano de Operação', descricao: '0 a 12 meses' },
-                { fase: 2, valor: resumo.incubacao2, cor: CORES.incubacao2, titulo: '2º Ano de Operação', descricao: '12 a 24 meses' },
-                { fase: 3, valor: resumo.incubacao3, cor: CORES.incubacao3, titulo: '3º Ano de Operação', descricao: '24 a 36 meses' },
-                { fase: 4, valor: resumo.maduras, cor: CORES.maduras, titulo: 'Maduras', descricao: '+36 meses' },
-              ].map((item) => (
-                <div 
-                  key={item.fase}
-                  style={{
-                    backgroundColor: '#212529',
-                    borderRadius: '10px',
-                    padding: '16px',
-                    borderLeft: `4px solid ${item.cor}`,
-                    transition: 'transform 0.2s',
-                  }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
-                    marginBottom: '8px'
-                  }}>
-                    <span style={{
-                      color: '#adb5bd',
-                      fontSize: '0.85rem',
-                      fontWeight: 500,
-                    }}>
-                      {item.titulo}
-                    </span>
-                    <span style={{
-                      backgroundColor: item.cor,
-                      color: '#000',
-                      padding: '4px 12px',
-                      borderRadius: '16px',
-                      fontSize: '1rem',
-                      fontWeight: 700,
-                      fontFamily: "'Orbitron', 'Poppins', sans-serif",
-                    }}>
-                      {item.valor}
-                    </span>
-                  </div>
-                  <p style={{
-                    color: '#6c757d',
-                    fontSize: '0.75rem',
-                    margin: 0,
-                  }}>
-                    {item.descricao}
-                  </p>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Tabela de Franquias */}

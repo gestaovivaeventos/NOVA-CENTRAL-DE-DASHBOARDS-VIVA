@@ -34,7 +34,7 @@ export default function Card({ titulo, children, className = '' }: CardProps) {
             letterSpacing: '0.06em',
             marginBottom: '16px',
             paddingBottom: '8px',
-            borderBottom: '1px solid #555',
+            borderBottom: '2px solid #FF6600',
             fontFamily: 'Poppins, sans-serif'
           }}
         >

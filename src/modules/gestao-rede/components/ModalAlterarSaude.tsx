@@ -74,10 +74,10 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
           alignItems: 'center',
           marginBottom: '20px',
           paddingBottom: '16px',
-          borderBottom: '1px solid #555',
+          borderBottom: '2px solid #FF6600',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <HeartPulse size={24} color="#dc3545" />
+            <HeartPulse size={24} color="#c0392b" />
             <h3 style={{
               color: '#F8F9FA',
               fontSize: '1.1rem',
@@ -117,14 +117,14 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
           <div style={{ display: 'flex', gap: '16px' }}>
             <div>
               <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>Status Atual: </span>
-              <span style={{ color: '#dc3545', fontSize: '0.85rem', fontWeight: 500 }}>
+              <span style={{ color: '#c0392b', fontSize: '0.85rem', fontWeight: 500 }}>
                 {getStatusLabel(franquia.saude)}
               </span>
             </div>
             <div>
-              <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>PEX: </span>
+              <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>Pontuação PEX: </span>
               <span style={{ color: '#F8F9FA', fontSize: '0.85rem', fontWeight: 500 }}>
-                {franquia.pontuacaoPex.toFixed(0)}%
+                {franquia.pontuacaoPex.toFixed(2)}
               </span>
             </div>
           </div>
@@ -145,8 +145,8 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
                 alignItems: 'center',
                 gap: '12px',
                 padding: '16px',
-                backgroundColor: selectedStatus === 'UTI_RECUPERACAO' ? '#e67e22' : '#212529',
-                border: selectedStatus === 'UTI_RECUPERACAO' ? '2px solid #e67e22' : '2px solid transparent',
+                backgroundColor: selectedStatus === 'UTI_RECUPERACAO' ? '#3d2a2a' : '#212529',
+                border: selectedStatus === 'UTI_RECUPERACAO' ? '2px solid #943126' : '2px solid #3a3d41',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -157,7 +157,7 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
                 width: '40px',
                 height: '40px',
                 borderRadius: '8px',
-                backgroundColor: '#e67e22',
+                backgroundColor: '#943126',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -182,8 +182,8 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
                 alignItems: 'center',
                 gap: '12px',
                 padding: '16px',
-                backgroundColor: selectedStatus === 'UTI_REPASSE' ? '#8e44ad' : '#212529',
-                border: selectedStatus === 'UTI_REPASSE' ? '2px solid #8e44ad' : '2px solid transparent',
+                backgroundColor: selectedStatus === 'UTI_REPASSE' ? '#2d1a20' : '#212529',
+                border: selectedStatus === 'UTI_REPASSE' ? '2px solid #6c2134' : '2px solid #3a3d41',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 textAlign: 'left',
@@ -194,7 +194,7 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
                 width: '40px',
                 height: '40px',
                 borderRadius: '8px',
-                backgroundColor: '#8e44ad',
+                backgroundColor: '#6c2134',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -216,12 +216,12 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
         {/* Erro */}
         {error && (
           <div style={{
-            backgroundColor: 'rgba(220, 53, 69, 0.2)',
-            border: '1px solid #dc3545',
+            backgroundColor: 'rgba(192, 57, 43, 0.2)',
+            border: '1px solid #c0392b',
             borderRadius: '8px',
             padding: '12px',
             marginBottom: '16px',
-            color: '#dc3545',
+            color: '#adb5bd',
             fontSize: '0.85rem',
           }}>
             {error}
@@ -253,7 +253,7 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
             disabled={!selectedStatus || loading}
             style={{
               padding: '10px 24px',
-              backgroundColor: selectedStatus ? (selectedStatus === 'UTI_RECUPERACAO' ? '#e67e22' : '#8e44ad') : '#6c757d',
+              backgroundColor: selectedStatus ? (selectedStatus === 'UTI_RECUPERACAO' ? '#943126' : '#6c2134') : '#6c757d',
               border: 'none',
               borderRadius: '6px',
               color: '#fff',
