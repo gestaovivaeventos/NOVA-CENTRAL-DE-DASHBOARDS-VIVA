@@ -326,7 +326,7 @@ export default function FluxoAnualCard({ dados, isSelected = false, onClick, onD
         {/* Despesas Anual */}
         <div className="py-2 border-b border-gray-700/30">
           <span className="text-[10px] text-gray-400 uppercase tracking-wide">Despesas Anual</span>
-          {onDespesaChange ? (
+          {onDespesaChange && dados.isAtual ? (
             <DespesaEditavel 
               valor={dados.custo} 
               onSave={(novoValor) => onDespesaChange(dados.ano, novoValor)} 

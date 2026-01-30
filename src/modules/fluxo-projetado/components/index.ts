@@ -11,6 +11,7 @@ export { default as GraficoProjecaoAnual } from './GraficoProjecaoAnual';
 export { default as TabelaFundos } from './TabelaFundos';
 export { default as Header } from './Header';
 export { default as Sidebar } from './Sidebar';
+export type { SidebarProps } from './Sidebar';
 export { default as CardReceitaAnual } from './CardReceitaAnual';
 export { default as FluxoAnualCard } from './FluxoAnualCard';
 export { default as ResumoTotaisCard } from './ResumoTotaisCard';

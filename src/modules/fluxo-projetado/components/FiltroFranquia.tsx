@@ -73,13 +73,14 @@ export default function FiltroFranquia({ franquiaSelecionada, onFranquiaChange, 
   
   return (
     <div className={`flex items-center gap-2 ${fullWidth ? 'w-full' : ''}`}>
-      <div className={`flex items-center gap-2 px-3 py-2 bg-[#252830] border border-gray-700 rounded-lg ${fullWidth ? 'w-full' : ''}`}>
+      <div className={`flex items-center gap-2 px-3 py-2 bg-[#252830] border border-gray-700 rounded-lg overflow-hidden ${fullWidth ? 'w-full' : ''}`}>
         <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
         {!fullWidth && <span className="text-xs text-gray-400 font-medium">Franquia:</span>}
         <select
           value={franquiaSelecionada}
           onChange={(e) => onFranquiaChange(e.target.value)}
-          className={`bg-transparent text-sm text-white font-semibold focus:outline-none cursor-pointer ${fullWidth ? 'flex-1' : 'pr-2'} ${!franquiaSelecionada ? 'text-gray-400' : ''}`}
+          className={`bg-transparent text-sm text-white font-semibold focus:outline-none cursor-pointer min-w-0 ${fullWidth ? 'flex-1 w-full' : 'pr-2'} ${!franquiaSelecionada ? 'text-gray-400' : ''}`}
+          style={{ maxWidth: 'calc(100% - 24px)' }}
         >
           <option value="" className="bg-[#1e2028] text-gray-400">
             Selecione uma franquia

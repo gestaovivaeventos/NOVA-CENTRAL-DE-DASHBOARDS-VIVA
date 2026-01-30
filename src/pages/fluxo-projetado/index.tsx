@@ -3,7 +3,7 @@
  * Página principal do módulo de projeção de receita
  */
 
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import { Header, FluxoAnualCard, DetalhamentoMensal, Sidebar, CalculadoraProjecao } from '@/modules/fluxo-projetado';
 import { DadosFluxoAnual, ParametrosFranquiaCard } from '@/modules/fluxo-projetado/components/FluxoAnualCard';
@@ -20,9 +20,16 @@ export default function FluxoProjetadoDashboard() {
   
   // Estado separado para despesas por ano (preservado durante reloads)
   const [despesasPorAno, setDespesasPorAno] = useState<Record<number, number>>({});
+  
+  // Ref para acessar despesasPorAno dentro de callbacks sem recriar
+  const despesasPorAnoRef = useRef<Record<number, number>>({});
+  despesasPorAnoRef.current = despesasPorAno;
 
   // Estado para parâmetros da franquia
   const [parametrosFranquia, setParametrosFranquia] = useState<ParametrosFranquiaCard | null>(null);
+  
+  // Ref para acessar mesesPermanenciaCarteira dentro de callbacks
+  const mesesPermanenciaRef = useRef<number>(0);
 
   // Estado para o ano selecionado (default: ano atual 2026)
   const [anoSelecionado, setAnoSelecionado] = useState<number>(2026);
@@ -30,7 +37,10 @@ export default function FluxoProjetadoDashboard() {
   // Estado para a franquia selecionada (inicia vazio para forçar seleção)
   const [franquiaSelecionada, setFranquiaSelecionada] = useState<string>('');
 
-  // Buscar parâmetros da franquia
+  // Estado para despesa anual da planilha
+  const [despesaAnualPlanilha, setDespesaAnualPlanilha] = useState<number>(0);
+
+  // Buscar parâmetros da franquia (inclui despesa fixa da coluna AK)
   const fetchParametros = useCallback(async (franquia: string) => {
     try {
       const response = await fetch(`/api/fluxo-projetado/parametros?refresh=${Date.now()}`);
@@ -43,6 +53,9 @@ export default function FluxoProjetadoDashboard() {
         );
         
         if (params) {
+          const mesesPermanencia = params.mesesPermanenciaCarteira || 0;
+          mesesPermanenciaRef.current = mesesPermanencia;
+          
           setParametrosFranquia({
             feePercentual: params.feePercentual || 0,
             percentualAntecipacao: params.percentualAntecipacao || 0,
@@ -52,10 +65,32 @@ export default function FluxoProjetadoDashboard() {
             diasBaile: params.diasBaileAnteciparUltimaParcela || 0,
             demaisReceitas: params.demaisReceitas || 0,
             margem: params.margem || 0,
-            mesesPermanenciaCarteira: params.mesesPermanenciaCarteira || 0,
+            mesesPermanenciaCarteira: mesesPermanencia,
           });
+
+          // Atualiza despesa fixa com valor da planilha (coluna AK)
+          const despesaFixa = params.despesaFixa || 0;
+          if (despesaFixa > 0) {
+            setDespesaAnualPlanilha(despesaFixa);
+            const anoAtual = new Date().getFullYear();
+            const despesaNegativa = -Math.abs(despesaFixa);
+            
+            // Se mesesPermanencia > 36, inclui também 2029
+            const despesas: Record<number, number> = {
+              [anoAtual]: despesaNegativa,
+              [anoAtual + 1]: despesaNegativa * 1.05,
+              [anoAtual + 2]: despesaNegativa * 1.05 * 1.05,
+            };
+            
+            if (mesesPermanencia > 36) {
+              despesas[anoAtual + 3] = despesaNegativa * 1.05 * 1.05 * 1.05; // +5% para 2029
+            }
+            
+            setDespesasPorAno(despesas);
+          }
         } else {
           setParametrosFranquia(null);
+          mesesPermanenciaRef.current = 0;
         }
       }
     } catch (err) {
@@ -77,8 +112,9 @@ export default function FluxoProjetadoDashboard() {
       }
 
       // Mapeia os dados da API para o formato do componente
-      // DESPESAS: Não puxa da planilha - é campo editável manual, inicia em 0
+      // DESPESAS: Usa o ref para evitar dependência circular
       const anoAtualMap = new Date().getFullYear();
+      const despesasAtuais = despesasPorAnoRef.current;
       const dados: DadosFluxoAnual[] = result.data.map((item: any) => {
         // Calcula saldo sem despesa (despesa inicia em 0)
         const receitaCarteira = item.receitaCarteira;
@@ -105,7 +141,7 @@ export default function FluxoProjetadoDashboard() {
         const receitaCalcFranqueado = somaAntecipacaoCalcFranqueado + somaFechamentoCalcFranqueado + somaDemaisReceitasCalcFranqueado;
         
         // Preserva despesa existente ou inicia em 0
-        const despesaExistente = despesasPorAno[item.ano] || 0;
+        const despesaExistente = despesasAtuais[item.ano] || 0;
         const saldoComDespesa = saldoSemDespesa + despesaExistente;
         
         return {
@@ -131,15 +167,21 @@ export default function FluxoProjetadoDashboard() {
         };
       });
 
-      // Garantir que 3 anos (ano atual + 2) sempre apareçam
+      // Determina quantos anos exibir baseado em mesesPermanenciaCarteira
       const anoAtual = new Date().getFullYear();
-      const anosDesejados = [anoAtual, anoAtual + 1, anoAtual + 2];
+      const mesesPermanencia = mesesPermanenciaRef.current;
+      
+      // Se mesesPermanencia > 36, exibe até 2029 (4 anos), senão até 2028 (3 anos)
+      const anosDesejados = mesesPermanencia > 36
+        ? [anoAtual, anoAtual + 1, anoAtual + 2, anoAtual + 3]
+        : [anoAtual, anoAtual + 1, anoAtual + 2];
+        
       const dadosCompletos: DadosFluxoAnual[] = anosDesejados.map(ano => {
         const dadoExistente = dados.find((d: DadosFluxoAnual) => d.ano === ano);
         if (dadoExistente) return dadoExistente;
         
         // Preserva despesa existente ou inicia em 0
-        const despesaExistente = despesasPorAno[ano] || 0;
+        const despesaExistente = despesasAtuais[ano] || 0;
         
         // Se não existe na base, cria registro zerado
         return {
@@ -177,39 +219,87 @@ export default function FluxoProjetadoDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [anoSelecionado, despesasPorAno]);
+  }, [anoSelecionado]);
 
   // Limpa despesas quando a franquia mudar (são específicas de cada franquia)
   useEffect(() => {
     setDespesasPorAno({});
+    setDespesaAnualPlanilha(0);
   }, [franquiaSelecionada]);
 
   // Buscar dados quando a franquia mudar (só se tiver franquia selecionada)
   useEffect(() => {
     if (franquiaSelecionada) {
       setLoading(true);
-      fetchDados(franquiaSelecionada);
-      fetchParametros(franquiaSelecionada);
+      // Busca parâmetros primeiro (inclui despesa fixa), depois os dados
+      fetchParametros(franquiaSelecionada).then(() => {
+        fetchDados(franquiaSelecionada);
+      });
     } else {
       setLoading(false);
       setDadosFluxoAnual([]);
     }
   }, [franquiaSelecionada, fetchDados, fetchParametros]);
 
-  // Handler para atualizar despesa (local e no estado separado)
-  const handleDespesaChange = useCallback((ano: number, novoValor: number) => {
-    // Atualiza o estado separado de despesas por ano (preservado durante reloads)
-    setDespesasPorAno(prev => ({ ...prev, [ano]: novoValor }));
+  // Handler para atualizar despesa (local e salvar na planilha)
+  // Somente o ano atual é editável, os outros são calculados com +5%
+  const handleDespesaChange = useCallback(async (ano: number, novoValor: number) => {
+    const anoAtual = new Date().getFullYear();
+    const mesesPermanencia = mesesPermanenciaRef.current;
+    
+    // Calcula despesas para todos os anos (ano atual + 5% para os seguintes)
+    const despesa2026 = novoValor;
+    const despesa2027 = novoValor * 1.05;
+    const despesa2028 = novoValor * 1.05 * 1.05;
+    const despesa2029 = novoValor * 1.05 * 1.05 * 1.05;
+    
+    // Atualiza o estado separado de despesas por ano
+    const despesas: Record<number, number> = {
+      [anoAtual]: despesa2026,
+      [anoAtual + 1]: despesa2027,
+      [anoAtual + 2]: despesa2028,
+    };
+    
+    if (mesesPermanencia > 36) {
+      despesas[anoAtual + 3] = despesa2029;
+    }
+    
+    setDespesasPorAno(despesas);
     
     // Atualiza também o estado dos dados para refletir imediatamente na UI
     setDadosFluxoAnual((prev) => 
       prev.map((dados) => {
-        if (dados.ano !== ano) return dados;
-        const novoSaldo = dados.receitaCarteira + dados.receitaNovosVendas + novoValor;
-        return { ...dados, custo: novoValor, saldo: novoSaldo };
+        let novaDespesa = despesa2026;
+        if (dados.ano === anoAtual + 1) novaDespesa = despesa2027;
+        if (dados.ano === anoAtual + 2) novaDespesa = despesa2028;
+        if (dados.ano === anoAtual + 3) novaDespesa = despesa2029;
+        
+        const novoSaldo = dados.receitaCarteira + dados.receitaNovosVendas + novaDespesa;
+        return { ...dados, custo: novaDespesa, saldo: novoSaldo };
       })
     );
-  }, []);
+
+    // Salva na planilha (coluna AK da aba PARAMETROS PAINEL)
+    // Salva o valor exato que o usuário digitou (valor absoluto)
+    const despesaAnual = Math.abs(novoValor);
+
+    try {
+      const response = await fetch('/api/fluxo-projetado/despesa-anual', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          franquia: franquiaSelecionada,
+          despesaAnual: despesaAnual,
+        }),
+      });
+      
+      if (!response.ok) {
+        console.error('[FluxoProjetado] Erro ao salvar despesa na planilha');
+      }
+    } catch (err) {
+      console.error('[FluxoProjetado] Erro ao salvar despesa:', err);
+    }
+  }, [franquiaSelecionada]);
 
   // Callback para quando os parâmetros forem salvos
   const handleParametrosSaved = useCallback(() => {
@@ -232,6 +322,7 @@ export default function FluxoProjetadoDashboard() {
           franquiaSelecionada={franquiaSelecionada}
           onFranquiaChange={setFranquiaSelecionada}
           onParametrosSaved={handleParametrosSaved}
+          paginaAtiva="projetado"
         />
 
         {/* Main Content */}
@@ -285,7 +376,11 @@ export default function FluxoProjetadoDashboard() {
                 <span className="text-gray-400">Nenhum dado encontrado para a franquia selecionada.</span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className={`grid grid-cols-1 gap-3 ${
+                dadosFluxoAnual.length === 4 
+                  ? 'md:grid-cols-4' 
+                  : 'md:grid-cols-3'
+              }`}>
                 {dadosFluxoAnual.map((dados) => (
                   <FluxoAnualCard
                     key={dados.ano}

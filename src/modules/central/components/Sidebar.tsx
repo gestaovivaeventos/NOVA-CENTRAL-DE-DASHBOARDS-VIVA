@@ -42,7 +42,7 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
         id: 'dashboards-gerais',
         name: 'Dashboards Gerais',
         dashboards: [
-          { id: 'fluxo-projetado', label: 'Fluxo Projetado', path: '/fluxo-projetado', icon: 'fluxo' },
+          { id: 'fluxo-projetado', label: 'Gestão de Caixa', path: '/fluxo-projetado', icon: 'fluxo' },
         ],
       },
     ];
@@ -67,7 +67,7 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
       dashboards: [
         { id: 'vendas', label: 'Dashboard Vendas', path: '/vendas', icon: 'money' },
         { id: 'carteira', label: 'Dashboard Carteira', path: '/carteira', icon: 'wallet' },
-        { id: 'fluxo-projetado', label: 'Fluxo Projetado', path: '/fluxo-projetado', icon: 'fluxo' },
+        { id: 'fluxo-projetado', label: 'Gestão de Caixa', path: '/fluxo-projetado', icon: 'fluxo' },
       ],
     },
   ];

@@ -25,6 +25,7 @@ export interface ParametrosFranquiaAPI {
   margem: number;
   mesesPermanenciaCarteira: number;
   feePercentual: number;
+  despesaFixa: number; // Coluna AK - Despesa Fixa Anual
 }
 
 // Mapeia índices das colunas (baseado na ordem dos cabeçalhos)
@@ -40,6 +41,7 @@ const COLUNAS = {
   MARGEM: 8,
   MESES_PERMANENCIA: 9,
   FEE_PERCENTUAL: 10,
+  DESPESA_FIXA: 36, // Coluna AK = índice 36
 };
 
 function parseNumber(value: any): number {
@@ -106,6 +108,7 @@ function parseRow(row: any[]): ParametrosFranquiaAPI | null {
     margem: parsePercentual(row[COLUNAS.MARGEM]),
     mesesPermanenciaCarteira: parseNumber(row[COLUNAS.MESES_PERMANENCIA]),
     feePercentual: parsePercentual(row[COLUNAS.FEE_PERCENTUAL]),
+    despesaFixa: parseNumber(row[COLUNAS.DESPESA_FIXA]),
   };
 }
 
@@ -144,7 +147,7 @@ async function getParametros(skipCache: boolean = false): Promise<ParametrosFran
   const auth = getAuthenticatedClient();
   const sheets = google.sheets({ version: 'v4', auth });
   
-  const range = `${SHEET_NAME}!A:K`;
+  const range = `${SHEET_NAME}!A:AK`;
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
     range,
