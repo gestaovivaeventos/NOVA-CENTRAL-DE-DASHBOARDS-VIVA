@@ -81,6 +81,7 @@ export function useFundosData(): UseFundosDataReturn {
         cursoFundo: headers.indexOf('curso_fundo'),
         tipoCliente: headers.indexOf('tipo_cliente'),
         dtBaile: headers.indexOf('dt_baile'),
+        tipoCurso: headers.indexOf('tipo_curso'),
       };
 
       // Verificar colunas essenciais
@@ -105,6 +106,7 @@ export function useFundosData(): UseFundosDataReturn {
             dt_baile: indices.dtBaile !== -1 ? parseDate(row[indices.dtBaile]) : null,
             curso_fundo: indices.cursoFundo !== -1 ? row[indices.cursoFundo] || '' : '',
             tipo_cliente: indices.tipoCliente !== -1 ? row[indices.tipoCliente] || 'N/A' : 'N/A',
+            tipo_curso: indices.tipoCurso !== -1 ? row[indices.tipoCurso] || '' : '',
           } as Fundo;
         })
         .filter(Boolean) as Fundo[];

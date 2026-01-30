@@ -377,7 +377,10 @@ export default function MultiSelect({
                         <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>✓</span>
                       )}
                     </div>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span 
+                      style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      title={option}
+                    >
                       {option}
                     </span>
                   </div>

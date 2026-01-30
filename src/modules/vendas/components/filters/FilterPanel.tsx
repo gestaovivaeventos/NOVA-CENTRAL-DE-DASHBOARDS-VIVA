@@ -34,6 +34,7 @@ interface FilterPanelProps {
   showTipoAdesao?: boolean;
   showTipoServico?: boolean;
   showTipoCliente?: boolean;
+  showTipoCurso?: boolean;
   showConsultorComercial?: boolean;
   showIndicacaoAdesao?: boolean;
   showInstituicao?: boolean;
@@ -63,6 +64,7 @@ export default function FilterPanel({
   showTipoAdesao,
   showTipoServico,
   showTipoCliente,
+  showTipoCurso,
   showConsultorComercial,
   showIndicacaoAdesao,
   showInstituicao,
@@ -84,6 +86,7 @@ export default function FilterPanel({
   const shouldShowTipoAdesao = showTipoAdesao ?? isIndicadoresPage;
   const shouldShowTipoServico = showTipoServico ?? isIndicadoresPage;
   const shouldShowTipoCliente = showTipoCliente ?? isIndicadoresPage;
+  const shouldShowTipoCurso = showTipoCurso ?? isIndicadoresPage;
   const shouldShowConsultorComercial = showConsultorComercial ?? isIndicadoresPage;
   const shouldShowIndicacaoAdesao = showIndicacaoAdesao ?? isIndicadoresPage;
   const shouldShowInstituicao = showInstituicao ?? isIndicadoresPage;
@@ -376,6 +379,17 @@ export default function FilterPanel({
             options={opcoes.tiposCliente}
             selectedValues={filtros.tipoCliente}
             onChange={(tipoCliente) => onFiltrosChange({ tipoCliente })}
+            placeholder="Todos os tipos"
+          />
+        )}
+
+        {/* Filtro de Tipo de Curso - Apenas página Indicadores */}
+        {shouldShowTipoCurso && opcoes.tiposCurso && opcoes.tiposCurso.length > 0 && (
+          <MultiSelect
+            label="Tipo de Curso"
+            options={opcoes.tiposCurso}
+            selectedValues={filtros.tipoCurso}
+            onChange={(tipoCurso) => onFiltrosChange({ tipoCurso })}
             placeholder="Todos os tipos"
           />
         )}

@@ -291,6 +291,7 @@ export interface FiltrosDados {
   tipoAdesao?: string[];
   tipoServico?: string[];
   tipoCliente?: string[];
+  tipoCurso?: string[];
   consultorComercial?: string[];
   indicacaoAdesao?: string[];
   instituicao?: string[];
@@ -355,6 +356,13 @@ export function filtrarDados(
     // Filtro por tipo de cliente
     if (filtros.tipoCliente && filtros.tipoCliente.length > 0) {
       if (!filtros.tipoCliente.includes(item.tipo_cliente)) {
+        return false;
+      }
+    }
+    
+    // Filtro por tipo de curso
+    if (filtros.tipoCurso && filtros.tipoCurso.length > 0) {
+      if (!filtros.tipoCurso.includes(item.tipo_curso)) {
         return false;
       }
     }

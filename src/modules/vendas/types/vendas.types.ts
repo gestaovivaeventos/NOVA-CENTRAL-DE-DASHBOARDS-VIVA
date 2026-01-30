@@ -18,6 +18,7 @@ export interface Adesao {
   tp_servico: string;
   nm_instituicao: string;
   tipo_cliente: string;
+  tipo_curso: string;
 }
 
 // Dados de um fundo/contrato
@@ -32,6 +33,7 @@ export interface Fundo {
   dt_baile: Date | null;
   curso_fundo: string;
   tipo_cliente: string;
+  tipo_curso: string;
 }
 
 // Dados de meta

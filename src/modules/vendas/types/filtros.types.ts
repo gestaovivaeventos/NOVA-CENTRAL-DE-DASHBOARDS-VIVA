@@ -30,6 +30,7 @@ export interface FiltrosState {
   tipoAdesao: string[];
   tipoServico: string[];
   tipoCliente: string[];
+  tipoCurso: string[];
   consultorComercial: string[];
   indicacaoAdesao: string[];
   instituicao: string[];
@@ -54,6 +55,7 @@ export interface FiltrosOpcoes {
   tiposAdesao: string[];
   tiposServico: string[];
   tiposCliente: string[];
+  tiposCurso: string[];
   consultoresComerciais: string[];
   indicacoesAdesao: string[];
   instituicoes: string[];

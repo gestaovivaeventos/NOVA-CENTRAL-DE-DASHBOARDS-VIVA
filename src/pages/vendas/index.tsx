@@ -83,6 +83,7 @@ const INITIAL_FILTERS: FiltrosState = {
   tipoAdesao: [],
   tipoServico: [],
   tipoCliente: [],
+  tipoCurso: [],
   consultorComercial: [],
   indicacaoAdesao: [],
   instituicao: [],
@@ -395,6 +396,11 @@ export default function Dashboard() {
       tiposAdesao: [...new Set(salesDataFiltrado.map((d) => (d.venda_posvenda || '').trim().toUpperCase()).filter(Boolean))].sort(),
       tiposServico: [...new Set(salesDataFiltrado.map((d) => d.tp_servico).filter(Boolean))].sort(),
       tiposCliente: [...new Set(salesDataFiltrado.map((d) => d.tipo_cliente).filter(Boolean))].sort(),
+      // Tipo de Curso - combinar de adesões e fundos
+      tiposCurso: [...new Set([
+        ...salesDataFiltrado.map((d) => d.tipo_curso).filter(Boolean),
+        ...fundosDataFiltrado.map((d) => d.tipo_curso).filter(Boolean),
+      ])].sort(),
       consultoresComerciais: [...new Set(salesDataFiltrado.map((d) => d.consultor_comercial).filter(Boolean))].sort(),
       indicacoesAdesao: [...new Set(salesDataFiltrado.map((d) => d.indicado_por).filter(Boolean))].sort(),
       instituicoes: [...new Set(salesDataFiltrado.map((d) => d.nm_instituicao).filter(Boolean))].sort(),
@@ -448,6 +454,13 @@ export default function Dashboard() {
       const tiposValidos = filtros.tipoCliente.filter(t => opcoesFiltros.tiposCliente.includes(t));
       if (tiposValidos.length !== filtros.tipoCliente.length) {
         filtrosParaLimpar.tipoCliente = tiposValidos;
+      }
+    }
+    
+    if (filtros.tipoCurso.length > 0) {
+      const tiposValidos = filtros.tipoCurso.filter(t => opcoesFiltros.tiposCurso.includes(t));
+      if (tiposValidos.length !== filtros.tipoCurso.length) {
+        filtrosParaLimpar.tipoCurso = tiposValidos;
       }
     }
     
@@ -522,6 +535,7 @@ export default function Dashboard() {
       tipoAdesao: filtros.tipoAdesao,
       tipoServico: filtros.tipoServico,
       tipoCliente: filtros.tipoCliente,
+      tipoCurso: filtros.tipoCurso,
       consultorComercial: filtros.consultorComercial,
       indicacaoAdesao: filtros.indicacaoAdesao,
       instituicao: filtros.instituicao,
@@ -535,6 +549,7 @@ export default function Dashboard() {
     filtros.tipoAdesao,
     filtros.tipoServico,
     filtros.tipoCliente,
+    filtros.tipoCurso,
     filtros.consultorComercial,
     filtros.indicacaoAdesao,
     filtros.instituicao,
@@ -648,6 +663,7 @@ export default function Dashboard() {
       tipoAdesao: filtros.tipoAdesao,
       tipoServico: filtros.tipoServico,
       tipoCliente: filtros.tipoCliente,
+      tipoCurso: filtros.tipoCurso,
       consultorComercial: filtros.consultorComercial,
       indicacaoAdesao: filtros.indicacaoAdesao,
       instituicao: filtros.instituicao,
@@ -721,6 +737,7 @@ export default function Dashboard() {
     filtros.tipoAdesao,
     filtros.tipoServico,
     filtros.tipoCliente,
+    filtros.tipoCurso,
     filtros.consultorComercial,
     filtros.indicacaoAdesao,
     filtros.instituicao,
@@ -828,6 +845,11 @@ export default function Dashboard() {
         }
       }
       
+      // Verificar filtro de tipo de curso
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) {
+        return false;
+      }
+      
       // Verificar se tem id_fundo
       if (!d.id_fundo || d.id_fundo.toString().trim() === '') return false;
       
@@ -886,7 +908,7 @@ export default function Dashboard() {
       contratos: { valor: contratosCount, meta: metaContratos * multiplicador },
       adesao: { valor: adesoesCount, meta: metaAdesoes * multiplicador },
     };
-  }, [dadosFiltrados, funilData, fundosData, filtros.unidades, filtros.isMetaInterna, metasData, periodo, parseFunilDate]);
+  }, [dadosFiltrados, funilData, fundosData, filtros.unidades, filtros.tipoCurso, filtros.isMetaInterna, metasData, periodo, parseFunilDate]);
 
   // Dados para gráfico VVR vs Meta por Mês
   const dadosGraficoVVRMes = useMemo(() => {
@@ -1236,6 +1258,8 @@ export default function Dashboard() {
         if (d.nm_unidade !== unidade) return false;
         if (!d.id_fundo || d.id_fundo.toString().trim() === '') return false;
         if (!d.dt_contrato || !(d.dt_contrato instanceof Date)) return false;
+        // Verificar filtro de tipo de curso
+        if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
         return d.dt_contrato >= startDate && d.dt_contrato <= endDate;
       }).length;
 
@@ -1285,7 +1309,7 @@ export default function Dashboard() {
         adesoesPercent: adesoesMeta > 0 ? adesoesResultado / adesoesMeta : 0,
       };
     });
-  }, [dadosFiltrados, funilData, fundosData, metasData, periodo, filtros.isMetaInterna, parseFunilDate]);
+  }, [dadosFiltrados, funilData, fundosData, metasData, periodo, filtros.isMetaInterna, filtros.tipoCurso, parseFunilDate]);
 
   // ========== DADOS PARA INDICADORES SECUNDÁRIOS ==========
   
@@ -1298,12 +1322,19 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     
-    // Filtrar por unidades e cursos
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltradosUnidades = salesData.filter(d => {
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1340,23 +1371,30 @@ export default function Dashboard() {
       vendas: salesByYear[year].vendas,
       posVendas: salesByYear[year].posVendas,
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades]);
 
   // Dados para gráfico VVR Total Mensal (barras empilhadas verticais)
   const dadosVVRMensal = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoVVR || anoVigente;
     
-    // Filtrar por unidades, cursos e ano
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltradosUnidades = salesData.filter(d => {
       const dt = d.dt_cadastro_integrante;
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1385,19 +1423,26 @@ export default function Dashboard() {
       vendas: salesByMonth[index].vendas,
       posVendas: salesByMonth[index].posVendas,
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoVVR, anoVigente]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades, anoSelecionadoVVR, anoVigente]);
 
   // Dados para gráfico Ticket Médio Anual (barras horizontais)
   const dadosTicketAnual = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     
-    // Filtrar por unidades e cursos
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltradosUnidades = salesData.filter(d => {
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1427,23 +1472,30 @@ export default function Dashboard() {
         ? ticketByYear[year].totalValor / ticketByYear[year].totalAdesoes 
         : 0,
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades]);
 
   // Dados para gráfico Ticket Médio Mensal (barras verticais)
   const dadosTicketMensal = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoTicket || anoVigente;
     
-    // Filtrar por unidades, cursos e ano
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltradosUnidades = salesData.filter(d => {
       const dt = d.dt_cadastro_integrante;
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1465,7 +1517,7 @@ export default function Dashboard() {
         ? ticketByMonth[index].totalValor / ticketByMonth[index].totalAdesoes 
         : 0,
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoTicket, anoVigente]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades, anoSelecionadoTicket, anoVigente]);
 
   // Estado para anos ativos nos gráficos de comparativo
   const [anosAtivosVVR, setAnosAtivosVVR] = useState<number[]>([]);
@@ -1489,11 +1541,19 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltradosUnidades = salesData.filter(d => {
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1525,7 +1585,7 @@ export default function Dashboard() {
       year,
       monthlyData: salesByYearMonth[year],
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anosAtivosVVR.length]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades, anosAtivosVVR.length]);
 
   // Anos ativos calculados
   const anosAtivosVVRComputed = useMemo(() => {
@@ -1539,11 +1599,14 @@ export default function Dashboard() {
     if (!fundosData || fundosData.length === 0) return { labels: [], values: [] };
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     
+    // Aplicar todos os filtros da página de indicadores (fundos usa tipo_curso da coluna R)
     const dadosFiltrados = fundosData.filter(d => {
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tipo_servico)) return false;
       return true;
     });
 
@@ -1567,7 +1630,7 @@ export default function Dashboard() {
       labels: years,
       values: years.map(y => contractsByYear[y] || 0),
     };
-  }, [fundosData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
+  }, [fundosData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoServico, opcoesFiltros.unidades]);
 
   // Estado para ano selecionado nos contratos
   const [anoSelecionadoContratos, setAnoSelecionadoContratos] = useState<number | null>(null);
@@ -1577,15 +1640,18 @@ export default function Dashboard() {
     if (!fundosData || fundosData.length === 0) return { labels: [], values: [] };
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoContratos || anoVigente;
     
+    // Aplicar todos os filtros da página de indicadores (fundos usa tipo_curso da coluna R)
     const dadosFiltrados = fundosData.filter(d => {
       const dt = d.dt_contrato;
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tipo_servico)) return false;
       return true;
     });
 
@@ -1603,18 +1669,26 @@ export default function Dashboard() {
       labels: MESES_NOMES,
       values: contractsByMonth,
     };
-  }, [fundosData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoContratos, anoVigente]);
+  }, [fundosData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoServico, opcoesFiltros.unidades, anoSelecionadoContratos, anoVigente]);
 
   // Dados para gráfico Comparativo Mensal de Adesões (barras agrupadas)
   const dadosComparativoAdesoes = useMemo(() => {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltradosUnidades = salesData.filter(d => {
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1646,7 +1720,7 @@ export default function Dashboard() {
       year,
       monthlyData: adesoesByYearMonth[year],
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anosAtivosAdesoes.length]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades, anosAtivosAdesoes.length]);
 
   // Anos ativos calculados para adesões
   const anosAtivosAdesoesComputed = useMemo(() => {
@@ -1660,11 +1734,19 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltradosUnidades = salesData.filter(d => {
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1699,7 +1781,7 @@ export default function Dashboard() {
       vendas: adesoesByYear[year].vendas,
       posVendas: adesoesByYear[year].posVendas,
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades]);
 
   // Estado para ano selecionado nas adesões por tipo
   const [anoSelecionadoAdesoesTipo, setAnoSelecionadoAdesoesTipo] = useState<number | null>(null);
@@ -1709,15 +1791,23 @@ export default function Dashboard() {
     if (!salesData || salesData.length === 0) return [];
 
     const unidadesAtivas = filtros.unidades.length > 0 ? filtros.unidades : opcoesFiltros.unidades;
-    const cursosAtivos = filtros.cursos;
     const anoParaExibir = anoSelecionadoAdesoesTipo || anoVigente;
     
+    // Aplicar todos os filtros da página de indicadores
     const dadosFiltrados = salesData.filter(d => {
       const dt = d.dt_cadastro_integrante;
       if (!(dt instanceof Date)) return false;
       if (dt.getFullYear() !== anoParaExibir) return false;
       if (unidadesAtivas.length > 0 && !unidadesAtivas.includes(d.nm_unidade)) return false;
-      if (cursosAtivos.length > 0 && !cursosAtivos.includes(d.curso_fundo)) return false;
+      if (filtros.cursos.length > 0 && !filtros.cursos.includes(d.curso_fundo)) return false;
+      if (filtros.tipoCurso.length > 0 && !filtros.tipoCurso.includes(d.tipo_curso)) return false;
+      if (filtros.fundos.length > 0 && !filtros.fundos.includes(d.nm_fundo)) return false;
+      if (filtros.tipoAdesao.length > 0 && !filtros.tipoAdesao.includes((d.venda_posvenda || '').trim().toUpperCase())) return false;
+      if (filtros.tipoServico.length > 0 && !filtros.tipoServico.includes(d.tp_servico)) return false;
+      if (filtros.tipoCliente.length > 0 && !filtros.tipoCliente.includes(d.tipo_cliente)) return false;
+      if (filtros.consultorComercial.length > 0 && !filtros.consultorComercial.includes(d.consultor_comercial)) return false;
+      if (filtros.indicacaoAdesao.length > 0 && !filtros.indicacaoAdesao.includes(d.indicado_por)) return false;
+      if (filtros.instituicao.length > 0 && !filtros.instituicao.includes(d.nm_instituicao)) return false;
       return true;
     });
 
@@ -1746,7 +1836,7 @@ export default function Dashboard() {
       vendas: adesoesByMonth[index].vendas,
       posVendas: adesoesByMonth[index].posVendas,
     }));
-  }, [salesData, filtros.unidades, filtros.cursos, opcoesFiltros.unidades, anoSelecionadoAdesoesTipo, anoVigente]);
+  }, [salesData, filtros.unidades, filtros.cursos, filtros.tipoCurso, filtros.fundos, filtros.tipoAdesao, filtros.tipoServico, filtros.tipoCliente, filtros.consultorComercial, filtros.indicacaoAdesao, filtros.instituicao, opcoesFiltros.unidades, anoSelecionadoAdesoesTipo, anoVigente]);
 
   // Dados para tabela de Desempenho por Consultor Comercial
   // Usa dadosFiltrados que já tem todos os filtros aplicados (período, unidade, tipo adesão, etc.)
@@ -1820,13 +1910,15 @@ export default function Dashboard() {
       const fundoMatch = filtros.fundos.length === 0 || 
         (d.nm_fundo && filtros.fundos.includes(d.nm_fundo));
       const tipoServicoMatch = filtros.tipoServico.length === 0 || 
-        (d.tipo_servico && filtros.tipoServico.includes(d.tipo_servico.trim().toUpperCase()));
+        (d.tipo_servico && filtros.tipoServico.includes(d.tipo_servico));
       const tipoClienteMatch = filtros.tipoCliente.length === 0 || 
-        (d.tipo_cliente && filtros.tipoCliente.includes(d.tipo_cliente.trim().toUpperCase()));
+        (d.tipo_cliente && filtros.tipoCliente.includes(d.tipo_cliente));
+      const tipoCursoMatch = filtros.tipoCurso.length === 0 || 
+        (d.tipo_curso && filtros.tipoCurso.includes(d.tipo_curso));
       const instituicaoMatch = filtros.instituicao.length === 0 || 
-        (d.instituicao && filtros.instituicao.includes(d.instituicao.trim().toUpperCase()));
+        (d.instituicao && filtros.instituicao.includes(d.instituicao));
       
-      return unidadeMatch && dateMatch && cursoMatch && fundoMatch && tipoServicoMatch && tipoClienteMatch && instituicaoMatch;
+      return unidadeMatch && dateMatch && cursoMatch && fundoMatch && tipoServicoMatch && tipoClienteMatch && tipoCursoMatch && instituicaoMatch;
     });
 
     return dadosFiltrados.map(d => ({
@@ -1845,7 +1937,7 @@ export default function Dashboard() {
         ? d.dt_baile.toLocaleDateString('pt-BR') 
         : '',
     }));
-  }, [fundosData, periodo, filtros.unidades, filtros.cursos, filtros.fundos, filtros.tipoServico, filtros.tipoCliente, filtros.instituicao, opcoesFiltros.unidades]);
+  }, [fundosData, periodo, filtros.unidades, filtros.cursos, filtros.fundos, filtros.tipoServico, filtros.tipoCliente, filtros.tipoCurso, filtros.instituicao, opcoesFiltros.unidades]);
 
   // ========== DADOS DO FUNIL ==========
   
