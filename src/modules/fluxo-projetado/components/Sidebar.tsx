@@ -169,7 +169,7 @@ export default function Sidebar({
               {/* Navegação entre páginas */}
               <div className="space-y-2">
                 <button 
-                  onClick={() => router.push('/fluxo-projetado')}
+                  onClick={() => router.push(franquiaSelecionada ? `/fluxo-projetado?franquia=${encodeURIComponent(franquiaSelecionada)}` : '/fluxo-projetado')}
                   className={`flex items-center gap-2 w-full px-3 py-2.5 border rounded-lg transition-all text-sm ${
                     paginaAtiva === 'projetado' 
                       ? 'bg-orange-500/20 border-orange-500 text-orange-400' 
@@ -181,7 +181,7 @@ export default function Sidebar({
                 </button>
                 
                 <button 
-                  onClick={() => router.push('/fluxo-projetado/realizado')}
+                  onClick={() => router.push(franquiaSelecionada ? `/fluxo-projetado/realizado?franquia=${encodeURIComponent(franquiaSelecionada)}` : '/fluxo-projetado/realizado')}
                   className={`flex items-center gap-2 w-full px-3 py-2.5 border rounded-lg transition-all text-sm ${
                     paginaAtiva === 'realizado' 
                       ? 'bg-orange-500/20 border-orange-500 text-orange-400' 
@@ -214,7 +214,7 @@ export default function Sidebar({
             <div className="flex flex-col items-center gap-3">
               {/* Botão Fluxo Projetado (ícone) */}
               <button
-                onClick={() => router.push('/fluxo-projetado')}
+                onClick={() => router.push(`/fluxo-projetado${franquiaSelecionada ? `?franquia=${encodeURIComponent(franquiaSelecionada)}` : ''}`)}
                 className={`p-2.5 rounded-lg transition-all ${
                   paginaAtiva === 'projetado'
                     ? 'bg-orange-500/30 text-orange-400'
@@ -227,7 +227,7 @@ export default function Sidebar({
               
               {/* Botão Fluxo Realizado (ícone) */}
               <button
-                onClick={() => router.push('/fluxo-projetado/realizado')}
+                onClick={() => router.push(`/fluxo-projetado/realizado${franquiaSelecionada ? `?franquia=${encodeURIComponent(franquiaSelecionada)}` : ''}`)}
                 className={`p-2.5 rounded-lg transition-all ${
                   paginaAtiva === 'realizado'
                     ? 'bg-orange-500/30 text-orange-400'

@@ -10,9 +10,10 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import Head from 'next/head';
-import { Header, Sidebar, RecebimentoFeeFundo, ReceitasRecebidasFundo, RealizadoAnualCard } from '@/modules/fluxo-projetado';
+import { useRouter } from 'next/router';
+import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas, RealizadoAnualCard } from '@/modules/fluxo-projetado';
 import { FundoFee } from '@/modules/fluxo-projetado/components/RecebimentoFeeFundo';
-import { FundoReceita } from '@/modules/fluxo-projetado/components/ReceitasRecebidasFundo';
+import { ReceitaMensalAgrupada } from '@/modules/fluxo-projetado/components/ReceitasMensaisAgrupadas';
 import { DadosRealizadoAnual } from '@/modules/fluxo-projetado/components/RealizadoAnualCard';
 import { Loader2, BarChart3 } from 'lucide-react';
 
@@ -75,58 +76,25 @@ const gerarFundosMockFee = (): FundoFee[] => {
 
 const dadosMockFundosFee: FundoFee[] = gerarFundosMockFee();
 
-const dadosMockFundosReceita: FundoReceita[] = [
-  {
-    id: '1',
-    nome: 'Turma Colégio Exemplo 2024',
-    unidade: 'Colégio Exemplo',
-    ativo: true,
-    totalRecebido: 21000.00,
-    receitasMensais: [
-      { mes: '01/2025', mesNome: 'Janeiro', ano: 2025, valorTotal: 3500.00, antecipacaoFee: 2100.00, ultimaParcelaFee: 0, demaisReceitas: 1400.00 },
-      { mes: '02/2025', mesNome: 'Fevereiro', ano: 2025, valorTotal: 3500.00, antecipacaoFee: 2100.00, ultimaParcelaFee: 0, demaisReceitas: 1400.00 },
-      { mes: '03/2025', mesNome: 'Março', ano: 2025, valorTotal: 3500.00, antecipacaoFee: 2100.00, ultimaParcelaFee: 0, demaisReceitas: 1400.00 },
-      { mes: '04/2025', mesNome: 'Abril', ano: 2025, valorTotal: 3500.00, antecipacaoFee: 2100.00, ultimaParcelaFee: 0, demaisReceitas: 1400.00 },
-      { mes: '05/2025', mesNome: 'Maio', ano: 2025, valorTotal: 3500.00, antecipacaoFee: 2100.00, ultimaParcelaFee: 0, demaisReceitas: 1400.00 },
-      { mes: '06/2025', mesNome: 'Junho', ano: 2025, valorTotal: 3500.00, antecipacaoFee: 2100.00, ultimaParcelaFee: 0, demaisReceitas: 1400.00 },
-      { mes: '07/2025', mesNome: 'Julho', ano: 2025, valorTotal: 0, antecipacaoFee: 0, ultimaParcelaFee: 0, demaisReceitas: 0 },
-      { mes: '08/2025', mesNome: 'Agosto', ano: 2025, valorTotal: 0, antecipacaoFee: 0, ultimaParcelaFee: 0, demaisReceitas: 0 },
-      { mes: '09/2025', mesNome: 'Setembro', ano: 2025, valorTotal: 0, antecipacaoFee: 0, ultimaParcelaFee: 0, demaisReceitas: 0 },
-      { mes: '10/2025', mesNome: 'Outubro', ano: 2025, valorTotal: 0, antecipacaoFee: 0, ultimaParcelaFee: 0, demaisReceitas: 0 },
-      { mes: '11/2025', mesNome: 'Novembro', ano: 2025, valorTotal: 14000.00, antecipacaoFee: 0, ultimaParcelaFee: 14000.00, demaisReceitas: 0 },
-      { mes: '12/2025', mesNome: 'Dezembro', ano: 2025, valorTotal: 0, antecipacaoFee: 0, ultimaParcelaFee: 0, demaisReceitas: 0 },
-      { mes: '01/2026', mesNome: 'Janeiro', ano: 2026, valorTotal: 2800.00, antecipacaoFee: 1680.00, ultimaParcelaFee: 0, demaisReceitas: 1120.00 },
-    ]
-  },
-  {
-    id: '2',
-    nome: 'Turma Instituto ABC 2024',
-    unidade: 'Instituto ABC',
-    ativo: true,
-    totalRecebido: 16800.00,
-    receitasMensais: [
-      { mes: '01/2025', mesNome: 'Janeiro', ano: 2025, valorTotal: 2800.00, antecipacaoFee: 1680.00, ultimaParcelaFee: 0, demaisReceitas: 1120.00 },
-      { mes: '02/2025', mesNome: 'Fevereiro', ano: 2025, valorTotal: 2800.00, antecipacaoFee: 1680.00, ultimaParcelaFee: 0, demaisReceitas: 1120.00 },
-      { mes: '03/2025', mesNome: 'Março', ano: 2025, valorTotal: 2800.00, antecipacaoFee: 1680.00, ultimaParcelaFee: 0, demaisReceitas: 1120.00 },
-      { mes: '04/2025', mesNome: 'Abril', ano: 2025, valorTotal: 2800.00, antecipacaoFee: 1680.00, ultimaParcelaFee: 0, demaisReceitas: 1120.00 },
-      { mes: '05/2025', mesNome: 'Maio', ano: 2025, valorTotal: 2800.00, antecipacaoFee: 1680.00, ultimaParcelaFee: 0, demaisReceitas: 1120.00 },
-      { mes: '06/2025', mesNome: 'Junho', ano: 2025, valorTotal: 2800.00, antecipacaoFee: 1680.00, ultimaParcelaFee: 0, demaisReceitas: 1120.00 },
-      { mes: '01/2026', mesNome: 'Janeiro', ano: 2026, valorTotal: 2200.00, antecipacaoFee: 1320.00, ultimaParcelaFee: 0, demaisReceitas: 880.00 },
-    ]
-  },
-  {
-    id: '5',
-    nome: 'Turma Escola Antiga 2024',
-    unidade: 'Escola Antiga',
-    ativo: false, // Fundo inativo de 2025
-    totalRecebido: 18000.00,
-    receitasMensais: [
-      { mes: '01/2025', mesNome: 'Janeiro', ano: 2025, valorTotal: 3000.00, antecipacaoFee: 1800.00, ultimaParcelaFee: 0, demaisReceitas: 1200.00 },
-      { mes: '02/2025', mesNome: 'Fevereiro', ano: 2025, valorTotal: 3000.00, antecipacaoFee: 1800.00, ultimaParcelaFee: 0, demaisReceitas: 1200.00 },
-      { mes: '03/2025', mesNome: 'Março', ano: 2025, valorTotal: 12000.00, antecipacaoFee: 0, ultimaParcelaFee: 12000.00, demaisReceitas: 0 },
-    ]
-  },
+// Mock de receitas mensais agrupadas (consolidado da franquia, não por fundo)
+const dadosMockReceitasMensais: ReceitaMensalAgrupada[] = [
+  // 2025
+  { mes: '01/2025', mesNome: 'Janeiro', ano: 2025, valorTotal: 18500.00, antecipacaoFee: 9200.00, ultimaParcelaFee: 0, demaisReceitas: 9300.00 },
+  { mes: '02/2025', mesNome: 'Fevereiro', ano: 2025, valorTotal: 22800.00, antecipacaoFee: 11400.00, ultimaParcelaFee: 0, demaisReceitas: 11400.00 },
+  { mes: '03/2025', mesNome: 'Março', ano: 2025, valorTotal: 19600.00, antecipacaoFee: 9800.00, ultimaParcelaFee: 0, demaisReceitas: 9800.00 },
+  { mes: '04/2025', mesNome: 'Abril', ano: 2025, valorTotal: 24300.00, antecipacaoFee: 12150.00, ultimaParcelaFee: 0, demaisReceitas: 12150.00 },
+  { mes: '05/2025', mesNome: 'Maio', ano: 2025, valorTotal: 21500.00, antecipacaoFee: 10750.00, ultimaParcelaFee: 0, demaisReceitas: 10750.00 },
+  { mes: '06/2025', mesNome: 'Junho', ano: 2025, valorTotal: 26100.00, antecipacaoFee: 13050.00, ultimaParcelaFee: 0, demaisReceitas: 13050.00 },
+  { mes: '07/2025', mesNome: 'Julho', ano: 2025, valorTotal: 18900.00, antecipacaoFee: 9450.00, ultimaParcelaFee: 0, demaisReceitas: 9450.00 },
+  { mes: '08/2025', mesNome: 'Agosto', ano: 2025, valorTotal: 23400.00, antecipacaoFee: 11700.00, ultimaParcelaFee: 0, demaisReceitas: 11700.00 },
+  { mes: '09/2025', mesNome: 'Setembro', ano: 2025, valorTotal: 20100.00, antecipacaoFee: 10050.00, ultimaParcelaFee: 0, demaisReceitas: 10050.00 },
+  { mes: '10/2025', mesNome: 'Outubro', ano: 2025, valorTotal: 25600.00, antecipacaoFee: 12800.00, ultimaParcelaFee: 0, demaisReceitas: 12800.00 },
+  { mes: '11/2025', mesNome: 'Novembro', ano: 2025, valorTotal: 48000.00, antecipacaoFee: 8000.00, ultimaParcelaFee: 32000.00, demaisReceitas: 8000.00 },
+  { mes: '12/2025', mesNome: 'Dezembro', ano: 2025, valorTotal: 31200.00, antecipacaoFee: 5200.00, ultimaParcelaFee: 20800.00, demaisReceitas: 5200.00 },
+  // 2026
+  { mes: '01/2026', mesNome: 'Janeiro', ano: 2026, valorTotal: 28400.00, antecipacaoFee: 14200.00, ultimaParcelaFee: 0, demaisReceitas: 14200.00 },
 ];
+
 
 const dadosMockRealizadoAnual: DadosRealizadoAnual[] = [
   {
@@ -154,6 +122,8 @@ const dadosMockRealizadoAnual: DadosRealizadoAnual[] = [
 ];
 
 export default function FluxoRealizadoDashboard() {
+  const router = useRouter();
+  
   // Estado para controle da sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -162,10 +132,18 @@ export default function FluxoRealizadoDashboard() {
 
   // Estados para dados (atualmente usando mocks)
   const [fundosFee, setFundosFee] = useState<FundoFee[]>([]);
-  const [fundosReceita, setFundosReceita] = useState<FundoReceita[]>([]);
+  const [receitasMensais, setReceitasMensais] = useState<ReceitaMensalAgrupada[]>([]);
   const [dadosAnuais, setDadosAnuais] = useState<DadosRealizadoAnual[]>([]);
   const [loading, setLoading] = useState(false);
   const [anoSelecionado, setAnoSelecionado] = useState<number | null>(null);
+
+  // Ler franquia da URL quando a página carrega
+  useEffect(() => {
+    if (router.isReady && router.query.franquia) {
+      const franquiaFromUrl = decodeURIComponent(router.query.franquia as string);
+      setFranquiaSelecionada(franquiaFromUrl);
+    }
+  }, [router.isReady, router.query.franquia]);
 
   // Carrega dados mock quando franquia é selecionada
   useEffect(() => {
@@ -174,13 +152,13 @@ export default function FluxoRealizadoDashboard() {
       // Simula carregamento de API
       setTimeout(() => {
         setFundosFee(dadosMockFundosFee);
-        setFundosReceita(dadosMockFundosReceita);
+        setReceitasMensais(dadosMockReceitasMensais);
         setDadosAnuais(dadosMockRealizadoAnual);
         setLoading(false);
       }, 500);
     } else {
       setFundosFee([]);
-      setFundosReceita([]);
+      setReceitasMensais([]);
       setDadosAnuais([]);
     }
   }, [franquiaSelecionada]);
@@ -238,9 +216,9 @@ export default function FluxoRealizadoDashboard() {
                   loading={false}
                 />
 
-                {/* BLOCO 2: Receitas Recebidas Totais por Fundo */}
-                <ReceitasRecebidasFundo 
-                  fundos={fundosReceita}
+                {/* BLOCO 2: Receitas Mensais Agrupadas (consolidado da franquia) */}
+                <ReceitasMensaisAgrupadas 
+                  receitas={receitasMensais}
                   loading={false}
                 />
 

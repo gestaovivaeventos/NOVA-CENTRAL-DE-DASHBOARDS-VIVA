@@ -5,11 +5,14 @@
 
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import { Header, FluxoAnualCard, DetalhamentoMensal, Sidebar, CalculadoraProjecao } from '@/modules/fluxo-projetado';
 import { DadosFluxoAnual, ParametrosFranquiaCard } from '@/modules/fluxo-projetado/components/FluxoAnualCard';
 import { Loader2 } from 'lucide-react';
 
 export default function FluxoProjetadoDashboard() {
+  const router = useRouter();
+  
   // Estado para controle da sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -39,6 +42,14 @@ export default function FluxoProjetadoDashboard() {
 
   // Estado para despesa anual da planilha
   const [despesaAnualPlanilha, setDespesaAnualPlanilha] = useState<number>(0);
+
+  // Ler franquia da URL quando a página carrega
+  useEffect(() => {
+    if (router.isReady && router.query.franquia) {
+      const franquiaFromUrl = decodeURIComponent(router.query.franquia as string);
+      setFranquiaSelecionada(franquiaFromUrl);
+    }
+  }, [router.isReady, router.query.franquia]);
 
   // Buscar parâmetros da franquia (inclui despesa fixa da coluna AK)
   const fetchParametros = useCallback(async (franquia: string) => {
