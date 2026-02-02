@@ -51,7 +51,7 @@ const todasFranquias = [
   'Salvador',
   'São Luís',
   'Sao Paulo',
-  'Uba'
+  'Uba',
   'Uberlândia',
   'Vitória',
   'Volta Redonda - VivaMixx',
