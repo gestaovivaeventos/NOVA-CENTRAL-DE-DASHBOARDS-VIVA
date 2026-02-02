@@ -16,8 +16,35 @@ const COLUNA_DESPESA_FIXA_MENSAL = 36;
 
 function parseNumber(value: any): number {
   if (value === undefined || value === null || value === '') return 0;
-  // Remove caracteres não numéricos exceto ponto, vírgula e sinal negativo
-  const cleaned = String(value).replace(/[^\d.,\-]/g, '').replace(',', '.');
+  
+  const strValue = String(value);
+  
+  // Detecta formato brasileiro (ex: 96.504,73) vs americano (ex: 96,504.73)
+  // Formato BR: ponto como milhar, vírgula como decimal
+  // Formato US: vírgula como milhar, ponto como decimal
+  const hasComma = strValue.includes(',');
+  const hasDot = strValue.includes('.');
+  
+  let cleaned = strValue.replace(/[^\d.,\-]/g, '');
+  
+  if (hasComma && hasDot) {
+    // Ambos existem - determinar qual é o separador decimal
+    const lastComma = strValue.lastIndexOf(',');
+    const lastDot = strValue.lastIndexOf('.');
+    
+    if (lastComma > lastDot) {
+      // Formato BR: 96.504,73 → vírgula é decimal
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else {
+      // Formato US: 96,504.73 → ponto é decimal
+      cleaned = cleaned.replace(/,/g, '');
+    }
+  } else if (hasComma) {
+    // Só tem vírgula - assume formato BR onde vírgula é decimal
+    cleaned = cleaned.replace(',', '.');
+  }
+  // Se só tem ponto, já está no formato correto para parseFloat
+  
   return parseFloat(cleaned) || 0;
 }
 
