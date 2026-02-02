@@ -23,7 +23,7 @@ const todasFranquias = [
   'Campos',
   'Cascavel',
   'Contagem',
-  'Cuiabá',
+  'Cuiaba',
   'Curitiba',
   'Divinópolis',
   'Florianópolis',
@@ -50,6 +50,8 @@ const todasFranquias = [
   'Rio de Janeiro',
   'Salvador',
   'São Luís',
+  'Sao Paulo',
+  'Uba'
   'Uberlândia',
   'Vitória',
   'Volta Redonda - VivaMixx',
