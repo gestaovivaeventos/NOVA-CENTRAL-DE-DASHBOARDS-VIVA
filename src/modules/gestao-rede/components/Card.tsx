@@ -1,6 +1,6 @@
 /**
  * Card - Componente reutilizável
- * Padrão Viva Eventos
+ * Padrão Viva Eventos TESTE BRANCHE
  */
 
 import React from 'react';
