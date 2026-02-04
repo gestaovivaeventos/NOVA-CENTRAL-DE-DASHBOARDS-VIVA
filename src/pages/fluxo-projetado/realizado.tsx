@@ -19,7 +19,7 @@ import { Loader2, BarChart3 } from 'lucide-react';
 import { withAuthAndFranchiser } from '@/utils/auth';
 
 // Função para gerar fundos mock em massa (simula 100+ fundos)
-// Nova estrutura: feeTotal, feeRecebido, feeDisponivelAntecipacao, saldoFundo
+// Nova estrutura: feeTotal, feeAntecipacaoTotal, feeAntecipacaoRecebido, saldoFundo
 const gerarFundosMockFee = (): FundoFee[] => {
   const unidades = [
     'Colégio São Paulo', 'Instituto Educacional', 'Escola Municipal', 'Centro de Ensino',
@@ -36,29 +36,34 @@ const gerarFundosMockFee = (): FundoFee[] => {
     
     // Gerar valores realistas
     const feeTotal = Math.floor(Math.random() * 40000) + 15000; // 15k a 55k
+    // FEE Antecipação = 60% do FEE Total (padrão)
+    const percentualAntecipacao = 0.60;
+    const feeAntecipacaoTotal = Math.floor(feeTotal * percentualAntecipacao);
     
-    // Determinar cenário: finalizado, saque disponível ou saldo insuficiente
-    const cenario = i % 5; // 0,1,2 = saque disponível, 3 = saldo insuficiente, 4 = finalizado
+    // Determinar cenário: finalizado, saque disponível, saldo parcial ou saldo insuficiente
+    const cenario = i % 6; // Distribuição entre os 4 status
     
-    let feeRecebido: number;
-    let feeDisponivelAntecipacao: number;
+    let feeAntecipacaoRecebido: number;
     let saldoFundo: number;
     
-    if (cenario === 4) {
-      // FINALIZADO: fee 100% recebido
-      feeRecebido = feeTotal;
-      feeDisponivelAntecipacao = 0;
-      saldoFundo = Math.floor(Math.random() * 10000); // Saldo residual pequeno
+    if (cenario === 5) {
+      // FINALIZADO: antecipação 100% recebida
+      feeAntecipacaoRecebido = feeAntecipacaoTotal;
+      saldoFundo = Math.floor(Math.random() * 10000); // Saldo residual
+    } else if (cenario === 4) {
+      // SALDO INSUFICIENTE: saldo = 0 e falta receber > 0
+      feeAntecipacaoRecebido = Math.floor(feeAntecipacaoTotal * (0.3 + Math.random() * 0.4)); // 30-70% recebido
+      saldoFundo = 0; // Saldo zero
     } else if (cenario === 3) {
-      // SALDO INSUFICIENTE: fee disponível > saldo do fundo
-      feeRecebido = Math.floor(feeTotal * (0.3 + Math.random() * 0.3)); // 30-60% recebido
-      feeDisponivelAntecipacao = Math.floor(feeTotal * (0.1 + Math.random() * 0.2)); // 10-30% disponível
-      saldoFundo = Math.floor(feeDisponivelAntecipacao * (0.3 + Math.random() * 0.5)); // Saldo menor que disponível
+      // SALDO PARCIAL: falta receber > 0, saldo > 0 mas saldo < falta receber
+      feeAntecipacaoRecebido = Math.floor(feeAntecipacaoTotal * (0.3 + Math.random() * 0.3)); // 30-60% recebido
+      const faltaReceber = feeAntecipacaoTotal - feeAntecipacaoRecebido;
+      saldoFundo = Math.floor(faltaReceber * (0.3 + Math.random() * 0.5)); // Saldo entre 30-80% do que falta
     } else {
-      // SAQUE DISPONÍVEL: fee disponível > 0 e saldo >= fee disponível
-      feeRecebido = Math.floor(feeTotal * (0.2 + Math.random() * 0.4)); // 20-60% recebido
-      feeDisponivelAntecipacao = Math.floor(feeTotal * (0.1 + Math.random() * 0.25)); // 10-35% disponível
-      saldoFundo = Math.floor(feeDisponivelAntecipacao * (1.2 + Math.random() * 2)); // Saldo maior que disponível
+      // SAQUE DISPONÍVEL: saldo >= falta receber
+      feeAntecipacaoRecebido = Math.floor(feeAntecipacaoTotal * (0.2 + Math.random() * 0.5)); // 20-70% recebido
+      const faltaReceber = feeAntecipacaoTotal - feeAntecipacaoRecebido;
+      saldoFundo = Math.floor(faltaReceber * (1.1 + Math.random() * 1.5)); // Saldo 110-260% do que falta
     }
     
     fundos.push({
@@ -66,8 +71,8 @@ const gerarFundosMockFee = (): FundoFee[] => {
       nome: `Turma ${String(i).padStart(3, '0')} - ${unidade} ${ano}`,
       unidade: unidade,
       feeTotal: feeTotal,
-      feeRecebido: feeRecebido,
-      feeDisponivelAntecipacao: feeDisponivelAntecipacao,
+      feeAntecipacaoTotal: feeAntecipacaoTotal,
+      feeAntecipacaoRecebido: feeAntecipacaoRecebido,
       saldoFundo: saldoFundo,
     });
   }
