@@ -16,15 +16,17 @@ export interface FundoFee {
   nome: string;               // Nome do fundo/turma
   unidade: string;            // Unidade escolar
   // Dados principais
-  feeTotal: number;           // FEE TOTAL CONTRATO
-  feeRecebido: number;        // FEE JÁ RECEBIDO
-  feeDisponivelAntecipacao: number; // FEE DISPONÍVEL P/ ANTECIPAÇÃO
+  feeTotal: number;           // FEE TOTAL DO CONTRATO
+  feeAntecipacaoTotal: number;// FEE ANTECIPAÇÃO (valor total liberado para antecipação)
+  feeAntecipacaoRecebido: number; // FEE ANTECIPAÇÃO JÁ RECEBIDO
   saldoFundo: number;         // SALDO DO FUNDO
-  // Calculado: FEE BLOQUEADO = feeTotal - feeRecebido - feeDisponivelAntecipacao
+  // Legado - manter para compatibilidade
+  feeRecebido?: number;        
+  feeDisponivelAntecipacao?: number;
 }
 
 // Status calculado dinamicamente
-export type StatusFundo = 'saque-disponivel' | 'saldo-insuficiente' | 'finalizado';
+export type StatusFundo = 'saque-disponivel' | 'saldo-parcial' | 'saldo-insuficiente' | 'finalizado';
 
 interface RecebimentoFeeFundoProps {
   fundos: FundoFee[];
@@ -41,44 +43,45 @@ const formatarPercentual = (valor: number): string => {
 
 const ITENS_POR_PAGINA = 10;
 
-type OrdenacaoCampo = 'nome' | 'feeTotal' | 'percentualRecebido' | 'saldoFundo' | 'status';
+type OrdenacaoCampo = 'nome' | 'feeTotal' | 'percentualRecebido' | 'faltaReceber' | 'saldoFundo' | 'status';
 type OrdenacaoDirecao = 'asc' | 'desc';
 
 // Função para calcular o status do fundo
 const calcularStatus = (fundo: FundoFee): StatusFundo => {
-  // FINALIZADO: quando todo o valor do FEE já tiver sido recebido
-  if (fundo.feeRecebido >= fundo.feeTotal) {
+  const faltaReceber = fundo.feeAntecipacaoTotal - fundo.feeAntecipacaoRecebido;
+  
+  // FINALIZADO: quando todo o valor do FEE antecipação já foi recebido
+  if (faltaReceber <= 0) {
     return 'finalizado';
   }
   
-  // SALDO INSUFICIENTE: quando FEE disponível para antecipação for maior que o saldo do fundo
-  if (fundo.feeDisponivelAntecipacao > 0 && fundo.feeDisponivelAntecipacao > fundo.saldoFundo) {
+  // SALDO INSUFICIENTE: quando saldo do fundo = 0 e falta receber > 0
+  if (fundo.saldoFundo === 0 && faltaReceber > 0) {
     return 'saldo-insuficiente';
   }
   
-  // SAQUE DISPONÍVEL: quando FEE disponível > 0 e o fundo tiver esse saldo disponível
-  if (fundo.feeDisponivelAntecipacao > 0 && fundo.saldoFundo >= fundo.feeDisponivelAntecipacao) {
-    return 'saque-disponivel';
+  // SALDO PARCIAL: quando falta receber > 0 e saldo > 0 mas saldo < falta receber
+  if (faltaReceber > 0 && fundo.saldoFundo > 0 && fundo.saldoFundo < faltaReceber) {
+    return 'saldo-parcial';
   }
   
-  // Default: saldo insuficiente (não há fee disponível para antecipação)
-  return 'saldo-insuficiente';
+  // SAQUE DISPONÍVEL: quando saldo >= falta receber
+  return 'saque-disponivel';
 };
 
-// Função para calcular o FEE Bloqueado (última parcela)
-const calcularFeeBloqueado = (fundo: FundoFee): number => {
-  return fundo.feeTotal - fundo.feeRecebido - fundo.feeDisponivelAntecipacao;
+// Função para calcular % de antecipação recebido
+const calcularPercentualAntecipacaoRecebido = (fundo: FundoFee): number => {
+  if (fundo.feeAntecipacaoTotal === 0) return 0;
+  return (fundo.feeAntecipacaoRecebido / fundo.feeAntecipacaoTotal) * 100;
 };
 
-// Função para calcular % FEE Recebido
-const calcularPercentualRecebido = (fundo: FundoFee): number => {
-  if (fundo.feeTotal === 0) return 0;
-  return (fundo.feeRecebido / fundo.feeTotal) * 100;
+// Função para calcular valor faltando receber
+const calcularFaltaReceber = (fundo: FundoFee): number => {
+  return Math.max(0, fundo.feeAntecipacaoTotal - fundo.feeAntecipacaoRecebido);
 };
 
 export default function RecebimentoFeeFundo({ fundos, loading = false }: RecebimentoFeeFundoProps) {
   const [expandido, setExpandido] = useState(true);
-  const [fundoExpandido, setFundoExpandido] = useState<string | null>(null);
   
   // Estados para busca, filtro e paginação
   const [busca, setBusca] = useState('');
@@ -120,13 +123,16 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
           comparacao = a.feeTotal - b.feeTotal;
           break;
         case 'percentualRecebido':
-          comparacao = calcularPercentualRecebido(a) - calcularPercentualRecebido(b);
+          comparacao = calcularPercentualAntecipacaoRecebido(a) - calcularPercentualAntecipacaoRecebido(b);
+          break;
+        case 'faltaReceber':
+          comparacao = calcularFaltaReceber(a) - calcularFaltaReceber(b);
           break;
         case 'saldoFundo':
           comparacao = a.saldoFundo - b.saldoFundo;
           break;
         case 'status':
-          const ordemStatus = { 'saque-disponivel': 1, 'saldo-insuficiente': 2, 'finalizado': 3 };
+          const ordemStatus = { 'saque-disponivel': 1, 'saldo-parcial': 2, 'saldo-insuficiente': 3, 'finalizado': 4 };
           comparacao = ordemStatus[calcularStatus(a)] - ordemStatus[calcularStatus(b)];
           break;
       }
@@ -151,13 +157,15 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
 
   // Calcula totais
   const totalFeeContrato = fundos.reduce((acc, f) => acc + f.feeTotal, 0);
-  const totalFeeRecebido = fundos.reduce((acc, f) => acc + f.feeRecebido, 0);
-  const totalDisponivelAntecipacao = fundos.reduce((acc, f) => acc + f.feeDisponivelAntecipacao, 0);
+  const totalFeeAntecipacao = fundos.reduce((acc, f) => acc + f.feeAntecipacaoTotal, 0);
+  const totalAntecipacaoRecebido = fundos.reduce((acc, f) => acc + f.feeAntecipacaoRecebido, 0);
+  const totalFaltaReceber = fundos.reduce((acc, f) => acc + calcularFaltaReceber(f), 0);
   const totalFundos = fundos.length;
 
   // Contagem por status
   const contagemStatus = useMemo(() => ({
     'saque-disponivel': fundos.filter(f => calcularStatus(f) === 'saque-disponivel').length,
+    'saldo-parcial': fundos.filter(f => calcularStatus(f) === 'saldo-parcial').length,
     'saldo-insuficiente': fundos.filter(f => calcularStatus(f) === 'saldo-insuficiente').length,
     'finalizado': fundos.filter(f => calcularStatus(f) === 'finalizado').length,
   }), [fundos]);
@@ -172,11 +180,19 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
         icon: CheckCircle,
         label: 'Saque Disponível'
       },
+      'saldo-parcial': { 
+        bg: 'bg-orange-500/20', 
+        bgSolid: 'bg-orange-900',
+        text: 'text-orange-400', 
+        border: 'border-orange-500/30',
+        icon: AlertCircle,
+        label: 'Saldo Parcial'
+      },
       'saldo-insuficiente': { 
-        bg: 'bg-yellow-500/20', 
-        bgSolid: 'bg-yellow-900',
-        text: 'text-yellow-400', 
-        border: 'border-yellow-500/30',
+        bg: 'bg-red-500/20', 
+        bgSolid: 'bg-red-900',
+        text: 'text-red-400', 
+        border: 'border-red-500/30',
         icon: Ban,
         label: 'Saldo Insuficiente'
       },
@@ -212,10 +228,6 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
     );
   };
 
-  const toggleFundo = (fundoId: string) => {
-    setFundoExpandido(fundoExpandido === fundoId ? null : fundoId);
-  };
-
   const alternarOrdenacao = (campo: OrdenacaoCampo) => {
     setOrdenacao(prev => ({
       campo,
@@ -246,8 +258,8 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-xs text-gray-400">Disponível p/ Antecipação</p>
-              <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalDisponivelAntecipacao)}</p>
+              <p className="text-xs text-gray-400">Falta Receber Antecipação</p>
+              <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalFaltaReceber)}</p>
             </div>
             {expandido ? (
               <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -274,25 +286,31 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
           ) : (
             <div className="space-y-4">
               {/* Resumo rápido em cards */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-5 gap-3">
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total Fundos</p>
                   <p className="text-2xl font-bold text-white">{totalFundos}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">FEE Total Contrato</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Valor FEE</p>
                   <p className="text-lg font-bold text-white">{formatarMoeda(totalFeeContrato)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">FEE Já Recebido</p>
-                  <p className="text-lg font-bold text-blue-400">{formatarMoeda(totalFeeRecebido)}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Antecip. Recebido</p>
+                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalAntecipacaoRecebido)}</p>
+                </div>
+                <div className="p-3 bg-gray-900/50 rounded-lg text-center">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Receber</p>
+                  <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Por Status</p>
                   <div className="flex items-center justify-center gap-2 mt-1">
                     <span className="text-xs text-emerald-400" title="Saque Disponível">{contagemStatus['saque-disponivel']}</span>
                     <span className="text-gray-600">|</span>
-                    <span className="text-xs text-yellow-400" title="Saldo Insuficiente">{contagemStatus['saldo-insuficiente']}</span>
+                    <span className="text-xs text-orange-400" title="Saldo Parcial">{contagemStatus['saldo-parcial']}</span>
+                    <span className="text-gray-600">|</span>
+                    <span className="text-xs text-red-400" title="Saldo Insuficiente">{contagemStatus['saldo-insuficiente']}</span>
                     <span className="text-gray-600">|</span>
                     <span className="text-xs text-blue-400" title="Finalizado">{contagemStatus['finalizado']}</span>
                   </div>
@@ -306,7 +324,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input
                     type="text"
-                    placeholder="Buscar por nome do fundo ou unidade..."
+                    placeholder="Buscar por nome ou código do fundo..."
                     value={busca}
                     onChange={(e) => setBusca(e.target.value)}
                     className="w-full pl-10 pr-10 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50"
@@ -346,6 +364,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                     {[
                       { value: 'todos', label: 'Todos' },
                       { value: 'saque-disponivel', label: 'Saque Disponível' },
+                      { value: 'saldo-parcial', label: 'Saldo Parcial' },
                       { value: 'saldo-insuficiente', label: 'Saldo Insuficiente' },
                       { value: 'finalizado', label: 'Finalizado' },
                     ].map(({ value, label }) => (
@@ -355,7 +374,8 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                           filtroStatus === value
                             ? value === 'saque-disponivel' ? 'bg-emerald-500 text-white'
-                            : value === 'saldo-insuficiente' ? 'bg-yellow-500 text-white'
+                            : value === 'saldo-parcial' ? 'bg-orange-500 text-white'
+                            : value === 'saldo-insuficiente' ? 'bg-red-500 text-white'
                             : value === 'finalizado' ? 'bg-blue-500 text-white'
                             : 'bg-gray-600 text-white'
                             : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -378,6 +398,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                     {[
                       { campo: 'feeTotal' as OrdenacaoCampo, label: 'Valor FEE' },
                       { campo: 'percentualRecebido' as OrdenacaoCampo, label: '% Recebido' },
+                      { campo: 'faltaReceber' as OrdenacaoCampo, label: 'Falta Receber' },
                       { campo: 'saldoFundo' as OrdenacaoCampo, label: 'Saldo Fundo' },
                       { campo: 'nome' as OrdenacaoCampo, label: 'Nome' },
                     ].map(({ campo, label }) => (
@@ -422,23 +443,21 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                   </button>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {fundosPaginados.map((fundo) => {
                     const status = calcularStatus(fundo);
-                    const percentualRecebido = calcularPercentualRecebido(fundo);
-                    const feeBloqueado = calcularFeeBloqueado(fundo);
+                    const percentualRecebido = calcularPercentualAntecipacaoRecebido(fundo);
+                    const faltaReceber = calcularFaltaReceber(fundo);
                     
                     return (
                       <div 
                         key={fundo.id}
-                        className="bg-gray-900/30 rounded-lg border border-gray-700/30 overflow-hidden hover:border-gray-600/50 transition-colors"
+                        className="bg-gray-900/30 rounded-lg border border-gray-700/30 overflow-hidden hover:border-gray-600/50 transition-colors px-3 py-2.5"
                       >
-                        {/* Linha principal do fundo */}
-                        <div 
-                          className="p-3 flex items-center justify-between cursor-pointer hover:bg-gray-800/30 transition-colors"
-                          onClick={() => toggleFundo(fundo.id)}
-                        >
-                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {/* Layout em linha única com flex */}
+                        <div className="flex items-center gap-3">
+                          {/* Nome e unidade */}
+                          <div className="flex items-center gap-2 min-w-0 w-[200px] flex-shrink-0">
                             {getStatusBadge(status, true)}
                             <div className="min-w-0 flex-1">
                               <span className="text-sm font-medium text-white truncate block">{fundo.nome}</span>
@@ -446,76 +465,46 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-6 flex-shrink-0">
+                          {/* Colunas de valores */}
+                          <div className="flex-1 grid grid-cols-6 gap-2">
                             <div className="text-right">
                               <p className="text-[10px] text-gray-500 uppercase">Valor FEE</p>
                               <p className="text-sm font-medium text-white">{formatarMoeda(fundo.feeTotal)}</p>
                             </div>
+                            
                             <div className="text-right">
-                              <p className="text-[10px] text-gray-500 uppercase">% Recebido</p>
+                              <p className="text-[10px] text-gray-500 uppercase">FEE Antecip.</p>
+                              <p className="text-sm font-medium text-cyan-400">{formatarMoeda(fundo.feeAntecipacaoTotal)}</p>
+                            </div>
+                            
+                            <div className="text-right">
+                              <p className="text-[10px] text-gray-500 uppercase">Antecip. Receb.</p>
+                              <p className="text-sm font-medium text-emerald-400">{formatarMoeda(fundo.feeAntecipacaoRecebido)}</p>
+                            </div>
+                            
+                            <div className="text-right">
+                              <p className="text-[10px] text-gray-500 uppercase">% Receb.</p>
                               <p className={`text-sm font-bold ${percentualRecebido >= 100 ? 'text-blue-400' : percentualRecebido >= 50 ? 'text-emerald-400' : 'text-yellow-400'}`}>
                                 {formatarPercentual(percentualRecebido)}
                               </p>
                             </div>
+                            
+                            <div className="text-right">
+                              <p className="text-[10px] text-gray-500 uppercase">Falta Receber</p>
+                              <p className="text-sm font-medium text-orange-400">{formatarMoeda(faltaReceber)}</p>
+                            </div>
+                            
                             <div className="text-right">
                               <p className="text-[10px] text-gray-500 uppercase">Saldo Fundo</p>
                               <p className="text-sm font-medium text-blue-400">{formatarMoeda(fundo.saldoFundo)}</p>
                             </div>
-                            {fundoExpandido === fundo.id ? (
-                              <ChevronUp size={16} className="text-gray-400" />
-                            ) : (
-                              <ChevronDown size={16} className="text-gray-400" />
-                            )}
+                          </div>
+                          
+                          {/* Status Badge */}
+                          <div className="w-[150px] flex-shrink-0 flex justify-center">
+                            {getStatusBadge(status)}
                           </div>
                         </div>
-                        
-                        {/* Detalhes expandidos */}
-                        {fundoExpandido === fundo.id && (
-                          <div className="px-4 pb-4 border-t border-gray-700/30">
-                            <div className="grid grid-cols-5 gap-3 mt-3">
-                              <div className="p-2 bg-gray-800/50 rounded-lg">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">FEE Total Contrato</p>
-                                <p className="text-sm font-semibold text-white">{formatarMoeda(fundo.feeTotal)}</p>
-                              </div>
-                              <div className="p-2 bg-gray-800/50 rounded-lg">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">FEE Já Recebido</p>
-                                <p className="text-sm font-semibold text-emerald-400">{formatarMoeda(fundo.feeRecebido)}</p>
-                              </div>
-                              <div className="p-2 bg-gray-800/50 rounded-lg">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">FEE Disp. p/ Antecipação</p>
-                                <p className="text-sm font-semibold text-orange-400">{formatarMoeda(fundo.feeDisponivelAntecipacao)}</p>
-                              </div>
-                              <div className="p-2 bg-gray-800/50 rounded-lg">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">FEE Bloqueado (Últ. Parcela)</p>
-                                <p className="text-sm font-semibold text-red-400">{formatarMoeda(feeBloqueado)}</p>
-                              </div>
-                              <div className="p-2 bg-gray-800/50 rounded-lg">
-                                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Status</p>
-                                <div className="mt-1">{getStatusBadge(status)}</div>
-                              </div>
-                            </div>
-                            
-                            {/* Barra de progresso */}
-                            <div className="mt-3">
-                              <div className="flex justify-between text-xs mb-1">
-                                <span className="text-gray-500">Progresso de Recebimento do FEE</span>
-                                <span className="text-gray-400">
-                                  {formatarPercentual(percentualRecebido)}
-                                </span>
-                              </div>
-                              <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full transition-all ${
-                                    percentualRecebido >= 100 
-                                      ? 'bg-gradient-to-r from-blue-500 to-blue-400' 
-                                      : 'bg-gradient-to-r from-emerald-500 to-emerald-400'
-                                  }`}
-                                  style={{ width: `${Math.min(percentualRecebido, 100)}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )}
                       </div>
                     );
                   })}
