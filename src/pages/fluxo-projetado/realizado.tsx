@@ -16,6 +16,7 @@ import { FundoFee } from '@/modules/fluxo-projetado/components/RecebimentoFeeFun
 import { ReceitaMensalAgrupada } from '@/modules/fluxo-projetado/components/ReceitasMensaisAgrupadas';
 import { DadosRealizadoAnual } from '@/modules/fluxo-projetado/components/RealizadoAnualCard';
 import { Loader2, BarChart3 } from 'lucide-react';
+import { withAuthAndFranchiser } from '@/utils/auth';
 
 // Função para gerar fundos mock em massa (simula 100+ fundos)
 // Nova estrutura: feeTotal, feeRecebido, feeDisponivelAntecipacao, saldoFundo
@@ -121,7 +122,7 @@ const dadosMockRealizadoAnual: DadosRealizadoAnual[] = [
   },
 ];
 
-export default function FluxoRealizadoDashboard() {
+function FluxoRealizadoDashboard() {
   const router = useRouter();
   
   // Estado para controle da sidebar
@@ -258,3 +259,6 @@ export default function FluxoRealizadoDashboard() {
     </>
   );
 }
+
+// Exporta com proteção de rota - apenas franqueadoras (accessLevel = 1) podem acessar
+export default withAuthAndFranchiser(FluxoRealizadoDashboard);

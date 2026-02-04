@@ -55,8 +55,8 @@ export function withAuthAndFranchiser(Component: React.ComponentType<any>) {
       if (!token) {
         router.push('/login');
       } else if (accessLevel === '0') {
-        // Franqueado não tem acesso - redireciona
-        router.push('/resultados');
+        // Franqueado não tem acesso - redireciona para PEX (único módulo permitido)
+        router.push('/pex');
       } else if (accessLevel === '1') {
         // Franqueadora tem acesso
         setIsAuthenticated(true);

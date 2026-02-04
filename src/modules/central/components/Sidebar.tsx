@@ -28,7 +28,7 @@ interface DashboardGroup {
 
 // Grupos de dashboards - filtrado por nível de acesso
 const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
-  // Franqueado (accessLevel = 0) tem acesso ao PEX e Fluxo Projetado
+  // Franqueado (accessLevel = 0) tem acesso apenas ao PEX
   if (accessLevel === 0) {
     return [
       {
@@ -36,13 +36,6 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
         name: 'Gestão por Resultados',
         dashboards: [
           { id: 'pex', label: 'Dashboard PEX', path: '/pex', icon: 'dashboard' },
-        ],
-      },
-      {
-        id: 'dashboards-gerais',
-        name: 'Dashboards Gerais',
-        dashboards: [
-          { id: 'fluxo-projetado', label: 'Gestão de Caixa', path: '/fluxo-projetado', icon: 'fluxo' },
         ],
       },
     ];

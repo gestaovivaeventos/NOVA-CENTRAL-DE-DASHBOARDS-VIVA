@@ -42,9 +42,9 @@ const allDashboards: Dashboard[] = [
 
 // Dashboards permitidos por nível de acesso
 const getDashboardsPermitidos = (accessLevel: number): string[] => {
-  // Franqueado (accessLevel = 0) só tem acesso ao PEX e Fluxo Projetado
+  // Franqueado (accessLevel = 0) só tem acesso ao PEX
   if (accessLevel === 0) {
-    return ['pex', 'fluxo-projetado'];
+    return ['pex'];
   }
   // Franqueadora (accessLevel >= 1) tem acesso a todos
   return allDashboards.map(d => d.id);
