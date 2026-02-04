@@ -11,7 +11,7 @@ import { DadosFluxoAnual, ParametrosFranquiaCard } from '@/modules/fluxo-projeta
 import { Loader2 } from 'lucide-react';
 import { withAuthAndFranchiser } from '@/utils/auth';
 
-export default function FluxoProjetadoDashboard() {
+function FluxoProjetadoDashboard() {
   const router = useRouter();
   
   // Estado para controle da sidebar
