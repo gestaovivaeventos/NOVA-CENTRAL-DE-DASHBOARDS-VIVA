@@ -48,6 +48,7 @@ export interface FiltrosOpcoes {
   
   // Opções adicionais
   cursos: string[];
+  cursosFunil: string[];  // Cursos do funil (coluna D - "Qual é o seu curso?")
   fundos: string[];
   origensLead: string[];
   segmentacoesLead: string[];

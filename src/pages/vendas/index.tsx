@@ -386,6 +386,8 @@ export default function Dashboard() {
       formasPagamento: [],
       // Cursos filtrados pela unidade e período
       cursos: [...new Set(salesDataFiltrado.map((d) => d.curso_fundo).filter(Boolean))].sort(),
+      // Cursos do Funil filtrados pela unidade e período (coluna D - "Qual é o seu curso?")
+      cursosFunil: [...new Set(funilDataFiltrado.map((d) => d.curso).filter(Boolean))].sort(),
       // Fundos filtrados pela unidade e período
       fundos: [...new Set(fundosDataFiltrado.map((d) => d.nm_fundo).filter(Boolean))].sort(),
       // Dados do Funil filtrados pela unidade e período
@@ -2015,8 +2017,13 @@ export default function Dashboard() {
       dados = dados.filter(d => filtros.etiquetas.includes(d.etiquetas));
     }
 
+    // Filtrar por curso (coluna D - "Qual é o seu curso?")
+    if (filtros.cursos.length > 0) {
+      dados = dados.filter(d => filtros.cursos.includes(d.curso));
+    }
+
     return dados;
-  }, [funilData, filtros.unidades, filtros.consultores, filtros.origemLead, filtros.segmentacaoLead, filtros.etiquetas, periodo, parseDataFunil]);
+  }, [funilData, filtros.unidades, filtros.consultores, filtros.origemLead, filtros.segmentacaoLead, filtros.etiquetas, filtros.cursos, periodo, parseDataFunil]);
 
   // Dados de negociações por fase (para gráfico do funil)
   const dadosNegociacoesPorFase = useMemo(() => {

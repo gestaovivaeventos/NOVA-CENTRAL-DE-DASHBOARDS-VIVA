@@ -42,6 +42,7 @@ interface FilterPanelProps {
   showOrigemLead?: boolean;
   showSegmentacaoLead?: boolean;
   showEtiquetas?: boolean;
+  showCursosFunil?: boolean;
 }
 
 export default function FilterPanel({
@@ -72,6 +73,7 @@ export default function FilterPanel({
   showOrigemLead,
   showSegmentacaoLead,
   showEtiquetas,
+  showCursosFunil,
 }: FilterPanelProps) {
   // Determinar quais filtros mostrar baseado na página ativa
   const isMetasPage = paginaAtiva === 'metas';
@@ -96,6 +98,7 @@ export default function FilterPanel({
   const shouldShowSegmentacaoLead = showSegmentacaoLead ?? isFunilPage;
   const shouldShowEtiquetas = showEtiquetas ?? isFunilPage;
   const shouldShowConsultoresFunil = showConsultores || isFunilPage;
+  const shouldShowCursosFunil = showCursosFunil ?? isFunilPage;
   
   // Na página do funil e indicadores, não mostra toggle de meta (só aparece na página de metas)
   const shouldShowMetaToggle = showMetaToggle && isMetasPage;
@@ -244,6 +247,17 @@ export default function FilterPanel({
             selectedValues={filtros.unidades}
             onChange={(unidades) => onFiltrosChange({ unidades })}
             placeholder="Todas as unidades"
+          />
+        )}
+
+        {/* Filtro de Cursos do Funil - Apenas página Funil (logo abaixo de Unidades) */}
+        {shouldShowCursosFunil && opcoes.cursosFunil && opcoes.cursosFunil.length > 0 && (
+          <MultiSelect
+            label="Curso"
+            options={opcoes.cursosFunil}
+            selectedValues={filtros.cursos}
+            onChange={(cursos) => onFiltrosChange({ cursos })}
+            placeholder="Todos os cursos"
           />
         )}
 
