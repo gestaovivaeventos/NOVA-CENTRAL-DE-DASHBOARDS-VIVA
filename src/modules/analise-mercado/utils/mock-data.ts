@@ -1,0 +1,359 @@
+/**
+ * Dados Mockados - Análise de Mercado
+ * Dados fictícios para validação de layout
+ */
+
+import type { DadosAnaliseMercado } from '../types';
+
+/**
+ * Dados de evolução do mercado educacional brasileiro (2020-2025)
+ * Fonte: Dados fictícios baseados em tendências do INEP
+ */
+export const evolucaoMercadoMockado = [
+  {
+    ano: 2020,
+    matriculados_total: 8680354,
+    concluintes_total: 1278000,
+    matriculados_presencial: 3700000,
+    matriculados_ead: 4980354,
+    concluintes_presencial: 750000,
+    concluintes_ead: 528000,
+    matriculados_medicina: 196000,
+    concluintes_medicina: 25000,
+    matriculados_ensino_medio: 7550000,
+    concluintes_ensino_medio: 2100000,
+  },
+  {
+    ano: 2021,
+    matriculados_total: 8970000,
+    concluintes_total: 1320000,
+    matriculados_presencial: 3550000,
+    matriculados_ead: 5420000,
+    concluintes_presencial: 720000,
+    concluintes_ead: 600000,
+    matriculados_medicina: 208000,
+    concluintes_medicina: 27000,
+    matriculados_ensino_medio: 7450000,
+    concluintes_ensino_medio: 2050000,
+  },
+  {
+    ano: 2022,
+    matriculados_total: 9350000,
+    concluintes_total: 1380000,
+    matriculados_presencial: 3450000,
+    matriculados_ead: 5900000,
+    concluintes_presencial: 700000,
+    concluintes_ead: 680000,
+    matriculados_medicina: 220000,
+    concluintes_medicina: 29000,
+    matriculados_ensino_medio: 7380000,
+    concluintes_ensino_medio: 2020000,
+  },
+  {
+    ano: 2023,
+    matriculados_total: 9750000,
+    concluintes_total: 1450000,
+    matriculados_presencial: 3380000,
+    matriculados_ead: 6370000,
+    concluintes_presencial: 680000,
+    concluintes_ead: 770000,
+    matriculados_medicina: 235000,
+    concluintes_medicina: 31000,
+    matriculados_ensino_medio: 7320000,
+    concluintes_ensino_medio: 1980000,
+  },
+  {
+    ano: 2024,
+    matriculados_total: 10100000,
+    concluintes_total: 1520000,
+    matriculados_presencial: 3300000,
+    matriculados_ead: 6800000,
+    concluintes_presencial: 660000,
+    concluintes_ead: 860000,
+    matriculados_medicina: 250000,
+    concluintes_medicina: 33000,
+    matriculados_ensino_medio: 7260000,
+    concluintes_ensino_medio: 1950000,
+  },
+  {
+    ano: 2025,
+    matriculados_total: 10450000,
+    concluintes_total: 1600000,
+    matriculados_presencial: 3200000,
+    matriculados_ead: 7250000,
+    concluintes_presencial: 640000,
+    concluintes_ead: 960000,
+    matriculados_medicina: 265000,
+    concluintes_medicina: 35000,
+    matriculados_ensino_medio: 7200000,
+    concluintes_ensino_medio: 1920000,
+  },
+];
+
+/**
+ * Dados de participação de mercado Viva (2020-2025)
+ */
+export const participacaoMercadoMockado = [
+  {
+    ano: 2020,
+    mercado_total: 1278000,
+    viva_total: 8500,
+    participacao_total: 0.66,
+    mercado_presencial: 750000,
+    viva_presencial: 7200,
+    participacao_presencial: 0.96,
+    mercado_medicina: 25000,
+    viva_medicina: 1200,
+    participacao_medicina: 4.8,
+  },
+  {
+    ano: 2021,
+    mercado_total: 1320000,
+    viva_total: 9200,
+    participacao_total: 0.70,
+    mercado_presencial: 720000,
+    viva_presencial: 7800,
+    participacao_presencial: 1.08,
+    mercado_medicina: 27000,
+    viva_medicina: 1450,
+    participacao_medicina: 5.4,
+  },
+  {
+    ano: 2022,
+    mercado_total: 1380000,
+    viva_total: 10100,
+    participacao_total: 0.73,
+    mercado_presencial: 700000,
+    viva_presencial: 8500,
+    participacao_presencial: 1.21,
+    mercado_medicina: 29000,
+    viva_medicina: 1700,
+    participacao_medicina: 5.9,
+  },
+  {
+    ano: 2023,
+    mercado_total: 1450000,
+    viva_total: 11200,
+    participacao_total: 0.77,
+    mercado_presencial: 680000,
+    viva_presencial: 9300,
+    participacao_presencial: 1.37,
+    mercado_medicina: 31000,
+    viva_medicina: 2000,
+    participacao_medicina: 6.5,
+  },
+  {
+    ano: 2024,
+    mercado_total: 1520000,
+    viva_total: 12500,
+    participacao_total: 0.82,
+    mercado_presencial: 660000,
+    viva_presencial: 10200,
+    participacao_presencial: 1.55,
+    mercado_medicina: 33000,
+    viva_medicina: 2350,
+    participacao_medicina: 7.1,
+  },
+  {
+    ano: 2025,
+    mercado_total: 1600000,
+    viva_total: 14000,
+    participacao_total: 0.88,
+    mercado_presencial: 640000,
+    viva_presencial: 11300,
+    participacao_presencial: 1.77,
+    mercado_medicina: 35000,
+    viva_medicina: 2800,
+    participacao_medicina: 8.0,
+  },
+];
+
+/**
+ * Segmentos estratégicos
+ */
+export const segmentosEstrategicosMockados = [
+  {
+    id: 'medicina',
+    nome: 'Medicina',
+    tipo: 'premium' as const,
+    ticket_medio: 4500,
+    volume_anual: 2800,
+    previsibilidade: 'alta' as const,
+    tendencia: 'crescimento' as const,
+    margem_percentual: 45,
+    destaque: 'Principal cluster de valor',
+  },
+  {
+    id: 'saude',
+    nome: 'Saúde (outros)',
+    tipo: 'crescimento' as const,
+    ticket_medio: 1800,
+    volume_anual: 3200,
+    previsibilidade: 'media' as const,
+    tendencia: 'crescimento' as const,
+    margem_percentual: 32,
+  },
+  {
+    id: 'direito',
+    nome: 'Direito',
+    tipo: 'volume' as const,
+    ticket_medio: 1200,
+    volume_anual: 2500,
+    previsibilidade: 'media' as const,
+    tendencia: 'estavel' as const,
+    margem_percentual: 28,
+  },
+  {
+    id: 'engenharias',
+    nome: 'Engenharias',
+    tipo: 'estavel' as const,
+    ticket_medio: 1500,
+    volume_anual: 1800,
+    previsibilidade: 'media' as const,
+    tendencia: 'estavel' as const,
+    margem_percentual: 30,
+  },
+  {
+    id: 'administracao',
+    nome: 'Administração/Gestão',
+    tipo: 'volume' as const,
+    ticket_medio: 800,
+    volume_anual: 2200,
+    previsibilidade: 'baixa' as const,
+    tendencia: 'declinio' as const,
+    margem_percentual: 22,
+  },
+  {
+    id: 'licenciaturas',
+    nome: 'Licenciaturas',
+    tipo: 'estavel' as const,
+    ticket_medio: 600,
+    volume_anual: 1500,
+    previsibilidade: 'alta' as const,
+    tendencia: 'estavel' as const,
+    margem_percentual: 18,
+  },
+];
+
+/**
+ * Tendências de mercado
+ */
+export const tendenciasMercadoMockadas = [
+  {
+    id: 'trend-1',
+    titulo: 'Crescimento do EAD',
+    descricao: 'Modalidade EAD continua crescendo e já representa mais de 60% das matrículas do ensino superior',
+    impacto: 'neutro' as const,
+    probabilidade: 'alta' as const,
+    horizonte: '1-2 anos' as const,
+    categoria: 'comportamental' as const,
+  },
+  {
+    id: 'trend-2',
+    titulo: 'Regulamentação de Medicina',
+    descricao: 'Novas regras do MEC podem limitar abertura de cursos de medicina, beneficiando instituições estabelecidas',
+    impacto: 'positivo' as const,
+    probabilidade: 'media' as const,
+    horizonte: '1-2 anos' as const,
+    categoria: 'regulatorio' as const,
+  },
+  {
+    id: 'trend-3',
+    titulo: 'Inteligência Artificial na Educação',
+    descricao: 'Adoção de IA para personalização do ensino e suporte ao aluno',
+    impacto: 'positivo' as const,
+    probabilidade: 'alta' as const,
+    horizonte: '1-2 anos' as const,
+    categoria: 'tecnologia' as const,
+  },
+  {
+    id: 'trend-4',
+    titulo: 'Demografia em Queda',
+    descricao: 'Redução da população em idade universitária nos próximos anos',
+    impacto: 'negativo' as const,
+    probabilidade: 'alta' as const,
+    horizonte: '3-5 anos' as const,
+    categoria: 'demografico' as const,
+  },
+];
+
+/**
+ * Riscos regulatórios
+ */
+export const riscosRegulatoriosMockados = [
+  {
+    id: 'risk-1',
+    titulo: 'Novo Marco Regulatório do Ensino Superior',
+    descricao: 'Possíveis mudanças nas regras de autorização e reconhecimento de cursos',
+    severidade: 'media' as const,
+    probabilidade: 'media' as const,
+    status: 'monitorando' as const,
+    orgao_regulador: 'MEC',
+    acoes_mitigacao: ['Acompanhamento das audiências públicas', 'Participação em grupos de trabalho'],
+  },
+  {
+    id: 'risk-2',
+    titulo: 'Revisão do FIES',
+    descricao: 'Alterações nas regras de financiamento estudantil federal',
+    severidade: 'alta' as const,
+    probabilidade: 'baixa' as const,
+    status: 'monitorando' as const,
+    orgao_regulador: 'MEC/FNDE',
+    acoes_mitigacao: ['Diversificação de fontes de financiamento', 'Parcerias com bancos privados'],
+  },
+];
+
+/**
+ * KPIs do mercado
+ */
+export const kpisMercadoMockados = [
+  {
+    id: 'kpi-1',
+    titulo: 'Market Share Total',
+    valor: 0.88,
+    unidade: '%',
+    variacao: 7.3,
+    tendencia: 'up' as const,
+    cor: '#10B981',
+  },
+  {
+    id: 'kpi-2',
+    titulo: 'Share Medicina',
+    valor: 8.0,
+    unidade: '%',
+    variacao: 12.7,
+    tendencia: 'up' as const,
+    cor: '#8B5CF6',
+  },
+  {
+    id: 'kpi-3',
+    titulo: 'Alunos Viva',
+    valor: 14000,
+    unidade: '',
+    variacao: 12.0,
+    tendencia: 'up' as const,
+    cor: '#FF6600',
+  },
+  {
+    id: 'kpi-4',
+    titulo: 'Ticket Médio Medicina',
+    valor: 4500,
+    unidade: 'R$',
+    variacao: 5.2,
+    tendencia: 'up' as const,
+    cor: '#3B82F6',
+  },
+];
+
+/**
+ * Dados consolidados mockados
+ */
+export const dadosAnaliseMercadoMockados: DadosAnaliseMercado = {
+  evolucao: evolucaoMercadoMockado,
+  participacao: participacaoMercadoMockado,
+  segmentos: segmentosEstrategicosMockados,
+  tendencias: tendenciasMercadoMockadas,
+  riscos: riscosRegulatoriosMockados,
+  kpis: kpisMercadoMockados,
+  ultima_atualizacao: '2025-02-05T10:00:00Z',
+};
