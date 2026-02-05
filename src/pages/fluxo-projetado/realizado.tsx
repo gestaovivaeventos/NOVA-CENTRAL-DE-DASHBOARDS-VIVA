@@ -11,8 +11,9 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas, RealizadoAnualCard } from '@/modules/fluxo-projetado';
+import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas, RealizadoAnualCard, ReceitasRealizadasFundo } from '@/modules/fluxo-projetado';
 import { FundoFee } from '@/modules/fluxo-projetado/components/RecebimentoFeeFundo';
+import { FundoReceita } from '@/modules/fluxo-projetado/components/ReceitasRealizadasFundo';
 import { ReceitaMensalAgrupada } from '@/modules/fluxo-projetado/components/ReceitasMensaisAgrupadas';
 import { DadosRealizadoAnual } from '@/modules/fluxo-projetado/components/RealizadoAnualCard';
 import { Loader2, BarChart3 } from 'lucide-react';
@@ -82,6 +83,74 @@ const gerarFundosMockFee = (): FundoFee[] => {
 
 const dadosMockFundosFee: FundoFee[] = gerarFundosMockFee();
 
+// Função para gerar dados mock de Receitas Realizadas por Fundo
+const gerarFundosMockReceita = (): FundoReceita[] => {
+  const unidades = [
+    'Colégio São Paulo', 'Instituto Educacional', 'Escola Municipal', 'Centro de Ensino',
+    'Colégio Estadual', 'Escola Particular', 'Instituto Federal', 'Escola Técnica',
+    'Colégio Adventista', 'Escola Batista', 'Instituto Santa Maria', 'Colégio Dom Bosco',
+    'Escola Integrada', 'Centro Educacional', 'Colégio Objetivo', 'Escola Positivo'
+  ];
+  
+  const fundos: FundoReceita[] = [];
+  
+  for (let i = 1; i <= 85; i++) {
+    const unidade = unidades[i % unidades.length];
+    const ano = 2024 + Math.floor(i / 40);
+    
+    // Gerar valores realistas
+    const valorFee = Math.floor(Math.random() * 40000) + 15000; // 15k a 55k
+    
+    // MARGEM TOTAL = FEE + Demais Receitas (margem deve ser maior que o FEE)
+    // Demais Receitas = entre 20% e 50% do FEE
+    const demaisReceitas = Math.floor(valorFee * (0.2 + Math.random() * 0.3));
+    const margemTotal = valorFee + demaisReceitas; // Margem = FEE + Demais Receitas
+    
+    // FEE Recebido = entre 0% e 100% do valorFee
+    const percentualRecebido = Math.random(); // 0 a 1
+    const feeRecebido = Math.floor(valorFee * percentualRecebido);
+    
+    // Margem Recebida = mesmo percentual aplicado à margem total
+    const margemRecebida = Math.floor(margemTotal * percentualRecebido);
+    
+    // Calcular falta receber (FEE + Margem faltante)
+    const faltaReceber = (valorFee - feeRecebido) + (margemTotal - margemRecebida);
+    
+    // Gerar saldo do fundo com diferentes cenários
+    const tipoStatus = i % 4;
+    let saldoFundo: number;
+    
+    if (percentualRecebido >= 0.99) {
+      // FINALIZADO: já recebeu tudo
+      saldoFundo = Math.floor(Math.random() * 5000); // saldo restante baixo
+    } else if (tipoStatus === 0) {
+      // SALDO INSUFICIENTE: saldo = 0
+      saldoFundo = 0;
+    } else if (tipoStatus === 1) {
+      // SALDO PARCIAL: saldo > 0 mas < falta receber
+      saldoFundo = Math.floor(faltaReceber * (0.1 + Math.random() * 0.5)); // 10-60% do falta
+    } else {
+      // SAQUE DISPONÍVEL: saldo >= falta receber
+      saldoFundo = Math.floor(faltaReceber * (1.1 + Math.random() * 0.5)); // 110-160% do falta
+    }
+    
+    fundos.push({
+      id: i.toString(),
+      nome: `Turma ${String(i).padStart(3, '0')} - ${unidade} ${ano}`,
+      unidade: unidade,
+      valorFee: valorFee,
+      feeRecebido: feeRecebido,
+      margemTotal: margemTotal,
+      margemRecebida: margemRecebida,
+      saldoFundo: saldoFundo,
+    });
+  }
+  
+  return fundos;
+};
+
+const dadosMockFundosReceita: FundoReceita[] = gerarFundosMockReceita();
+
 // Mock de receitas mensais agrupadas (consolidado da franquia, não por fundo)
 const dadosMockReceitasMensais: ReceitaMensalAgrupada[] = [
   // 2025
@@ -138,6 +207,7 @@ function FluxoRealizadoDashboard() {
 
   // Estados para dados (atualmente usando mocks)
   const [fundosFee, setFundosFee] = useState<FundoFee[]>([]);
+  const [fundosReceita, setFundosReceita] = useState<FundoReceita[]>([]);
   const [receitasMensais, setReceitasMensais] = useState<ReceitaMensalAgrupada[]>([]);
   const [dadosAnuais, setDadosAnuais] = useState<DadosRealizadoAnual[]>([]);
   const [loading, setLoading] = useState(false);
@@ -158,12 +228,14 @@ function FluxoRealizadoDashboard() {
       // Simula carregamento de API
       setTimeout(() => {
         setFundosFee(dadosMockFundosFee);
+        setFundosReceita(dadosMockFundosReceita);
         setReceitasMensais(dadosMockReceitasMensais);
         setDadosAnuais(dadosMockRealizadoAnual);
         setLoading(false);
       }, 500);
     } else {
       setFundosFee([]);
+      setFundosReceita([]);
       setReceitasMensais([]);
       setDadosAnuais([]);
     }
@@ -228,7 +300,13 @@ function FluxoRealizadoDashboard() {
                   loading={false}
                 />
 
-                {/* BLOCO 3: Realizado por Ano */}
+                {/* BLOCO 3: Receitas Realizadas por Fundo */}
+                <ReceitasRealizadasFundo 
+                  fundos={fundosReceita}
+                  loading={false}
+                />
+
+                {/* BLOCO 4: Realizado por Ano */}
                 <div className="rounded-xl overflow-hidden border border-gray-700/50 p-4" style={{ background: 'linear-gradient(180deg, #1e2028 0%, #181a20 100%)' }}>
                   <div className="flex items-center gap-3 mb-4">
                     <div className="p-2 bg-orange-500/20 rounded-lg">

@@ -22,6 +22,7 @@ export { default as FiltroFranquia } from './FiltroFranquia';
 export { default as CalculadoraProjecao } from './CalculadoraProjecao';
 export { default as RecebimentoFeeFundo } from './RecebimentoFeeFundo';
 export { default as ReceitasRecebidasFundo } from './ReceitasRecebidasFundo';
+export { default as ReceitasRealizadasFundo } from './ReceitasRealizadasFundo';
 export { default as RealizadoAnualCard } from './RealizadoAnualCard';
 export { default as ReceitasMensaisAgrupadas } from './ReceitasMensaisAgrupadas';
 export type { DadosFluxoAnual } from './FluxoAnualCard';
