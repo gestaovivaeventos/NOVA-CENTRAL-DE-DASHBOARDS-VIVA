@@ -37,7 +37,8 @@ function mapSaude(valor: string): SaudeFranquia {
   if (saude.includes('PERFORMANDO') || saude === 'PERFORMANDO') return 'PERFORMANDO';
   if (saude.includes('CONSOLIDA') || saude === 'EM CONSOLIDAÇÃO' || saude === 'EM CONSOLIDACAO') return 'EM_CONSOLIDACAO';
   if (saude.includes('ATEN') || saude === 'ATENÇÃO' || saude === 'ATENCAO') return 'ATENCAO';
-  if (saude === 'UTI') return 'UTI';
+  // UTI agora entra direto como UTI_RECUPERACAO - decisão manual apenas para UTI_REPASSE
+  if (saude === 'UTI') return 'UTI_RECUPERACAO';
   
   return 'SEM_AVALIACAO';
 }
@@ -94,6 +95,7 @@ function parseFlags(valor: string): FlagsEstruturais {
 
 /**
  * Converte dados brutos da planilha para o formato da aplicação
+ * Agrupa por franquia para calcular evolução de saúde (saúde anterior + meses estagnado)
  */
 function processarDados(rows: string[][]): Franquia[] {
   if (!rows || rows.length < 2) return [];
@@ -107,9 +109,16 @@ function processarDados(rows: string[][]): Franquia[] {
     colIndex[header] = index;
   });
   
-  const franquias: Franquia[] = [];
+  // Processar todas as linhas em registros intermediários
+  interface RegistroIntermediario {
+    raw: string[];
+    nome: string;
+    dataRef: string;
+    saude: SaudeFranquia;
+  }
   
-  // Processar cada linha de dados
+  const registrosPorFranquia: Record<string, RegistroIntermediario[]> = {};
+  
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
     if (!row || row.length === 0) continue;
@@ -121,6 +130,40 @@ function processarDados(rows: string[][]): Franquia[] {
     
     const nomeUnidade = getValue('nm_unidade').trim();
     if (!nomeUnidade) continue;
+    
+    const dataRef = getValue('data').trim();
+    const saudeStr = getValue('saude');
+    
+    if (!registrosPorFranquia[nomeUnidade]) {
+      registrosPorFranquia[nomeUnidade] = [];
+    }
+    
+    registrosPorFranquia[nomeUnidade].push({
+      raw: row,
+      nome: nomeUnidade,
+      dataRef,
+      saude: mapSaude(saudeStr),
+    });
+  }
+  
+  const franquias: Franquia[] = [];
+  
+  // Para cada franquia, ordenar por data e pegar o registro mais recente
+  for (const [nomeUnidade, registros] of Object.entries(registrosPorFranquia)) {
+    // Ordenar por data (mais recente primeiro)
+    registros.sort((a, b) => {
+      // Tentar comparar como string (YYYY-MM ou similar) 
+      return b.dataRef.localeCompare(a.dataRef);
+    });
+    
+    // O registro mais recente é o atual
+    const registroAtual = registros[0];
+    const row = registroAtual.raw;
+    
+    const getValue = (colName: string): string => {
+      const idx = colIndex[colName];
+      return idx !== undefined ? (row[idx] || '') : '';
+    };
     
     const pontuacaoStr = getValue('pontuacao_pex').replace(',', '.').replace('%', '');
     const pontuacao = parseFloat(pontuacaoStr) || 0;
@@ -137,8 +180,27 @@ function processarDados(rows: string[][]): Franquia[] {
       ? postoAvancadoStr.split(',').map(p => p.trim()).filter(p => p.length > 0)
       : [];
     
+    // Calcular saúde anterior (do mês anterior, se existir)
+    const saudeAtual = registroAtual.saude;
+    let saudeAnterior: SaudeFranquia | undefined = undefined;
+    let mesesNaSaudeAtual = 1;
+    
+    if (registros.length > 1) {
+      // Segundo registro = mês anterior
+      saudeAnterior = registros[1].saude;
+      
+      // Contar meses consecutivos na saúde atual (percorrer do mais recente para trás)
+      for (let j = 1; j < registros.length; j++) {
+        if (registros[j].saude === saudeAtual) {
+          mesesNaSaudeAtual++;
+        } else {
+          break;
+        }
+      }
+    }
+    
     const franquia: Franquia = {
-      id: `fr-${i}`,
+      id: `fr-${franquias.length + 1}`,
       chaveData: getValue('chave_data'),
       dataReferencia: getValue('data'),
       nome: nomeUnidade,
@@ -147,7 +209,7 @@ function processarDados(rows: string[][]): Franquia[] {
       dataInauguracao: getValue('dt_inauguracao'),
       maturidade: mapMaturidade(getValue('maturidade')),
       pontuacaoPex: pontuacao,
-      saude: mapSaude(getValue('saude')),
+      saude: saudeAtual,
       flags: parseFlags(getValue('flags')),
       postosAvancados: postosAvancados,
       mercado: getValue('mercado')?.trim() || '',
@@ -156,6 +218,9 @@ function processarDados(rows: string[][]): Franquia[] {
       estado: getValue('estado')?.trim() || '',
       latitude: !isNaN(latitude!) ? latitude : null,
       longitude: !isNaN(longitude!) ? longitude : null,
+      // Campos de evolução de saúde
+      saudeAnterior,
+      mesesNaSaudeAtual,
     };
     
     franquias.push(franquia);

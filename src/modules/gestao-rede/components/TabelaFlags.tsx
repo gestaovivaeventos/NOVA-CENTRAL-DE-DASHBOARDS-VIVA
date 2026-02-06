@@ -1,20 +1,29 @@
 /**
- * TabelaFlags - Tabela com análise de flags estruturais
- * Mostra total de franquias com cada flag ativa
- * Com funcionalidade de expansão para ver detalhes das franquias
- * Atualizado para novos tipos da planilha
+ * TabelaFlags - Kanban de Flags Estruturais
+ * Exibe franquias em colunas por flag (formato kanban igual ao bloco de classificação PEX)
+ * Com funcionalidade de edição de flags e batch save
  */
 
-import React, { useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { Franquia, SaudeFranquia } from '../types';
+import React, { useState, useMemo } from 'react';
+import { Users, Shield, AlertTriangle, DollarSign, Flag, Save, Loader2, X, AlertCircle } from 'lucide-react';
+import { Franquia, SaudeFranquia, FlagsEstruturais } from '../types';
+import ModalEditarFlags from './ModalEditarFlags';
+
+// Tipo para alterações pendentes
+interface AlteracaoFlagPendente {
+  chaveData: string;
+  nomeFranquia: string;
+  novoValor: FlagsEstruturais;
+  descricao: string;
+}
 
 interface TabelaFlagsProps {
   franquias: Franquia[];
   titulo?: string;
+  onRefresh?: () => void;
 }
 
-// Cores para saúde (classificação PEX) - Cores definidas pelo usuário
+// Cores para saúde (classificação PEX)
 const SAUDE_CORES: Record<SaudeFranquia, string> = {
   'TOP_PERFORMANCE': '#2980b9',
   'PERFORMANDO': '#27ae60',
@@ -28,439 +37,508 @@ const SAUDE_CORES: Record<SaudeFranquia, string> = {
 
 const SAUDE_LABELS: Record<SaudeFranquia, string> = {
   'TOP_PERFORMANCE': 'TOP',
-  'PERFORMANDO': 'Performando',
-  'EM_CONSOLIDACAO': 'Em Consolid.',
+  'PERFORMANDO': 'Perform.',
+  'EM_CONSOLIDACAO': 'Consolid.',
   'ATENCAO': 'Atenção',
   'UTI': 'UTI',
   'UTI_RECUPERACAO': 'UTI Recup.',
-  'UTI_REPASSE': 'UTI Repasse',
-  'SEM_AVALIACAO': 'S/ Avaliação',
+  'UTI_REPASSE': 'UTI Rep.',
+  'SEM_AVALIACAO': 'S/ Aval.',
 };
 
-// Informações das flags - Paleta profissional com bordas
-const FLAGS_INFO = {
-  socioOperador: {
-    label: 'Sócio Operador',
-    cor: '#8b6b6b',
-    bg: '#4a3838',
-    descricao: 'Franquias com alerta de sócio operador',
-  },
-  timeCritico: {
-    label: 'Time Crítico',
-    cor: '#a8956b',
-    bg: '#4a4538',
-    descricao: 'Franquias com time em situação crítica',
-  },
-  governanca: {
+// Configuração das flags para kanban
+const FLAGS_CONFIG: {
+  key: keyof Franquia['flags'];
+  label: string;
+  cor: string;
+  bg: string;
+  borderColor: string;
+  icon: React.ReactNode;
+  descricao: string;
+}[] = [
+  {
+    key: 'governanca',
     label: 'Governança',
-    cor: '#7b6b8b',
+    cor: '#FFFFFF',
     bg: '#3d3545',
-    descricao: 'Franquias com problemas de governança',
+    borderColor: '#7b6b8b',
+    icon: <Shield size={16} />,
+    descricao: 'Problemas de governança',
   },
-  necessidadeCapitalGiro: {
-    label: 'Necessidade Capital de Giro',
-    cor: '#6b8fa8',
+  {
+    key: 'necessidadeCapitalGiro',
+    label: 'Capital de Giro',
+    cor: '#FFFFFF',
     bg: '#3d4a5a',
-    descricao: 'Franquias com necessidade de capital de giro',
+    borderColor: '#6b8fa8',
+    icon: <DollarSign size={16} />,
+    descricao: 'Necessidade de capital de giro',
   },
-};
+  {
+    key: 'timeCritico',
+    label: 'Time Crítico',
+    cor: '#FFFFFF',
+    bg: '#4a4538',
+    borderColor: '#a8956b',
+    icon: <AlertTriangle size={16} />,
+    descricao: 'Time em situação crítica',
+  },
+  {
+    key: 'socioOperador',
+    label: 'Sócio Operador',
+    cor: '#FFFFFF',
+    bg: '#4a3838',
+    borderColor: '#8b6b6b',
+    icon: <Users size={16} />,
+    descricao: 'Alerta de sócio operador',
+  },
+];
 
-type FlagKey = keyof typeof FLAGS_INFO;
+export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Estruturais', onRefresh }: TabelaFlagsProps) {
+  const [modalFlagsOpen, setModalFlagsOpen] = useState(false);
+  const [franquiaSelecionada, setFranquiaSelecionada] = useState<Franquia | null>(null);
+  
+  // Estado para alterações pendentes (batch save)
+  const [alteracoesPendentes, setAlteracoesPendentes] = useState<AlteracaoFlagPendente[]>([]);
+  const [salvandoTudo, setSalvandoTudo] = useState(false);
+  const [erroSalvar, setErroSalvar] = useState<string | null>(null);
 
-export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Estruturais' }: TabelaFlagsProps) {
-  const [expandedFlags, setExpandedFlags] = useState<Set<FlagKey>>(new Set());
-
-  // Agrupa franquias por flag
-  const dadosFlags = useMemo(() => {
-    const resultado: Array<{
-      flag: FlagKey;
-      label: string;
-      cor: string;
-      descricao: string;
-      total: number;
-      percentual: number;
-      franquias: Franquia[];
-    }> = [];
-
-    // Filtra apenas franquias ativas em operação (não em implantação)
-    const franquiasAtivas = franquias.filter(
-      f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'
-    );
-
-    const totalFranquias = franquiasAtivas.length;
-
-    // Para cada flag, agrupa as franquias
-    Object.entries(FLAGS_INFO).forEach(([key, info]) => {
-      const flagKey = key as FlagKey;
-      const franquiasComFlag = franquiasAtivas.filter(f => f.flags[flagKey]);
-
-      resultado.push({
-        flag: flagKey,
-        label: info.label,
-        cor: info.cor,
-        descricao: info.descricao,
-        total: franquiasComFlag.length,
-        percentual: totalFranquias > 0 ? (franquiasComFlag.length / totalFranquias) * 100 : 0,
-        franquias: franquiasComFlag.sort((a, b) => b.pontuacaoPex - a.pontuacaoPex), // Ordena por pontuação decrescente
-      });
+  // Criar uma versão local das franquias com as alterações pendentes aplicadas
+  const franquiasComAlteracoes = useMemo(() => {
+    return franquias.map(f => {
+      const alteracao = alteracoesPendentes.find(a => a.chaveData === f.chaveData);
+      if (alteracao) {
+        return { ...f, flags: alteracao.novoValor };
+      }
+      return f;
     });
+  }, [franquias, alteracoesPendentes]);
 
+  // Filtrar apenas franquias ativas em operação
+  const franquiasAtivas = useMemo(() => 
+    franquiasComAlteracoes.filter(f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'),
+    [franquiasComAlteracoes]
+  );
+
+  // Agrupar por flag
+  const franquiasPorFlag = useMemo(() => {
+    const resultado: Record<string, Franquia[]> = {};
+    FLAGS_CONFIG.forEach(flag => {
+      resultado[flag.key] = franquiasAtivas
+        .filter(f => f.flags[flag.key])
+        .sort((a, b) => a.pontuacaoPex - b.pontuacaoPex);
+    });
     return resultado;
-  }, [franquias]);
+  }, [franquiasAtivas]);
 
-  const toggleFlag = (flag: FlagKey) => {
-    const newExpanded = new Set(expandedFlags);
-    if (newExpanded.has(flag)) {
-      newExpanded.delete(flag);
-    } else {
-      newExpanded.add(flag);
+  const handleEditarFlags = (franquia: Franquia) => {
+    setFranquiaSelecionada(franquia);
+    setModalFlagsOpen(true);
+  };
+
+  // Adicionar alteração de flags às pendentes
+  const handleAddFlagsPendente = async (franquia: Franquia, novasFlags: FlagsEstruturais) => {
+    const flagsAtivas: string[] = [];
+    if (novasFlags.governanca) flagsAtivas.push('Governança');
+    if (novasFlags.necessidadeCapitalGiro) flagsAtivas.push('Capital de Giro');
+    if (novasFlags.timeCritico) flagsAtivas.push('Time Crítico');
+    if (novasFlags.socioOperador) flagsAtivas.push('Sócio Operador');
+    
+    const descricao = flagsAtivas.length > 0 
+      ? `Flags: ${flagsAtivas.join(', ')}`
+      : 'Flags removidas';
+
+    setAlteracoesPendentes(prev => {
+      const semAnterior = prev.filter(a => a.chaveData !== franquia.chaveData);
+      return [...semAnterior, {
+        chaveData: franquia.chaveData,
+        nomeFranquia: franquia.nome,
+        novoValor: novasFlags,
+        descricao,
+      }];
+    });
+  };
+
+  const handleLimparPendentes = () => {
+    setAlteracoesPendentes([]);
+    setErroSalvar(null);
+  };
+
+  const handleSalvarTudo = async () => {
+    if (alteracoesPendentes.length === 0) return;
+
+    setSalvandoTudo(true);
+    setErroSalvar(null);
+
+    try {
+      for (const alteracao of alteracoesPendentes) {
+        const response = await fetch('/api/gestao-rede/update-flags', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chaveData: alteracao.chaveData,
+            flags: alteracao.novoValor,
+          }),
+        });
+        const result = await response.json();
+        if (!result.success) {
+          throw new Error(`Erro ao salvar flags de ${alteracao.nomeFranquia}: ${result.error}`);
+        }
+      }
+
+      setAlteracoesPendentes([]);
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      setErroSalvar(error instanceof Error ? error.message : 'Erro ao salvar alterações');
+    } finally {
+      setSalvandoTudo(false);
     }
-    setExpandedFlags(newExpanded);
+  };
+
+  const temAlteracaoPendente = (chaveData: string) => {
+    return alteracoesPendentes.some(a => a.chaveData === chaveData);
   };
 
   return (
+    <>
     <div style={{
       backgroundColor: '#343A40',
       borderRadius: '12px',
-      padding: '24px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+      padding: '20px',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
     }}>
-      {/* Título */}
+      {/* Header com barra de alterações pendentes */}
       <div style={{
-        marginBottom: '20px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '16px',
         paddingBottom: '12px',
         borderBottom: '2px solid #FF6600',
+        flexWrap: 'wrap',
+        gap: '12px',
       }}>
-        <h2 style={{
-          fontSize: '1.3rem',
-          fontWeight: 700,
-          color: '#F8F9FA',
-          margin: 0,
-          fontFamily: "'Poppins', sans-serif",
-        }}>
-          {titulo}
-        </h2>
+        <div>
+          <h3 style={{
+            color: '#adb5bd',
+            fontSize: '1rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            fontFamily: 'Poppins, sans-serif',
+            margin: 0,
+          }}>
+            {titulo}
+          </h3>
+          <span style={{
+            color: '#6c757d',
+            fontSize: '0.75rem',
+            fontFamily: 'Poppins, sans-serif',
+          }}>
+            {franquiasAtivas.length} franquias em operação
+          </span>
+        </div>
+
+        {/* Barra de alterações pendentes */}
+        {alteracoesPendentes.length > 0 && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            backgroundColor: '#495057',
+            padding: '8px 16px',
+            borderRadius: '8px',
+            border: '1px solid #FF6600',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{
+                backgroundColor: '#FF6600',
+                color: '#fff',
+                padding: '2px 8px',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+              }}>
+                {alteracoesPendentes.length}
+              </span>
+              <span style={{ color: '#F8F9FA', fontSize: '0.85rem', fontWeight: 500 }}>
+                alteração(ões) pendente(s)
+              </span>
+            </div>
+
+            <button
+              onClick={handleLimparPendentes}
+              disabled={salvandoTudo}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '4px',
+                padding: '6px 12px', borderRadius: '6px',
+                border: '1px solid #6c757d', backgroundColor: 'transparent',
+                color: '#adb5bd', fontSize: '0.8rem', cursor: 'pointer',
+              }}
+            >
+              <X size={14} /> Cancelar
+            </button>
+
+            <button
+              onClick={handleSalvarTudo}
+              disabled={salvandoTudo}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '6px',
+                border: 'none', backgroundColor: '#FF6600',
+                color: '#fff', fontSize: '0.85rem', fontWeight: 600,
+                cursor: salvandoTudo ? 'wait' : 'pointer',
+                opacity: salvandoTudo ? 0.7 : 1,
+              }}
+            >
+              {salvandoTudo ? (
+                <><Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} /> Salvando...</>
+              ) : (
+                <><Save size={16} /> Salvar Todas</>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Tabela */}
-      <div style={{
-        overflowX: 'auto',
-      }}>
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
+      {/* Erro ao salvar */}
+      {erroSalvar && (
+        <div style={{
+          backgroundColor: 'rgba(139, 107, 107, 0.2)',
+          border: '1px solid #8b6b6b',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
         }}>
-          {/* Header */}
-          <thead>
-            <tr style={{
-              borderBottom: '2px solid #3a3f46',
-            }}>
-              <th style={{
-                textAlign: 'left',
-                padding: '12px 16px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: '#6c757d',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontFamily: "'Poppins', sans-serif",
-              }}>
-                Flag
-              </th>
-              <th style={{
-                textAlign: 'center',
-                padding: '12px 16px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: '#6c757d',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontFamily: "'Poppins', sans-serif",
-              }}>
-                Total Franquias
-              </th>
-              <th style={{
-                textAlign: 'center',
-                padding: '12px 16px',
-                fontSize: '0.75rem',
-                fontWeight: 600,
-                color: '#6c757d',
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                fontFamily: "'Poppins', sans-serif",
-              }}>
-                % do Total
-              </th>
-            </tr>
-          </thead>
+          <AlertCircle size={18} color="#adb5bd" />
+          <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>{erroSalvar}</span>
+          <button
+            onClick={() => setErroSalvar(null)}
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#adb5bd', cursor: 'pointer' }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
-          {/* Body */}
-          <tbody>
-            {dadosFlags.map((item, index) => {
-              const isExpanded = expandedFlags.has(item.flag);
-              const isEven = index % 2 === 0;
-              
-              return (
-                <React.Fragment key={item.flag}>
-                  <tr 
-                    onClick={() => item.total > 0 && toggleFlag(item.flag)}
+      {/* Kanban Grid */}
+      <div style={{ overflowX: 'auto' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: `repeat(${FLAGS_CONFIG.length}, 1fr)`,
+          gap: '12px',
+          minWidth: `${FLAGS_CONFIG.length * 220}px`,
+        }}>
+          {/* Cabeçalhos */}
+          {FLAGS_CONFIG.map((flag) => (
+            <div
+              key={flag.key}
+              style={{
+                backgroundColor: flag.bg,
+                color: flag.cor,
+                padding: '10px 8px',
+                borderRadius: '8px 8px 0 0',
+                textAlign: 'center',
+                fontWeight: 600,
+                fontSize: '0.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '4px',
+                borderTop: `3px solid ${flag.borderColor}`,
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {flag.icon}
+                <span>{flag.label}</span>
+              </div>
+              <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>
+                {flag.descricao}
+              </span>
+              <span style={{
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                padding: '2px 8px',
+                borderRadius: '10px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+              }}>
+                {franquiasPorFlag[flag.key]?.length || 0}
+              </span>
+            </div>
+          ))}
+
+          {/* Colunas de franquias */}
+          {FLAGS_CONFIG.map((flag) => (
+            <div
+              key={`col-${flag.key}`}
+              style={{
+                backgroundColor: '#212529',
+                borderRadius: '0 0 8px 8px',
+                padding: '8px',
+                minHeight: '200px',
+                maxHeight: '400px',
+                overflowY: 'auto',
+              }}
+            >
+              {(franquiasPorFlag[flag.key]?.length || 0) === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  color: '#6c757d',
+                  padding: '20px',
+                  fontSize: '0.8rem',
+                }}>
+                  Nenhuma franquia
+                </div>
+              ) : (
+                franquiasPorFlag[flag.key]?.map((franquia) => (
+                  <div
+                    key={franquia.id}
                     style={{
-                      backgroundColor: isEven ? '#2d3035' : 'transparent',
-                      transition: 'background-color 0.2s',
-                      cursor: item.total > 0 ? 'pointer' : 'default',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (item.total > 0) {
-                        e.currentTarget.style.backgroundColor = '#2a2f36';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = isEven ? '#2d3035' : 'transparent';
+                      backgroundColor: temAlteracaoPendente(franquia.chaveData) ? '#3d4a3d' : '#343A40',
+                      borderRadius: '6px',
+                      padding: '10px',
+                      marginBottom: '8px',
+                      borderLeft: `3px solid ${SAUDE_CORES[franquia.saude]}`,
+                      position: 'relative',
                     }}
                   >
-                    {/* Flag */}
-                    <td style={{
-                      padding: '16px',
-                      borderBottom: isExpanded ? 'none' : '1px solid #3a3f46',
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {/* Ícone de expansão */}
-                        {item.total > 0 && (
-                          <div style={{ display: 'flex', alignItems: 'center', color: '#adb5bd' }}>
-                            {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                          </div>
-                        )}
-                        
-                        {/* Indicador de cor */}
-                        <div style={{
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          backgroundColor: item.cor,
-                        }} />
-                        
-                        <div>
-                          <div style={{
-                            fontSize: '0.95rem',
-                            fontWeight: 600,
-                            color: '#F8F9FA',
-                            fontFamily: "'Poppins', sans-serif",
-                          }}>
-                            {item.label}
-                          </div>
-                          <div style={{
-                            fontSize: '0.7rem',
-                            color: '#adb5bd',
-                            fontFamily: "'Poppins', sans-serif",
-                          }}>
-                            {item.descricao}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Total */}
-                    <td style={{
-                      textAlign: 'center',
-                      padding: '16px',
-                      borderBottom: isExpanded ? 'none' : '1px solid #3a3f46',
-                    }}>
+                    {/* Indicador de alteração pendente */}
+                    {temAlteracaoPendente(franquia.chaveData) && (
                       <div style={{
-                        fontSize: '1.3rem',
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: '#FF6600',
+                      }} title="Alteração pendente" />
+                    )}
+                    {/* Nome + Score */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'flex-start',
+                      marginBottom: '6px',
+                    }}>
+                      <span style={{
+                        color: '#F8F9FA',
+                        fontSize: '0.8rem',
+                        fontWeight: 500,
+                        flex: 1,
+                      }}>
+                        {franquia.nome}
+                      </span>
+                      <span style={{
+                        color: SAUDE_CORES[franquia.saude],
+                        fontSize: '0.85rem',
                         fontWeight: 700,
-                        color: item.total > 0 ? item.cor : '#6c757d',
-                        fontFamily: "'Orbitron', 'Poppins', sans-serif",
+                        fontFamily: "'Orbitron', sans-serif",
+                        marginLeft: '8px',
                       }}>
-                        {item.total}
-                      </div>
-                    </td>
-
-                    {/* Percentual */}
-                    <td style={{
-                      textAlign: 'center',
-                      padding: '16px',
-                      borderBottom: isExpanded ? 'none' : '1px solid #3a3f46',
+                        {franquia.pontuacaoPex.toFixed(2)}
+                      </span>
+                    </div>
+                    {/* Maturidade + Badge Saúde + Botão editar */}
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                     }}>
-                      <div style={{
-                        fontSize: '1.1rem',
-                        fontWeight: 600,
-                        color: item.total > 0 ? '#F8F9FA' : '#6c757d',
-                        fontFamily: "'Poppins', sans-serif",
+                      <span style={{
+                        color: '#6c757d',
+                        fontSize: '0.7rem',
                       }}>
-                        {item.percentual.toFixed(1)}%
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* Linhas expandidas com as franquias */}
-                  {isExpanded && item.total > 0 && (
-                    <tr>
-                      <td colSpan={3} style={{
-                        padding: 0,
-                        backgroundColor: '#1f2329',
-                        borderBottom: '1px solid #3a3f46',
-                      }}>
-                        <div style={{
-                          padding: '16px 24px',
-                          maxHeight: '400px',
-                          overflowY: 'auto',
+                        {franquia.maturidade}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          backgroundColor: SAUDE_CORES[franquia.saude],
+                          color: franquia.saude === 'ATENCAO' ? '#000' : '#fff',
+                          fontSize: '0.6rem',
+                          fontWeight: 600,
+                          fontFamily: "'Poppins', sans-serif",
+                          textTransform: 'uppercase',
+                          whiteSpace: 'nowrap',
                         }}>
-                          {/* Header das franquias */}
-                          <div style={{
-                            display: 'grid',
-                            gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                            gap: '12px',
-                            padding: '8px 12px',
-                            marginBottom: '8px',
-                            borderBottom: '1px solid #3a3f46',
-                          }}>
-                            <div style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              color: '#6c757d',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
-                              fontFamily: "'Poppins', sans-serif",
-                            }}>
-                              Franquia
-                            </div>
-                            <div style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              color: '#6c757d',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
-                              fontFamily: "'Poppins', sans-serif",
-                              textAlign: 'center',
-                            }}>
-                              Pontuação PEX
-                            </div>
-                            <div style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              color: '#6c757d',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
-                              fontFamily: "'Poppins', sans-serif",
-                              textAlign: 'center',
-                            }}>
-                              Classificação
-                            </div>
-                            <div style={{
-                              fontSize: '0.7rem',
-                              fontWeight: 600,
-                              color: '#6c757d',
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
-                              fontFamily: "'Poppins', sans-serif",
-                            }}>
-                              Maturidade
-                            </div>
-                          </div>
+                          {SAUDE_LABELS[franquia.saude]}
+                        </span>
+                        {/* Botão editar flags */}
+                        <button
+                          onClick={() => handleEditarFlags(franquia)}
+                          title="Editar flags"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '20px',
+                            height: '20px',
+                            borderRadius: '3px',
+                            backgroundColor: '#6c757d',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <Flag size={10} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
 
-                          {/* Lista de franquias */}
-                          {item.franquias.map((franquia, idx) => (
-                            <div
-                              key={franquia.id}
-                              style={{
-                                display: 'grid',
-                                gridTemplateColumns: '2fr 1fr 1fr 1fr',
-                                gap: '12px',
-                                padding: '10px 12px',
-                                borderRadius: '6px',
-                                marginBottom: '4px',
-                                backgroundColor: idx % 2 === 0 ? '#252830' : 'transparent',
-                                transition: 'background-color 0.2s',
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#2a2f36';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#252830' : 'transparent';
-                              }}
-                            >
-                              {/* Nome da Franquia */}
-                              <div style={{
-                                fontSize: '0.85rem',
-                                fontWeight: 500,
-                                color: '#F8F9FA',
-                                fontFamily: "'Poppins', sans-serif",
-                                display: 'flex',
-                                alignItems: 'center',
-                              }}>
-                                {franquia.nome}
-                              </div>
-
-                              {/* Pontuação PEX */}
-                              <div style={{
-                                textAlign: 'center',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}>
-                                <div style={{
-                                  display: 'inline-block',
-                                  padding: '4px 12px',
-                                  borderRadius: '16px',
-                                  backgroundColor: SAUDE_CORES[franquia.saude] + '20',
-                                  border: `1px solid ${SAUDE_CORES[franquia.saude]}`,
-                                }}>
-                                  <span style={{
-                                    fontSize: '0.9rem',
-                                    fontWeight: 700,
-                                    color: SAUDE_CORES[franquia.saude],
-                                    fontFamily: "'Orbitron', 'Poppins', sans-serif",
-                                  }}>
-                                    {franquia.pontuacaoPex.toFixed(2)}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Classificação (Saúde) */}
-                              <div style={{
-                                textAlign: 'center',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}>
-                                <span style={{
-                                  display: 'inline-block',
-                                  padding: '4px 10px',
-                                  borderRadius: '4px',
-                                  backgroundColor: SAUDE_CORES[franquia.saude],
-                                  color: franquia.saude === 'ATENCAO' ? '#000' : '#fff',
-                                  fontSize: '0.7rem',
-                                  fontWeight: 600,
-                                  fontFamily: "'Poppins', sans-serif",
-                                  textTransform: 'uppercase',
-                                  whiteSpace: 'nowrap',
-                                }}>
-                                  {SAUDE_LABELS[franquia.saude]}
-                                </span>
-                              </div>
-
-                              {/* Maturidade */}
-                              <div style={{
-                                fontSize: '0.8rem',
-                                color: '#adb5bd',
-                                fontFamily: "'Poppins', sans-serif",
-                                display: 'flex',
-                                alignItems: 'center',
-                              }}>
-                                {franquia.maturidade}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* Legenda */}
+      <div style={{
+        marginTop: '16px',
+        paddingTop: '12px',
+        borderTop: '1px solid #444',
+        display: 'flex',
+        gap: '16px',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+      }}>
+        <span style={{ color: '#6c757d', fontSize: '0.75rem', fontWeight: 600 }}>AÇÕES:</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '18px',
+            height: '18px',
+            borderRadius: '3px',
+            backgroundColor: '#6c757d',
+            color: '#fff',
+          }}>
+            <Flag size={10} />
+          </span>
+          <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Clique para editar flags da franquia</span>
+        </div>
       </div>
     </div>
+
+    {/* Modal de edição de flags */}
+    {franquiaSelecionada && (
+      <ModalEditarFlags
+        franquia={franquiaSelecionada}
+        isOpen={modalFlagsOpen}
+        onClose={() => {
+          setModalFlagsOpen(false);
+          setFranquiaSelecionada(null);
+        }}
+        onSave={handleAddFlagsPendente}
+      />
+    )}
+    </>
   );
 }

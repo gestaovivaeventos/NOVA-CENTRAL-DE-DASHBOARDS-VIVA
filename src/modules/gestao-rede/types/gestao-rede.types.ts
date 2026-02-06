@@ -97,6 +97,9 @@ export interface Franquia {
   estado: string;
   latitude: number | null;
   longitude: number | null;
+  // Campos de evolução de saúde (calculados a partir do histórico)
+  saudeAnterior?: SaudeFranquia;       // Saúde do mês anterior
+  mesesNaSaudeAtual?: number;          // Quantos meses consecutivos na saúde atual
 }
 
 /**

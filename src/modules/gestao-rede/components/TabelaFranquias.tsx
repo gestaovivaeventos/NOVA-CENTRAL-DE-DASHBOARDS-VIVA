@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Search, ChevronLeft, ChevronRight, AlertTriangle, Users, Shield, DollarSign } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, ChevronLeft, ChevronRight, AlertTriangle, Users, Shield, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { Franquia, SaudeFranquia } from '../types';
 
 interface TabelaFranquiasProps {
@@ -19,7 +19,7 @@ interface TabelaFranquiasProps {
   };
 }
 
-type CampoOrdenacao = 'nome' | 'dataInauguracao' | 'maturidade' | 'pontuacaoPex' | 'saude' | 'postoAvancado';
+type CampoOrdenacao = 'nome' | 'dataInauguracao' | 'maturidade' | 'pontuacaoPex' | 'saude' | 'mesesNaSaudeAtual';
 
 // Cores e labels para saúde (classificação PEX) - Paleta de cores definida pelo usuário
 const SAUDE_CONFIG: Record<SaudeFranquia, { label: string; cor: string; bg: string; borderColor: string }> = {
@@ -152,9 +152,9 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             valorA = a.saude;
             valorB = b.saude;
             break;
-          case 'postoAvancado':
-            valorA = a.postosAvancados.length;
-            valorB = b.postosAvancados.length;
+          case 'mesesNaSaudeAtual':
+            valorA = a.mesesNaSaudeAtual || 0;
+            valorB = b.mesesNaSaudeAtual || 0;
             break;
         }
 
@@ -335,14 +335,15 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             <tr>
               {[
                 { campo: 'nome' as CampoOrdenacao, label: 'Franquia', width: '180px' },
-                { campo: 'dataInauguracao' as CampoOrdenacao, label: 'Inauguração', width: '120px' },
-                { campo: 'maturidade' as CampoOrdenacao, label: 'Maturidade', width: '120px' },
-                { campo: 'pontuacaoPex' as CampoOrdenacao, label: 'Pontuação PEX', width: '100px' },
-                { campo: 'saude' as CampoOrdenacao, label: 'Saúde', width: '130px' },
-                { campo: 'postoAvancado' as CampoOrdenacao, label: 'Posto Avançado', width: '130px' },
-              ].map(col => (
+                { campo: 'dataInauguracao' as CampoOrdenacao, label: 'Inauguração', width: '110px' },
+                { campo: 'maturidade' as CampoOrdenacao, label: 'Maturidade', width: '100px' },
+                { campo: 'pontuacaoPex' as CampoOrdenacao, label: 'PEX', width: '80px' },
+                { campo: 'saude' as CampoOrdenacao, label: 'Saúde Atual', width: '110px' },
+                { campo: 'saude' as CampoOrdenacao, label: 'Saúde Anterior', width: '110px' },
+                { campo: 'mesesNaSaudeAtual' as CampoOrdenacao, label: 'Tempo na Saúde', width: '100px' },
+              ].map((col, colIdx) => (
                 <th 
-                  key={col.campo}
+                  key={`col-${colIdx}`}
                   onClick={() => handleOrdenacao(col.campo)}
                   style={{
                     textAlign: 'left',
@@ -480,20 +481,69 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                       </span>
                     )}
                   </td>
+                  {/* Saúde Anterior */}
                   <td style={{ 
                     padding: '10px 8px',
                     borderBottom: '1px solid #444',
-                    textAlign: 'left',
                   }}>
-                    {franquia.postosAvancados.length > 0 ? (
-                      <span style={{
-                        color: '#adb5bd',
-                        fontSize: '0.8rem',
-                      }}>
-                        {franquia.postosAvancados.join(', ')}
-                      </span>
+                    {isImplantacao || isInativa || !franquia.saudeAnterior ? (
+                      <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>-</span>
+                    ) : (() => {
+                      const saudeAntConfig = SAUDE_CONFIG[franquia.saudeAnterior!] || SAUDE_CONFIG['SEM_AVALIACAO'];
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span style={{
+                            backgroundColor: saudeAntConfig.bg,
+                            color: saudeAntConfig.cor,
+                            padding: '3px 8px',
+                            borderRadius: '10px',
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                          }}>
+                            {saudeAntConfig.label}
+                          </span>
+                          {/* Indicador de evolução */}
+                          {franquia.saude !== franquia.saudeAnterior && (() => {
+                            const ordemSaude: SaudeFranquia[] = ['UTI_REPASSE', 'UTI_RECUPERACAO', 'UTI', 'ATENCAO', 'EM_CONSOLIDACAO', 'PERFORMANDO', 'TOP_PERFORMANCE'];
+                            const idxAtual = ordemSaude.indexOf(franquia.saude);
+                            const idxAnterior = ordemSaude.indexOf(franquia.saudeAnterior!);
+                            const melhorou = idxAtual > idxAnterior;
+                            return melhorou ? (
+                              <TrendingUp size={14} color="#27ae60" title="Evoluiu" />
+                            ) : (
+                              <TrendingDown size={14} color="#c0392b" title="Regrediu" />
+                            );
+                          })()}
+                        </div>
+                      );
+                    })()}
+                  </td>
+                  {/* Meses na Saúde Atual */}
+                  <td style={{ 
+                    padding: '10px 8px',
+                    borderBottom: '1px solid #444',
+                    textAlign: 'center',
+                  }}>
+                    {isImplantacao || isInativa || !franquia.mesesNaSaudeAtual ? (
+                      <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>-</span>
                     ) : (
-                      <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>-</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                        <span style={{
+                          color: franquia.mesesNaSaudeAtual >= 3 ? '#e67e22' : '#adb5bd',
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                          fontFamily: "'Orbitron', sans-serif",
+                        }}>
+                          {franquia.mesesNaSaudeAtual}
+                        </span>
+                        <span style={{
+                          color: '#6c757d',
+                          fontSize: '0.65rem',
+                        }}>
+                          {franquia.mesesNaSaudeAtual === 1 ? 'mês' : 'meses'}
+                        </span>
+                      </div>
                     )}
                   </td>
                   <td style={{ 

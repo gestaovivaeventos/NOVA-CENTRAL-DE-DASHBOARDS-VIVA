@@ -1,6 +1,13 @@
 /**
  * Gestão Rede - Dashboard Principal
- * Visualização da estrutura hierárquica das franquias
+ * Visualização da estrutura das franquias
+ * 
+ * Alterações v2:
+ * - KPIs reestruturados: Ativas, Implantação, Incubação (com detalhe), Maduras
+ * - Inativas em bloco colapsável separado
+ * - Removidos blocos redundantes (hierarquia, donuts status/maturidade)
+ * - Flags em formato kanban
+ * - UTI removido, todas entram como UTI Recuperação
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -13,15 +20,17 @@ import {
   Clock, 
   Zap, 
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  Info,
+  X,
+  Sprout,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   GestaoRedeLayout,
   KPICard,
-  HierarquiaTree,
-  GraficoDonut,
-  GraficoBarras,
   TabelaFranquias,
   TabelaClassificacaoPEX,
   TabelaSegmentoMercado,
@@ -32,7 +41,6 @@ import {
 import { useGestaoRede } from '@/modules/gestao-rede/hooks';
 import { 
   calcularResumoRede, 
-  montarArvoreHierarquica,
   CORES 
 } from '@/modules/gestao-rede/utils';
 
@@ -48,17 +56,15 @@ export default function GestaoRedeDashboard() {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    // Franqueados (accessLevel = 0) só podem acessar o PEX
     if (!authLoading && user && user.accessLevel === 0) {
       router.push('/pex');
     }
   }, [isAuthenticated, authLoading, router, user]);
 
-  // Calcular resumo e árvore hierárquica baseado nos dados
+  // Calcular resumo baseado nos dados
   const resumo = useMemo(() => calcularResumoRede(franquias), [franquias]);
-  const arvoreHierarquica = useMemo(() => montarArvoreHierarquica(franquias), [franquias]);
 
-  // Estado para filtro de tabela (legado)
+  // Estado para filtro de tabela
   const [filtroStatus, setFiltroStatus] = useState<'TODOS' | 'ATIVA' | 'INATIVA'>('TODOS');
   
   // Estado para filtros avançados
@@ -67,48 +73,23 @@ export default function GestaoRedeDashboard() {
     classificacao: [],
     flags: [],
   });
+
+  // Estado para bloco de inativas colapsável
+  const [inativasExpandido, setInativasExpandido] = useState(false);
   
-  // Franquias filtradas (para cards KPI)
+  // Estado para detalhe de incubação
+  const [detalheIncubacao, setDetalheIncubacao] = useState(false);
+  
+  // Franquias filtradas
   const franquiasFiltradas = useMemo(() => {
     if (filtroStatus === 'TODOS') return franquias;
     return franquias.filter(f => f.status === filtroStatus);
   }, [franquias, filtroStatus]);
 
-  // Dados para gráficos
-  const dadosStatusGeral = [
-    { nome: 'Ativas', valor: resumo.ativas, cor: '#FF6600' },
-    { nome: 'Inativas', valor: resumo.inativas, cor: '#c0392b' },
-  ];
-
-  const dadosMaturidade = [
-    { nome: '1º Ano Op.', valor: resumo.incubacao1, cor: '#FF6600' },
-    { nome: '2º Ano Op.', valor: resumo.incubacao2, cor: '#cc5200' },
-    { nome: '3º Ano Op.', valor: resumo.incubacao3, cor: '#994d00' },
-    { nome: 'Maduras', valor: resumo.maduras, cor: '#663300' },
-  ];
-
-  const dadosBarrasStatus = [
-    { nome: 'Maduras', valor: resumo.maduras, cor: CORES.maduras },
-    { nome: 'Em Implantação', valor: resumo.emImplantacao, cor: CORES.implantacao },
-    { nome: '1º/2º/3º Ano Op.', valor: resumo.emIncubacao, cor: CORES.incubacao },
-    { nome: 'Inativas', valor: resumo.inativas, cor: CORES.inativas },
-  ];
-
-  // Dados para gráfico de classificação PEX - Paleta profissional
-  const franquiasEmOperacao = franquias.filter(
-    f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'
-  );
-  
-  const dadosClassificacaoPEX = [
-    { nome: 'TOP Performance', valor: franquiasEmOperacao.filter(f => f.saude === 'TOP_PERFORMANCE').length, cor: '#2980b9' },
-    { nome: 'Performando', valor: franquiasEmOperacao.filter(f => f.saude === 'PERFORMANDO').length, cor: '#27ae60' },
-    { nome: 'Em Consolidação', valor: franquiasEmOperacao.filter(f => f.saude === 'EM_CONSOLIDACAO').length, cor: '#e67e22' },
-    { nome: 'Atenção', valor: franquiasEmOperacao.filter(f => f.saude === 'ATENCAO').length, cor: '#f1c40f' },
-    { nome: 'UTI', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI').length, cor: '#c0392b' },
-    { nome: 'UTI Recuperação', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_RECUPERACAO').length, cor: '#943126' },
-    { nome: 'UTI Repasse', valor: franquiasEmOperacao.filter(f => f.saude === 'UTI_REPASSE').length, cor: '#6c2134' },
-    { nome: 'Sem Avaliação', valor: franquiasEmOperacao.filter(f => f.saude === 'SEM_AVALIACAO').length, cor: '#6c757d' },
-  ].filter(d => d.valor > 0);
+  // Franquias inativas detalhadas
+  const franquiasInativas = useMemo(() => franquias.filter(f => f.status === 'INATIVA'), [franquias]);
+  const encerradasOperacao = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'ENCERRADA_OPERACAO'), [franquiasInativas]);
+  const encerradasImplantacao = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'ENCERRADA_IMPLANTACAO'), [franquiasInativas]);
 
   if (authLoading || isLoading) {
     return (
@@ -210,7 +191,6 @@ export default function GestaoRedeDashboard() {
                 </div>
               </div>
 
-              {/* Mensagem de erro, se houver */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {error && (
                   <div style={{
@@ -235,91 +215,304 @@ export default function GestaoRedeDashboard() {
 
         {/* Conteúdo Principal */}
         <div style={{ padding: '0 24px 24px 24px' }}>
-          {/* KPIs Principais - Linha única */}
+          
+          {/* ===== KPIs Principais - Cards de totais ===== */}
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(5, 1fr)', 
+            gridTemplateColumns: 'repeat(4, 1fr)', 
             gap: '16px',
-            marginBottom: '24px'
+            marginBottom: '16px'
           }}>
             <KPICard
               titulo="Franquias Ativas"
               valor={resumo.ativas}
-              cor={CORES.primaria}
+              cor="#27ae60"
               icone={<Building2 size={32} />}
               subtitulo="Rede ativa atual"
-            />
-            <KPICard
-              titulo="Franquias Inativas"
-              valor={resumo.inativas}
-              cor={CORES.inativas}
-              icone={<XCircle size={32} />}
-              onClick={() => setFiltroStatus(filtroStatus === 'INATIVA' ? 'TODOS' : 'INATIVA')}
-              selecionado={filtroStatus === 'INATIVA'}
-              subtitulo="Encerradas"
             />
             <KPICard
               titulo="Em Implantação"
               valor={resumo.emImplantacao}
               total={resumo.ativas}
-              porcentagem={(resumo.emImplantacao / resumo.ativas) * 100}
-              cor={CORES.implantacao}
+              porcentagem={resumo.ativas > 0 ? (resumo.emImplantacao / resumo.ativas) * 100 : 0}
+              cor="#FF6600"
               icone={<Clock size={32} />}
               subtitulo="das ativas"
             />
             <KPICard
-              titulo="Em Operação"
-              valor={resumo.emOperacao}
-              total={resumo.ativas}
-              porcentagem={resumo.ativas > 0 ? (resumo.emOperacao / resumo.ativas) * 100 : 0}
-              cor={CORES.operacao}
-              icone={<TrendingUp size={32} />}
-              subtitulo="das ativas"
+              titulo="Em Incubação"
+              valor={resumo.emIncubacao}
+              total={resumo.emOperacao}
+              porcentagem={resumo.emOperacao > 0 ? (resumo.emIncubacao / resumo.emOperacao) * 100 : 0}
+              cor="#2980b9"
+              icone={<Sprout size={32} />}
+              subtitulo="em operação"
+              onClick={() => setDetalheIncubacao(!detalheIncubacao)}
+              selecionado={detalheIncubacao}
             />
             <KPICard
               titulo="Franquias Maduras"
               valor={resumo.maduras}
               total={resumo.emOperacao}
               porcentagem={resumo.emOperacao > 0 ? (resumo.maduras / resumo.emOperacao) * 100 : 0}
-              cor={CORES.maduras}
+              cor="#8e44ad"
               icone={<Zap size={32} />}
               subtitulo="em operação"
             />
           </div>
 
-          {/* Grid Principal - Hierarquia à esquerda, Gráficos Donut à direita */}
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: '1fr 1fr', 
-            gap: '24px',
-            marginBottom: '24px'
-          }}>
-            {/* Hierarquia em Árvore */}
-            <HierarquiaTree 
-              data={arvoreHierarquica}
-              expandirApenasAtivas={true}
-            />
+          {/* ===== Detalhe de Incubação (expansível) ===== */}
+          {detalheIncubacao && (
+            <div style={{
+              backgroundColor: '#343A40',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              marginBottom: '16px',
+              border: '1px solid #2980b9',
+              animation: 'fadeIn 0.3s ease',
+            }}>
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '12px',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Info size={16} color="#2980b9" />
+                  <span style={{
+                    color: '#adb5bd',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontFamily: 'Poppins, sans-serif',
+                  }}>
+                    Detalhamento — Franquias em Incubação
+                  </span>
+                </div>
+                <button
+                  onClick={() => setDetalheIncubacao(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: '#6c757d',
+                    padding: '4px',
+                  }}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '12px',
+              }}>
+                {/* 1º Ano */}
+                <div style={{
+                  backgroundColor: '#212529',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  borderLeft: '4px solid #3498db',
+                }}>
+                  <div style={{ color: '#6c757d', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'Poppins, sans-serif' }}>
+                    1º Ano de Operação
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{
+                      color: '#3498db',
+                      fontSize: '2rem',
+                      fontWeight: 700,
+                      fontFamily: "'Orbitron', sans-serif",
+                    }}>
+                      {resumo.incubacao1}
+                    </span>
+                    <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>
+                      ({resumo.emIncubacao > 0 ? ((resumo.incubacao1 / resumo.emIncubacao) * 100).toFixed(0) : 0}%)
+                    </span>
+                  </div>
+                </div>
 
-            {/* Gráficos Donut empilhados */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {/* Gráfico Donut - Status Geral */}
-              <GraficoDonut
-                dados={dadosStatusGeral}
-                titulo="Distribuição por Status"
-                valorCentral={resumo.totalFranquias}
-                labelCentral="Total"
-                tamanho={180}
-              />
+                {/* 2º Ano */}
+                <div style={{
+                  backgroundColor: '#212529',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  borderLeft: '4px solid #2980b9',
+                }}>
+                  <div style={{ color: '#6c757d', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'Poppins, sans-serif' }}>
+                    2º Ano de Operação
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{
+                      color: '#2980b9',
+                      fontSize: '2rem',
+                      fontWeight: 700,
+                      fontFamily: "'Orbitron', sans-serif",
+                    }}>
+                      {resumo.incubacao2}
+                    </span>
+                    <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>
+                      ({resumo.emIncubacao > 0 ? ((resumo.incubacao2 / resumo.emIncubacao) * 100).toFixed(0) : 0}%)
+                    </span>
+                  </div>
+                </div>
 
-              {/* Gráfico Donut - Maturidade */}
-              <GraficoDonut
-                dados={dadosMaturidade}
-                titulo="Distribuição por Maturidade"
-                valorCentral={resumo.emOperacao}
-                labelCentral="Em Operação"
-                tamanho={180}
-              />
+                {/* 3º Ano */}
+                <div style={{
+                  backgroundColor: '#212529',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  borderLeft: '4px solid #1a6da0',
+                }}>
+                  <div style={{ color: '#6c757d', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '8px', fontFamily: 'Poppins, sans-serif' }}>
+                    3º Ano de Operação
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                    <span style={{
+                      color: '#1a6da0',
+                      fontSize: '2rem',
+                      fontWeight: 700,
+                      fontFamily: "'Orbitron', sans-serif",
+                    }}>
+                      {resumo.incubacao3}
+                    </span>
+                    <span style={{ color: '#6c757d', fontSize: '0.8rem' }}>
+                      ({resumo.emIncubacao > 0 ? ((resumo.incubacao3 / resumo.emIncubacao) * 100).toFixed(0) : 0}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <style jsx>{`
+                @keyframes fadeIn {
+                  from { opacity: 0; transform: translateY(-8px); }
+                  to { opacity: 1; transform: translateY(0); }
+                }
+              `}</style>
             </div>
+          )}
+
+          {/* ===== Bloco Inativas - Colapsável ===== */}
+          <div style={{
+            backgroundColor: '#343A40',
+            borderRadius: '12px',
+            marginBottom: '24px',
+            overflow: 'hidden',
+          }}>
+            <button
+              onClick={() => setInativasExpandido(!inativasExpandido)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '14px 20px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                borderBottom: inativasExpandido ? '1px solid #3a3d41' : 'none',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <XCircle size={20} color="#c0392b" />
+                <span style={{
+                  color: '#adb5bd',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  fontFamily: 'Poppins, sans-serif',
+                }}>
+                  Franquias Inativas
+                </span>
+                <span style={{
+                  backgroundColor: '#c0392b',
+                  color: '#fff',
+                  padding: '2px 10px',
+                  borderRadius: '12px',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  fontFamily: "'Orbitron', sans-serif",
+                }}>
+                  {resumo.inativas}
+                </span>
+              </div>
+              <div style={{ color: '#6c757d' }}>
+                {inativasExpandido ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+              </div>
+            </button>
+
+            {inativasExpandido && (
+              <div style={{ padding: '16px 20px' }}>
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: '12px',
+                  marginBottom: '16px',
+                }}>
+                  <div style={{
+                    backgroundColor: '#212529',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    borderLeft: '4px solid #943126',
+                  }}>
+                    <div style={{ color: '#6c757d', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px', fontFamily: 'Poppins, sans-serif' }}>
+                      Encerradas em Operação
+                    </div>
+                    <span style={{ color: '#943126', fontSize: '1.8rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif" }}>
+                      {resumo.encerradasOperacao}
+                    </span>
+                  </div>
+                  <div style={{
+                    backgroundColor: '#212529',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    borderLeft: '4px solid #6c2134',
+                  }}>
+                    <div style={{ color: '#6c757d', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px', fontFamily: 'Poppins, sans-serif' }}>
+                      Encerradas em Implantação
+                    </div>
+                    <span style={{ color: '#6c2134', fontSize: '1.8rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif" }}>
+                      {resumo.encerradasImplantacao}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Lista de franquias inativas */}
+                <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                  {franquiasInativas.map((f, idx) => (
+                    <div
+                      key={f.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '8px 12px',
+                        borderRadius: '6px',
+                        backgroundColor: idx % 2 === 0 ? '#212529' : 'transparent',
+                        marginBottom: '2px',
+                      }}
+                    >
+                      <span style={{ color: '#F8F9FA', fontSize: '0.85rem', fontFamily: 'Poppins, sans-serif' }}>
+                        {f.nome}
+                      </span>
+                      <span style={{
+                        color: '#FFFFFF',
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        padding: '3px 10px',
+                        borderRadius: '4px',
+                        backgroundColor: f.statusInativacao === 'ENCERRADA_OPERACAO' ? '#943126' : '#6c2134',
+                        fontFamily: 'Poppins, sans-serif',
+                      }}>
+                        {f.statusInativacao === 'ENCERRADA_OPERACAO' ? 'Enc. Operação' : 'Enc. Implantação'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Tabela Kanban - Classificação PEX */}
@@ -327,14 +520,14 @@ export default function GestaoRedeDashboard() {
             <TabelaClassificacaoPEX franquias={franquias} onRefresh={refetch} />
           </div>
 
+          {/* Kanban - Flags Estruturais */}
+          <div style={{ marginBottom: '24px' }}>
+            <TabelaFlags franquias={franquias} onRefresh={refetch} />
+          </div>
+
           {/* Tabela - Segmento de Mercado */}
           <div style={{ marginBottom: '24px' }}>
             <TabelaSegmentoMercado franquias={franquias} />
-          </div>
-
-          {/* Tabela - Flags Estruturais */}
-          <div style={{ marginBottom: '24px' }}>
-            <TabelaFlags franquias={franquias} />
           </div>
 
           {/* Tabela de Franquias */}
