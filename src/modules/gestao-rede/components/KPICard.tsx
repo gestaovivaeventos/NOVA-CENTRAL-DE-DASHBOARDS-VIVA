@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface KPICardProps {
   titulo: string;
@@ -138,6 +139,24 @@ export default function KPICard({
           </div>
         )}
       </div>
+
+      {/* Indicador de expansão para cards clicáveis */}
+      {onClick && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginTop: '8px',
+          gap: '4px',
+          color: selecionado ? cor : '#6c757d',
+          fontSize: '0.7rem',
+          fontFamily: 'Poppins, sans-serif',
+          transition: 'color 0.2s',
+        }}>
+          {selecionado ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          <span>{selecionado ? 'Recolher' : 'Ver detalhes'}</span>
+        </div>
+      )}
     </div>
   );
 }

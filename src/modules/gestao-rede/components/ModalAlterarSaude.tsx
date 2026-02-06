@@ -16,7 +16,10 @@ interface ModalAlterarSaudeProps {
 
 export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }: ModalAlterarSaudeProps) {
   const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<'UTI_RECUPERACAO' | 'UTI_REPASSE' | null>(null);
+  // Agora só permite mudar para UTI_REPASSE (todas entram como UTI_RECUPERACAO automaticamente)
+  const [selectedStatus, setSelectedStatus] = useState<'UTI_RECUPERACAO' | 'UTI_REPASSE' | null>(
+    franquia.saude === 'UTI_RECUPERACAO' ? 'UTI_REPASSE' : 'UTI_RECUPERACAO'
+  );
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -39,7 +42,6 @@ export default function ModalAlterarSaude({ franquia, isOpen, onClose, onSave }:
 
   const getStatusLabel = (status: SaudeFranquia) => {
     switch (status) {
-      case 'UTI': return 'UTI';
       case 'UTI_RECUPERACAO': return 'UTI Recuperação';
       case 'UTI_REPASSE': return 'UTI Repasse';
       default: return status;

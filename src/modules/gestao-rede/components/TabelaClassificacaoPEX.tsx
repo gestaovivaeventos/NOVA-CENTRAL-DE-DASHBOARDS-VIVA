@@ -41,8 +41,7 @@ const CLASSIFICACOES: {
   { key: 'PERFORMANDO', label: 'Performando', cor: '#FFFFFF', bg: '#1e5631', borderColor: '#27ae60', icon: <TrendingUp size={16} />, faixa: '≥ 85%' },
   { key: 'EM_CONSOLIDACAO', label: 'Em Consolidação', cor: '#FFFFFF', bg: '#7a4a0a', borderColor: '#e67e22', icon: <TrendingUp size={16} />, faixa: '≥ 75%' },
   { key: 'ATENCAO', label: 'Atenção', cor: '#1a1a1a', bg: '#9a8a1a', borderColor: '#f1c40f', icon: <AlertCircle size={16} />, faixa: '≥ 60%' },
-  { key: 'UTI', label: 'UTI', cor: '#FFFFFF', bg: '#7a1a1a', borderColor: '#c0392b', icon: <HeartPulse size={16} />, faixa: '< 60%' },
-  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#FFFFFF', bg: '#5a2a2a', borderColor: '#943126', icon: <HeartPulse size={16} /> },
+  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#FFFFFF', bg: '#5a2a2a', borderColor: '#943126', icon: <HeartPulse size={16} />, faixa: '< 60%' },
   { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#FFFFFF', bg: '#4a1a2a', borderColor: '#6c2134', icon: <HeartPulse size={16} /> },
 ];
 
@@ -91,11 +90,10 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
     return acc;
   }, {} as Record<SaudeFranquia, Franquia[]>);
 
-  // Filtrar classificações para mostrar apenas as que têm franquias
-  // UTI só aparece se tiver franquias, outras sempre aparecem
+  // Filtrar classificações para mostrar apenas as que têm franquias ou sempre visíveis
   const classificacoesVisiveis = CLASSIFICACOES.filter(classificacao => {
-    // UTI só aparece se tiver franquias
-    if (classificacao.key === 'UTI') {
+    // UTI_REPASSE só aparece se tiver franquias
+    if (classificacao.key === 'UTI_REPASSE') {
       return (franquiasPorClassificacao[classificacao.key]?.length || 0) > 0;
     }
     // Outras classificações sempre aparecem
@@ -236,7 +234,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
   };
 
   const isUtiStatus = (status: SaudeFranquia) => {
-    return status === 'UTI' || status === 'UTI_RECUPERACAO' || status === 'UTI_REPASSE';
+    return status === 'UTI_RECUPERACAO' || status === 'UTI_REPASSE';
   };
 
   const renderFlags = (franquia: Franquia) => {
