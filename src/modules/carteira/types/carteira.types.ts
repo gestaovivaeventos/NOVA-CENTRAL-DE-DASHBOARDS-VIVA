@@ -103,6 +103,13 @@ export interface DadosPorFranquia {
   alunosEventoPrincipal: number;
   inadimplentes: number;
   nuncaPagaram: number;
+  // Saúde dos fundos da unidade
+  saudeFundos: {
+    critico: number;
+    atencao: number;
+    quaseLa: number;
+    alcancada: number;
+  };
 }
 
 // Dados para gráfico de evolução histórica

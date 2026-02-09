@@ -494,6 +494,9 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     dadosFiltradosComSaude.forEach((row: any) => {
       const key = row.franquia;
       const existing = franquiaMap.get(key);
+      
+      // Calcular saúde do fundo atual
+      const saudeFundo = calcularSaudeFundo(row.dataBaile, row.alunosAtivos / (row.macMeta || 1));
 
       if (existing) {
         existing.totalFundos += 1;
@@ -504,6 +507,11 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
         existing.alunosEventoPrincipal += row.alunosEventoPrincipal;
         existing.inadimplentes += row.integrantesInadimplentes;
         existing.nuncaPagaram += row.nuncaPagaram;
+        // Contar saúde dos fundos
+        if (saudeFundo === 'Crítico') existing.saudeFundos.critico += 1;
+        else if (saudeFundo === 'Atenção') existing.saudeFundos.atencao += 1;
+        else if (saudeFundo === 'Quase lá') existing.saudeFundos.quaseLa += 1;
+        else if (saudeFundo === 'Alcançada') existing.saudeFundos.alcancada += 1;
       } else {
         franquiaMap.set(key, {
           franquia: row.franquia,
@@ -516,6 +524,12 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           alunosEventoPrincipal: row.alunosEventoPrincipal,
           inadimplentes: row.integrantesInadimplentes,
           nuncaPagaram: row.nuncaPagaram,
+          saudeFundos: {
+            critico: saudeFundo === 'Crítico' ? 1 : 0,
+            atencao: saudeFundo === 'Atenção' ? 1 : 0,
+            quaseLa: saudeFundo === 'Quase lá' ? 1 : 0,
+            alcancada: saudeFundo === 'Alcançada' ? 1 : 0,
+          },
         });
       }
     });
