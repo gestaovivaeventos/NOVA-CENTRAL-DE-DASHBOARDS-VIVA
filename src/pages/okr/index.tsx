@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, createContext, useCon
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Target } from 'lucide-react';
-import { Sidebar, Header, OkrKrCard, Loader } from '@/modules/okr/components';
+import { Sidebar, Header, OkrKrCard, Loader, PresentationTimer } from '@/modules/okr/components';
 import { fetchOkrData } from '@/modules/okr/hooks/useOkrData';
 import { OkrData } from '@/modules/okr/types';
 import { useAuth } from '@/context/AuthContext';
@@ -306,6 +306,13 @@ const OkrPageContent: React.FC = () => {
         ) : (
           <div className="page-container">
             <Header team={selectedTeam} />
+
+            {/* Temporizador de Apresentação - Fixo no topo */}
+            <PresentationTimer 
+              totalObjectives={objectiveIds.length}
+              teamName={selectedTeam}
+              accentColor={accentColor}
+            />
 
             <div className="filters-section">
               <div className="filter-group filter-group-objetivo">
