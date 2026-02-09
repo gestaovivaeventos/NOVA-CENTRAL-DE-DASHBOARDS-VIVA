@@ -118,13 +118,15 @@ export default function PresentationTimer({
         />
       )}
 
-      {/* Timer fixo */}
+      {/* Timer fixo quando iniciado */}
       <div 
         className="presentation-timer"
         style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 9999,
+          position: hasStarted ? 'fixed' : 'relative',
+          top: hasStarted ? '24px' : 'auto',
+          left: hasStarted ? '332px' : 'auto',
+          right: hasStarted ? '32px' : 'auto',
+          zIndex: hasStarted ? 9999 : 1,
           background: 'linear-gradient(135deg, rgba(30, 32, 40, 0.98) 0%, rgba(24, 26, 32, 0.98) 100%)',
           borderRadius: '12px',
           border: `1px solid ${hasStarted && isRunning ? getTimerColor() : 'rgba(107, 114, 128, 0.3)'}`,
@@ -134,9 +136,11 @@ export default function PresentationTimer({
           gap: '16px',
           boxShadow: isCritical && isRunning 
             ? `0 0 20px ${getTimerColor()}40, 0 4px 20px rgba(0,0,0,0.5)` 
-            : '0 4px 20px rgba(0,0,0,0.3)',
+            : hasStarted 
+              ? '0 4px 20px rgba(0,0,0,0.5)' 
+              : '0 2px 10px rgba(0,0,0,0.2)',
           transition: 'all 0.3s ease',
-          marginBottom: '16px',
+          marginBottom: hasStarted ? '0' : '16px',
         }}
       >
         {/* Ícone e Info */}
@@ -249,6 +253,11 @@ export default function PresentationTimer({
           </div>
         )}
       </div>
+
+      {/* Placeholder para manter o espaço quando timer está fixed */}
+      {hasStarted && (
+        <div style={{ height: '60px', marginBottom: '16px' }} />
+      )}
 
       {/* Estilos de animação */}
       <style jsx>{`
