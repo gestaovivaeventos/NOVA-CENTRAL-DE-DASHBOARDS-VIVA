@@ -51,7 +51,6 @@ export default function Sidebar({
   const router = useRouter();
   const { user, logout } = useAuth();
   const [dataAtual, setDataAtual] = useState<string>('');
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   
   useEffect(() => {
     const hoje = new Date();
@@ -133,70 +132,60 @@ export default function Sidebar({
             onClick={() => onCollapseChange(!isCollapsed)}
             className="hover:bg-orange-500/20"
             style={{
-              padding: '8px',
-              borderRadius: '8px',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
+              width: '32px',
+              height: '32px',
+              borderRadius: '6px',
+              backgroundColor: '#1a1d21',
+              border: '1px solid #FF6600',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              cursor: 'pointer',
               color: '#FF6600',
-              transition: 'background-color 0.2s',
+              transition: 'all 0.2s',
+              flexShrink: 0,
+              boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             }}
+            title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
           >
-            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
         </div>
 
         {/* Menu de Navegação */}
-        <nav style={{ padding: '12px 8px' }}>
+        <nav style={{ padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           {PAGES.map((page) => {
             const isActive = paginaAtiva === page.id;
-            const isHovered = hoveredItem === page.id;
             const Icon = page.icon;
 
             return (
               <button
                 key={page.id}
                 onClick={() => onPaginaChange(page.id)}
-                onMouseEnter={() => setHoveredItem(page.id)}
-                onMouseLeave={() => setHoveredItem(null)}
+                className={`
+                  group flex items-center rounded-lg transition-all duration-200
+                  ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-4'}
+                  ${isActive
+                    ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
+                    : 'text-gray-400 border border-gray-600/50 hover:bg-gray-700/50'
+                  }
+                `}
                 style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: isCollapsed ? '12px' : '12px 16px',
-                  marginBottom: '4px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: isActive 
-                    ? 'rgba(255, 102, 0, 0.15)' 
-                    : isHovered 
-                      ? 'rgba(255, 255, 255, 0.05)' 
-                      : 'transparent',
+                  fontFamily: 'Poppins, sans-serif',
+                  fontSize: '0.85rem',
+                  fontWeight: isActive ? 600 : 500,
+                  boxShadow: !isActive ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
+                  height: '42px',
+                  whiteSpace: 'nowrap',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  justifyContent: isCollapsed ? 'center' : 'flex-start',
                 }}
+                title={isCollapsed ? page.label : undefined}
               >
                 <Icon 
                   size={20} 
-                  color={isActive ? '#FF6600' : '#9ca3af'} 
+                  strokeWidth={isActive ? 2.5 : 2}
                 />
-                {!isCollapsed && (
-                  <span
-                    style={{
-                      color: isActive ? '#FF6600' : '#9ca3af',
-                      fontSize: '0.9rem',
-                      fontWeight: isActive ? 600 : 400,
-                      fontFamily: "'Poppins', sans-serif",
-                    }}
-                  >
-                    {page.label}
-                  </span>
-                )}
+                {!isCollapsed && <span>{page.label}</span>}
               </button>
             );
           })}
@@ -224,88 +213,49 @@ export default function Sidebar({
         </div>
 
         {/* Links de Ação */}
-        <div style={{ padding: '8px' }}>
+        <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {/* Voltar à Central */}
           <Link
             href="/"
-            onMouseEnter={() => setHoveredItem('central')}
-            onMouseLeave={() => setHoveredItem(null)}
+            className={`
+              flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
+              ${isCollapsed ? 'justify-center p-2.5 w-full' : 'gap-3 px-4 py-2.5 w-full'}
+            `}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: isCollapsed ? '12px' : '12px 16px',
-              marginBottom: '4px',
-              borderRadius: '8px',
+              fontFamily: 'Poppins, sans-serif',
+              fontSize: '0.95rem',
+              fontWeight: 500,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
               textDecoration: 'none',
-              background: hoveredItem === 'central' ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-              transition: 'all 0.2s',
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
+              height: '42px',
             }}
+            title="Central de Dashboards"
           >
-            <Home size={20} color="#9ca3af" />
-            {!isCollapsed && (
-              <span
-                style={{
-                  color: '#9ca3af',
-                  fontSize: '0.9rem',
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                Central de Dashboards
-              </span>
-            )}
+            <Home size={20} strokeWidth={2} />
+            {!isCollapsed && <span>Central de Dashboards</span>}
           </Link>
 
           {/* Logout */}
           <button
             onClick={handleLogout}
-            onMouseEnter={() => setHoveredItem('logout')}
-            onMouseLeave={() => setHoveredItem(null)}
+            className={`
+              flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50
+              ${isCollapsed ? 'justify-center p-2.5 w-full' : 'gap-3 px-4 py-2.5 w-full'}
+            `}
             style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: isCollapsed ? '12px' : '12px 16px',
-              borderRadius: '8px',
-              border: 'none',
-              background: hoveredItem === 'logout' ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+              fontFamily: 'Poppins, sans-serif',
+              fontSize: '0.95rem',
+              fontWeight: 500,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+              height: '42px',
               cursor: 'pointer',
-              transition: 'all 0.2s',
-              justifyContent: isCollapsed ? 'center' : 'flex-start',
             }}
+            title={isCollapsed ? 'Sair' : undefined}
           >
-            <LogOut size={20} color="#9ca3af" />
-            {!isCollapsed && (
-              <span
-                style={{
-                  color: '#9ca3af',
-                  fontSize: '0.9rem',
-                  fontFamily: "'Poppins', sans-serif",
-                }}
-              >
-                Sair
-              </span>
-            )}
+            <LogOut size={20} strokeWidth={2} />
+            {!isCollapsed && <span>Sair</span>}
           </button>
         </div>
-
-        {/* Footer informativo - não fixo, parte do scroll */}
-        {!isCollapsed && (
-          <div 
-            style={{
-              padding: '16px',
-              borderTop: '1px solid #333',
-              textAlign: 'center',
-              marginTop: '8px',
-            }}
-          >
-            <p style={{ color: '#4a5568', fontSize: '0.65rem' }}>
-              📊 Gestão de Dados - VIVA Eventos 2025
-            </p>
-          </div>
-        )}
       </aside>
 
       {/* Spacer para compensar sidebar fixa */}

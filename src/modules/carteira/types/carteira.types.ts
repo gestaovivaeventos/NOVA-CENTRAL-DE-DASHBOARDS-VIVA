@@ -33,6 +33,7 @@ export interface CarteiraRow {
   // Baile
   baileARealizar: string; // baile_a_realizar (coluna W) - "REALIZAR" ou outro
   dataBaile: Date | null; // data do baile para cálculo de saúde
+  tipoClienteFundo: string; // tipo_cliente_fundo (coluna I) - "FUNDO DE FORMATURA" ou "FUNDO DE FOF"
   
   // Status
   status: string;

@@ -137,10 +137,10 @@ export default function HistoricoPage() {
           <section>
             <GraficosHistoricos dados={historico} loading={loading} />
           </section>
-        </main>
 
-        {/* Footer */}
-        <Footer sidebarCollapsed={sidebarCollapsed} />
+          {/* Footer */}
+          <Footer />
+        </main>
       </div>
     </>
   );

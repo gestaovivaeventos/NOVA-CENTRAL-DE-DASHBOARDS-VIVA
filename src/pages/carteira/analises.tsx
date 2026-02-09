@@ -163,10 +163,10 @@ export default function AnalisesPage() {
               <TabelaFranquias dados={dadosPorFranquia} loading={loading} />
             </section>
           </div>
-        </main>
 
-        {/* Footer */}
-        <Footer sidebarCollapsed={sidebarCollapsed} />
+          {/* Footer */}
+          <Footer />
+        </main>
       </div>
     </>
   );
