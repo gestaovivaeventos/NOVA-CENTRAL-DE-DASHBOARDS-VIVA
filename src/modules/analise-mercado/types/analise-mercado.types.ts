@@ -33,6 +33,12 @@ export interface ParticipacaoMercado {
   mercado_medicina: number;
   viva_medicina: number;
   participacao_medicina: number; // %
+  mercado_ensino_medio: number;
+  viva_ensino_medio: number;
+  participacao_ensino_medio: number; // %
+  mercado_ead: number;
+  viva_ead: number;
+  participacao_ead: number; // %
 }
 
 /**
@@ -92,6 +98,11 @@ export interface KPIMercado {
 }
 
 /**
+ * Nível de ensino para filtro
+ */
+export type NivelEnsino = 'superior' | 'medio' | 'medicina';
+
+/**
  * Filtros disponíveis
  */
 export interface FiltrosAnaliseMercado {
@@ -99,6 +110,7 @@ export interface FiltrosAnaliseMercado {
   segmento?: string;
   regiao?: string;
   modalidade?: 'presencial' | 'ead' | 'todos';
+  nivelEnsino?: NivelEnsino;
 }
 
 /**

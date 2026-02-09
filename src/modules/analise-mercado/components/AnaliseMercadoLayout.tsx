@@ -9,21 +9,35 @@ import Image from 'next/image';
 import { 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
   Home, 
   LogOut,
-  BarChart3
+  BarChart3,
+  GraduationCap,
+  BookOpen,
+  Stethoscope,
+  Filter
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import type { NivelEnsino } from '@/modules/analise-mercado/types';
 
 interface AnaliseMercadoLayoutProps {
   children: React.ReactNode;
   titulo?: string;
+  nivelEnsino?: NivelEnsino;
+  onNivelChange?: (nivel: NivelEnsino) => void;
 }
 
 const SIDEBAR_WIDTH_EXPANDED = 280;
 const SIDEBAR_WIDTH_COLLAPSED = 60;
 
-export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE MERCADO' }: AnaliseMercadoLayoutProps) {
+const FILTER_OPTIONS: { id: NivelEnsino; label: string; short: string; icon: typeof GraduationCap; color: string }[] = [
+  { id: 'superior', label: 'Ensino Superior', short: 'SUP', icon: GraduationCap, color: '#3B82F6' },
+  { id: 'medio', label: 'Ensino Médio', short: 'MED', icon: BookOpen, color: '#10B981' },
+  { id: 'medicina', label: 'Medicina', short: 'MED', icon: Stethoscope, color: '#8B5CF6' },
+];
+
+export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE MERCADO', nivelEnsino, onNivelChange }: AnaliseMercadoLayoutProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -34,6 +48,7 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
     return false;
   });
   const [dataAtual, setDataAtual] = useState<string>('');
+  const [filterOpen, setFilterOpen] = useState(false);
 
   // Persistir estado da sidebar
   useEffect(() => {
@@ -174,6 +189,83 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
               </button>
             </div>
           )}
+
+          {/* Filtro por Nível de Ensino — expansível */}
+          {nivelEnsino && onNivelChange && (() => {
+            const current = FILTER_OPTIONS.find(f => f.id === nivelEnsino) || FILTER_OPTIONS[0];
+            return isCollapsed ? (
+              <div className="flex flex-col items-center gap-2" style={{ marginTop: 12 }}>
+                <button
+                  onClick={() => setFilterOpen(!filterOpen)}
+                  className="p-2.5 rounded-lg transition-all"
+                  style={{ backgroundColor: `${current.color}25`, border: `1px solid ${current.color}`, color: current.color }}
+                  title={`Filtro: ${current.label}`}
+                >
+                  <Filter size={18} />
+                </button>
+                {filterOpen && FILTER_OPTIONS.filter(f => f.id !== nivelEnsino).map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => { onNivelChange(f.id); setFilterOpen(false); }}
+                    className="p-2.5 rounded-lg transition-all"
+                    style={{ backgroundColor: 'transparent', border: '1px solid #495057', color: '#6C757D' }}
+                    title={f.label}
+                  >
+                    <f.icon size={18} />
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div style={{ marginTop: 12 }}>
+                {/* Botão principal — mostra seleção atual */}
+                <button
+                  onClick={() => setFilterOpen(!filterOpen)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                    padding: '9px 12px', borderRadius: 8, cursor: 'pointer',
+                    backgroundColor: `${current.color}18`,
+                    border: `1px solid ${current.color}`,
+                    color: current.color,
+                    fontFamily: "'Poppins', sans-serif", fontSize: '0.82rem', fontWeight: 600,
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <current.icon size={16} />
+                  <span style={{ flex: 1, textAlign: 'left' }}>{current.label}</span>
+                  <ChevronDown size={14} style={{ transform: filterOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
+                </button>
+
+                {/* Opções expansíveis */}
+                <div style={{
+                  overflow: 'hidden',
+                  maxHeight: filterOpen ? '200px' : '0px',
+                  transition: 'max-height 0.25s ease',
+                  marginTop: filterOpen ? 4 : 0,
+                }}>
+                  {FILTER_OPTIONS.filter(f => f.id !== nivelEnsino).map(f => (
+                    <button
+                      key={f.id}
+                      onClick={() => { onNivelChange(f.id); setFilterOpen(false); }}
+                      className="flex items-center gap-2 w-full rounded-lg transition-all text-sm"
+                      style={{
+                        padding: '8px 12px', marginTop: 2,
+                        backgroundColor: 'transparent',
+                        border: '1px solid transparent',
+                        color: '#ADB5BD', fontWeight: 400,
+                        fontFamily: "'Poppins', sans-serif",
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${f.color}15`; (e.currentTarget as HTMLButtonElement).style.color = f.color; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#ADB5BD'; }}
+                    >
+                      <f.icon size={15} />
+                      <span>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Espaçador flexível */}
           <div className="flex-grow" />

@@ -61,12 +61,6 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
         { id: 'vendas', label: 'Dashboard Vendas', path: '/vendas', icon: 'money' },
         { id: 'carteira', label: 'Dashboard Carteira', path: '/carteira', icon: 'wallet' },
         { id: 'fluxo-projetado', label: 'Gestão de Caixa', path: '/fluxo-projetado', icon: 'fluxo' },
-      ],
-    },
-    {
-      id: 'inteligencia',
-      name: 'Inteligência Estratégica',
-      dashboards: [
         { id: 'analise-mercado', label: 'Análise de Mercado', path: '/analise-mercado', icon: 'mercado' },
       ],
     },

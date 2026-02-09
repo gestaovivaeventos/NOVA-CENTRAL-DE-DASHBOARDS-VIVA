@@ -1,10 +1,8 @@
 /**
- * Análise de Mercado - Comparativo Brasil vs Viva
- * Layout lado a lado para comparar mercado nacional com participação Viva
- * Acesso: Somente Franqueadora (accessLevel = 1)
+ * Análise de Mercado — Dashboard Simplificado
+ * Cards com total do mercado + % Viva, tabela de evolução, distribuição
+ * Filtro: Ensino Superior | Ensino Médio | Medicina
  */
-
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -12,547 +10,369 @@ import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMercado';
 import { AnaliseMercadoLayout } from '@/modules/analise-mercado';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-import { TrendingUp, TrendingDown, Minus, Star, Globe, Building2, Users, GraduationCap, Stethoscope, BookOpen } from 'lucide-react';
-import type { KPIMercado } from '@/modules/analise-mercado/types';
+import { Doughnut, Bar, Chart } from 'react-chartjs-2';
+import { TrendingUp, TrendingDown } from 'lucide-react';
+import type { NivelEnsino } from '@/modules/analise-mercado/types';
+
+function fmt(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString('pt-BR');
+}
+function fmtN(n: number): string { return n.toLocaleString('pt-BR'); }
 
 export default function AnaliseMercadoPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { dados, loading, dadosFiltrados } = useAnaliseMercado();
-  const [visaoAtiva, setVisaoAtiva] = useState<'comparativo' | 'brasil' | 'viva'>('comparativo');
-  const [accessChecked, setAccessChecked] = useState(false);
+  const { loading, dadosFiltrados } = useAnaliseMercado();
+  const [nivel, setNivel] = useState<NivelEnsino>('superior');
+  const [ready, setReady] = useState(false);
 
-  // Verificar autenticação e permissão (apenas Franqueadora)
   useEffect(() => {
-    if (!authLoading && !accessChecked) {
-      if (!isAuthenticated) {
-        router.replace('/login');
-        return;
-      }
-      if (user && user.accessLevel !== 1) {
-        router.replace('/');
-        return;
-      }
-      setAccessChecked(true);
+    if (!authLoading && !ready) {
+      if (!isAuthenticated) { router.replace('/login'); return; }
+      if (user && user.accessLevel !== 1) { router.replace('/'); return; }
+      setReady(true);
     }
-  }, [isAuthenticated, authLoading, user, router, accessChecked]);
+  }, [isAuthenticated, authLoading, user, router, ready]);
 
-  // Loading state
-  if (authLoading || loading || !accessChecked) {
+  if (authLoading || loading || !ready) {
     return (
       <div style={{ minHeight: '100vh', backgroundColor: '#212529', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid #FF6600',
-            borderTopColor: 'transparent',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto',
-          }} />
-          <p style={{ marginTop: '16px', color: '#adb5bd' }}>Carregando dados de mercado...</p>
+          <div style={{ width: 48, height: 48, border: '4px solid #FF6600', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+          <p style={{ marginTop: 16, color: '#adb5bd' }}>Carregando...</p>
         </div>
         <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
-  // Verificar permissão
-  if (user && user.accessLevel !== 1) {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#212529', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.3)',
-          borderRadius: '12px',
-          padding: '40px',
-          textAlign: 'center',
-          maxWidth: '400px',
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
-          <h3 style={{ color: '#F8F9FA', fontSize: '1.2rem', marginBottom: '8px' }}>Acesso Restrito</h3>
-          <p style={{ color: '#adb5bd' }}>Este módulo é exclusivo para usuários com nível de acesso Franqueadora.</p>
-        </div>
-      </div>
-    );
-  }
+  if (user && user.accessLevel !== 1) return null;
 
-  const { evolucao, participacao, segmentos, kpis } = dadosFiltrados;
-  const ultimoAno = participacao[participacao.length - 1];
-  const ultimoEvolucao = evolucao[evolucao.length - 1];
-  const medicina = segmentos.find(s => s.id === 'medicina');
+  const { evolucao, participacao } = dadosFiltrados;
+  const ultimo = participacao[participacao.length - 1];
+  const penultimo = participacao.length > 1 ? participacao[participacao.length - 2] : null;
+  const evUlt = evolucao[evolucao.length - 1];
+  const evPen = evolucao.length > 1 ? evolucao[evolucao.length - 2] : null;
 
-  // Opções padrão dos gráficos
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'top' as const, labels: { color: '#ADB5BD', usePointStyle: true, padding: 12, font: { size: 11 } } },
-      datalabels: { display: false },
-    },
-    scales: {
-      x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#ADB5BD', font: { size: 10 } } },
-      y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#ADB5BD', font: { size: 10 } } },
-    },
-  };
+  // helpers por nível
+  const mat = (e: typeof evUlt) => !e ? 0 : nivel === 'superior' ? e.matriculados_total : nivel === 'medio' ? e.matriculados_ensino_medio : e.matriculados_medicina;
+  const conc = (e: typeof evUlt) => !e ? 0 : nivel === 'superior' ? e.concluintes_total : nivel === 'medio' ? e.concluintes_ensino_medio : e.concluintes_medicina;
+  const pres = (e: typeof evUlt) => !e ? 0 : nivel === 'superior' ? e.matriculados_presencial : mat(e);
+  const ead = (e: typeof evUlt) => !e ? 0 : nivel === 'superior' ? e.matriculados_ead : 0;
+  const shareTotal = (p: typeof ultimo) => !p ? 0 : nivel === 'superior' ? p.participacao_total : nivel === 'medio' ? p.participacao_ensino_medio : p.participacao_medicina;
+  const sharePres = (p: typeof ultimo) => !p ? 0 : nivel === 'superior' ? p.participacao_presencial : shareTotal(p);
+  const shareEad = (p: typeof ultimo) => !p ? 0 : nivel === 'superior' ? p.participacao_ead : 0;
+  const vivaTot = (p: typeof ultimo) => !p ? 0 : nivel === 'superior' ? p.viva_total : nivel === 'medio' ? p.viva_ensino_medio : p.viva_medicina;
 
-  // ===== DADOS DOS GRÁFICOS - VISÃO BRASIL =====
-  const brasilEvolucaoData = {
-    labels: evolucao.map(d => d.ano.toString()),
-    datasets: [
-      {
-        label: 'Matriculados (milhões)',
-        data: evolucao.map(d => d.matriculados_total / 1000000),
-        borderColor: '#3B82F6',
-        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-        tension: 0.4,
-        fill: true,
-      },
-      {
-        label: 'Concluintes (milhares)',
-        data: evolucao.map(d => d.concluintes_total / 1000),
-        borderColor: '#10B981',
-        backgroundColor: 'transparent',
-        tension: 0.4,
-      },
-    ],
-  };
+  const nivelLabel = nivel === 'superior' ? 'Ensino Superior' : nivel === 'medio' ? 'Ensino Médio' : 'Medicina';
+  const cor = nivel === 'superior' ? '#3B82F6' : nivel === 'medio' ? '#10B981' : '#8B5CF6';
 
-  const brasilModalidadeData = {
-    labels: evolucao.map(d => d.ano.toString()),
-    datasets: [
-      { label: 'Presencial', data: evolucao.map(d => d.matriculados_presencial / 1000000), backgroundColor: '#3B82F6', borderRadius: 4 },
-      { label: 'EAD', data: evolucao.map(d => d.matriculados_ead / 1000000), backgroundColor: '#8B5CF6', borderRadius: 4 },
-    ],
-  };
+  // variações
+  const varMat = evPen ? ((mat(evUlt) - mat(evPen)) / mat(evPen) * 100) : 0;
+  const varConc = evPen ? ((conc(evUlt) - conc(evPen)) / conc(evPen) * 100) : 0;
+  const varPres = evPen ? ((pres(evUlt) - pres(evPen)) / pres(evPen) * 100) : 0;
+  const varEad = evPen && ead(evPen) ? ((ead(evUlt) - ead(evPen)) / ead(evPen) * 100) : 0;
 
-  const brasilSegmentosData = {
-    labels: ['Ensino Superior', 'Medicina', 'Ensino Médio'],
+  // doughnut concluintes
+  const doughnutData = {
+    labels: ['Ens. Superior', 'Medicina', 'Ensino Médio'],
     datasets: [{
-      data: [
-        ultimoEvolucao?.concluintes_total || 0,
-        ultimoEvolucao?.concluintes_medicina || 0,
-        ultimoEvolucao?.concluintes_ensino_medio || 0,
-      ],
+      data: [evUlt?.concluintes_total || 0, evUlt?.concluintes_medicina || 0, evUlt?.concluintes_ensino_medio || 0],
       backgroundColor: ['#3B82F6', '#8B5CF6', '#10B981'],
-      borderColor: '#343A40',
-      borderWidth: 2,
+      borderColor: '#343A40', borderWidth: 2,
     }],
   };
-
-  // ===== DADOS DOS GRÁFICOS - VISÃO VIVA =====
-  const vivaEvolucaoData = {
-    labels: participacao.map(d => d.ano.toString()),
-    datasets: [
-      {
-        label: 'Total Viva',
-        data: participacao.map(d => d.viva_total),
-        borderColor: '#FF6600',
-        backgroundColor: 'rgba(255, 102, 0, 0.1)',
-        tension: 0.4,
-        fill: true,
-      },
-      {
-        label: 'Presencial',
-        data: participacao.map(d => d.viva_presencial),
-        borderColor: '#10B981',
-        backgroundColor: 'transparent',
-        tension: 0.4,
-      },
-    ],
-  };
-
-  const vivaDistribuicaoData = {
-    labels: ['Medicina', 'Outros Presencial', 'EAD/Híbrido'],
-    datasets: [{
-      data: [
-        ultimoAno?.viva_medicina || 0,
-        (ultimoAno?.viva_presencial || 0) - (ultimoAno?.viva_medicina || 0),
-        (ultimoAno?.viva_total || 0) - (ultimoAno?.viva_presencial || 0),
-      ],
-      backgroundColor: ['#FF6600', '#3B82F6', '#6B7280'],
-      borderColor: '#343A40',
-      borderWidth: 2,
-    }],
-  };
-
-  const vivaMarketShareData = {
-    labels: participacao.map(d => d.ano.toString()),
-    datasets: [
-      { label: 'Share Total (%)', data: participacao.map(d => d.participacao_total), backgroundColor: '#FF6600', borderRadius: 4 },
-      { label: 'Share Presencial (%)', data: participacao.map(d => d.participacao_presencial), backgroundColor: '#3B82F6', borderRadius: 4 },
-      { label: 'Share Medicina (%)', data: participacao.map(d => d.participacao_medicina), backgroundColor: '#8B5CF6', borderRadius: 4 },
-    ],
-  };
-
-  // Componente Card de Métrica
-  const MetricCard = ({ titulo, valor, subtitulo, cor, icon: Icon }: { titulo: string; valor: string; subtitulo?: string; cor: string; icon: any }) => (
-    <div style={{
-      backgroundColor: '#2D3238',
-      borderRadius: '8px',
-      padding: '16px',
-      borderLeft: `3px solid ${cor}`,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-        <Icon size={16} color={cor} />
-        <p style={{ color: '#6C757D', fontSize: '0.7rem', textTransform: 'uppercase', margin: 0 }}>{titulo}</p>
-      </div>
-      <p style={{ color: '#F8F9FA', fontSize: '1.5rem', fontWeight: 700, margin: '4px 0' }}>{valor}</p>
-      {subtitulo && <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: 0 }}>{subtitulo}</p>}
-    </div>
-  );
-
-  // Componente Card de Gráfico
-  const ChartCard = ({ titulo, children, altura = '240px', corBorda }: { titulo: string; children: React.ReactNode; altura?: string; corBorda?: string }) => (
-    <div style={{
-      backgroundColor: '#2D3238',
-      borderRadius: '8px',
-      padding: '16px',
-      height: '100%',
-      borderTop: corBorda ? `3px solid ${corBorda}` : undefined,
-    }}>
-      <h3 style={{ color: '#F8F9FA', fontSize: '0.85rem', fontWeight: 600, marginBottom: '12px' }}>{titulo}</h3>
-      <div style={{ height: altura }}>{children}</div>
-    </div>
-  );
-
-  // Componente de Seção com cor
-  const SectionHeader = ({ titulo, cor, icon: Icon }: { titulo: string; cor: string; icon: any }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-      <div style={{ 
-        width: '36px', height: '36px', borderRadius: '8px', 
-        backgroundColor: `${cor}20`, display: 'flex', alignItems: 'center', justifyContent: 'center' 
-      }}>
-        <Icon size={20} color={cor} />
-      </div>
-      <h2 style={{ color: cor, fontSize: '1rem', fontWeight: 700, margin: 0 }}>{titulo}</h2>
-    </div>
-  );
 
   return (
     <>
-      <Head>
-        <title>Análise de Mercado | Viva Eventos</title>
-      </Head>
+      <Head><title>Análise de Mercado | Viva Eventos</title></Head>
+      <AnaliseMercadoLayout titulo="ANÁLISE DE MERCADO" nivelEnsino={nivel} onNivelChange={setNivel}>
 
-      <AnaliseMercadoLayout titulo="ANÁLISE DE MERCADO">
-        {/* Aviso de Dados Mockados */}
-        <div style={{
-          backgroundColor: 'rgba(245, 158, 11, 0.1)',
-          border: '1px solid rgba(245, 158, 11, 0.3)',
-          borderRadius: '6px',
-          padding: '10px 16px',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-        }}>
+        {/* Aviso mockado */}
+        <div style={{ backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, padding: '8px 16px', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
           <span>⚠️</span>
-          <p style={{ color: '#F59E0B', fontSize: '0.8rem', margin: 0 }}>
-            <strong>Validação de Layout</strong> - Dados fictícios para visualização
-          </p>
+          <p style={{ color: '#F59E0B', fontSize: '0.75rem', margin: 0 }}><strong>Validação de Layout</strong> — Dados fictícios</p>
         </div>
 
-        {/* Tabs de Navegação */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
-          {[
-            { id: 'comparativo', label: 'Comparativo', icon: Users },
-            { id: 'brasil', label: 'Visão Brasil', icon: Globe },
-            { id: 'viva', label: 'Visão Viva', icon: Building2 },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setVisaoAtiva(tab.id as any)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
-                borderRadius: '8px',
-                border: visaoAtiva === tab.id ? '2px solid #FF6600' : '1px solid #495057',
-                backgroundColor: visaoAtiva === tab.id ? 'rgba(255, 102, 0, 0.15)' : '#2D3238',
-                color: visaoAtiva === tab.id ? '#FF6600' : '#ADB5BD',
-                fontSize: '0.85rem',
-                fontWeight: visaoAtiva === tab.id ? 600 : 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-            >
-              <tab.icon size={18} />
-              {tab.label}
-            </button>
-          ))}
+        {/* CARDS — cada card tem total mercado + % Viva */}
+        <div style={{ display: 'grid', gridTemplateColumns: nivel === 'superior' ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)', gap: 16, marginBottom: 28 }}>
+          {/* Matriculados */}
+          <Card titulo="MATRICULADOS" cor={cor} valor={fmt(mat(evUlt))} subtitulo={nivelLabel} share={shareTotal(ultimo)} variacao={varMat} vivaLabel="Matriculados Viva" vivaNumero={fmt(vivaTot(ultimo))} />
+          {/* Concluintes */}
+          <Card titulo="CONCLUINTES" cor="#F59E0B" valor={fmt(conc(evUlt))} subtitulo={nivelLabel} share={shareTotal(ultimo)} variacao={varConc} vivaLabel="Concluintes Viva" vivaNumero={fmt(Math.round(conc(evUlt) * shareTotal(ultimo) / 100))} />
+          {/* Presencial */}
+          {nivel === 'superior' && (
+            <Card titulo="PRESENCIAL" cor="#10B981" valor={fmt(pres(evUlt))} subtitulo="Matriculados" share={sharePres(ultimo)} variacao={varPres} />
+          )}
+          {/* EAD */}
+          {nivel === 'superior' && (
+            <Card titulo="EAD" cor="#8B5CF6" valor={fmt(ead(evUlt))} subtitulo="Matriculados" share={shareEad(ultimo)} variacao={varEad} />
+          )}
         </div>
 
-        {/* ===== LAYOUT COMPARATIVO ===== */}
-        {visaoAtiva === 'comparativo' && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            {/* COLUNA BRASIL */}
-            <div>
-              <SectionHeader titulo="VISÃO BRASIL" cor="#3B82F6" icon={Globe} />
-              
-              {/* Métricas Brasil */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <MetricCard 
-                  titulo="Matriculados" 
-                  valor={`${(ultimoEvolucao?.matriculados_total / 1000000).toFixed(1)}M`}
-                  subtitulo="Total 2025"
-                  cor="#3B82F6"
-                  icon={Users}
-                />
-                <MetricCard 
-                  titulo="Concluintes" 
-                  valor={`${(ultimoEvolucao?.concluintes_total / 1000000).toFixed(2)}M`}
-                  subtitulo="Total 2025"
-                  cor="#10B981"
-                  icon={GraduationCap}
-                />
-                <MetricCard 
-                  titulo="Medicina" 
-                  valor={`${(ultimoEvolucao?.concluintes_medicina / 1000).toFixed(0)}K`}
-                  subtitulo="Concluintes"
-                  cor="#8B5CF6"
-                  icon={Stethoscope}
-                />
-                <MetricCard 
-                  titulo="Ensino Médio" 
-                  valor={`${(ultimoEvolucao?.concluintes_ensino_medio / 1000000).toFixed(2)}M`}
-                  subtitulo="Concluintes"
-                  cor="#F59E0B"
-                  icon={BookOpen}
-                />
-              </div>
-
-              {/* Gráficos Brasil */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <ChartCard titulo="Evolução do Mercado" altura="200px" corBorda="#3B82F6">
-                  <Line data={brasilEvolucaoData} options={chartOptions} />
-                </ChartCard>
-                <ChartCard titulo="Modalidade: Presencial vs EAD" altura="200px" corBorda="#3B82F6">
-                  <Bar data={brasilModalidadeData} options={chartOptions} />
-                </ChartCard>
-              </div>
-            </div>
-
-            {/* COLUNA VIVA */}
-            <div>
-              <SectionHeader titulo="VISÃO VIVA" cor="#FF6600" icon={Building2} />
-              
-              {/* Métricas Viva */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <MetricCard 
-                  titulo="Alunos Viva" 
-                  valor={ultimoAno?.viva_total.toLocaleString('pt-BR') || '0'}
-                  subtitulo="Total 2025"
-                  cor="#FF6600"
-                  icon={Users}
-                />
-                <MetricCard 
-                  titulo="Market Share" 
-                  valor={`${ultimoAno?.participacao_total.toFixed(2)}%`}
-                  subtitulo="Total"
-                  cor="#10B981"
-                  icon={TrendingUp}
-                />
-                <MetricCard 
-                  titulo="Medicina Viva" 
-                  valor={ultimoAno?.viva_medicina.toLocaleString('pt-BR') || '0'}
-                  subtitulo={`${ultimoAno?.participacao_medicina.toFixed(1)}% share`}
-                  cor="#8B5CF6"
-                  icon={Stethoscope}
-                />
-                <MetricCard 
-                  titulo="Presencial" 
-                  valor={ultimoAno?.viva_presencial.toLocaleString('pt-BR') || '0'}
-                  subtitulo={`${ultimoAno?.participacao_presencial.toFixed(2)}% share`}
-                  cor="#3B82F6"
-                  icon={GraduationCap}
-                />
-              </div>
-
-              {/* Gráficos Viva */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <ChartCard titulo="Evolução Alunos Viva" altura="200px" corBorda="#FF6600">
-                  <Line data={vivaEvolucaoData} options={chartOptions} />
-                </ChartCard>
-                <ChartCard titulo="Market Share por Segmento" altura="200px" corBorda="#FF6600">
-                  <Bar data={vivaMarketShareData} options={chartOptions} />
-                </ChartCard>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ===== LAYOUT BRASIL ===== */}
-        {visaoAtiva === 'brasil' && (
-          <div>
-            <SectionHeader titulo="MERCADO EDUCACIONAL BRASILEIRO" cor="#3B82F6" icon={Globe} />
-            
-            {/* Métricas Brasil - Grid completo */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '24px' }}>
-              <MetricCard titulo="Matriculados Total" valor={`${(ultimoEvolucao?.matriculados_total / 1000000).toFixed(1)}M`} cor="#3B82F6" icon={Users} />
-              <MetricCard titulo="Concluintes Total" valor={`${(ultimoEvolucao?.concluintes_total / 1000000).toFixed(2)}M`} cor="#10B981" icon={GraduationCap} />
-              <MetricCard titulo="Presencial" valor={`${(ultimoEvolucao?.matriculados_presencial / 1000000).toFixed(1)}M`} cor="#8B5CF6" icon={Building2} />
-              <MetricCard titulo="EAD" valor={`${(ultimoEvolucao?.matriculados_ead / 1000000).toFixed(1)}M`} cor="#F59E0B" icon={Globe} />
-              <MetricCard titulo="Medicina" valor={`${(ultimoEvolucao?.concluintes_medicina / 1000).toFixed(0)}K`} cor="#EF4444" icon={Stethoscope} />
-              <MetricCard titulo="Ensino Médio" valor={`${(ultimoEvolucao?.concluintes_ensino_medio / 1000000).toFixed(2)}M`} cor="#06B6D4" icon={BookOpen} />
-            </div>
-
-            {/* Gráficos Brasil */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-              <ChartCard titulo="Evolução: Matriculados x Concluintes" altura="280px" corBorda="#3B82F6">
-                <Line data={brasilEvolucaoData} options={chartOptions} />
-              </ChartCard>
-              <ChartCard titulo="Modalidade: Presencial x EAD (milhões)" altura="280px" corBorda="#3B82F6">
-                <Bar data={brasilModalidadeData} options={chartOptions} />
-              </ChartCard>
-              <ChartCard titulo="Distribuição Concluintes 2025" altura="280px" corBorda="#3B82F6">
-                <Doughnut data={brasilSegmentosData} options={{
-                  ...chartOptions,
-                  plugins: { ...chartOptions.plugins, legend: { position: 'bottom' as const, labels: { color: '#ADB5BD', padding: 12 } } },
-                }} />
-              </ChartCard>
-            </div>
-
-            {/* Tabela de Evolução */}
-            <div style={{ marginTop: '24px', backgroundColor: '#2D3238', borderRadius: '8px', padding: '16px', borderTop: '3px solid #3B82F6' }}>
-              <h3 style={{ color: '#F8F9FA', fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px' }}>Série Histórica do Mercado</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid #495057' }}>
-                    <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'left', padding: '8px' }}>Ano</th>
-                    <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Matriculados</th>
-                    <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Concluintes</th>
-                    <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Presencial</th>
-                    <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>EAD</th>
-                    <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Medicina</th>
+        {/* TABELA EVOLUÇÃO POR ANO */}
+        <h2 style={{ color: '#F8F9FA', fontSize: '0.95rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #FF6600', paddingBottom: 8, marginBottom: 16, fontFamily: "'Poppins', sans-serif" }}>
+          Evolução por Ano — {nivelLabel}
+        </h2>
+        <div style={{ backgroundColor: '#343A40', borderRadius: 12, overflow: 'hidden', marginBottom: 28 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#2D3238' }}>
+                <Th left>Ano</Th>
+                <Th>Matriculados</Th>
+                <Th>Concluintes</Th>
+                {nivel === 'superior' && <Th>Presencial</Th>}
+                {nivel === 'superior' && <Th>EAD</Th>}
+                <Th>Matriculados Viva</Th>
+                <Th>Concluintes Viva</Th>
+                <Th>Evolução Viva</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {evolucao.map((e, i) => {
+                const p = participacao[i];
+                const concViva = Math.round(conc(e) * shareTotal(p) / 100);
+                return (
+                  <tr key={e.ano} style={{ borderBottom: '1px solid #3D4349', backgroundColor: i % 2 ? 'rgba(255,255,255,0.02)' : 'transparent' }}>
+                    <Td left bold>{e.ano}</Td>
+                    <Td>{fmt(mat(e))}</Td>
+                    <Td>{fmt(conc(e))}</Td>
+                    {nivel === 'superior' && <Td>{fmt(pres(e))}</Td>}
+                    {nivel === 'superior' && <Td>{fmt(ead(e))}</Td>}
+                    <Td cor="#FF6600" bold>{fmt(vivaTot(p))}</Td>
+                    <Td cor="#FF6600" bold>{fmt(concViva)}</Td>
+                    <Td cor="#10B981" bold>{shareTotal(p).toFixed(2)}%</Td>
                   </tr>
-                </thead>
-                <tbody>
-                  {evolucao.map((e, idx) => (
-                    <tr key={e.ano} style={{ borderBottom: '1px solid #3D4349', backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                      <td style={{ padding: '10px 8px', color: '#F8F9FA', fontWeight: 600 }}>{e.ano}</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', color: '#ADB5BD' }}>{(e.matriculados_total / 1000000).toFixed(2)}M</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', color: '#ADB5BD' }}>{(e.concluintes_total / 1000).toFixed(0)}K</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', color: '#ADB5BD' }}>{(e.matriculados_presencial / 1000000).toFixed(2)}M</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', color: '#ADB5BD' }}>{(e.matriculados_ead / 1000000).toFixed(2)}M</td>
-                      <td style={{ padding: '10px 8px', textAlign: 'right', color: '#8B5CF6' }}>{(e.concluintes_medicina / 1000).toFixed(0)}K</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* GRÁFICOS */}
+        <h2 style={{ color: '#F8F9FA', fontSize: '0.95rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid #FF6600', paddingBottom: 8, marginBottom: 16, fontFamily: "'Poppins', sans-serif" }}>
+          Análise Gráfica ({evUlt?.ano || 2025})
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+          {/* Gráfico Rosca - Distribuição Concluintes */}
+          <div style={{ backgroundColor: '#343A40', borderRadius: 12, padding: 20 }}>
+            <p style={{ color: '#ADB5BD', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 12, textAlign: 'center' }}>Distribuição Concluintes</p>
+            <div style={{ height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Doughnut data={doughnutData} options={{
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                  legend: { 
+                    position: 'left',
+                    align: 'start',
+                    labels: { 
+                      color: '#ADB5BD', 
+                      padding: 15, 
+                      font: { size: 11 },
+                      boxWidth: 15,
+                      boxHeight: 15,
+                    } 
+                  }, 
+                  datalabels: { 
+                    color: '#F8F9FA',
+                    font: { size: 11, weight: 'bold' },
+                    anchor: 'end',
+                    align: 'end',
+                    offset: 8,
+                    borderWidth: 2,
+                    borderColor: (ctx: any) => ctx.dataset.backgroundColor[ctx.dataIndex],
+                    borderRadius: 4,
+                    backgroundColor: '#343A40',
+                    padding: { top: 4, bottom: 4, left: 6, right: 6 },
+                    formatter: (value: number, ctx: any) => {
+                      const total = ctx.chart.data.datasets[0].data.reduce((a: number, b: number) => a + b, 0);
+                      const pct = ((value / total) * 100).toFixed(1);
+                      return `${pct}%`;
+                    },
+                  },
+                },
+                layout: {
+                  padding: 30,
+                },
+              }} />
             </div>
           </div>
-        )}
-
-        {/* ===== LAYOUT VIVA ===== */}
-        {visaoAtiva === 'viva' && (
-          <div>
-            <SectionHeader titulo="PARTICIPAÇÃO VIVA EVENTOS" cor="#FF6600" icon={Building2} />
-            
-            {/* Métricas Viva - Grid completo */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px', marginBottom: '24px' }}>
-              <MetricCard titulo="Alunos Total" valor={ultimoAno?.viva_total.toLocaleString('pt-BR') || '0'} cor="#FF6600" icon={Users} />
-              <MetricCard titulo="Share Total" valor={`${ultimoAno?.participacao_total.toFixed(2)}%`} cor="#10B981" icon={TrendingUp} />
-              <MetricCard titulo="Presencial" valor={ultimoAno?.viva_presencial.toLocaleString('pt-BR') || '0'} cor="#3B82F6" icon={Building2} />
-              <MetricCard titulo="Share Presencial" valor={`${ultimoAno?.participacao_presencial.toFixed(2)}%`} cor="#8B5CF6" icon={TrendingUp} />
-              <MetricCard titulo="Medicina" valor={ultimoAno?.viva_medicina.toLocaleString('pt-BR') || '0'} cor="#EF4444" icon={Stethoscope} />
-              <MetricCard titulo="Share Medicina" valor={`${ultimoAno?.participacao_medicina.toFixed(1)}%`} cor="#F59E0B" icon={Star} />
-            </div>
-
-            {/* Gráficos Viva */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
-              <ChartCard titulo="Evolução Alunos Viva" altura="280px" corBorda="#FF6600">
-                <Line data={vivaEvolucaoData} options={chartOptions} />
-              </ChartCard>
-              <ChartCard titulo="Market Share por Segmento (%)" altura="280px" corBorda="#FF6600">
-                <Bar data={vivaMarketShareData} options={chartOptions} />
-              </ChartCard>
-              <ChartCard titulo="Distribuição Atual (2025)" altura="280px" corBorda="#FF6600">
-                <Doughnut data={vivaDistribuicaoData} options={{
-                  ...chartOptions,
-                  plugins: { ...chartOptions.plugins, legend: { position: 'bottom' as const, labels: { color: '#ADB5BD', padding: 12 } } },
-                }} />
-              </ChartCard>
-            </div>
-
-            {/* Destaque Medicina */}
-            <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '16px' }}>
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%)',
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-                borderRadius: '8px',
-                padding: '20px',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                  <Star size={20} color="#FFD700" fill="#FFD700" />
-                  <h3 style={{ color: '#8B5CF6', fontSize: '1rem', fontWeight: 700, margin: 0 }}>Medicina - Cluster Premium</h3>
-                </div>
-                
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  <div>
-                    <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: 0 }}>TICKET MÉDIO</p>
-                    <p style={{ color: '#F8F9FA', fontSize: '1.25rem', fontWeight: 700, margin: '2px 0' }}>
-                      R$ {medicina?.ticket_medio.toLocaleString('pt-BR')}
-                    </p>
-                  </div>
-                  <div>
-                    <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: 0 }}>MARKET SHARE</p>
-                    <p style={{ color: '#10B981', fontSize: '1.25rem', fontWeight: 700, margin: '2px 0' }}>
-                      {ultimoAno?.participacao_medicina.toFixed(1)}%
-                    </p>
-                  </div>
-                  <div>
-                    <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: 0 }}>MARGEM</p>
-                    <p style={{ color: '#10B981', fontSize: '1.25rem', fontWeight: 700, margin: '2px 0' }}>
-                      {medicina?.margem_percentual}%
-                    </p>
-                  </div>
-                </div>
-                
-                <div style={{ marginTop: '16px', padding: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '6px' }}>
-                  <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, lineHeight: 1.4 }}>
-                    ✓ Alta previsibilidade<br/>
-                    ✓ Tendência de crescimento<br/>
-                    ✓ Principal cluster de valor
-                  </p>
-                </div>
-              </div>
-
-              {/* Tabela de Evolução Viva */}
-              <div style={{ backgroundColor: '#2D3238', borderRadius: '8px', padding: '16px', borderTop: '3px solid #FF6600' }}>
-                <h3 style={{ color: '#F8F9FA', fontSize: '0.9rem', fontWeight: 600, marginBottom: '12px' }}>Série Histórica Viva</h3>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #495057' }}>
-                      <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'left', padding: '8px' }}>Ano</th>
-                      <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Total</th>
-                      <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Share</th>
-                      <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Presencial</th>
-                      <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Medicina</th>
-                      <th style={{ color: '#6C757D', fontWeight: 600, textAlign: 'right', padding: '8px' }}>Share Med.</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {participacao.map((p, idx) => (
-                      <tr key={p.ano} style={{ borderBottom: '1px solid #3D4349', backgroundColor: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                        <td style={{ padding: '10px 8px', color: '#F8F9FA', fontWeight: 600 }}>{p.ano}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#FF6600', fontWeight: 600 }}>{p.viva_total.toLocaleString('pt-BR')}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#10B981' }}>{p.participacao_total.toFixed(2)}%</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#ADB5BD' }}>{p.viva_presencial.toLocaleString('pt-BR')}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#8B5CF6' }}>{p.viva_medicina.toLocaleString('pt-BR')}</td>
-                        <td style={{ padding: '10px 8px', textAlign: 'right', color: '#F59E0B', fontWeight: 600 }}>{p.participacao_medicina.toFixed(1)}%</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {/* Gráfico Colunas - Presencial x EAD (só para Superior) */}
+          {nivel === 'superior' ? (
+            <div style={{ backgroundColor: '#343A40', borderRadius: 12, padding: 20 }}>
+              <p style={{ color: '#ADB5BD', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 12, textAlign: 'center' }}>Presencial x EAD</p>
+              <div style={{ height: 260 }}>
+                <Bar
+                  data={{
+                    labels: evolucao.map(e => e.ano),
+                    datasets: [
+                      {
+                        label: 'Presencial',
+                        data: evolucao.map(e => e.matriculados_presencial),
+                        backgroundColor: '#10B981',
+                        borderRadius: 4,
+                      },
+                      {
+                        label: 'EAD',
+                        data: evolucao.map(e => e.matriculados_ead),
+                        backgroundColor: '#8B5CF6',
+                        borderRadius: 4,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'bottom', labels: { color: '#ADB5BD', padding: 12, font: { size: 11 } } },
+                      datalabels: { 
+                        color: '#F8F9FA',
+                        font: { size: 10, weight: 'bold' },
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: (value: number) => fmt(value),
+                      },
+                    },
+                    scales: {
+                      x: { ticks: { color: '#6C757D', font: { size: 10 } }, grid: { display: false } },
+                      y: { ticks: { color: '#6C757D', font: { size: 10 }, callback: (v: any) => fmt(v) }, grid: { color: '#3D4349' } },
+                    },
+                  }}
+                />
               </div>
             </div>
-          </div>
-        )}
+          ) : (
+            <div style={{ backgroundColor: '#343A40', borderRadius: 12, padding: 20 }}>
+              <p style={{ color: '#ADB5BD', fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', marginBottom: 12, textAlign: 'center' }}>Evolução de Matriculados</p>
+              <div style={{ height: 260 }}>
+                <Chart
+                  type="bar"
+                  data={{
+                    labels: evolucao.map(e => e.ano),
+                    datasets: [
+                      {
+                        type: 'bar' as const,
+                        label: 'Matriculados',
+                        data: evolucao.map(e => mat(e)),
+                        backgroundColor: cor,
+                        borderRadius: 4,
+                        order: 2,
+                      },
+                      {
+                        type: 'line' as const,
+                        label: 'Matriculados Viva',
+                        data: participacao.map(p => vivaTot(p)),
+                        borderColor: '#FF6600',
+                        backgroundColor: '#FF6600',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#FF6600',
+                        tension: 0.3,
+                        order: 1,
+                        yAxisID: 'y1',
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: { position: 'bottom', labels: { color: '#ADB5BD', padding: 12, font: { size: 11 } } },
+                      datalabels: { 
+                        color: '#F8F9FA',
+                        font: { size: 10, weight: 'bold' },
+                        anchor: 'end',
+                        align: 'top',
+                        formatter: (value: number) => fmt(value),
+                      },
+                    },
+                    scales: {
+                      x: { ticks: { color: '#6C757D', font: { size: 10 } }, grid: { display: false } },
+                      y: { 
+                        position: 'left',
+                        ticks: { color: '#6C757D', font: { size: 10 }, callback: (v: any) => fmt(v) }, 
+                        grid: { color: '#3D4349' },
+                      },
+                      y1: {
+                        position: 'right',
+                        ticks: { color: '#FF6600', font: { size: 10 }, callback: (v: any) => fmt(v) },
+                        grid: { display: false },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
       </AnaliseMercadoLayout>
     </>
   );
+}
+
+// ===== Card único: total mercado + % Viva =====
+function Card({ titulo, cor, valor, subtitulo, share, variacao: v, vivaLabel, vivaNumero }: {
+  titulo: string; cor: string; valor: string; subtitulo: string; share: number; variacao: number;
+  vivaLabel?: string; vivaNumero?: string;
+}) {
+  const up = v >= 0;
+  return (
+    <div style={{
+      backgroundColor: '#343A40', borderRadius: 12, padding: 20,
+      position: 'relative', overflow: 'hidden',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+    }}>
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, backgroundColor: cor }} />
+
+      {/* Label */}
+      <p style={{ color: '#ADB5BD', fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 10px', fontFamily: "'Poppins', sans-serif" }}>
+        {titulo}
+      </p>
+
+      {/* Valor grande (total mercado) */}
+      <div style={{ color: cor, fontSize: '2rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif", lineHeight: 1.1 }}>
+        {valor}
+      </div>
+      <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: '4px 0 0' }}>{subtitulo}</p>
+
+      {/* Subtítulo Viva com número */}
+      {vivaLabel && vivaNumero && (
+        <div style={{ margin: '8px 0 0' }}>
+          <p style={{ color: '#ADB5BD', fontSize: '0.65rem', textTransform: 'uppercase', margin: '0 0 4px' }}>{vivaLabel}</p>
+          <div style={{ color: '#FF6600', fontSize: '2rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif", lineHeight: 1.1 }}>
+            {vivaNumero}
+          </div>
+        </div>
+      )}
+
+      {/* Separador */}
+      <div style={{ borderTop: '1px solid #495057', margin: '12px 0' }} />
+
+      {/* Linha inferior: share Viva + variação */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <p style={{ color: '#6C757D', fontSize: '0.6rem', margin: '0 0 2px', textTransform: 'uppercase' }}>Participação Viva</p>
+          <span style={{ color: '#FF6600', fontSize: '1.2rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif" }}>
+            {share.toFixed(2)}%
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          {up ? <TrendingUp size={14} color="#10B981" /> : <TrendingDown size={14} color="#EF4444" />}
+          <span style={{ color: up ? '#10B981' : '#EF4444', fontSize: '0.75rem', fontWeight: 600 }}>
+            {up ? '+' : ''}{v.toFixed(1)}%
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ===== Tabela helpers =====
+function Th({ children, left }: { children: React.ReactNode; left?: boolean }) {
+  return <th style={{ color: '#6C757D', fontWeight: 600, padding: '12px 10px', textAlign: left ? 'left' : 'right', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '2px solid #495057' }}>{children}</th>;
+}
+function Td({ children, left, cor, bold }: { children: React.ReactNode; left?: boolean; cor?: string; bold?: boolean }) {
+  return <td style={{ padding: '10px', textAlign: left ? 'left' : 'right', color: cor || '#ADB5BD', fontWeight: bold ? 600 : 400 }}>{children}</td>;
 }
