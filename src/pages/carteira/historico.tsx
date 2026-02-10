@@ -38,6 +38,10 @@ export default function HistoricoPage() {
     error
   } = useCarteiraData(filtros);
 
+  // Verificar se há dados carregados (para loading inicial vs refresh)
+  const hasData = historico.length > 0;
+  const isInitialLoading = loading && !hasData;
+
   // Handler para atualização de filtros
   const handleFiltrosChange = (novosFiltros: Partial<FiltrosCarteira>) => {
     updateFiltros(novosFiltros);
@@ -83,8 +87,8 @@ export default function HistoricoPage() {
     return <Loading mensagem="Verificando autenticação..." />;
   }
 
-  // Loading inicial de dados
-  if (loading && !isClient) {
+  // Loading inicial de dados (mostra tela de loading centralizada)
+  if (isInitialLoading) {
     return <Loading mensagem="Carregando dados históricos..." />;
   }
 
@@ -137,10 +141,10 @@ export default function HistoricoPage() {
           <section>
             <GraficosHistoricos dados={historico} loading={loading} />
           </section>
-        </main>
 
-        {/* Footer */}
-        <Footer sidebarCollapsed={sidebarCollapsed} />
+          {/* Footer */}
+          <Footer />
+        </main>
       </div>
     </>
   );

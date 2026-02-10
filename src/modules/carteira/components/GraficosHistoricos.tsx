@@ -3,7 +3,7 @@
  * Usando Chart.js (mesmo padrão do módulo de vendas)
  */
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { DadosHistorico } from '@/modules/carteira/types';
 import { FundosAtivosAnualChart, FundosMensalChart } from './charts';
 
@@ -183,24 +183,47 @@ export default function GraficosHistoricos({ dados, loading = false }: GraficosH
   }, [dados]);
 
   // Estado para anos ativos no gráfico mensal de fundos
-  const [activeYearsFundos, setActiveYearsFundos] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear();
-    const previousYear = currentYear - 1;
-    const availableYears = dadosFundosMensais.map(d => d.year);
-    return [previousYear, currentYear].filter(y => availableYears.includes(y));
-  });
+  const [activeYearsFundos, setActiveYearsFundos] = useState<number[]>([]);
 
   // Estado para anos ativos no gráfico mensal de integrantes
-  const [activeYearsIntegrantes, setActiveYearsIntegrantes] = useState<number[]>(() => {
-    const currentYear = new Date().getFullYear();
-    const previousYear = currentYear - 1;
-    const availableYears = dadosIntegrantesMensais.map(d => d.year);
-    return [previousYear, currentYear].filter(y => availableYears.includes(y));
-  });
+  const [activeYearsIntegrantes, setActiveYearsIntegrantes] = useState<number[]>([]);
 
   // Estado para anos ativos no gráfico mensal de atingimento
-  // Como filtramos apenas 2024 e 2025, já definimos esses anos diretamente
   const [activeYearsAtingimento, setActiveYearsAtingimento] = useState<number[]>([2024, 2025]);
+
+  // useEffect para atualizar anos ativos quando os dados chegarem
+  // Garante que o ano vigente seja pré-selecionado
+  useEffect(() => {
+    const currentYear = new Date().getFullYear();
+    const availableYears = dadosFundosMensais.map(d => d.year);
+    
+    if (availableYears.length > 0 && activeYearsFundos.length === 0) {
+      // Selecionar apenas o ano vigente se disponível
+      if (availableYears.includes(currentYear)) {
+        setActiveYearsFundos([currentYear]);
+      } else {
+        // Fallback: selecionar o último ano disponível
+        const lastYear = Math.max(...availableYears);
+        setActiveYearsFundos([lastYear]);
+      }
+    }
+  }, [dadosFundosMensais, activeYearsFundos.length]);
+
+  useEffect(() => {
+    const currentYear = new Date().getFullYear();
+    const availableYears = dadosIntegrantesMensais.map(d => d.year);
+    
+    if (availableYears.length > 0 && activeYearsIntegrantes.length === 0) {
+      // Selecionar apenas o ano vigente se disponível
+      if (availableYears.includes(currentYear)) {
+        setActiveYearsIntegrantes([currentYear]);
+      } else {
+        // Fallback: selecionar o último ano disponível
+        const lastYear = Math.max(...availableYears);
+        setActiveYearsIntegrantes([lastYear]);
+      }
+    }
+  }, [dadosIntegrantesMensais, activeYearsIntegrantes.length]);
 
   // Handler para toggle de anos (fundos)
   const handleYearToggleFundos = (year: number) => {
