@@ -5,3 +5,4 @@ export { Modal, HelpModal } from './Modal';
 export { default as OkrKrCard } from './OkrKrCard';
 export { default as Loader } from './Loader';
 export { default as Card } from './Card';
+export { default as PresentationTimer } from './PresentationTimer';
