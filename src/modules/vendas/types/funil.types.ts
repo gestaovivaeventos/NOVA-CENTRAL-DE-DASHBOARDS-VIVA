@@ -6,6 +6,7 @@
 export interface LeadFunil {
   id: number;
   titulo: string;
+  responsaveis: string;
   fase_perdido: string;
   curso: string;
   consultor: string;

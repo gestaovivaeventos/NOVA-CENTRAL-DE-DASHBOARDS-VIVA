@@ -260,19 +260,27 @@ export default function Dashboard() {
   
   const hasError = errorSales || errorMetas || errorFundos;
 
+  // Função auxiliar para parsear data no formato YYYY-MM-DD
+  // IMPORTANTE: Usar este método para evitar problemas de fuso horário do JavaScript
+  // new Date("YYYY-MM-DD") interpreta como UTC, causando deslocamento de dia em fusos negativos
+  const parseDateString = useCallback((dateStr: string): Date => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }, []);
+
   // Calcular período ANTES das opções de filtros (para usar na hierarquia)
   const periodo = useMemo(() => {
     if (filtros.periodoSelecionado === 'personalizado') {
-      // Criar datas com horários corretos para comparação
-      const start = filtros.dataInicio ? new Date(filtros.dataInicio) : new Date();
-      const end = filtros.dataFim ? new Date(filtros.dataFim) : new Date();
+      // Parsear datas manualmente para evitar problema de fuso horário
+      const start = filtros.dataInicio ? parseDateString(filtros.dataInicio) : new Date();
+      const end = filtros.dataFim ? parseDateString(filtros.dataFim) : new Date();
       return {
         startDate: new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0),
         endDate: new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999),
       };
     }
     return getPeriodoDatas(filtros.periodoSelecionado as any);
-  }, [filtros.periodoSelecionado, filtros.dataInicio, filtros.dataFim]);
+  }, [filtros.periodoSelecionado, filtros.dataInicio, filtros.dataFim, parseDateString]);
 
   // Função auxiliar para parsear datas do funil (formato DD/MM/YYYY)
   const parseFunilDateForFilter = useCallback((dateStr: string | undefined | null): Date | null => {
@@ -1983,9 +1991,7 @@ export default function Dashboard() {
     // Filtrar por período de data (usando campo criado_em)
     if (periodo?.startDate && periodo?.endDate) {
       const startDate = periodo.startDate;
-      // Adicionar 1 dia ao endDate para incluir o dia final completo
-      const endDate = new Date(periodo.endDate);
-      endDate.setDate(endDate.getDate() + 1);
+      const endDate = periodo.endDate; // Já está com 23:59:59.999
 
       dados = dados.filter(item => {
         if (!item.criado_em) return false;
@@ -1993,7 +1999,7 @@ export default function Dashboard() {
         const dataItem = parseDataFunil(item.criado_em);
         if (!dataItem) return false;
         
-        return dataItem >= startDate && dataItem < endDate;
+        return dataItem >= startDate && dataItem <= endDate;
       });
     }
 

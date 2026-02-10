@@ -278,14 +278,21 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
     if (!filtros) return filteredData;
 
+    // Função auxiliar para parsear data no formato YYYY-MM-DD sem problemas de fuso horário
+    const parseDateString = (dateStr: string): Date => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+
     return filteredData.filter((row: any) => {
       // Filtro de data
       if (filtros.dataInicio) {
-        const dataInicio = new Date(filtros.dataInicio);
+        const dataInicio = parseDateString(filtros.dataInicio);
         if (row.data < dataInicio) return false;
       }
       if (filtros.dataFim) {
-        const dataFim = new Date(filtros.dataFim);
+        const dataFim = parseDateString(filtros.dataFim);
+        dataFim.setHours(23, 59, 59, 999); // Incluir o dia inteiro
         if (row.data > dataFim) return false;
       }
 
