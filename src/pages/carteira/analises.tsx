@@ -43,6 +43,10 @@ export default function AnalisesPage() {
     error
   } = useCarteiraData(filtros);
 
+  // Verificar se há dados carregados (para loading inicial vs refresh)
+  const hasData = dadosPorFundo.length > 0 || dadosPorFranquia.length > 0;
+  const isInitialLoading = loading && !hasData;
+
   // Handler para atualização de filtros
   const handleFiltrosChange = (novosFiltros: Partial<FiltrosCarteira>) => {
     updateFiltros(novosFiltros);
@@ -88,8 +92,8 @@ export default function AnalisesPage() {
     return <Loading mensagem="Verificando autenticação..." />;
   }
 
-  // Loading inicial de dados
-  if (loading && !isClient) {
+  // Loading inicial de dados (mostra tela de loading centralizada)
+  if (isInitialLoading) {
     return <Loading mensagem="Carregando dados da carteira..." />;
   }
 
@@ -163,10 +167,10 @@ export default function AnalisesPage() {
               <TabelaFranquias dados={dadosPorFranquia} loading={loading} />
             </section>
           </div>
-        </main>
 
-        {/* Footer */}
-        <Footer sidebarCollapsed={sidebarCollapsed} />
+          {/* Footer */}
+          <Footer />
+        </main>
       </div>
     </>
   );

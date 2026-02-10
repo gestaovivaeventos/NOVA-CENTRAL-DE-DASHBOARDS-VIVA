@@ -157,6 +157,8 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       dataBaile: getIndex(['data_baile', 'dt_baile', 'data_evento']),
       status: getIndex(['status', 'situacao_fundo', 'status_fundo']),
       situacao: getIndex(['situacao', 'situacao_carteira']),
+      // Tipo de cliente do fundo
+      tipoClienteFundo: getIndex(['tipo_cliente_fundo', 'tipo_cliente', 'tp_cliente_fundo']),
       // Novos campos de consultores
       consultorRelacionamento: getIndex(['consultor_planejamento', 'consultor_relacionamento', 'consultor_rel', 'relacionamento']),
       consultorAtendimento: getIndex(['consultor_atendimento', 'consultor_atd', 'atendimento']),
@@ -201,6 +203,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           dataBaile: dataBaileValue,
           status: indices.status !== -1 ? row[indices.status] || 'Ativo' : 'Ativo',
           situacao: indices.situacao !== -1 ? row[indices.situacao] || '' : '',
+          tipoClienteFundo: indices.tipoClienteFundo !== -1 ? (row[indices.tipoClienteFundo] || '').toUpperCase().trim() : '',
           // Campos de consultores
           consultorRelacionamento: indices.consultorRelacionamento !== -1 ? row[indices.consultorRelacionamento] || '' : '',
           consultorAtendimento: indices.consultorAtendimento !== -1 ? row[indices.consultorAtendimento] || '' : '',
@@ -271,9 +274,22 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
   // Filtrar dados baseado nos filtros
   const dadosFiltrados = useMemo(() => {
-    // IMPORTANTE: Só considerar fundos com baile "REALIZAR"
+    // FILTROS OBRIGATÓRIOS DE NEGÓCIO:
+    // 1. tipo_cliente_fundo = "FUNDO DE FORMATURA"
+    // 2. situacao_fundo diferente de "Rescindindo" e "Rescindido"
+    // 3. baile_a_realizar = "REALIZAR"
     let filteredData = dados.filter((row: any) => {
-      return row.baileARealizar === 'REALIZAR';
+      // Filtro 1: Apenas fundos de formatura
+      if (row.tipoClienteFundo !== 'FUNDO DE FORMATURA') return false;
+      
+      // Filtro 2: Excluir fundos rescindindo ou rescindidos
+      const situacao = (row.status || '').toUpperCase().trim();
+      if (situacao === 'RESCINDINDO' || situacao === 'RESCINDIDO') return false;
+      
+      // Filtro 3: Apenas fundos com baile a realizar
+      if (row.baileARealizar !== 'REALIZAR') return false;
+      
+      return true;
     });
 
     if (!filtros) return filteredData;
@@ -501,6 +517,9 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     dadosFiltradosComSaude.forEach((row: any) => {
       const key = row.franquia;
       const existing = franquiaMap.get(key);
+      
+      // Calcular saúde do fundo atual
+      const saudeFundo = calcularSaudeFundo(row.dataBaile, row.alunosAtivos / (row.macMeta || 1));
 
       if (existing) {
         existing.totalFundos += 1;
@@ -511,6 +530,11 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
         existing.alunosEventoPrincipal += row.alunosEventoPrincipal;
         existing.inadimplentes += row.integrantesInadimplentes;
         existing.nuncaPagaram += row.nuncaPagaram;
+        // Contar saúde dos fundos
+        if (saudeFundo === 'Crítico') existing.saudeFundos.critico += 1;
+        else if (saudeFundo === 'Atenção') existing.saudeFundos.atencao += 1;
+        else if (saudeFundo === 'Quase lá') existing.saudeFundos.quaseLa += 1;
+        else if (saudeFundo === 'Alcançada') existing.saudeFundos.alcancada += 1;
       } else {
         franquiaMap.set(key, {
           franquia: row.franquia,
@@ -523,6 +547,12 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           alunosEventoPrincipal: row.alunosEventoPrincipal,
           inadimplentes: row.integrantesInadimplentes,
           nuncaPagaram: row.nuncaPagaram,
+          saudeFundos: {
+            critico: saudeFundo === 'Crítico' ? 1 : 0,
+            atencao: saudeFundo === 'Atenção' ? 1 : 0,
+            quaseLa: saudeFundo === 'Quase lá' ? 1 : 0,
+            alcancada: saudeFundo === 'Alcançada' ? 1 : 0,
+          },
         });
       }
     });
@@ -548,9 +578,22 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
   // Dados filtrados SEM filtro de período (para histórico)
   const dadosSemFiltroPeriodo = useMemo(() => {
-    // IMPORTANTE: Só considerar fundos com baile "REALIZAR"
+    // FILTROS OBRIGATÓRIOS DE NEGÓCIO (mesmos da página de análises):
+    // 1. tipo_cliente_fundo = "FUNDO DE FORMATURA"
+    // 2. situacao_fundo diferente de "Rescindindo" e "Rescindido"
+    // 3. baile_a_realizar = "REALIZAR"
     let filteredData = dados.filter((row: any) => {
-      return row.baileARealizar === 'REALIZAR';
+      // Filtro 1: Apenas fundos de formatura
+      if (row.tipoClienteFundo !== 'FUNDO DE FORMATURA') return false;
+      
+      // Filtro 2: Excluir fundos rescindindo ou rescindidos
+      const situacao = (row.status || '').toUpperCase().trim();
+      if (situacao === 'RESCINDINDO' || situacao === 'RESCINDIDO') return false;
+      
+      // Filtro 3: Apenas fundos com baile a realizar
+      if (row.baileARealizar !== 'REALIZAR') return false;
+      
+      return true;
     });
 
     if (!filtros) return filteredData;

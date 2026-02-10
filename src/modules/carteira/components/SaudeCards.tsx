@@ -26,7 +26,12 @@ const SAUDE_CONFIG = {
     gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.03) 100%)',
     borderGradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.4) 0%, rgba(239, 68, 68, 0.1) 100%)',
     shadowColor: 'rgba(239, 68, 68, 0.15)',
-    tooltip: 'Fundos com atingimento abaixo de 70% e baile em menos de 6 meses. Requerem intervenção imediata.',
+    tooltip: `Fundos classificados como críticos conforme tempo até o baile:
+• Até 6 meses: menos de 90% do MAC
+• Até 1 ano: menos de 80% do MAC
+• Até 1 ano e meio: menos de 70% do MAC
+• Até 2 anos: menos de 65% do MAC
+• Mais de 2 anos: menos de 50% do MAC`,
     Icon: AlertTriangle,
   },
   atencao: { 
@@ -35,7 +40,12 @@ const SAUDE_CONFIG = {
     gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(245, 158, 11, 0.03) 100%)',
     borderGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.4) 0%, rgba(245, 158, 11, 0.1) 100%)',
     shadowColor: 'rgba(245, 158, 11, 0.15)',
-    tooltip: 'Fundos com atingimento entre 70% e 85%. Precisam de monitoramento constante.',
+    tooltip: `Fundos que precisam de monitoramento conforme tempo até o baile:
+• Até 6 meses: entre 91% e 95% do MAC
+• Até 1 ano: entre 81% e 85% do MAC
+• Até 1 ano e meio: entre 71% e 80% do MAC
+• Até 2 anos: entre 66% e 70% do MAC
+• Mais de 2 anos: entre 50% e 60% do MAC`,
     Icon: AlertCircle,
   },
   quaseLa: { 
@@ -44,7 +54,12 @@ const SAUDE_CONFIG = {
     gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.03) 100%)',
     borderGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.4) 0%, rgba(59, 130, 246, 0.1) 100%)',
     shadowColor: 'rgba(59, 130, 246, 0.15)',
-    tooltip: 'Fundos com atingimento entre 85% e 99%. Estão muito próximos de alcançar a meta.',
+    tooltip: `Fundos próximos da meta conforme tempo até o baile:
+• Até 6 meses: entre 96% e 99% do MAC
+• Até 1 ano: entre 86% e 99% do MAC
+• Até 1 ano e meio: entre 81% e 99% do MAC
+• Até 2 anos: entre 71% e 99% do MAC
+• Mais de 2 anos: entre 61% e 99% do MAC`,
     Icon: TrendingUp,
   },
   alcancada: { 
@@ -53,7 +68,7 @@ const SAUDE_CONFIG = {
     gradient: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15) 0%, rgba(34, 197, 94, 0.03) 100%)',
     borderGradient: 'linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(34, 197, 94, 0.1) 100%)',
     shadowColor: 'rgba(34, 197, 94, 0.15)',
-    tooltip: 'Fundos que atingiram ou superaram 100% da meta de alunos do contrato (MAC).',
+    tooltip: `Fundos que atingiram ou superaram 100% da meta de alunos do contrato (MAC), independente do tempo restante até o baile.`,
     Icon: CheckCircle,
   },
 };
@@ -112,10 +127,12 @@ export default function SaudeCards({ fundosPorSaude, loading = false }: SaudeCar
       <h2 className="section-title">Saúde dos Fundos</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {cards.map((card) => {
+        {cards.map((card, index) => {
           const config = SAUDE_CONFIG[card.key as keyof typeof SAUDE_CONFIG];
           const percentual = totalFundos > 0 ? ((card.value / totalFundos) * 100).toFixed(1) : '0';
           const Icon = config.Icon;
+          // Para o último card (index 3), posicionar tooltip à esquerda para não cortar
+          const isLastCard = index === 3;
           
           return (
             <div 
@@ -143,11 +160,11 @@ export default function SaudeCards({ fundosPorSaude, loading = false }: SaudeCar
                     style={{ color: `${config.color}80`, cursor: 'help' }} 
                   />
                   <div 
-                    className="absolute left-1/2 transform -translate-x-1/2 bottom-full mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200"
-                    style={{ minWidth: '220px', whiteSpace: 'normal', zIndex: 9999 }}
+                    className={`absolute bottom-full mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 ${isLastCard ? 'right-0' : 'left-1/2 transform -translate-x-1/2'}`}
+                    style={{ width: '280px', whiteSpace: 'pre-line', zIndex: 9999 }}
                   >
                     {config.tooltip}
-                    <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    <div className={`absolute top-full border-4 border-transparent border-t-gray-900 ${isLastCard ? 'right-2' : 'left-1/2 transform -translate-x-1/2'}`}></div>
                   </div>
                 </div>
               </div>

@@ -120,13 +120,13 @@ export default function Sidebar({
             borderBottom: '1px solid #333',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: isCollapsed ? 'center' : 'space-between',
             gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            {/* Info do Usuário */}
-            {!isCollapsed && (
+          {!isCollapsed && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+              {/* Info do Usuário */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h2
                   style={{
@@ -165,8 +165,8 @@ export default function Sidebar({
                   Atualizado: {dataAtual || new Date().toLocaleDateString('pt-BR')}
                 </p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Botão Toggle */}
           <button
