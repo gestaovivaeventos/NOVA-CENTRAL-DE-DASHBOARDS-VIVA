@@ -62,6 +62,11 @@
   --sidebar-width-collapsed: 80px;
 }
 
+/* Garantir box-sizing em todos os elementos */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 /* Base Styles */
 html {
   scroll-behavior: smooth;
@@ -70,6 +75,7 @@ html {
 body {
   @apply bg-dark-bg text-dark-text antialiased;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
 }
 
 /* Custom Scrollbar */
@@ -658,7 +664,7 @@ body {
 /* Chart Wrapper KPI */
 .kpi-time-section .chart-wrapper {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(0, 3fr);
+  grid-template-columns: 1fr 3fr;
   grid-template-areas: "sidebar chart";
   gap: 1.5rem;
   align-items: stretch;
@@ -826,16 +832,19 @@ body {
 .kr-display-wrapper {
   width: 100%;
   margin-bottom: 2rem;
+  box-sizing: border-box;
 }
 
 /* KR Display Container (Card dos OKRs) */
 .kr-display-container {
   background-color: var(--bg-secondary);
   border-radius: 0.75rem;
-  padding: 2rem;
+  padding: 1.5rem;
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   width: 100%;
+  box-sizing: border-box;
+  overflow: visible;
 }
 
 /* Container dos gráficos de KR */
@@ -1153,40 +1162,41 @@ body {
 /* Dentro do contexto .kr-display-container */
 .kr-display-container .chart-wrapper {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(0, 3fr);
+  grid-template-columns: 1fr 3fr;
   grid-template-areas: "sidebar chart";
   gap: 1.5rem;
   align-items: stretch;
-  min-height: 400px;
+  min-height: 380px;
   height: auto;
   max-height: none;
   overflow: visible;
+  width: 100%;
 }
 
 /* KPI Sidebar OKR */
 .kr-display-container .kpi-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   grid-area: sidebar;
-  min-height: 380px;
+  min-height: 0;
   height: auto;
   max-height: none;
+  width: 100%;
 }
 
 /* Cards de KPI na sidebar OKR - mesmo estilo de fundo do KPI */
 .kr-display-container .kpi-card {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
   background-color: var(--bg-tertiary);
-  padding: 1rem;
+  padding: 0.875rem;
   border-radius: 0.5rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: center;
   flex: 1;
-  min-height: 55px;
-  max-height: 70px;
+  min-height: 50px;
   /* Reset estilos herdados do Vendas */
   position: relative;
   overflow: visible;
@@ -1209,26 +1219,25 @@ body {
 
 .kr-display-container .kpi-card.kpi-card-atingimento {
   flex-grow: 2;
-  min-height: 140px;
-  max-height: 160px;
+  min-height: 130px;
   position: relative;
 }
 
 .kr-display-container .kpi-card.kpi-card-atingimento .kpi-label {
-  margin-top: 0.5rem;
-  margin-bottom: 0.3rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.2rem;
 }
 
 .kr-display-container .kpi-card .kpi-label {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.2rem;
   font-weight: 500;
   text-transform: uppercase;
 }
 
 .kr-display-container .kpi-card .kpi-value {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: #FFFFFF;
   line-height: 1.2;
@@ -1276,7 +1285,7 @@ body {
 /* Área do gráfico principal OKR */
 .kr-display-container .main-chart-area {
   position: relative;
-  min-height: 380px;
+  min-height: 350px;
   height: auto;
   max-height: none;
   min-width: 0;
@@ -1284,6 +1293,7 @@ body {
   overflow: visible;
   display: flex;
   align-items: stretch;
+  flex: 1;
 }
 
 .kr-display-container .main-chart-area canvas {
@@ -1295,9 +1305,10 @@ body {
 /* KPI Sidebar OKR - mantendo compatibilidade */
 .okr-chart-wrapper {
   display: grid;
-  grid-template-columns: minmax(200px, 1fr) minmax(0, 3fr);
+  grid-template-columns: 1fr 3fr;
   grid-template-areas: "sidebar chart";
   gap: 1.5rem;
+  width: 100%;
   align-items: stretch;
   min-height: 400px;
   height: auto;
@@ -1309,18 +1320,19 @@ body {
 .okr-kpi-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   grid-area: sidebar;
-  min-height: 380px;
+  min-height: 360px;
   height: auto;
   max-height: none;
+  width: 100%;
 }
 
 /* Container do gráfico de atingimento (doughnut) OKR */
 .atingimento-chart-container {
   position: relative;
-  width: 110px;
-  height: 110px;
+  width: 100px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1332,7 +1344,7 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 1.5rem;
+  font-size: 1.35rem;
   font-weight: 600;
   font-family: 'Poppins', sans-serif;
   color: #fff !important;
@@ -1344,10 +1356,9 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.75rem 1rem 1rem 1rem;
+  padding: 0.5rem 0.75rem 0.75rem 0.75rem;
   flex-grow: 2;
-  min-height: 140px;
-  max-height: 160px;
+  min-height: 130px;
   position: relative;
 }
 
@@ -1362,6 +1373,30 @@ body {
 }
 
 /* Responsive OKR */
+@media (max-width: 1200px) {
+  .kr-display-container .chart-wrapper {
+    grid-template-columns: 1fr 2.5fr;
+    gap: 1rem;
+  }
+
+  .kr-display-container .kpi-sidebar {
+    gap: 0.5rem;
+  }
+
+  .kr-display-container .kpi-card .kpi-value {
+    font-size: 1.1rem;
+  }
+
+  .atingimento-chart-container {
+    width: 90px;
+    height: 90px;
+  }
+
+  .atingimento-center-text {
+    font-size: 1.2rem;
+  }
+}
+
 @media (max-width: 1024px) {
   .kr-display-container .chart-wrapper {
     grid-template-columns: 1fr;
@@ -1383,15 +1418,27 @@ body {
   }
 
   .kr-display-container .kpi-card {
-    flex: 1 1 calc(50% - 0.375rem);
-    min-height: 60px;
+    flex: 1 1 calc(50% - 0.5rem);
+    min-height: 55px;
     max-height: none;
   }
 
   .kr-display-container .kpi-card.kpi-card-atingimento {
     flex: 1 1 100%;
-    min-height: 120px;
+    min-height: 110px;
     max-height: none;
+    flex-direction: row;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .atingimento-chart-container {
+    width: 80px;
+    height: 80px;
+  }
+
+  .atingimento-center-text {
+    font-size: 1.1rem;
   }
 
   .kr-display-container .main-chart-area {
@@ -1428,7 +1475,7 @@ body {
 
   .kpi-card-atingimento {
     flex: 1 1 100%;
-    min-height: 120px;
+    min-height: 110px;
     max-height: none;
   }
 
@@ -1440,6 +1487,13 @@ body {
   }
 }
 
+/* Media query para telas muito grandes (zoom baixo) */
+@media (min-width: 1600px) {
+  .kr-display-container .kpi-card .kpi-value {
+    font-size: 1.5rem;
+  }
+}
+
 /* ========== ESTILOS ADICIONAIS OKR ========== */
 
 /* App container para o layout OKR */
@@ -1447,6 +1501,7 @@ body {
   display: flex;
   min-height: 100vh;
   background-color: var(--bg-primary);
+  overflow-x: hidden;
 }
 
 /* Main Content OKR - com margin-left para sidebar */
@@ -1455,10 +1510,15 @@ body {
   margin-left: var(--sidebar-width, 300px);
   padding: 24px 32px;
   transition: margin-left 0.3s ease;
+  min-width: 0;
+  width: calc(100% - var(--sidebar-width, 300px));
+  max-width: calc(100% - var(--sidebar-width, 300px));
 }
 
 .app-container .main-content.sidebar-collapsed {
   margin-left: var(--sidebar-width-collapsed, 80px);
+  width: calc(100% - var(--sidebar-width-collapsed, 80px));
+  max-width: calc(100% - var(--sidebar-width-collapsed, 80px));
 }
 
 /* Page Container OKR */
@@ -1466,6 +1526,8 @@ body {
   width: 100%;
   max-width: 100%;
   padding: 0;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 /* Filters Section OKR */
@@ -1479,6 +1541,8 @@ body {
   border-radius: 12px;
   border: 1px solid var(--border-color);
   align-items: flex-start;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 /* Filtro de objetivo OKR */
