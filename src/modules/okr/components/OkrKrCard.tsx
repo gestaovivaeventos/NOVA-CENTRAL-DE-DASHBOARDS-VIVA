@@ -109,6 +109,28 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
   const medidaRef = useRef<HTMLSelectElement | null>(null);
   const chartRef = useRef<ChartJS<'bar'>>(null);
   const doughnutRef = useRef<ChartJS<'doughnut'>>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // ResizeObserver para forçar resize dos charts ao mudar zoom
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const observer = new ResizeObserver(() => {
+      // Dar um pequeno delay para o layout estabilizar
+      requestAnimationFrame(() => {
+        if (chartRef.current) {
+          chartRef.current.resize();
+        }
+        if (doughnutRef.current) {
+          doughnutRef.current.resize();
+        }
+      });
+    });
+
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, [showDataEntry]);
 
   const indicator = kr.indicador;
   const medida = kr.medida || '';
@@ -531,7 +553,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
 
   return (
     <>
-      <div className="kr-display-container">
+      <div className="kr-display-container" ref={wrapperRef}>
         {/* Header do card */}
         <div className="kr-card-header">
           <div className="kr-title-row">
