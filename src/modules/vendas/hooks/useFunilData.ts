@@ -69,6 +69,7 @@ export function useFunilData(): UseFunilDataReturn {
       const columnIndices = {
         titulo: 0,           // A
         fasePerdido: 1,      // B
+        responsaveis: 2,     // C
         curso: 3,            // D
         origemLead: 6,       // G
         criadoEm: 12,        // M
@@ -103,9 +104,15 @@ export function useFunilData(): UseFunilDataReturn {
           // Ignorar linhas sem título
           if (!titulo || titulo.trim() === '') return null;
 
+          const responsaveis = row[columnIndices.responsaveis] || '';
+          
+          // Desconsiderar leads com responsável "IMPLANTAÇÃO VIVA BR"
+          if (responsaveis.toUpperCase().includes('IMPLANTAÇÃO VIVA BR')) return null;
+
           return {
             id: index + 1,
             titulo,
+            responsaveis,
             fase_perdido: row[columnIndices.fasePerdido] || '',
             curso: row[columnIndices.curso] || '',
             consultor: row[columnIndices.consultor] || '',
