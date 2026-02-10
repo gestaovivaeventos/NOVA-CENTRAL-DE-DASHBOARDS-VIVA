@@ -80,12 +80,12 @@ export default function Sidebar({
             borderBottom: '1px solid #333',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: isCollapsed ? 'center' : 'space-between',
             gap: '12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            {!isCollapsed && (
+          {!isCollapsed && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h2
                   style={{
@@ -124,8 +124,8 @@ export default function Sidebar({
                   Atualizado: {dataAtual}
                 </p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Botão Toggle */}
           <button
@@ -152,109 +152,114 @@ export default function Sidebar({
           </button>
         </div>
 
-        {/* Menu de Navegação */}
-        <nav style={{ padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {PAGES.map((page) => {
-            const isActive = paginaAtiva === page.id;
-            const Icon = page.icon;
+        {/* Conteúdo da Sidebar - com scroll e flex para empurrar botões para baixo */}
+        <div 
+          className={`${isCollapsed ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
+          style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
+        >
 
-            return (
-              <button
-                key={page.id}
-                onClick={() => onPaginaChange(page.id)}
-                className={`
-                  group flex items-center rounded-lg transition-all duration-200
-                  ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-4'}
-                  ${isActive
-                    ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
-                    : 'text-gray-400 border border-gray-600/50 hover:bg-gray-700/50'
-                  }
-                `}
-                style={{
-                  fontFamily: 'Poppins, sans-serif',
-                  fontSize: '0.85rem',
-                  fontWeight: isActive ? 600 : 500,
-                  boxShadow: !isActive ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
-                  height: '42px',
-                  whiteSpace: 'nowrap',
-                  cursor: 'pointer',
-                }}
-                title={isCollapsed ? page.label : undefined}
-              >
-                <Icon 
-                  size={20} 
-                  strokeWidth={isActive ? 2.5 : 2}
+          {/* Menu de Navegação */}
+          <nav className="flex flex-col gap-1.5 mb-6">
+            {PAGES.map((page) => {
+              const isActive = paginaAtiva === page.id;
+              const Icon = page.icon;
+
+              return (
+                <button
+                  key={page.id}
+                  onClick={() => onPaginaChange(page.id)}
+                  className={`
+                    group flex items-center rounded-lg transition-all duration-200
+                    ${isCollapsed ? 'justify-center p-2.5' : 'gap-3 px-4'}
+                    ${isActive
+                      ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
+                      : 'text-gray-400 border border-gray-600/50 hover:bg-gray-700/50'
+                    }
+                  `}
+                  style={{
+                    fontFamily: 'Poppins, sans-serif',
+                    fontSize: '0.85rem',
+                    fontWeight: isActive ? 600 : 500,
+                    boxShadow: !isActive ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
+                    height: '42px',
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer',
+                  }}
+                  title={isCollapsed ? page.label : undefined}
+                >
+                  <Icon 
+                    size={20} 
+                    strokeWidth={isActive ? 2.5 : 2}
+                  />
+                  {!isCollapsed && <span>{page.label}</span>}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Painel de Filtros - apenas quando expandida */}
+          {!isCollapsed && (
+            <>
+              <hr className="border-dark-tertiary mb-4" />
+              <div className="filters-content">
+                <FilterPanel
+                  filtros={filtros}
+                  opcoes={filtrosOpcoes}
+                  onFiltrosChange={onFiltrosChange}
                 />
-                {!isCollapsed && <span>{page.label}</span>}
-              </button>
-            );
-          })}
-        </nav>
+              </div>
+            </>
+          )}
 
-        {/* Separador */}
-        <div style={{ padding: '0 20px', margin: '8px 0' }}>
-          <div style={{ height: '1px', background: '#333' }} />
-        </div>
+          {/* Espaçador flexível para empurrar os botões para baixo */}
+          <div className="flex-grow" />
 
-        {/* Painel de Filtros - apenas quando expandida */}
-        {!isCollapsed && (
-          <div style={{ padding: '0 16px' }}>
-            <FilterPanel
-              filtros={filtros}
-              opcoes={filtrosOpcoes}
-              onFiltrosChange={onFiltrosChange}
-            />
+          {/* Área inferior: Central + Sair */}
+          <div className={`${isCollapsed ? 'pb-4' : 'pb-6'}`}>
+            <hr className="border-dark-tertiary mb-4" />
+            
+            {/* Link para Central de Dashboards */}
+            <Link
+              href="/"
+              className={`
+                flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
+                ${isCollapsed ? 'justify-center p-2.5 w-full' : 'gap-3 px-4 py-2.5 w-full'}
+              `}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                textDecoration: 'none',
+                height: '42px',
+              }}
+              title="Central de Dashboards"
+            >
+              <Home size={20} strokeWidth={2} />
+              {!isCollapsed && <span>Central de Dashboards</span>}
+            </Link>
+
+            {/* Botão de Logout */}
+            <button
+              onClick={handleLogout}
+              className={`
+                flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50
+                ${isCollapsed ? 'justify-center p-2.5 w-full mt-2' : 'gap-3 px-4 py-2.5 w-full mt-2'}
+              `}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                height: '42px',
+                cursor: 'pointer',
+              }}
+              title={isCollapsed ? 'Sair' : undefined}
+            >
+              <LogOut size={20} strokeWidth={2} />
+              {!isCollapsed && <span>Sair</span>}
+            </button>
           </div>
-        )}
-
-        {/* Separador */}
-        <div style={{ padding: '0 20px', margin: '8px 0' }}>
-          <div style={{ height: '1px', background: '#333' }} />
-        </div>
-
-        {/* Links de Ação */}
-        <div style={{ padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {/* Voltar à Central */}
-          <Link
-            href="/"
-            className={`
-              flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
-              ${isCollapsed ? 'justify-center p-2.5 w-full' : 'gap-3 px-4 py-2.5 w-full'}
-            `}
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontSize: '0.95rem',
-              fontWeight: 500,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              textDecoration: 'none',
-              height: '42px',
-            }}
-            title="Central de Dashboards"
-          >
-            <Home size={20} strokeWidth={2} />
-            {!isCollapsed && <span>Central de Dashboards</span>}
-          </Link>
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className={`
-              flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50
-              ${isCollapsed ? 'justify-center p-2.5 w-full' : 'gap-3 px-4 py-2.5 w-full'}
-            `}
-            style={{
-              fontFamily: 'Poppins, sans-serif',
-              fontSize: '0.95rem',
-              fontWeight: 500,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              height: '42px',
-              cursor: 'pointer',
-            }}
-            title={isCollapsed ? 'Sair' : undefined}
-          >
-            <LogOut size={20} strokeWidth={2} />
-            {!isCollapsed && <span>Sair</span>}
-          </button>
         </div>
       </aside>
 

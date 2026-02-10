@@ -571,9 +571,22 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
 
   // Dados filtrados SEM filtro de período (para histórico)
   const dadosSemFiltroPeriodo = useMemo(() => {
-    // IMPORTANTE: Só considerar fundos com baile "REALIZAR"
+    // FILTROS OBRIGATÓRIOS DE NEGÓCIO (mesmos da página de análises):
+    // 1. tipo_cliente_fundo = "FUNDO DE FORMATURA"
+    // 2. situacao_fundo diferente de "Rescindindo" e "Rescindido"
+    // 3. baile_a_realizar = "REALIZAR"
     let filteredData = dados.filter((row: any) => {
-      return row.baileARealizar === 'REALIZAR';
+      // Filtro 1: Apenas fundos de formatura
+      if (row.tipoClienteFundo !== 'FUNDO DE FORMATURA') return false;
+      
+      // Filtro 2: Excluir fundos rescindindo ou rescindidos
+      const situacao = (row.status || '').toUpperCase().trim();
+      if (situacao === 'RESCINDINDO' || situacao === 'RESCINDIDO') return false;
+      
+      // Filtro 3: Apenas fundos com baile a realizar
+      if (row.baileARealizar !== 'REALIZAR') return false;
+      
+      return true;
     });
 
     if (!filtros) return filteredData;
