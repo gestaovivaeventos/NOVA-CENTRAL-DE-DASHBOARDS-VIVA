@@ -13,6 +13,7 @@ export interface FiltrosState {
   isMetaInterna: boolean;
   
   // Filtros de seleção
+  maturidade: string[];
   unidades: string[];
   regionais: string[];
   ufs: string[];
@@ -38,6 +39,7 @@ export interface FiltrosState {
 
 // Opções disponíveis para cada filtro
 export interface FiltrosOpcoes {
+  maturidades: string[];
   unidades: string[];
   regionais: string[];
   ufs: string[];

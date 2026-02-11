@@ -20,6 +20,7 @@ interface FilterPanelProps {
   onFiltrosChange: (filtros: Partial<FiltrosState>) => void;
   paginaAtiva?: PaginaAtiva;
   showMetaToggle?: boolean;
+  showMaturidade?: boolean;
   showUnidades?: boolean;
   showRegionais?: boolean;
   showUFs?: boolean;
@@ -51,6 +52,7 @@ export default function FilterPanel({
   onFiltrosChange,
   paginaAtiva = 'metas',
   showMetaToggle = true,
+  showMaturidade,
   showUnidades = true,
   showRegionais = true,
   showUFs = true,
@@ -102,6 +104,9 @@ export default function FilterPanel({
   
   // Na página do funil e indicadores, não mostra toggle de meta (só aparece na página de metas)
   const shouldShowMetaToggle = showMetaToggle && isMetasPage;
+  
+  // Filtro de maturidade - Apenas página de Metas
+  const shouldShowMaturidade = showMaturidade ?? isMetasPage;
 
   // Estado para controlar se os filtros estão expandidos
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
@@ -238,6 +243,17 @@ export default function FilterPanel({
           onDataInicioChange={(dataInicio) => onFiltrosChange({ dataInicio })}
           onDataFimChange={(dataFim) => onFiltrosChange({ dataFim })}
         />
+
+        {/* Filtro de Maturidade - Acima de Unidades (apenas página Metas) */}
+        {shouldShowMaturidade && opcoes.maturidades && opcoes.maturidades.length > 0 && (
+          <MultiSelect
+            label="Maturidade"
+            options={opcoes.maturidades}
+            selectedValues={filtros.maturidade}
+            onChange={(maturidade) => onFiltrosChange({ maturidade })}
+            placeholder="Todas as maturidades"
+          />
+        )}
 
         {/* Filtro de Unidades */}
         {showUnidades && opcoes.unidades.length > 0 && (

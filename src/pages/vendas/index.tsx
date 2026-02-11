@@ -68,6 +68,7 @@ const INITIAL_FILTERS: FiltrosState = {
   dataInicio: initialDates.dataInicio,
   dataFim: initialDates.dataFim,
   isMetaInterna: false,
+  maturidade: [],
   unidades: [],
   regionais: [],
   ufs: [],
@@ -248,6 +249,27 @@ export default function Dashboard() {
     return new Map();
   }, [metasDataRaw, user]);
 
+  // Filtrar fundosData por maturidade (quando filtro aplicado)
+  const fundosDataFiltradosPorMaturidade = useMemo(() => {
+    if (!fundosData || fundosData.length === 0) return [];
+    if (!filtros.maturidade || filtros.maturidade.length === 0) return fundosData;
+    return fundosData.filter(d => filtros.maturidade.includes(d.maturidade));
+  }, [fundosData, filtros.maturidade]);
+
+  // Filtrar metasData por maturidade (quando filtro aplicado)
+  const metasDataFiltradoPorMaturidade = useMemo(() => {
+    if (!metasData || metasData.size === 0) return new Map();
+    if (!filtros.maturidade || filtros.maturidade.length === 0) return metasData;
+    
+    const filteredMetas = new Map();
+    metasData.forEach((value, key) => {
+      if (filtros.maturidade.includes(value.maturidade)) {
+        filteredMetas.set(key, value);
+      }
+    });
+    return filteredMetas;
+  }, [metasData, filtros.maturidade]);
+
   // Loading global - mostra tela de carregamento enquanto dados principais não carregaram
   const hasAnySalesData = salesData.length > 0;
   const hasAnyMetasData = metasData.size > 0;
@@ -300,6 +322,7 @@ export default function Dashboard() {
   const opcoesFiltros = useMemo<FiltrosOpcoes>(() => {
     if (!salesData || salesData.length === 0) {
       return {
+        maturidades: [],
         unidades: [],
         regionais: [],
         ufs: [],
@@ -315,14 +338,29 @@ export default function Dashboard() {
         tiposAdesao: [],
         tiposServico: [],
         tiposCliente: [],
+        tiposCurso: [],
         consultoresComerciais: [],
         indicacoesAdesao: [],
         instituicoes: [],
+        cursosFunil: [],
       };
     }
 
+    // Hierarquia de filtros: Maturidade > Período + Unidade
+    const hasMaturidadeFilter = filtros.maturidade && filtros.maturidade.length > 0;
+    
+    // Filtrar dados por maturidade primeiro (hierarquia superior)
+    const salesDataPorMaturidade = hasMaturidadeFilter 
+      ? salesData.filter(d => filtros.maturidade.includes(d.maturidade))
+      : salesData;
+    
+    const fundosDataPorMaturidade = hasMaturidadeFilter && fundosData
+      ? fundosData.filter(d => filtros.maturidade.includes(d.maturidade))
+      : fundosData || [];
+
     // Unidades sempre mostram todas as opções disponíveis (de vendas + funil)
-    const unidadesVendas = extrairUnidades(salesData);
+    // Mas filtradas por maturidade se houver filtro
+    const unidadesVendas = extrairUnidades(salesDataPorMaturidade);
     
     // Extrair unidades do funil e incluir "Sem Unidade" se houver leads sem unidade
     // Aplicar normalização para corrigir nomes inconsistentes
@@ -332,20 +370,23 @@ export default function Dashboard() {
     }))].filter(Boolean) : [];
     
     // Combinar todas as unidades (vendas + funil) sem duplicatas
-    const todasUnidades = [...new Set([...unidadesVendas, ...unidadesFunil])].sort((a, b) => {
-      // "Sem Unidade" vai para o final da lista
-      if (a === 'Sem Unidade') return 1;
-      if (b === 'Sem Unidade') return -1;
-      return a.localeCompare(b);
-    });
+    // Se há filtro de maturidade, usar unidades filtradas
+    const todasUnidades = hasMaturidadeFilter 
+      ? [...new Set(unidadesVendas)].sort((a, b) => a.localeCompare(b))
+      : [...new Set([...unidadesVendas, ...unidadesFunil])].sort((a, b) => {
+          // "Sem Unidade" vai para o final da lista
+          if (a === 'Sem Unidade') return 1;
+          if (b === 'Sem Unidade') return -1;
+          return a.localeCompare(b);
+        });
     
     // Hierarquia de filtros: Período + Unidade
     const hasUnidadeFilter = filtros.unidades.length > 0;
     const startDate = periodo?.startDate;
     const endDate = periodo?.endDate;
     
-    // Filtrar salesData por unidade e período
-    const salesDataFiltrado = salesData.filter(d => {
+    // Filtrar salesData por maturidade, unidade e período
+    const salesDataFiltrado = salesDataPorMaturidade.filter(d => {
       const unidadeNormalizada = normalizarNomeUnidade(d.nm_unidade || '');
       const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
       const unidadeMatch = !hasUnidadeFilter || filtrosNormalizados.includes(unidadeNormalizada);
@@ -356,8 +397,8 @@ export default function Dashboard() {
       return unidadeMatch && dataMatch;
     });
     
-    // Filtrar fundosData por unidade e período (usando dt_contrato)
-    const fundosDataFiltrado = fundosData ? fundosData.filter(d => {
+    // Filtrar fundosData por maturidade, unidade e período (usando dt_contrato)
+    const fundosDataFiltrado = fundosDataPorMaturidade.filter(d => {
       const unidadeNormalizada = normalizarNomeUnidade(d.nm_unidade || '');
       const filtrosNormalizados = filtros.unidades.map(u => normalizarNomeUnidade(u));
       const unidadeMatch = !hasUnidadeFilter || filtrosNormalizados.includes(unidadeNormalizada);
@@ -366,7 +407,7 @@ export default function Dashboard() {
          d.dt_contrato >= startDate && 
          d.dt_contrato <= endDate);
       return unidadeMatch && dataMatch;
-    }) : [];
+    });
     
     // Filtrar funilData por unidade e período (usando criado_em)
     const funilDataFiltrado = funilData ? funilData.filter(d => {
@@ -383,6 +424,11 @@ export default function Dashboard() {
     }) : [];
 
     return {
+      // Maturidades extraídas de todas as bases (sem filtro, pois é filtro de hierarquia superior)
+      maturidades: [...new Set([
+        ...salesData.map((d) => d.maturidade).filter(Boolean).filter(m => m !== 'N/A'),
+        ...fundosData.map((d) => d.maturidade).filter(Boolean).filter(m => m !== 'N/A'),
+      ])].sort(),
       // Unidades sempre mostram todas (é o filtro principal junto com período)
       unidades: todasUnidades,
       regionais: [],
@@ -415,7 +461,7 @@ export default function Dashboard() {
       indicacoesAdesao: [...new Set(salesDataFiltrado.map((d) => d.indicado_por).filter(Boolean))].sort(),
       instituicoes: [...new Set(salesDataFiltrado.map((d) => d.nm_instituicao).filter(Boolean))].sort(),
     };
-  }, [salesData, fundosData, funilData, filtros.unidades, periodo, parseFunilDateForFilter]);
+  }, [salesData, fundosData, funilData, filtros.maturidade, filtros.unidades, periodo, parseFunilDateForFilter]);
 
   // Limpar filtros secundários que não são mais válidos quando a unidade muda
   useEffect(() => {
@@ -535,6 +581,7 @@ export default function Dashboard() {
       // Filtros básicos
       dataInicio: periodo.startDate,
       dataFim: periodo.endDate,
+      maturidade: filtros.maturidade,
       unidades: filtros.unidades,
       
       // Filtros da página de Metas
@@ -553,6 +600,7 @@ export default function Dashboard() {
   }, [
     salesData, 
     periodo, 
+    filtros.maturidade,
     filtros.unidades, 
     filtros.cursos,
     filtros.fundos,
@@ -594,12 +642,12 @@ export default function Dashboard() {
     let metaVVRPosVendas = 0;
     let metaQAV = 0;
     
-    if (metasData && periodo?.startDate && periodo?.endDate) {
+    if (metasDataFiltradoPorMaturidade && periodo?.startDate && periodo?.endDate) {
       // Se há filtro de unidades, usar as unidades selecionadas
       // Se não há filtro, considerar TODAS as unidades que têm meta (como no original)
       const hasUnidadeFilter = filtros.unidades.length > 0;
       
-      metasData.forEach((metaInfo, chave) => {
+      metasDataFiltradoPorMaturidade.forEach((metaInfo, chave) => {
         const [unidadeMeta, anoMeta, mesMeta] = chave.split('|');
         
         if (!unidadeMeta) return;
@@ -639,7 +687,7 @@ export default function Dashboard() {
       metaQAV: metaQAV * multiplicador,
       metaTK: tk * 1.1 * multiplicador,
     };
-  }, [dadosFiltrados, metasData, filtros.isMetaInterna, filtros.unidades, opcoesFiltros.unidades, periodo]);
+  }, [dadosFiltrados, metasDataFiltradoPorMaturidade, filtros.isMetaInterna, filtros.unidades, opcoesFiltros.unidades, periodo]);
 
   // KPIs do ano anterior (mesmo período)
   const kpisAnoAnterior = useMemo(() => {
@@ -696,7 +744,7 @@ export default function Dashboard() {
     let metaVVRVendas = 0;
     let metaVVRPosVendas = 0;
 
-    if (metasData) {
+    if (metasDataFiltradoPorMaturidade) {
       // Se há filtro de unidades, usar as unidades selecionadas
       // Se não há filtro, considerar TODAS as unidades que têm meta (como no original)
       const hasUnidadeFilter = filtros.unidades.length > 0;
@@ -704,7 +752,7 @@ export default function Dashboard() {
         ? filtros.unidades.map((u: string) => normalizarNomeUnidade(u).toLowerCase().trim())
         : [];
       
-      metasData.forEach((metaInfo, chave) => {
+      metasDataFiltradoPorMaturidade.forEach((metaInfo, chave) => {
         const [unidadeMetaRaw, anoMeta, mesMeta] = chave.split('|');
         const unidadeMeta = normalizarNomeUnidade(unidadeMetaRaw || '').toLowerCase().trim();
         
@@ -752,7 +800,7 @@ export default function Dashboard() {
     filtros.indicacaoAdesao,
     filtros.instituicao,
     filtros.isMetaInterna, 
-    metasData, 
+    metasDataFiltradoPorMaturidade, 
     opcoesFiltros.unidades
   ]);
 
@@ -1103,12 +1151,12 @@ export default function Dashboard() {
     const porUnidade: Record<string, { valorRealizado: number; valorMeta: number }> = {};
     const multiplicador = filtros.isMetaInterna ? META_CONFIG.META_INTERNA_MULTIPLICADOR : 1;
     
-    // PRIMEIRO: Adicionar todas as unidades que têm meta no período
-    if (metasData && periodo?.startDate && periodo?.endDate) {
+    // PRIMEIRO: Adicionar todas as unidades que têm meta no período (filtrado por maturidade)
+    if (metasDataFiltradoPorMaturidade && periodo?.startDate && periodo?.endDate) {
       const startDate = periodo.startDate;
       const endDate = periodo.endDate;
       
-      metasData.forEach((meta, key) => {
+      metasDataFiltradoPorMaturidade.forEach((meta, key) => {
         const [unidadeRaw, anoStr, mesStr] = key.split('|');
         const unidade = normalizarNomeUnidade(unidadeRaw || '');
         const metaDate = new Date(parseInt(anoStr), parseInt(mesStr) - 1, 1);
@@ -1169,7 +1217,7 @@ export default function Dashboard() {
       }))
       .sort((a, b) => b.percentual - a.percentual)
       .map((item, index) => ({ ...item, posicao: index + 1 }));
-  }, [dadosFiltrados, metasData, filtros.isMetaInterna, filtros.unidades, periodo, tipoTabelaDados, periodoLabelTabela]);
+  }, [dadosFiltrados, metasDataFiltradoPorMaturidade, filtros.isMetaInterna, filtros.unidades, periodo, tipoTabelaDados, periodoLabelTabela]);
 
   // Dados para tabela de Atingimento Indicadores Operacionais (por unidade)
   const indicadoresOperacionaisPorUnidade = useMemo(() => {
@@ -1178,23 +1226,40 @@ export default function Dashboard() {
     const multiplicador = filtros.isMetaInterna ? META_CONFIG.META_INTERNA_MULTIPLICADOR : 1;
     const startDate = periodo.startDate;
     const endDate = periodo.endDate;
+    const hasMaturidadeFilter = filtros.maturidade && filtros.maturidade.length > 0;
 
-    // Obter lista de unidades dos dados filtrados, funil e fundos
+    // Obter lista de unidades - quando há filtro de maturidade, usar apenas unidades das metas filtradas E no período
     const unidadesSet = new Set<string>();
-    dadosFiltrados.forEach(d => {
-      if (d.nm_unidade) unidadesSet.add(d.nm_unidade);
-    });
     
-    if (funilData) {
-      funilData.forEach(d => {
+    if (hasMaturidadeFilter) {
+      // Com filtro de maturidade: usar apenas unidades que têm metas na maturidade selecionada E no período
+      metasDataFiltradoPorMaturidade.forEach((_, chave) => {
+        const [unidade, anoStr, mesStr] = chave.split('|');
+        if (!unidade || !anoStr || !mesStr) return;
+        
+        // Verificar se a meta está no período selecionado
+        const metaDate = new Date(parseInt(anoStr), parseInt(mesStr) - 1, 1);
+        if (metaDate >= startDate && metaDate <= endDate) {
+          unidadesSet.add(unidade);
+        }
+      });
+    } else {
+      // Sem filtro de maturidade: usar todas as unidades disponíveis
+      dadosFiltrados.forEach(d => {
         if (d.nm_unidade) unidadesSet.add(d.nm_unidade);
       });
-    }
-    
-    if (fundosData) {
-      fundosData.forEach(d => {
-        if (d.nm_unidade) unidadesSet.add(d.nm_unidade);
-      });
+      
+      if (funilData) {
+        funilData.forEach(d => {
+          if (d.nm_unidade) unidadesSet.add(d.nm_unidade);
+        });
+      }
+      
+      if (fundosDataFiltradosPorMaturidade) {
+        fundosDataFiltradosPorMaturidade.forEach(d => {
+          if (d.nm_unidade) unidadesSet.add(d.nm_unidade);
+        });
+      }
     }
 
     const unidades = Array.from(unidadesSet).sort();
@@ -1213,8 +1278,8 @@ export default function Dashboard() {
 
       // Buscar meta de leads para essa unidade no período
       let leadsMeta = 0;
-      if (metasData) {
-        metasData.forEach((metaInfo, chave) => {
+      if (metasDataFiltradoPorMaturidade) {
+        metasDataFiltradoPorMaturidade.forEach((metaInfo, chave) => {
           const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
@@ -1248,8 +1313,8 @@ export default function Dashboard() {
       }, 0);
 
       let reunioesMeta = 0;
-      if (metasData) {
-        metasData.forEach((metaInfo, chave) => {
+      if (metasDataFiltradoPorMaturidade) {
+        metasDataFiltradoPorMaturidade.forEach((metaInfo, chave) => {
           const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
@@ -1264,7 +1329,7 @@ export default function Dashboard() {
 
       // === CONTRATOS (MV) ===
       // Contar id_fundo em fundosData para essa unidade no período
-      const contratosResultado = (fundosData || []).filter(d => {
+      const contratosResultado = (fundosDataFiltradosPorMaturidade || []).filter(d => {
         if (d.nm_unidade !== unidade) return false;
         if (!d.id_fundo || d.id_fundo.toString().trim() === '') return false;
         if (!d.dt_contrato || !(d.dt_contrato instanceof Date)) return false;
@@ -1274,8 +1339,8 @@ export default function Dashboard() {
       }).length;
 
       let contratosMeta = 0;
-      if (metasData) {
-        metasData.forEach((metaInfo, chave) => {
+      if (metasDataFiltradoPorMaturidade) {
+        metasDataFiltradoPorMaturidade.forEach((metaInfo, chave) => {
           const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
@@ -1297,8 +1362,8 @@ export default function Dashboard() {
       ).length;
 
       let adesoesMeta = 0;
-      if (metasData) {
-        metasData.forEach((metaInfo, chave) => {
+      if (metasDataFiltradoPorMaturidade) {
+        metasDataFiltradoPorMaturidade.forEach((metaInfo, chave) => {
           const [u, ano, mes] = chave.split('|');
           if (u !== unidade) return;
           if (ano && mes) {
@@ -1319,7 +1384,7 @@ export default function Dashboard() {
         adesoesPercent: adesoesMeta > 0 ? adesoesResultado / adesoesMeta : 0,
       };
     });
-  }, [dadosFiltrados, funilData, fundosData, metasData, periodo, filtros.isMetaInterna, filtros.tipoCurso, parseFunilDate]);
+  }, [dadosFiltrados, funilData, fundosDataFiltradosPorMaturidade, metasDataFiltradoPorMaturidade, periodo, filtros.isMetaInterna, filtros.maturidade, filtros.tipoCurso, parseFunilDate]);
 
   // ========== DADOS PARA INDICADORES SECUNDÁRIOS ==========
   

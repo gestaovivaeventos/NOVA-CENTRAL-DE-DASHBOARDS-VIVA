@@ -80,6 +80,7 @@ export function useMetasData(): UseMetasDataReturn {
         metaLeads: headers.indexOf('meta_leads') !== -1 ? headers.indexOf('meta_leads') : 8,
         metaReunioes: headers.indexOf('meta_reunioes') !== -1 ? headers.indexOf('meta_reunioes') : 9,
         metaContratos: headers.indexOf('meta_contratos') !== -1 ? headers.indexOf('meta_contratos') : 10,
+        maturidade: headers.indexOf('maturidade') !== -1 ? headers.indexOf('maturidade') : 11, // Coluna L
       };
 
       // Processar dados
@@ -108,6 +109,7 @@ export function useMetasData(): UseMetasDataReturn {
           meta_leads: parseInt(row[indices.metaLeads]) || 0,
           meta_reunioes: parseInt(row[indices.metaReunioes]) || 0,
           meta_contratos: parseInt(row[indices.metaContratos]) || 0,
+          maturidade: indices.maturidade !== -1 ? row[indices.maturidade] || 'N/A' : 'N/A',
         });
       });
 
