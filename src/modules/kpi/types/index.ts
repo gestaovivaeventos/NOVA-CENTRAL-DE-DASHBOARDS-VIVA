@@ -10,6 +10,7 @@ export interface KpiData {
   meta: number;
   resultado: number | null;
   percentual: number;
+  atingimento: number | null;  // Coluna G - % ATINGIMENTO
   grandeza: string;
   tendencia: string;
   tipo: string;

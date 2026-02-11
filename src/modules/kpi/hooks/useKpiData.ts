@@ -61,10 +61,6 @@ export function useKpiData() {
 
       const processedData: KpiData[] = rows
         .slice(1)
-        .filter((row: string[]) => {
-          const nivelAcesso = row[kpiColumns.NIVEL_ACESSO]?.toString().trim().toUpperCase() || '';
-          return nivelAcesso !== 'GESTORES';
-        })
         .map((row: string[]) => {
           return {
             competencia: row[kpiColumns.COMPETENCIA] || '',
@@ -72,6 +68,7 @@ export function useKpiData() {
             kpi: row[kpiColumns.KPI] || '',
             meta: parseNumericValue(row[kpiColumns.META]),
             resultado: parseResultado(row[kpiColumns.RESULTADO]),
+            atingimento: parseResultado(row[kpiColumns.ATINGIMENTO]),
             percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
             grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
             tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
@@ -107,10 +104,6 @@ export async function fetchKpiData(): Promise<KpiData[]> {
 
   const processedData: KpiData[] = rows
     .slice(1)
-    .filter((row: string[]) => {
-      const nivelAcesso = row[kpiColumns.NIVEL_ACESSO]?.toString().trim().toUpperCase() || '';
-      return nivelAcesso !== 'GESTORES';
-    })
     .map((row: string[]) => {
       return {
         competencia: row[kpiColumns.COMPETENCIA] || '',
@@ -118,6 +111,7 @@ export async function fetchKpiData(): Promise<KpiData[]> {
         kpi: row[kpiColumns.KPI] || '',
         meta: parseNumericValue(row[kpiColumns.META]),
         resultado: parseResultado(row[kpiColumns.RESULTADO]),
+        atingimento: parseResultado(row[kpiColumns.ATINGIMENTO]),
         percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
         grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
         tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),

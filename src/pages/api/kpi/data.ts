@@ -18,11 +18,12 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
 
 // Mapeamento de colunas
 const COL_MAP = {
-  COMPETENCIA: 18,  // S
+  COMPETENCIA: 0,   // A - DATA
   TIME: 1,          // B
   KPI: 3,           // D
   META: 4,          // E
   RESULTADO: 5,     // F
+  ATINGIMENTO: 6,   // G - % ATINGIMENTO
   PERCENTUAL: 16,   // Q
   GRANDEZA: 9,      // J
   TENDENCIA: 15,    // P
@@ -52,12 +53,9 @@ async function fetchKpiData(): Promise<KpiData[]> {
 
   const processedData: KpiData[] = rows
     .slice(1) // Pular cabeçalho
-    .filter((row: string[]) => {
-      const nivelAcesso = row[COL_MAP.NIVEL_ACESSO]?.toString().trim().toUpperCase() || '';
-      return nivelAcesso !== 'GESTORES';
-    })
     .map((row: string[]) => {
       const resultadoCell = row[COL_MAP.RESULTADO];
+      const atingimentoCell = row[COL_MAP.ATINGIMENTO];
       return {
         competencia: row[COL_MAP.COMPETENCIA] || '',
         time: row[COL_MAP.TIME] || '',
@@ -66,6 +64,10 @@ async function fetchKpiData(): Promise<KpiData[]> {
         resultado:
           resultadoCell !== null && resultadoCell !== undefined && String(resultadoCell).trim() !== ''
             ? parseFloat(String(resultadoCell).replace(',', '.'))
+            : null,
+        atingimento:
+          atingimentoCell !== null && atingimentoCell !== undefined && String(atingimentoCell).trim() !== ''
+            ? parseFloat(String(atingimentoCell).replace(',', '.'))
             : null,
         percentual: parseFloat((row[COL_MAP.PERCENTUAL] || '0').replace(',', '.')),
         grandeza: (row[COL_MAP.GRANDEZA] || '').trim().toLowerCase(),
@@ -81,6 +83,12 @@ async function fetchKpiData(): Promise<KpiData[]> {
   return processedData;
 }
 
+// Exportar função para invalidar cache (usada pelo create.ts)
+export function invalidateKpiCache() {
+  cache = null;
+  console.log('[KPI Data] Cache invalidado');
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<KpiApiResponse>
@@ -90,6 +98,13 @@ export default async function handler(
   }
 
   try {
+    // Forçar refresh do cache se solicitado
+    const { refresh } = req.query;
+    if (refresh === 'true') {
+      cache = null;
+      console.log('[KPI Data] Cache forçado a atualizar');
+    }
+
     let data = await fetchKpiData();
     
     // Filtrar por time se especificado

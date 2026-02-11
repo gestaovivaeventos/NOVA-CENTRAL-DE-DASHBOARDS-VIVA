@@ -16,7 +16,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Chart } from 'react-chartjs-2';
 import { KpiData } from '../types';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { TrendingDown, TrendingUp, Pencil } from 'lucide-react';
 
 // Função para criar cor degradê (do claro para escuro) - igual ao OKR
 const createGradientColors = (baseColor: string): { light: string; dark: string } => {
@@ -64,6 +64,7 @@ interface KpiChartSectionProps {
   kpiName: string;
   data: KpiData[];
   accentColor: string;
+  onEdit?: () => void;
 }
 
 // Meses abreviados para formatação de labels
@@ -109,10 +110,24 @@ const formatValor = (valor: number | null, grandeza: string, minDecimals = 0): s
   }
 };
 
-// Formatar competência para exibição (03/2024 → mar/24)
+// Formatar competência para exibição (01/03/2024 → mar/24 ou 03/2024 → mar/24)
 const formatCompetencia = (comp: string): string => {
   if (!comp) return comp;
-  const [mes, ano] = comp.split('/');
+  const parts = comp.split('/');
+  let mes: string, ano: string;
+  
+  if (parts.length === 3) {
+    // Formato DD/MM/YYYY
+    mes = parts[1];
+    ano = parts[2];
+  } else if (parts.length === 2) {
+    // Formato MM/YYYY (fallback)
+    mes = parts[0];
+    ano = parts[1];
+  } else {
+    return comp;
+  }
+  
   const idx = parseInt(mes, 10) - 1;
   if (!isNaN(idx) && ano && mesesAbrev[idx]) {
     return `${mesesAbrev[idx]}/${ano.slice(-2)}`;
@@ -124,6 +139,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   kpiName,
   data,
   accentColor,
+  onEdit,
 }) => {
   // Ref para o chart e state para o gradiente
   const chartRef = useRef<ChartJS<'bar'>>(null);
@@ -149,8 +165,16 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
     return [...data].sort((a, b) => {
       const parseComp = (s: string) => {
         if (!s) return 0;
-        const [mes, ano] = s.split('/').map((x) => parseInt(x));
-        return (ano || 0) * 100 + (mes || 0);
+        const parts = s.split('/').map((x) => parseInt(x));
+        // Suporta DD/MM/YYYY e MM/YYYY
+        if (parts.length === 3) {
+          const [, mes, ano] = parts;
+          return (ano || 0) * 100 + (mes || 0);
+        } else if (parts.length === 2) {
+          const [mes, ano] = parts;
+          return (ano || 0) * 100 + (mes || 0);
+        }
+        return 0;
       };
       return parseComp(a.competencia) - parseComp(b.competencia);
     });
@@ -529,7 +553,19 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   return (
     <section className="kpi-time-section">
       <div className="kpi-header">
-        <h2>{kpiName}</h2>
+        <div className="flex items-center gap-3">
+          <h2>{kpiName}</h2>
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              title="Editar KPI"
+              style={{ color: accentColor }}
+            >
+              <Pencil size={18} />
+            </button>
+          )}
+        </div>
         <div 
           className="tendencia-badge"
           style={{
