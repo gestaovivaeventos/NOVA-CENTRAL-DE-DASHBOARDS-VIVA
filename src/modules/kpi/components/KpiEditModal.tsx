@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Save, AlertCircle, Pencil, Ban } from 'lucide-react';
+import { X, Save, AlertCircle, Pencil } from 'lucide-react';
 import { KpiData } from '../types';
 
 // Lista de meses
@@ -31,7 +31,6 @@ interface KpiEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: () => Promise<void>;
-  onInactivate?: () => void;
   kpiData: KpiData[];
   kpiName: string;
   accentColor?: string;
@@ -42,7 +41,6 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
   isOpen,
   onClose,
   onSave,
-  onInactivate,
   kpiData,
   kpiName,
   accentColor = '#ff6600',
@@ -321,15 +319,6 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
                 {grandeza === '%' && 'Informe os valores em porcentagem (ex: 85)'}
                 {grandeza === 'Número inteiro' && 'Informe valores inteiros (ex: 100)'}
               </p>
-
-              {/* Botão Inativar KPI */}
-              <button
-                type="button"
-                onClick={onInactivate}
-                className="mt-4 text-sm text-orange-400 hover:text-orange-300 hover:underline transition-colors"
-              >
-                Inativar KPI
-              </button>
             </div>
           )}
 

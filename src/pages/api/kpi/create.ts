@@ -41,6 +41,7 @@ const COL_INDEX = {
   GRANDEZA: 9,    // J
   TENDENCIA: 15,  // P
   COMPETENCIA: 18, // S - Competência (MM/YYYY)
+  SITUACAO_KPI: 32, // AG - Situação do KPI (Ativo/Inativo)
 };
 
 /**
@@ -141,8 +142,8 @@ function createRow(
   grandeza: string,
   tendencia: string
 ): (string | number)[] {
-  // Criar array com 31 colunas (até AE)
-  const row: (string | number)[] = new Array(31).fill('');
+  // Criar array com 33 colunas (até AG)
+  const row: (string | number)[] = new Array(33).fill('');
   
   // Processar valor da meta
   let metaValue: string | number = '';
@@ -172,6 +173,7 @@ function createRow(
   row[COL_INDEX.GRANDEZA] = grandeza;          // J - GRANDEZA
   row[COL_INDEX.TENDENCIA] = tendencia;        // P - TENDÊNCIA
   row[COL_INDEX.COMPETENCIA] = competenciaMesAno; // S - COMPETÊNCIA (MM/YYYY)
+  row[COL_INDEX.SITUACAO_KPI] = 'Ativo';       // AG - SITUAÇÃO KPI
   
   return row;
 }

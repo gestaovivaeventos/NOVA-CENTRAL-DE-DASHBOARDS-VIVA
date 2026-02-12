@@ -23,6 +23,11 @@ interface KpiFormModalProps {
   selectedTeam: string;
 }
 
+// Obter mês atual (formato '01', '02', etc)
+const getMesAtual = (): string => {
+  return (new Date().getMonth() + 1).toString().padStart(2, '0');
+};
+
 // Lista de meses
 const MESES = [
   { value: '01', label: 'Janeiro' },
@@ -74,7 +79,7 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<KpiFormData>({
     nome: '',
-    inicioMes: '',
+    inicioMes: getMesAtual(),
     inicioAno: new Date().getFullYear().toString(),
     terminoMes: '12',
     terminoAno: new Date().getFullYear().toString(),
@@ -87,6 +92,41 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const anos = useMemo(() => gerarAnos(), []);
+
+  // Limpar formulário quando o modal for fechado
+  useEffect(() => {
+    if (!isOpen) {
+      setFormData({
+        nome: '',
+        inicioMes: getMesAtual(),
+        inicioAno: new Date().getFullYear().toString(),
+        terminoMes: '12',
+        terminoAno: new Date().getFullYear().toString(),
+        tendencia: '',
+        grandeza: '',
+        metas: {},
+      });
+      setError(null);
+    }
+  }, [isOpen]);
+
+  // Filtrar meses disponíveis (a partir do mês atual para o ano atual)
+  const mesesDisponiveis = useMemo(() => {
+    const anoAtual = new Date().getFullYear().toString();
+    const mesAtual = parseInt(getMesAtual());
+    
+    if (formData.inicioAno === anoAtual) {
+      // Para o ano atual, mostrar apenas mêses a partir do atual
+      return MESES.filter((m) => parseInt(m.value) >= mesAtual);
+    }
+    // Para anos futuros, mostrar todos os meses
+    return MESES;
+  }, [formData.inicioAno]);
+
+  // Atualizar terminoAno quando inicioAno mudar
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, terminoAno: prev.inicioAno, terminoMes: '12' }));
+  }, [formData.inicioAno]);
 
   // Gerar lista de meses para as metas baseado no início e término
   const mesesMetas = useMemo(() => {
@@ -194,7 +234,7 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
       // Limpar formulário após sucesso
       setFormData({
         nome: '',
-        inicioMes: '',
+        inicioMes: getMesAtual(),
         inicioAno: new Date().getFullYear().toString(),
         terminoMes: '12',
         terminoAno: new Date().getFullYear().toString(),
@@ -272,7 +312,7 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
           </div>
 
           {/* Período - Início */}
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="mb-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Início do KPI <span className="text-red-400">*</span>
@@ -284,7 +324,7 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
                   className="flex-1 px-3 py-3 rounded-lg bg-dark-primary border border-gray-600 text-white focus:outline-none focus:border-orange-500"
                 >
                   <option value="">Mês</option>
-                  {MESES.map((mes) => (
+                  {mesesDisponiveis.map((mes) => (
                     <option key={mes.value} value={mes.value}>
                       {mes.label}
                     </option>
@@ -302,37 +342,9 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
                   ))}
                 </select>
               </div>
-            </div>
-
-            {/* Período - Término */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Término do KPI
-              </label>
-              <div className="flex gap-2">
-                <select
-                  value={formData.terminoMes}
-                  onChange={(e) => handleChange('terminoMes', e.target.value)}
-                  className="flex-1 px-3 py-3 rounded-lg bg-dark-primary border border-gray-600 text-white focus:outline-none focus:border-orange-500"
-                >
-                  {MESES.map((mes) => (
-                    <option key={mes.value} value={mes.value}>
-                      {mes.label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  value={formData.terminoAno}
-                  onChange={(e) => handleChange('terminoAno', e.target.value)}
-                  className="w-24 px-3 py-3 rounded-lg bg-dark-primary border border-gray-600 text-white focus:outline-none focus:border-orange-500"
-                >
-                  {anos.map((ano) => (
-                    <option key={ano} value={ano}>
-                      {ano}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                O KPI será criado do mês selecionado até dezembro/{formData.inicioAno}
+              </p>
             </div>
           </div>
 

@@ -182,13 +182,26 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
 
   const labels = sortedData.map((d) => d.competencia);
   const labelsFormatados = labels.map(formatCompetencia);
-  const metas = sortedData.map((d) => d.meta);
+  const situacoes = sortedData.map((d) => (d.situacao || 'Ativo').toString().trim().toUpperCase());
+  // Metas: null para meses inativos
+  const metas = sortedData.map((d, idx) => {
+    const situacao = (d.situacao || 'Ativo').toString().trim().toUpperCase();
+    if (situacao === 'INATIVO') return null;
+    return d.meta;
+  });
   const resultados = sortedData.map((d) => d.resultado);
   const percentuais = sortedData.map((d) => d.percentual);
   const grandezas = sortedData.map((d) => d.grandeza || '');
   const grandeza = grandezas[0] || '';
   const tendencia = sortedData[0]?.tendencia || '';
   const tipo = sortedData[0]?.tipo || '';
+
+  // Detectar primeiro mês inativo
+  const inativacaoInfo = useMemo(() => {
+    const idx = situacoes.findIndex(s => s === 'INATIVO');
+    if (idx === -1) return null;
+    return labelsFormatados[idx];
+  }, [situacoes, labelsFormatados]);
 
   // Calcular métricas para os cards laterais
 
@@ -555,6 +568,19 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
       <div className="kpi-header">
         <div className="flex items-center gap-3">
           <h2>{kpiName}</h2>
+          {inativacaoInfo && (
+            <span 
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
+              style={{ 
+                backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.3)'
+              }}
+              title={`KPI inativado a partir de ${inativacaoInfo}`}
+            >
+              Inativo a partir de {inativacaoInfo}
+            </span>
+          )}
           {onEdit && (
             <button
               onClick={onEdit}

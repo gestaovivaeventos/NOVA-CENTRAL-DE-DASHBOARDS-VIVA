@@ -14,6 +14,7 @@ export interface KpiData {
   grandeza: string;
   tendencia: string;
   tipo: string;
+  situacao: string;  // Coluna AG - SITUAÇÃO KPI (Ativo/Inativo)
 }
 
 // Tipos para Team

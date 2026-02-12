@@ -29,6 +29,7 @@ const COL_MAP = {
   TENDENCIA: 15,    // P
   TIPO: 29,         // AD
   NIVEL_ACESSO: 7,  // H
+  SITUACAO_KPI: 32, // AG - SITUAÇÃO KPI (Ativo/Inativo)
 };
 
 async function fetchKpiData(): Promise<KpiData[]> {
@@ -37,7 +38,7 @@ async function fetchKpiData(): Promise<KpiData[]> {
     return cache.data;
   }
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}?key=${API_KEY}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME + '!A:AG')}?key=${API_KEY}`;
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -73,6 +74,7 @@ async function fetchKpiData(): Promise<KpiData[]> {
         grandeza: (row[COL_MAP.GRANDEZA] || '').trim().toLowerCase(),
         tendencia: (row[COL_MAP.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[COL_MAP.TIPO] || '').toString().toUpperCase().trim(),
+        situacao: (row[COL_MAP.SITUACAO_KPI] || 'Ativo').toString().trim(),
       };
     })
     .filter((d: KpiData) => d.time && d.kpi && d.competencia);

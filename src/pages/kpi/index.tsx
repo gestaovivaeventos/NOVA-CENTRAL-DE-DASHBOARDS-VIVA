@@ -198,6 +198,45 @@ export default function KpiPage() {
     setAllKpiData(data);
   };
 
+  // Handler para inativar KPI
+  const handleInactivateKpi = async (kpiName: string, kpiDataList: KpiData[]) => {
+    if (!selectedTeam) {
+      alert('Selecione um time primeiro.');
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Tem certeza que deseja inativar o KPI "${kpiName}"?\n\nIsso marcará como "Inativo" todos os meses que ainda não possuem resultado.`
+    );
+
+    if (!confirmar) return;
+
+    try {
+      const response = await fetch('/api/kpi/inactivate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          team: selectedTeam,
+          kpiName: kpiName
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(result.message || 'KPI inativado com sucesso!');
+        // Recarregar dados
+        const data = await fetchKpiData();
+        setAllKpiData(data);
+      } else {
+        alert(`Erro ao inativar KPI: ${result.error}`);
+      }
+    } catch (error: any) {
+      console.error('Erro ao inativar KPI:', error);
+      alert('Erro ao inativar KPI. Tente novamente.');
+    }
+  };
+
   // Atualizar variável CSS de cor de destaque
   useEffect(() => {
     document.documentElement.style.setProperty('--current-accent-color', accentColor);
@@ -374,6 +413,7 @@ export default function KpiPage() {
                     kpiGroups={kpiGroups}
                     accentColor={accentColor}
                     onEdit={handleOpenEditModal}
+                    onInactivate={handleInactivateKpi}
                   />
                 )}
               </div>

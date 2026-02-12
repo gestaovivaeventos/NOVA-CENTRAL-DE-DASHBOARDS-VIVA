@@ -28,6 +28,7 @@ export const kpiColumns = {
   TENDENCIA: 15,    // P
   TIPO: 29,         // AD
   NIVEL_ACESSO: 7,  // H
+  SITUACAO_KPI: 32, // AG - SITUAÇÃO KPI (Ativo/Inativo)
 };
 
 // Mapeamento de times para logos

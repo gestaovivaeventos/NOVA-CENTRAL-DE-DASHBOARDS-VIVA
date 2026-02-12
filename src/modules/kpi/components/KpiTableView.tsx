@@ -2,13 +2,17 @@
 
 import React, { useMemo, useState } from 'react';
 import { KpiData } from '../types';
-import { Pencil, TrendingUp, TrendingDown, Info } from 'lucide-react';
+import { Pencil, TrendingUp, TrendingDown, Info, Ban } from 'lucide-react';
 
 interface KpiTableViewProps {
   kpiGroups: Record<string, KpiData[]>;
   accentColor: string;
   onEdit: (kpiName: string, data: KpiData[]) => void;
+  onInactivate?: (kpiName: string, data: KpiData[]) => void;
 }
+
+// Nomes dos meses abreviados
+const monthNames = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
 // Helper para formatar valor conforme grandeza
 const formatValue = (value: number | undefined | null, grandeza: string): string => {
@@ -74,15 +78,42 @@ const calculateAtingimento = (
   
   const tipoUpper = (tipo || '').toUpperCase().trim();
   
-  // Filtrar apenas itens com resultado preenchido para alguns cálculos
-  const itemsWithResult = data.filter(
-    (item) => item.resultado !== null && item.resultado !== undefined
-  );
+  // Helper para ordenar por competência
+  const parseComp = (s: string) => {
+    if (!s) return 0;
+    const parts = s.split('/').map((x) => parseInt(x));
+    if (parts.length === 3) {
+      const [, mes, ano] = parts;
+      return (ano || 0) * 100 + (mes || 0);
+    } else if (parts.length === 2) {
+      const [mes, ano] = parts;
+      return (ano || 0) * 100 + (mes || 0);
+    }
+    return 0;
+  };
+  
+  // Ordenar dados por competência
+  const sortedData = [...data].sort((a, b) => parseComp(a.competencia) - parseComp(b.competencia));
   
   if (tipoUpper === 'ACUMULADO NO ANO') {
-    // Soma de RESULTADO / Soma de META
-    const somaResultado = itemsWithResult.reduce((acc, item) => acc + (item.resultado || 0), 0);
-    const somaMeta = itemsWithResult.reduce((acc, item) => acc + item.meta, 0);
+    // Encontrar o último mês com resultado
+    let lastIndexWithResult = -1;
+    for (let i = sortedData.length - 1; i >= 0; i--) {
+      if (sortedData[i].resultado !== null && sortedData[i].resultado !== undefined) {
+        lastIndexWithResult = i;
+        break;
+      }
+    }
+    
+    if (lastIndexWithResult === -1) return 0;
+    
+    // Somar resultados e metas do início até o último mês com resultado
+    let somaResultado = 0;
+    let somaMeta = 0;
+    for (let i = 0; i <= lastIndexWithResult; i++) {
+      somaResultado += sortedData[i].resultado || 0;
+      somaMeta += sortedData[i].meta || 0;
+    }
     
     if (somaMeta === 0) return 0;
     
@@ -106,23 +137,6 @@ const calculateAtingimento = (
     return totalAtingimento / itemsWithAtingimento.length;
   } else {
     // EVOLUÇÃO ou outros - último valor da coluna % ATINGIMENTO
-    // Ordenar por competência para pegar o último
-    const sortedData = [...data].sort((a, b) => {
-      const parseComp = (s: string) => {
-        if (!s) return 0;
-        const parts = s.split('/').map((x) => parseInt(x));
-        if (parts.length === 3) {
-          const [, mes, ano] = parts;
-          return (ano || 0) * 100 + (mes || 0);
-        } else if (parts.length === 2) {
-          const [mes, ano] = parts;
-          return (ano || 0) * 100 + (mes || 0);
-        }
-        return 0;
-      };
-      return parseComp(a.competencia) - parseComp(b.competencia);
-    });
-    
     // Pegar o último item com atingimento preenchido
     for (let i = sortedData.length - 1; i >= 0; i--) {
       if (sortedData[i].atingimento !== null && sortedData[i].atingimento !== undefined) {
@@ -133,7 +147,7 @@ const calculateAtingimento = (
   }
 };
 
-const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onEdit }) => {
+const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onEdit, onInactivate }) => {
   // Estado para controlar qual tooltip está visível
   const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
 
@@ -147,20 +161,26 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
       const tipo = firstItem?.tipo || '';
       
       // Metas e resultados por mês
-      const monthlyData: Record<number, { meta: number; resultado: number | null }> = {};
+      const monthlyData: Record<number, { meta: number; resultado: number | null; situacao: string }> = {};
       
       data.forEach((item) => {
         const month = extractMonth(item.competencia);
         if (month > 0) {
+          const situacaoNormalizada = (item.situacao || 'Ativo').toString().trim().toUpperCase();
           monthlyData[month] = {
             meta: item.meta,
             resultado: item.resultado ?? null,
+            situacao: situacaoNormalizada,
           };
         }
       });
       
       // Calcular atingimento baseado no TIPO
       const calculatedAtingimento = calculateAtingimento(data, tipo, tendencia);
+      
+      // Verificar se tem meses inativos e encontrar o primeiro
+      const mesesOrdenados = Object.keys(monthlyData).map(Number).sort((a, b) => a - b);
+      const primeiroMesInativo = mesesOrdenados.find(m => monthlyData[m].situacao === 'INATIVO');
       
       return {
         kpiName,
@@ -170,6 +190,7 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
         monthlyData,
         avgAtingimento: calculatedAtingimento,
         data,
+        primeiroMesInativo,
       };
     });
   }, [kpiGroups]);
@@ -193,8 +214,8 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
 
   return (
     <div className="bg-dark-card rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
+        <table className="w-full text-sm" style={{ minWidth: '1200px' }}>
           <thead>
             <tr className="border-b border-gray-700">
               <th className="px-4 py-3 text-left text-gray-400 font-medium sticky left-0 bg-dark-card z-10 min-w-[200px]">
@@ -239,6 +260,11 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                       {row.kpiName}
                     </div>
                     <div className="text-xs text-gray-500">{row.grandeza}</div>
+                    {row.primeiroMesInativo && (
+                      <div className="text-xs text-red-400 mt-0.5">
+                        Inativo a partir de {monthNames[row.primeiroMesInativo - 1]}
+                      </div>
+                    )}
                   </td>
                   
                   {/* Tendência */}
@@ -260,6 +286,15 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                   {activeMonths.map((month) => {
                     const monthData = row.monthlyData[month];
                     if (!monthData) {
+                      return (
+                        <td key={month} className="px-3 py-3 text-center text-gray-600">
+                          -
+                        </td>
+                      );
+                    }
+                    
+                    // Se o mês está inativado, mostrar apenas "-"
+                    if (monthData.situacao === 'INATIVO') {
                       return (
                         <td key={month} className="px-3 py-3 text-center text-gray-600">
                           -
@@ -325,13 +360,24 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                   
                   {/* Ações */}
                   <td className="px-3 py-3 text-center">
-                    <button
-                      onClick={() => onEdit(row.kpiName, row.data)}
-                      className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
-                      title="Editar KPI"
-                    >
-                      <Pencil size={16} />
-                    </button>
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => onEdit(row.kpiName, row.data)}
+                        className="p-1.5 rounded-lg hover:bg-gray-700 transition-colors text-gray-400 hover:text-white"
+                        title="Editar KPI"
+                      >
+                        <Pencil size={16} />
+                      </button>
+                      {onInactivate && (
+                        <button
+                          onClick={() => onInactivate(row.kpiName, row.data)}
+                          className="p-1.5 rounded-lg hover:bg-red-900/50 transition-colors text-gray-400 hover:text-red-400"
+                          title="Inativar KPI"
+                        >
+                          <Ban size={16} />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
