@@ -281,6 +281,7 @@ export interface FiltrosDados {
   // Filtros básicos
   dataInicio?: Date;
   dataFim?: Date;
+  maturidade?: string[];
   unidades?: string[];
   
   // Filtros da página de Metas
@@ -315,6 +316,13 @@ export function filtrarDados(
     }
     if (filtros.dataFim && item.dt_cadastro_integrante > filtros.dataFim) {
       return false;
+    }
+    
+    // Filtro por maturidade
+    if (filtros.maturidade && filtros.maturidade.length > 0) {
+      if (!filtros.maturidade.includes(item.maturidade)) {
+        return false;
+      }
     }
     
     // Filtro por unidade

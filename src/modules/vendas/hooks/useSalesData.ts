@@ -53,6 +53,7 @@ export function useSalesData(): UseSalesDataReturn {
       nmInstituicao: headers.indexOf('nm_instituicao'),
       tipoCliente: headers.indexOf('tipo_cliente'),
       tipoCurso: headers.indexOf('tipo_curso'),
+      maturidade: headers.indexOf('maturidade') !== -1 ? headers.indexOf('maturidade') : 20, // Coluna U
     };
 
     // Verificar colunas essenciais
@@ -82,6 +83,7 @@ export function useSalesData(): UseSalesDataReturn {
           nm_instituicao: indices.nmInstituicao !== -1 ? row[indices.nmInstituicao] || 'N/A' : 'N/A',
           tipo_cliente: indices.tipoCliente !== -1 ? row[indices.tipoCliente] || 'N/A' : 'N/A',
           tipo_curso: indices.tipoCurso !== -1 ? row[indices.tipoCurso] || '' : '',
+          maturidade: indices.maturidade !== -1 ? row[indices.maturidade] || 'N/A' : 'N/A',
         } as Adesao;
       })
       .filter(Boolean) as Adesao[];

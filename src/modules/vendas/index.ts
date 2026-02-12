@@ -41,3 +41,6 @@ export * from './utils';
 
 // Config
 export * from './config/app.config';
+
+// Context
+export { VendasFiltersProvider, useVendasFilters, INITIAL_FILTERS } from './context';
