@@ -38,57 +38,7 @@ import { META_CONFIG, PAGES } from '@/modules/vendas/config/app.config';
 import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/types/filtros.types';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
-
-// Função para calcular datas do período "Este mês"
-function getInitialDates(): { dataInicio: string; dataFim: string } {
-  const hoje = new Date();
-  const year = hoje.getFullYear();
-  const month = hoje.getMonth();
-  
-  const inicioMes = new Date(year, month, 1);
-  const fimMes = new Date(year, month + 1, 0);
-  
-  const formatDate = (date: Date): string => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const y = date.getFullYear();
-    return `${y}-${m}-${day}`;
-  };
-  
-  return {
-    dataInicio: formatDate(inicioMes),
-    dataFim: formatDate(fimMes),
-  };
-}
-
-// Estado inicial dos filtros com datas do mês atual
-const initialDates = getInitialDates();
-const INITIAL_FILTERS: FiltrosState = {
-  periodoSelecionado: 'estemes',
-  dataInicio: initialDates.dataInicio,
-  dataFim: initialDates.dataFim,
-  isMetaInterna: false,
-  maturidade: [],
-  unidades: [],
-  regionais: [],
-  ufs: [],
-  cidades: [],
-  consultores: [],
-  supervisores: [],
-  formasPagamento: [],
-  cursos: [],
-  fundos: [],
-  origemLead: [],
-  segmentacaoLead: [],
-  etiquetas: [],
-  tipoAdesao: [],
-  tipoServico: [],
-  tipoCliente: [],
-  tipoCurso: [],
-  consultorComercial: [],
-  indicacaoAdesao: [],
-  instituicao: [],
-};
+import { useVendasFilters, INITIAL_FILTERS } from '@/modules/vendas/context';
 
 // Nomes dos meses abreviados
 const MESES_NOMES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
@@ -123,10 +73,9 @@ export default function Dashboard() {
   // O valor real do localStorage será carregado no useEffect
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [filtrosCarregados, setFiltrosCarregados] = useState(false);
   
-  // Inicializar filtros com valores padrão (será carregado do localStorage após montagem)
-  const [filtros, setFiltros] = useState<FiltrosState>(INITIAL_FILTERS);
+  // Usar filtros do contexto (persiste entre páginas via sessionStorage)
+  const { filtros, setFiltros, filtrosCarregados } = useVendasFilters();
   const [tipoGraficoVVR, setTipoGraficoVVR] = useState<'total' | 'vendas' | 'posvendas'>('total');
   const [tipoTabelaDados, setTipoTabelaDados] = useState<'total' | 'vendas' | 'posvendas'>('total');
 
@@ -137,14 +86,6 @@ export default function Dashboard() {
     if (saved === 'true') {
       setSidebarCollapsed(true);
     }
-  }, []);
-
-  // Não carregar filtros do localStorage - sempre iniciar com valores padrão (mês vigente)
-  useEffect(() => {
-    // Limpar filtros salvos anteriormente para garantir início limpo
-    localStorage.removeItem('dashboardFilters');
-    // Marcar que os filtros foram carregados
-    setFiltrosCarregados(true);
   }, []);
 
   // Inicializar unidades do franqueado automaticamente (se não tiver filtro salvo)
