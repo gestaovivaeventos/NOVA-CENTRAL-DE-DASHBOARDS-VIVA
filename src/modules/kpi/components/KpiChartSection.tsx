@@ -16,7 +16,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Chart } from 'react-chartjs-2';
 import { KpiData } from '../types';
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import { TrendingDown, TrendingUp, Pencil } from 'lucide-react';
 
 // Função para criar cor degradê (do claro para escuro) - igual ao OKR
 const createGradientColors = (baseColor: string): { light: string; dark: string } => {
@@ -64,6 +64,7 @@ interface KpiChartSectionProps {
   kpiName: string;
   data: KpiData[];
   accentColor: string;
+  onEdit?: () => void;
 }
 
 // Meses abreviados para formatação de labels
@@ -109,10 +110,24 @@ const formatValor = (valor: number | null, grandeza: string, minDecimals = 0): s
   }
 };
 
-// Formatar competência para exibição (03/2024 → mar/24)
+// Formatar competência para exibição (01/03/2024 → mar/24 ou 03/2024 → mar/24)
 const formatCompetencia = (comp: string): string => {
   if (!comp) return comp;
-  const [mes, ano] = comp.split('/');
+  const parts = comp.split('/');
+  let mes: string, ano: string;
+  
+  if (parts.length === 3) {
+    // Formato DD/MM/YYYY
+    mes = parts[1];
+    ano = parts[2];
+  } else if (parts.length === 2) {
+    // Formato MM/YYYY (fallback)
+    mes = parts[0];
+    ano = parts[1];
+  } else {
+    return comp;
+  }
+  
   const idx = parseInt(mes, 10) - 1;
   if (!isNaN(idx) && ano && mesesAbrev[idx]) {
     return `${mesesAbrev[idx]}/${ano.slice(-2)}`;
@@ -124,6 +139,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   kpiName,
   data,
   accentColor,
+  onEdit,
 }) => {
   // Ref para o chart e state para o gradiente
   const chartRef = useRef<ChartJS<'bar'>>(null);
@@ -149,8 +165,16 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
     return [...data].sort((a, b) => {
       const parseComp = (s: string) => {
         if (!s) return 0;
-        const [mes, ano] = s.split('/').map((x) => parseInt(x));
-        return (ano || 0) * 100 + (mes || 0);
+        const parts = s.split('/').map((x) => parseInt(x));
+        // Suporta DD/MM/YYYY e MM/YYYY
+        if (parts.length === 3) {
+          const [, mes, ano] = parts;
+          return (ano || 0) * 100 + (mes || 0);
+        } else if (parts.length === 2) {
+          const [mes, ano] = parts;
+          return (ano || 0) * 100 + (mes || 0);
+        }
+        return 0;
       };
       return parseComp(a.competencia) - parseComp(b.competencia);
     });
@@ -158,13 +182,26 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
 
   const labels = sortedData.map((d) => d.competencia);
   const labelsFormatados = labels.map(formatCompetencia);
-  const metas = sortedData.map((d) => d.meta);
+  const situacoes = sortedData.map((d) => (d.situacao || 'Ativo').toString().trim().toUpperCase());
+  // Metas: null para meses inativos
+  const metas = sortedData.map((d, idx) => {
+    const situacao = (d.situacao || 'Ativo').toString().trim().toUpperCase();
+    if (situacao === 'INATIVO') return null;
+    return d.meta;
+  });
   const resultados = sortedData.map((d) => d.resultado);
   const percentuais = sortedData.map((d) => d.percentual);
   const grandezas = sortedData.map((d) => d.grandeza || '');
   const grandeza = grandezas[0] || '';
   const tendencia = sortedData[0]?.tendencia || '';
   const tipo = sortedData[0]?.tipo || '';
+
+  // Detectar primeiro mês inativo
+  const inativacaoInfo = useMemo(() => {
+    const idx = situacoes.findIndex(s => s === 'INATIVO');
+    if (idx === -1) return null;
+    return labelsFormatados[idx];
+  }, [situacoes, labelsFormatados]);
 
   // Calcular métricas para os cards laterais
 
@@ -529,7 +566,32 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   return (
     <section className="kpi-time-section">
       <div className="kpi-header">
-        <h2>{kpiName}</h2>
+        <div className="flex items-center gap-3">
+          <h2>{kpiName}</h2>
+          {inativacaoInfo && (
+            <span 
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium"
+              style={{ 
+                backgroundColor: 'rgba(239, 68, 68, 0.15)', 
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.3)'
+              }}
+              title={`KPI inativado a partir de ${inativacaoInfo}`}
+            >
+              Inativo a partir de {inativacaoInfo}
+            </span>
+          )}
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
+              title="Editar KPI"
+              style={{ color: accentColor }}
+            >
+              <Pencil size={18} />
+            </button>
+          )}
+        </div>
         <div 
           className="tendencia-badge"
           style={{

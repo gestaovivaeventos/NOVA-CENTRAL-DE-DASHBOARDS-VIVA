@@ -18,16 +18,18 @@ const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
 
 // Mapeamento de colunas
 const COL_MAP = {
-  COMPETENCIA: 18,  // S
+  COMPETENCIA: 0,   // A - DATA
   TIME: 1,          // B
   KPI: 3,           // D
   META: 4,          // E
   RESULTADO: 5,     // F
+  ATINGIMENTO: 6,   // G - % ATINGIMENTO
   PERCENTUAL: 16,   // Q
   GRANDEZA: 9,      // J
   TENDENCIA: 15,    // P
   TIPO: 29,         // AD
   NIVEL_ACESSO: 7,  // H
+  SITUACAO_KPI: 32, // AG - SITUAÇÃO KPI (Ativo/Inativo)
 };
 
 async function fetchKpiData(): Promise<KpiData[]> {
@@ -36,7 +38,7 @@ async function fetchKpiData(): Promise<KpiData[]> {
     return cache.data;
   }
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME)}?key=${API_KEY}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME + '!A:AG')}?key=${API_KEY}`;
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -52,12 +54,9 @@ async function fetchKpiData(): Promise<KpiData[]> {
 
   const processedData: KpiData[] = rows
     .slice(1) // Pular cabeçalho
-    .filter((row: string[]) => {
-      const nivelAcesso = row[COL_MAP.NIVEL_ACESSO]?.toString().trim().toUpperCase() || '';
-      return nivelAcesso !== 'GESTORES';
-    })
     .map((row: string[]) => {
       const resultadoCell = row[COL_MAP.RESULTADO];
+      const atingimentoCell = row[COL_MAP.ATINGIMENTO];
       return {
         competencia: row[COL_MAP.COMPETENCIA] || '',
         time: row[COL_MAP.TIME] || '',
@@ -67,10 +66,15 @@ async function fetchKpiData(): Promise<KpiData[]> {
           resultadoCell !== null && resultadoCell !== undefined && String(resultadoCell).trim() !== ''
             ? parseFloat(String(resultadoCell).replace(',', '.'))
             : null,
+        atingimento:
+          atingimentoCell !== null && atingimentoCell !== undefined && String(atingimentoCell).trim() !== ''
+            ? parseFloat(String(atingimentoCell).replace(',', '.'))
+            : null,
         percentual: parseFloat((row[COL_MAP.PERCENTUAL] || '0').replace(',', '.')),
         grandeza: (row[COL_MAP.GRANDEZA] || '').trim().toLowerCase(),
         tendencia: (row[COL_MAP.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[COL_MAP.TIPO] || '').toString().toUpperCase().trim(),
+        situacao: (row[COL_MAP.SITUACAO_KPI] || 'Ativo').toString().trim(),
       };
     })
     .filter((d: KpiData) => d.time && d.kpi && d.competencia);
@@ -79,6 +83,12 @@ async function fetchKpiData(): Promise<KpiData[]> {
   cache = { data: processedData, timestamp: Date.now() };
 
   return processedData;
+}
+
+// Exportar função para invalidar cache (usada pelo create.ts)
+export function invalidateKpiCache() {
+  cache = null;
+  console.log('[KPI Data] Cache invalidado');
 }
 
 export default async function handler(
@@ -90,6 +100,13 @@ export default async function handler(
   }
 
   try {
+    // Forçar refresh do cache se solicitado
+    const { refresh } = req.query;
+    if (refresh === 'true') {
+      cache = null;
+      console.log('[KPI Data] Cache forçado a atualizar');
+    }
+
     let data = await fetchKpiData();
     
     // Filtrar por time se especificado

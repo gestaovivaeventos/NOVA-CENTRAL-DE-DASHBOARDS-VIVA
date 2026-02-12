@@ -48,11 +48,25 @@ export const formatarValor = (valor: number | null, grandeza: string, minDecimal
 };
 
 /**
- * Formatar competência para exibição (03/2024 → mar/24)
+ * Formatar competência para exibição (01/03/2024 → mar/24 ou 03/2024 → mar/24)
  */
 export const formatarCompetencia = (comp: string): string => {
   if (!comp) return comp;
-  const [mes, ano] = comp.split('/');
+  const parts = comp.split('/');
+  let mes: string, ano: string;
+  
+  if (parts.length === 3) {
+    // Formato DD/MM/YYYY
+    mes = parts[1];
+    ano = parts[2];
+  } else if (parts.length === 2) {
+    // Formato MM/YYYY (fallback)
+    mes = parts[0];
+    ano = parts[1];
+  } else {
+    return comp;
+  }
+  
   const idx = parseInt(mes, 10) - 1;
   if (!isNaN(idx) && ano && mesesAbrev[idx]) {
     return `${mesesAbrev[idx]}/${ano.slice(-2)}`;
@@ -67,8 +81,16 @@ export const ordenarPorCompetencia = <T extends { competencia: string }>(dados: 
   return [...dados].sort((a, b) => {
     const parseComp = (s: string) => {
       if (!s) return 0;
-      const [mes, ano] = s.split('/').map((x) => parseInt(x));
-      return (ano || 0) * 100 + (mes || 0);
+      const parts = s.split('/').map((x) => parseInt(x));
+      // Suporta DD/MM/YYYY e MM/YYYY
+      if (parts.length === 3) {
+        const [, mes, ano] = parts;
+        return (ano || 0) * 100 + (mes || 0);
+      } else if (parts.length === 2) {
+        const [mes, ano] = parts;
+        return (ano || 0) * 100 + (mes || 0);
+      }
+      return 0;
     };
     return parseComp(a.competencia) - parseComp(b.competencia);
   });
