@@ -7,7 +7,7 @@ import { config, kpiColumns } from '../config/app.config';
 import { KpiData } from '../types';
 
 const buildApiUrl = () =>
-  `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodeURIComponent(config.sheetName)}?key=${config.apiKey}`;
+  `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodeURIComponent(config.sheetName + '!A:AG')}?key=${config.apiKey}`;
 
 // Função para parsear valores numéricos (incluindo moeda)
 const parseNumericValue = (value: string | null | undefined): number => {
@@ -61,10 +61,6 @@ export function useKpiData() {
 
       const processedData: KpiData[] = rows
         .slice(1)
-        .filter((row: string[]) => {
-          const nivelAcesso = row[kpiColumns.NIVEL_ACESSO]?.toString().trim().toUpperCase() || '';
-          return nivelAcesso !== 'GESTORES';
-        })
         .map((row: string[]) => {
           return {
             competencia: row[kpiColumns.COMPETENCIA] || '',
@@ -72,10 +68,12 @@ export function useKpiData() {
             kpi: row[kpiColumns.KPI] || '',
             meta: parseNumericValue(row[kpiColumns.META]),
             resultado: parseResultado(row[kpiColumns.RESULTADO]),
+            atingimento: parseResultado(row[kpiColumns.ATINGIMENTO]),
             percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
             grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
             tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
             tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
+            situacao: (row[kpiColumns.SITUACAO_KPI] || 'Ativo').toString().trim(),
           };
         })
         .filter((d: KpiData) => d.time && d.kpi && d.competencia);
@@ -107,10 +105,6 @@ export async function fetchKpiData(): Promise<KpiData[]> {
 
   const processedData: KpiData[] = rows
     .slice(1)
-    .filter((row: string[]) => {
-      const nivelAcesso = row[kpiColumns.NIVEL_ACESSO]?.toString().trim().toUpperCase() || '';
-      return nivelAcesso !== 'GESTORES';
-    })
     .map((row: string[]) => {
       return {
         competencia: row[kpiColumns.COMPETENCIA] || '',
@@ -118,10 +112,12 @@ export async function fetchKpiData(): Promise<KpiData[]> {
         kpi: row[kpiColumns.KPI] || '',
         meta: parseNumericValue(row[kpiColumns.META]),
         resultado: parseResultado(row[kpiColumns.RESULTADO]),
+        atingimento: parseResultado(row[kpiColumns.ATINGIMENTO]),
         percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
         grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
         tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
+        situacao: (row[kpiColumns.SITUACAO_KPI] || 'Ativo').toString().trim(),
       };
     })
     .filter((d: KpiData) => d.time && d.kpi && d.competencia);

@@ -10,9 +10,11 @@ export interface KpiData {
   meta: number;
   resultado: number | null;
   percentual: number;
+  atingimento: number | null;  // Coluna G - % ATINGIMENTO
   grandeza: string;
   tendencia: string;
   tipo: string;
+  situacao: string;  // Coluna AG - SITUAÇÃO KPI (Ativo/Inativo)
 }
 
 // Tipos para Team

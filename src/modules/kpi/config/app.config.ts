@@ -17,16 +17,18 @@ export const config = {
 
 // Mapeamento de colunas (para uso nas APIs)
 export const kpiColumns = {
-  COMPETENCIA: 18,  // S
+  COMPETENCIA: 0,   // A - DATA (DD/MM/YYYY)
   TIME: 1,          // B
   KPI: 3,           // D
   META: 4,          // E
   RESULTADO: 5,     // F
+  ATINGIMENTO: 6,   // G - % ATINGIMENTO
   PERCENTUAL: 16,   // Q
   GRANDEZA: 9,      // J
   TENDENCIA: 15,    // P
   TIPO: 29,         // AD
   NIVEL_ACESSO: 7,  // H
+  SITUACAO_KPI: 32, // AG - SITUAÇÃO KPI (Ativo/Inativo)
 };
 
 // Mapeamento de times para logos

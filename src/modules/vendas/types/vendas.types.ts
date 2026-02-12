@@ -19,6 +19,7 @@ export interface Adesao {
   nm_instituicao: string;
   tipo_cliente: string;
   tipo_curso: string;
+  maturidade: string;
 }
 
 // Dados de um fundo/contrato
@@ -34,6 +35,7 @@ export interface Fundo {
   curso_fundo: string;
   tipo_cliente: string;
   tipo_curso: string;
+  maturidade: string;
 }
 
 // Dados de meta
@@ -45,6 +47,7 @@ export interface Meta {
   meta_leads: number;
   meta_contratos: number;
   meta_reunioes: number;
+  maturidade: string;
 }
 
 // Chave para metas: "Unidade-AAAA-MM"
