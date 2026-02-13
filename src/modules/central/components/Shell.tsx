@@ -86,6 +86,11 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas de Projetos são independentes (layout próprio)
+  if (router.pathname.startsWith('/projetos')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 

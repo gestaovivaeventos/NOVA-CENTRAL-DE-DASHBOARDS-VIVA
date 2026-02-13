@@ -38,6 +38,7 @@ const allDashboards: Dashboard[] = [
   { id: 'pex', name: 'Dashboard PEX', description: 'Visão geral do PEX', path: '/pex', icon: 'dashboard' },
   { id: 'carteira', name: 'Dashboard Carteira', description: 'Análise de fundos e franquias', path: '/carteira', icon: 'wallet' },
   { id: 'fluxo-projetado', name: 'Gestão de Caixa', description: 'Projeção de fluxo de caixa', path: '/fluxo-projetado', icon: 'fluxo' },
+  { id: 'projetos', name: 'Painel de Projetos', description: 'Gerenciamento de projetos', path: '/projetos', icon: 'projetos' },
 ];
 
 // Dashboards permitidos por nível de acesso
@@ -85,6 +86,11 @@ const dashboardIcons: Record<string, JSX.Element> = {
   fluxo: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  ),
+  projetos: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
     </svg>
   ),
 };

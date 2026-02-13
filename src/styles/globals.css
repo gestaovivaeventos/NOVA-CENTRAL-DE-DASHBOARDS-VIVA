@@ -47,6 +47,26 @@
   background: #FF6600;
 }
 
+/* Scrollbar customizada para Painel de Projetos */
+.projetos-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 6px;
+}
+
+.projetos-scroll::-webkit-scrollbar-track {
+  background: #1a1d21;
+  border-radius: 4px;
+}
+
+.projetos-scroll::-webkit-scrollbar-thumb {
+  background: #4a4d51;
+  border-radius: 4px;
+}
+
+.projetos-scroll::-webkit-scrollbar-thumb:hover {
+  background: #FF6600;
+}
+
 /* CSS Variables para módulo Vendas */
 :root {
   --bg-primary: #212529;
