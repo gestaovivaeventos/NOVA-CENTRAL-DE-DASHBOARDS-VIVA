@@ -28,6 +28,7 @@ interface TabelaResumoProps {
   filtrosMaturidades?: string[];
   filtrosMercados?: string[];
   filtrosPerformanceComercial?: string[];
+  dadosHistorico?: any[];
 }
 
 // Mapeamento dos nomes de indicadores da planilha para as colunas dos dados
@@ -59,7 +60,8 @@ export default function TabelaResumo({
   consultoresSelecionados = [],
   filtrosMaturidades = [],
   filtrosMercados = [],
-  filtrosPerformanceComercial = []
+  filtrosPerformanceComercial = [],
+  dadosHistorico = []
 }: TabelaResumoProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoTipo>(null);
@@ -90,6 +92,35 @@ export default function TabelaResumo({
   };
 
   // Filtrar dados pela QUARTER selecionada
+  // Meses que compõem cada quarter
+  const MESES_POR_QUARTER: Record<string, number[]> = {
+    '1': [1, 2, 3],
+    '2': [4, 5, 6],
+    '3': [7, 8, 9],
+    '4': [10, 11, 12]
+  };
+
+  // Helper para parsear data do histórico (DD/MM/AAAA)
+  const parseDateHist = (data: string): { dia: number; mes: number; ano: number } | null => {
+    if (!data) return null;
+    const partes = data.split('/');
+    if (partes.length < 3) return null;
+    const dia = parseInt(partes[0], 10);
+    const mes = parseInt(partes[1], 10);
+    const ano = parseInt(partes[2], 10);
+    if (isNaN(dia) || isNaN(mes) || isNaN(ano)) return null;
+    return { dia, mes, ano };
+  };
+
+  // Colunas numéricas que devem ser substituídas pelo histórico
+  const COLUNAS_NUMERICAS = [
+    'vvr_12_meses', 'vvr_carteira', 'indice_margem_entrega',
+    'Indice_endividamento', 'churn', 'nps_geral', 'reclame_aqui',
+    'conformidades', 'estrutura_organizacioanl', 'enps_rede',
+    'colaboradores_mais_1_ano', 'bonus'
+  ];
+
+  // Passo 1: Filtrar dados principais (dadosBrutos) — mantém quarter_ativo, consultor, etc.
   const dadosFiltrados = useMemo(() => {
     let resultado = dados;
     
@@ -97,11 +128,9 @@ export default function TabelaResumo({
       resultado = resultado.filter(item => item.quarter === quarterSelecionado);
     }
     
-    // Filtrar por cluster (suporta único ou múltiplos)
     if (clustersSelecionados && clustersSelecionados.length > 0) {
       resultado = resultado.filter(item => {
         if (!item.cluster) return false;
-        // Comparação case-insensitive
         return clustersSelecionados.some(c => 
           c.toUpperCase().trim() === item.cluster.toUpperCase().trim()
         );
@@ -110,41 +139,30 @@ export default function TabelaResumo({
       resultado = resultado.filter(item => item.cluster === clusterSelecionado);
     }
     
-    // Filtrar por consultor (suporta único ou múltiplos)
     if (consultoresSelecionados && consultoresSelecionados.length > 0 && nomeColunaConsultor) {
       resultado = resultado.filter(item => consultoresSelecionados.includes(item[nomeColunaConsultor]));
     } else if (consultorSelecionado && nomeColunaConsultor) {
       resultado = resultado.filter(item => item[nomeColunaConsultor] === consultorSelecionado);
     }
     
-    // Filtrar por unidades selecionadas (se houver)
     if (unidadesSelecionadas && unidadesSelecionadas.length > 0) {
       resultado = resultado.filter(item => unidadesSelecionadas.includes(item.nm_unidade));
     }
     
-    // Filtrar por maturidade (multi-select)
     if (filtrosMaturidades && filtrosMaturidades.length > 0) {
       resultado = resultado.filter(item => {
         const isFranquiaIncubacao = isIncubacao(item.cluster);
-        if (filtrosMaturidades.includes('Maduras') && filtrosMaturidades.includes('Incubação')) {
-          return true; // Ambos selecionados = todos
-        }
-        if (filtrosMaturidades.includes('Maduras')) {
-          return !isFranquiaIncubacao;
-        }
-        if (filtrosMaturidades.includes('Incubação')) {
-          return isFranquiaIncubacao;
-        }
+        if (filtrosMaturidades.includes('Maduras') && filtrosMaturidades.includes('Incubação')) return true;
+        if (filtrosMaturidades.includes('Maduras')) return !isFranquiaIncubacao;
+        if (filtrosMaturidades.includes('Incubação')) return isFranquiaIncubacao;
         return true;
       });
     }
     
-    // Filtrar por mercado (multi-select)
     if (filtrosMercados && filtrosMercados.length > 0) {
       resultado = resultado.filter(item => item.mercado && filtrosMercados.includes(item.mercado));
     }
     
-    // Filtrar por performance comercial (multi-select)
     if (filtrosPerformanceComercial && filtrosPerformanceComercial.length > 0) {
       resultado = resultado.filter(item => {
         if (!item.performance_comercial) return false;
@@ -157,11 +175,95 @@ export default function TabelaResumo({
     return resultado;
   }, [dados, quarterSelecionado, clusterSelecionado, clustersSelecionados, consultorSelecionado, consultoresSelecionados, nomeColunaConsultor, unidadesSelecionadas, filtrosMaturidades, filtrosMercados, filtrosPerformanceComercial]);
 
+  // Passo 2: Substituir dados numéricos pelo último mês disponível do histórico no quarter
+  // E pontuação com/sem bônus pela média dos meses do quarter
+  const dadosFiltradosComHistorico = useMemo(() => {
+    if (!dadosHistorico || dadosHistorico.length === 0 || !quarterSelecionado) return dadosFiltrados;
+
+    const mesesDoQuarter = MESES_POR_QUARTER[quarterSelecionado] || [];
+    if (mesesDoQuarter.length === 0) return dadosFiltrados;
+
+    // Encontrar todos os registros do quarter no histórico
+    const registrosQuarter = dadosHistorico.filter(item => {
+      const parsed = parseDateHist(item.data);
+      return parsed && mesesDoQuarter.includes(parsed.mes);
+    });
+
+    if (registrosQuarter.length === 0) return dadosFiltrados;
+
+    // Encontrar o último mês preenchido no quarter
+    let ultimoMes = 0;
+    let ultimoAno = 0;
+    registrosQuarter.forEach(item => {
+      const parsed = parseDateHist(item.data);
+      if (parsed) {
+        if (parsed.ano > ultimoAno || (parsed.ano === ultimoAno && parsed.mes > ultimoMes)) {
+          ultimoMes = parsed.mes;
+          ultimoAno = parsed.ano;
+        }
+      }
+    });
+
+    // Registros do último mês disponível, indexados por unidade
+    const registrosUltimoMes = new Map<string, any>();
+    registrosQuarter.forEach(item => {
+      const parsed = parseDateHist(item.data);
+      if (parsed && parsed.mes === ultimoMes && parsed.ano === ultimoAno) {
+        registrosUltimoMes.set(item.nm_unidade, item);
+      }
+    });
+
+    // Registros de todos os meses do quarter, agrupados por unidade (para média de pontuação)
+    const registrosPorUnidade = new Map<string, any[]>();
+    registrosQuarter.forEach(item => {
+      const lista = registrosPorUnidade.get(item.nm_unidade) || [];
+      lista.push(item);
+      registrosPorUnidade.set(item.nm_unidade, lista);
+    });
+
+    return dadosFiltrados.map(item => {
+      const historicoUltimoMes = registrosUltimoMes.get(item.nm_unidade);
+      if (!historicoUltimoMes) return item;
+
+      // Copiar item base (mantém quarter_ativo, consultor, etc.)
+      const novoItem = { ...item };
+
+      // Substituir colunas numéricas pelo último mês do histórico
+      COLUNAS_NUMERICAS.forEach(col => {
+        if (historicoUltimoMes[col] !== undefined && historicoUltimoMes[col] !== '') {
+          novoItem[col] = historicoUltimoMes[col];
+        }
+      });
+
+      // Pontuação com/sem bônus = média dos meses do quarter
+      const registrosUnidade = registrosPorUnidade.get(item.nm_unidade) || [];
+      if (registrosUnidade.length > 0) {
+        const valoresComBonus = registrosUnidade
+          .map(h => parseFloat((h.pontuacao_com_bonus || '0').toString().replace(',', '.')))
+          .filter(v => !isNaN(v) && v > 0);
+        if (valoresComBonus.length > 0) {
+          const media = valoresComBonus.reduce((s, v) => s + v, 0) / valoresComBonus.length;
+          novoItem.pontuacao_com_bonus = media.toFixed(2);
+        }
+
+        const valoresSemBonus = registrosUnidade
+          .map(h => parseFloat((h.pontuacao_sem_bonus || '0').toString().replace(',', '.')))
+          .filter(v => !isNaN(v) && v > 0);
+        if (valoresSemBonus.length > 0) {
+          const media = valoresSemBonus.reduce((s, v) => s + v, 0) / valoresSemBonus.length;
+          novoItem.pontuacao_sem_bonus = media.toFixed(2);
+        }
+      }
+
+      return novoItem;
+    });
+  }, [dadosFiltrados, dadosHistorico, quarterSelecionado]);
+
   // Ordenar dados
   const dadosOrdenados = useMemo(() => {
-    if (!colunaOrdenada || !direcaoOrdenacao) return dadosFiltrados;
+    if (!colunaOrdenada || !direcaoOrdenacao) return dadosFiltradosComHistorico;
 
-    return [...dadosFiltrados].sort((a, b) => {
+    return [...dadosFiltradosComHistorico].sort((a, b) => {
       let valorA = a[colunaOrdenada];
       let valorB = b[colunaOrdenada];
 
@@ -181,7 +283,7 @@ export default function TabelaResumo({
         return strB.localeCompare(strA);
       }
     });
-  }, [dadosFiltrados, colunaOrdenada, direcaoOrdenacao]);
+  }, [dadosFiltradosComHistorico, colunaOrdenada, direcaoOrdenacao]);
 
   // Função para ordenar
   const handleOrdenar = (coluna: string) => {

@@ -249,6 +249,10 @@ export default function ResultadosPage() {
   const [filtrosMercados, setFiltrosMercados] = useState<string[]>([]);
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
+  // Filtro independente de mês/ano para os cards de indicador
+  const [filtroMesIndicador, setFiltroMesIndicador] = useState<string>('');
+  // Filtro independente de quarter para a tabela resumo
+  const [filtroQuarterTabela, setFiltroQuarterTabela] = useState<string>('');
 
   // Helper para verificar se é franquia de incubação (baseado no cluster)
   const isIncubacao = (cluster: string | undefined) => {
@@ -352,12 +356,101 @@ export default function ResultadosPage() {
       .sort();
   }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, filtrosPerformanceComercial, filtrosMaturidades, filtrosMercados, nomeColunaConsultor]);
 
+  // ============================================
+  // HELPERS PARA CÁLCULOS COM HISTÓRICO
+  // ============================================
+
+  // Mapeamento de meses para quarters (trimestre padrão)
+  const MESES_POR_QUARTER: Record<string, number[]> = {
+    '1': [1, 2, 3],   // Q1 = Jan, Fev, Mar
+    '2': [4, 5, 6],   // Q2 = Abr, Mai, Jun
+    '3': [7, 8, 9],   // Q3 = Jul, Ago, Set
+    '4': [10, 11, 12], // Q4 = Out, Nov, Dez
+  };
+
+  const NOMES_MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
+  // Helper para parsear data do histórico (DD/MM/AAAA) e extrair mês e ano
+  const parseDateHistorico = (data: string): { mes: number; ano: number } | null => {
+    if (!data) return null;
+    const partes = data.split('/');
+    if (partes.length !== 3) return null;
+    const mes = parseInt(partes[1], 10);
+    const ano = parseInt(partes[2], 10);
+    if (isNaN(mes) || isNaN(ano)) return null;
+    return { mes, ano };
+  };
+
+  // Helper para obter pontuacao_com_bonus de um item do histórico
+  const parsePontuacaoHistorico = (item: any): number => {
+    const val = item?.pontuacao_com_bonus;
+    if (!val) return 0;
+    const num = parseFloat(String(val).replace(',', '.'));
+    return isNaN(num) ? 0 : num;
+  };
+
+  // Lista de meses disponíveis no histórico (para o filtro dos cards de indicador)
+  const listaMesesHistorico = useMemo(() => {
+    if (!dadosHistorico || dadosHistorico.length === 0) return [];
+    const mesesUnicos = new Set<string>();
+    dadosHistorico.forEach(item => {
+      const parsed = parseDateHistorico(item.data);
+      if (parsed) {
+        const label = `${NOMES_MESES[parsed.mes - 1]}/${parsed.ano}`;
+        mesesUnicos.add(label);
+      }
+    });
+    // Ordenar cronologicamente (mais recente primeiro)
+    return Array.from(mesesUnicos).sort((a, b) => {
+      const [mesA, anoA] = a.split('/');
+      const [mesB, anoB] = b.split('/');
+      const idxA = NOMES_MESES.indexOf(mesA);
+      const idxB = NOMES_MESES.indexOf(mesB);
+      if (anoA !== anoB) return parseInt(anoB) - parseInt(anoA);
+      return idxB - idxA;
+    });
+  }, [dadosHistorico]);
+
+  // Inicializar filtro de mês/ano dos indicadores
+  useEffect(() => {
+    if (listaMesesHistorico.length > 0 && !filtroMesIndicador) {
+      setFiltroMesIndicador(listaMesesHistorico[0]); // mais recente
+    }
+  }, [listaMesesHistorico, filtroMesIndicador]);
+
+  // Parsear o filtro de mês selecionado para mes/ano numéricos
+  const filtroMesAnoParsed = useMemo(() => {
+    if (!filtroMesIndicador) return null;
+    const [mesStr, anoStr] = filtroMesIndicador.split('/');
+    const mes = NOMES_MESES.indexOf(mesStr) + 1;
+    const ano = parseInt(anoStr, 10);
+    if (mes === 0 || isNaN(ano)) return null;
+    return { mes, ano };
+  }, [filtroMesIndicador]);
+
+  // Determinar o quarter correspondente ao mês selecionado (para obter pesos corretos)
+  const quarterDoMesSelecionado = useMemo(() => {
+    if (!filtroMesAnoParsed) return '1';
+    const mes = filtroMesAnoParsed.mes;
+    if (mes <= 3) return '1';
+    if (mes <= 6) return '2';
+    if (mes <= 9) return '3';
+    return '4';
+  }, [filtroMesAnoParsed]);
+
   // Inicializar filtros
   useEffect(() => {
     if (listaQuarters.length > 0 && !filtroQuarter) {
       setFiltroQuarter(listaQuarters[0]);
     }
   }, [listaQuarters, filtroQuarter]);
+
+  // Inicializar filtro independente de quarter para tabela resumo
+  useEffect(() => {
+    if (listaQuarters.length > 0 && !filtroQuarterTabela) {
+      setFiltroQuarterTabela(listaQuarters[0]);
+    }
+  }, [listaQuarters, filtroQuarterTabela]);
 
   useEffect(() => {
     if (listaUnidades.length > 0 && !filtroUnidade) {
@@ -419,68 +512,60 @@ export default function ResultadosPage() {
     return dadosBrutos.find(item => item.quarter === filtroQuarter && item.nm_unidade === unidadeEfetiva);
   }, [dadosBrutos, filtroQuarter, unidadeEfetiva]);
 
-  // Pontuação total (média de quarters válidos para premiação)
-  // Regra: Q4 do ano anterior + Q1, Q2, Q3 do ano atual
-  // Exceção 2026 (primeiro ano): apenas Q1, Q2, Q3
+  // Pontuação total = média de TODOS os meses vigentes do histórico
+  // Ciclo 2026 (primeiro ano): Jan a Set
+  // Próximos ciclos: Set a Set
   const pontuacaoTotal = useMemo(() => {
-    if (!dadosBrutos || !unidadeEfetiva) return 0;
+    if (!dadosHistorico || dadosHistorico.length === 0 || !unidadeEfetiva) return 0;
     
     const anoAtual = new Date().getFullYear();
-    const primeiroAnoPrograma = 2026;
     
-    // Quarters válidos para premiação
-    // Se for o primeiro ano (2026), considera apenas Q1, Q2, Q3
-    // Nos próximos anos, considerará Q4 do ano anterior + Q1, Q2, Q3 do ano atual
-    const quartersValidos = anoAtual === primeiroAnoPrograma 
-      ? ['1', '2', '3'] 
-      : ['1', '2', '3']; // TODO: Implementar lógica para incluir Q4 do ano anterior quando houver dados
+    // Filtrar registros da unidade no histórico
+    const registrosUnidade = dadosHistorico.filter(item => {
+      if (item.nm_unidade !== unidadeEfetiva) return false;
+      const parsed = parseDateHistorico(item.data);
+      if (!parsed) return false;
+      // Para 2026 (primeiro ano): meses 1-9 do ano 2026
+      if (anoAtual === 2026) {
+        return parsed.ano === 2026 && parsed.mes >= 1 && parsed.mes <= 9;
+      }
+      // Próximos anos: ciclo Set(anoAnterior) a Set(anoAtual) 
+      // Set do ano anterior (mes 9, ano-1) até Ago do ano atual (mes 8, ano) + Set do ano atual (mes 9, ano)
+      return (parsed.ano === anoAtual - 1 && parsed.mes >= 9) || 
+             (parsed.ano === anoAtual && parsed.mes <= 9);
+    });
     
-    // Filtrar dados da unidade que estão ativos E são quarters válidos
-    const dadosUnidadeAtivos = dadosBrutos.filter(item => 
-      item.nm_unidade === unidadeEfetiva && 
-      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo' &&
-      quartersValidos.includes(item.quarter?.toString())
-    );
+    if (registrosUnidade.length === 0) return 0;
     
-    const total = dadosUnidadeAtivos.reduce((sum, item) => {
-      const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
-      return sum + (isNaN(pont) ? 0 : pont);
-    }, 0);
-    
-    // Divisor é a quantidade de quarters ativos da unidade
-    return dadosUnidadeAtivos.length > 0 ? total / dadosUnidadeAtivos.length : 0;
-  }, [dadosBrutos, unidadeEfetiva]);
+    const soma = registrosUnidade.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
+    return soma / registrosUnidade.length;
+  }, [dadosHistorico, unidadeEfetiva]);
 
-  // Posição na Rede e no Cluster (baseado na média de quarters válidos para premiação)
-  // Usa dados completos da rede para calcular a posição real
+  // Posição na Rede e no Cluster (baseado na média de TODOS os meses vigentes do histórico)
   const posicoes = useMemo(() => {
-    if (!dadosRedeCompleta || dadosRedeCompleta.length === 0 || !unidadeEfetiva) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
+    if (!dadosHistorico || dadosHistorico.length === 0 || !unidadeEfetiva) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
     
     const anoAtual = new Date().getFullYear();
-    const primeiroAnoPrograma = 2026;
     
-    // Quarters válidos para premiação (mesma regra da pontuação total)
-    const quartersValidos = anoAtual === primeiroAnoPrograma 
-      ? ['1', '2', '3'] 
-      : ['1', '2', '3']; // TODO: Implementar Q4 do ano anterior
+    // Filtrar registros vigentes do histórico
+    const registrosVigentes = dadosHistorico.filter(item => {
+      const parsed = parseDateHistorico(item.data);
+      if (!parsed) return false;
+      if (anoAtual === 2026) {
+        return parsed.ano === 2026 && parsed.mes >= 1 && parsed.mes <= 9;
+      }
+      return (parsed.ano === anoAtual - 1 && parsed.mes >= 9) || 
+             (parsed.ano === anoAtual && parsed.mes <= 9);
+    });
     
-    // Filtrar dados de quarters ativos E válidos (usando dados completos da rede)
-    const dadosAtivos = dadosRedeCompleta.filter(item => 
-      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo' &&
-      quartersValidos.includes(item.quarter?.toString())
-    );
-    
-    // Calcular média de cada unidade (dividindo pela qtd de quarters ativos de cada unidade)
-    const unidadesUnicas = Array.from(new Set(dadosAtivos.map(item => item.nm_unidade)));
+    // Calcular média de cada unidade
+    const unidadesUnicas = Array.from(new Set(registrosVigentes.map(item => item.nm_unidade)));
     
     const mediasPorUnidade = unidadesUnicas.map(unidade => {
-      const dadosUnidade = dadosAtivos.filter(item => item.nm_unidade === unidade);
-      const total = dadosUnidade.reduce((sum, item) => {
-        const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
-        return sum + (isNaN(pont) ? 0 : pont);
-      }, 0);
-      const media = dadosUnidade.length > 0 ? total / dadosUnidade.length : 0;
-      const cluster = dadosUnidade[0]?.cluster || '';
+      const registros = registrosVigentes.filter(item => item.nm_unidade === unidade);
+      const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
+      const media = registros.length > 0 ? soma / registros.length : 0;
+      const cluster = registros[0]?.cluster || '';
       return { unidade, media, cluster };
     });
     
@@ -496,50 +581,75 @@ export default function ResultadosPage() {
     const totalCluster = rankingCluster.length;
     
     return { posicaoRede, totalRede, posicaoCluster, totalCluster };
-  }, [dadosRedeCompleta, unidadeEfetiva]);
+  }, [dadosHistorico, unidadeEfetiva]);
 
-  // Pontuações por quarter (apenas quarters ativos) com posições
+  // Pontuações por quarter = média dos meses do quarter (do HISTÓRICO) com posições
   const pontuacoesPorQuarter = useMemo(() => {
-    if (!dadosBrutos || !unidadeEfetiva) return [];
+    if (!dadosHistorico || dadosHistorico.length === 0 || !unidadeEfetiva) {
+      return ['1', '2', '3', '4'].map(quarter => ({
+        quarter, pontuacao: 0, ativo: false, posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0
+      }));
+    }
+    
+    const anoAtual = new Date().getFullYear();
     
     return ['1', '2', '3', '4'].map(quarter => {
-      const item = dadosBrutos.find(d => d.quarter === quarter && d.nm_unidade === unidadeEfetiva);
-      if (!item) return { quarter, pontuacao: 0, ativo: false, posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
+      const mesesDoQuarter = MESES_POR_QUARTER[quarter];
       
-      // Verificar se o quarter está ativo
-      const quarterAtivo = (item.quarter_ativo || '').toString().toLowerCase() === 'ativo';
+      // Verificar se o quarter está ativo nos dados brutos
+      const itemBruto = dadosBrutos?.find(d => d.quarter === quarter && d.nm_unidade === unidadeEfetiva);
+      const quarterAtivo = itemBruto ? (itemBruto.quarter_ativo || '').toString().toLowerCase() === 'ativo' : false;
       
-      const pont = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.'));
+      // Filtrar meses do histórico para este quarter e unidade
+      const registrosMesesQuarter = dadosHistorico.filter(item => {
+        if (item.nm_unidade !== unidadeEfetiva) return false;
+        const parsed = parseDateHistorico(item.data);
+        if (!parsed) return false;
+        return parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
+      });
       
-      // Calcular posições para este quarter usando dados completos da rede
+      // Média dos meses do quarter
+      const somaQuarter = registrosMesesQuarter.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
+      const mediaQuarter = registrosMesesQuarter.length > 0 ? somaQuarter / registrosMesesQuarter.length : 0;
+      
+      // Calcular posições para este quarter usando dados do histórico (todas as unidades)
       let posicaoRede = 0, totalRede = 0, posicaoCluster = 0, totalCluster = 0;
       
-      if (quarterAtivo && dadosRedeCompleta && dadosRedeCompleta.length > 0) {
-        const dadosQuarter = dadosRedeCompleta.filter(d => d.quarter === quarter);
+      if (quarterAtivo) {
+        // Todas as unidades com dados neste quarter
+        const todasUnidadesQuarter = Array.from(new Set(
+          dadosHistorico
+            .filter(item => {
+              const parsed = parseDateHistorico(item.data);
+              return parsed && parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
+            })
+            .map(item => item.nm_unidade)
+        ));
         
-        // Filtrar apenas itens com quarter ativo para o ranking
-        const dadosQuarterAtivo = dadosQuarter.filter(d => 
-          (d.quarter_ativo || '').toString().toLowerCase() === 'ativo'
-        );
+        const mediasQuarter = todasUnidadesQuarter.map(unidade => {
+          const registros = dadosHistorico.filter(item => {
+            if (item.nm_unidade !== unidade) return false;
+            const parsed = parseDateHistorico(item.data);
+            return parsed && parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
+          });
+          const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
+          const media = registros.length > 0 ? soma / registros.length : 0;
+          const cluster = registros[0]?.cluster || '';
+          return { unidade, media, cluster };
+        }).sort((a, b) => b.media - a.media);
         
-        const rankingRede = dadosQuarterAtivo.map(d => ({
-          unidade: d.nm_unidade,
-          pontuacao: parseFloat((d['pontuacao_com_bonus'] || '0').toString().replace(',', '.')),
-          cluster: d.cluster
-        })).sort((a, b) => b.pontuacao - a.pontuacao);
+        posicaoRede = mediasQuarter.findIndex(d => d.unidade === unidadeEfetiva) + 1;
+        totalRede = mediasQuarter.length;
         
-        posicaoRede = rankingRede.findIndex(d => d.unidade === unidadeEfetiva) + 1;
-        totalRede = rankingRede.length;
-        
-        const clusterUnidade = item.cluster || '';
-        const rankingCluster = rankingRede.filter(d => d.cluster === clusterUnidade);
+        const clusterUnidade = mediasQuarter.find(d => d.unidade === unidadeEfetiva)?.cluster || '';
+        const rankingCluster = mediasQuarter.filter(d => d.cluster === clusterUnidade);
         posicaoCluster = rankingCluster.findIndex(d => d.unidade === unidadeEfetiva) + 1;
         totalCluster = rankingCluster.length;
       }
       
       return { 
         quarter, 
-        pontuacao: isNaN(pont) ? 0 : pont, 
+        pontuacao: mediaQuarter, 
         ativo: quarterAtivo,
         posicaoRede,
         totalRede,
@@ -547,29 +657,32 @@ export default function ResultadosPage() {
         totalCluster
       };
     });
-  }, [dadosBrutos, unidadeEfetiva, dadosRedeCompleta]);
+  }, [dadosHistorico, dadosBrutos, unidadeEfetiva]);
 
-  // Indicadores
+  // Indicadores - Agora usa dados do HISTÓRICO filtrados pelo mês/ano selecionado
   const indicadores = useMemo(() => {
-    if (!itemSelecionado || !dadosBrutos) return [];
-    
-    // Verificar se o quarter está ativo
-    const quarterAtivo = (itemSelecionado.quarter_ativo || '').toString().toLowerCase() === 'ativo';
+    if (!unidadeEfetiva || !dadosHistorico || dadosHistorico.length === 0 || !filtroMesAnoParsed) return [];
     
     const parseValor = (valor: any): number => {
       if (!valor) return 0;
       return parseFloat(valor.toString().replace(',', '.')) || 0;
     };
 
-    // Dados filtrados do usuário (para sua visualização)
-    const dadosFiltrados = dadosBrutos.filter(item => item.quarter === filtroQuarter);
-    
-    // Dados completos da rede (para comparações reais de melhor da rede/cluster)
-    const dadosRedeFiltradosQuarter = dadosRedeCompleta.filter(item => item.quarter === filtroQuarter);
-    const cluster = itemSelecionado.cluster;
-    const dadosClusterCompleto = dadosRedeFiltradosQuarter.filter(item => item.cluster === cluster);
+    // Filtrar dados do histórico pelo mês/ano selecionado
+    const dadosMesSelecionado = dadosHistorico.filter(item => {
+      const parsed = parseDateHistorico(item.data);
+      return parsed && parsed.mes === filtroMesAnoParsed.mes && parsed.ano === filtroMesAnoParsed.ano;
+    });
 
-    // Função para obter peso dinâmico do contexto de parâmetros
+    // Item da unidade selecionada nesse mês
+    const itemHistoricoUnidade = dadosMesSelecionado.find(item => item.nm_unidade === unidadeEfetiva);
+    if (!itemHistoricoUnidade) return [];
+
+    // Dados completos da rede nesse mês
+    const cluster = itemHistoricoUnidade.cluster;
+    const dadosClusterMes = dadosMesSelecionado.filter(item => item.cluster === cluster);
+
+    // Função para obter peso dinâmico - usa o quarter correspondente ao mês selecionado
     const obterPesoDinamico = (nomeIndicador: string): number => {
       if (!parametrosData?.pesos || parametrosData.pesos.length === 0) return 0;
       
@@ -578,9 +691,8 @@ export default function ResultadosPage() {
       );
       if (!indicadorPeso) return 0;
       
-      // Selecionar o peso do quarter correto
       let pesoStr = '0';
-      switch (filtroQuarter) {
+      switch (quarterDoMesSelecionado) {
         case '1': pesoStr = indicadorPeso.quarter1; break;
         case '2': pesoStr = indicadorPeso.quarter2; break;
         case '3': pesoStr = indicadorPeso.quarter3; break;
@@ -725,30 +837,22 @@ export default function ResultadosPage() {
         info => info.indicador.toUpperCase().trim() === ind.indicadorPlanilha.toUpperCase().trim()
       );
       
-      // Se quarter inativo, todos os valores zerados
-      const pontuacaoUnidade = quarterAtivo ? parseValor(itemSelecionado[ind.coluna]) : 0;
+      // Valor do indicador da unidade no mês selecionado (do HISTÓRICO)
+      const pontuacaoUnidade = parseValor(itemHistoricoUnidade[ind.coluna]);
       
       // Calcular percentual de atingimento (pontuação / (peso * 100) * 100)
       const tetoMaximo = peso * 100;
       const percentualAtingimento = tetoMaximo > 0 ? (pontuacaoUnidade / tetoMaximo) * 100 : 0;
       
-      // Usar dados completos da rede para comparações (não os filtrados por permissão)
-      const valoresRede = quarterAtivo 
-        ? dadosRedeFiltradosQuarter.map(item => parseValor(item[ind.coluna])) 
-        : [];
+      // Melhor da rede (todos os dados do mês selecionado)
+      const valoresRede = dadosMesSelecionado.map(item => parseValor(item[ind.coluna]));
       const melhorRede = valoresRede.length > 0 ? Math.max(...valoresRede) : 0;
-      const itemMelhorRede = quarterAtivo 
-        ? dadosRedeFiltradosQuarter.find(item => parseValor(item[ind.coluna]) === melhorRede) 
-        : null;
+      const itemMelhorRede = dadosMesSelecionado.find(item => parseValor(item[ind.coluna]) === melhorRede);
       
-      // Usar dados completos do cluster para comparações
-      const valoresCluster = quarterAtivo 
-        ? dadosClusterCompleto.map(item => parseValor(item[ind.coluna])) 
-        : [];
+      // Melhor do cluster (dados do cluster no mês selecionado)
+      const valoresCluster = dadosClusterMes.map(item => parseValor(item[ind.coluna]));
       const melhorCluster = valoresCluster.length > 0 ? Math.max(...valoresCluster) : 0;
-      const itemMelhorCluster = quarterAtivo 
-        ? dadosClusterCompleto.find(item => parseValor(item[ind.coluna]) === melhorCluster) 
-        : null;
+      const itemMelhorCluster = dadosClusterMes.find(item => parseValor(item[ind.coluna]) === melhorCluster);
 
       return {
         ...ind,
@@ -759,12 +863,11 @@ export default function ResultadosPage() {
         melhorPontuacaoCluster: melhorCluster,
         unidadeMelhorRede: itemMelhorRede?.nm_unidade || '-',
         unidadeMelhorCluster: itemMelhorCluster?.nm_unidade || '-',
-        // Usar dados da planilha se disponíveis, senão usar tooltip padrão
         resumo: indicadorInfo?.resumo || '',
         calculo: indicadorInfo?.calculo || ''
       };
     });
-  }, [itemSelecionado, dadosBrutos, dadosRedeCompleta, filtroQuarter, parametrosData?.pesos, parametrosData?.indicadoresInfo]);
+  }, [dadosHistorico, unidadeEfetiva, filtroMesAnoParsed, quarterDoMesSelecionado, parametrosData?.pesos, parametrosData?.indicadoresInfo]);
 
   // Loading
   if (loading) {
@@ -963,10 +1066,10 @@ export default function ResultadosPage() {
                   fontWeight: 700,
                   margin: 0
                 }}>
-                  Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+                  Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarterTabela}º Quarter)</span>
                 </h2>
                 
-                {/* Seletor de Quarter */}
+                {/* Seletor de Quarter independente */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -990,13 +1093,13 @@ export default function ResultadosPage() {
                     {listaQuarters.map((q) => (
                       <button
                         key={q}
-                        onClick={() => setFiltroQuarter(q)}
+                        onClick={() => setFiltroQuarterTabela(q)}
                         style={{
                           padding: '8px 16px',
                           borderRadius: '6px',
                           border: 'none',
-                          backgroundColor: filtroQuarter === q ? '#FF6600' : 'transparent',
-                          color: filtroQuarter === q ? '#fff' : '#adb5bd',
+                          backgroundColor: filtroQuarterTabela === q ? '#FF6600' : 'transparent',
+                          color: filtroQuarterTabela === q ? '#fff' : '#adb5bd',
                           fontSize: '0.9rem',
                           fontWeight: 600,
                           cursor: 'pointer',
@@ -1004,13 +1107,13 @@ export default function ResultadosPage() {
                           fontFamily: 'Poppins, sans-serif'
                         }}
                         onMouseEnter={(e) => {
-                          if (filtroQuarter !== q) {
+                          if (filtroQuarterTabela !== q) {
                             e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
                             e.currentTarget.style.color = '#FF6600';
                           }
                         }}
                         onMouseLeave={(e) => {
-                          if (filtroQuarter !== q) {
+                          if (filtroQuarterTabela !== q) {
                             e.currentTarget.style.backgroundColor = 'transparent';
                             e.currentTarget.style.color = '#adb5bd';
                           }
@@ -1025,7 +1128,7 @@ export default function ResultadosPage() {
               <Card>
                 <TabelaResumo
                   dados={dadosBrutos || []}
-                  quarterSelecionado={filtroQuarter}
+                  quarterSelecionado={filtroQuarterTabela}
                   clustersSelecionados={filtrosClusters}
                   consultoresSelecionados={filtrosConsultores}
                   nomeColunaConsultor={nomeColunaConsultor}
@@ -1034,6 +1137,7 @@ export default function ResultadosPage() {
                   filtrosMaturidades={filtrosMaturidades}
                   filtrosMercados={filtrosMercados}
                   filtrosPerformanceComercial={filtrosPerformanceComercial}
+                  dadosHistorico={dadosHistorico}
                 />
               </Card>
             </>
@@ -1305,10 +1409,14 @@ export default function ResultadosPage() {
                 fontWeight: 700,
                 margin: 0
               }}>
-                Performance por Indicador <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+                Performance por Indicador {filtroMesAnoParsed && (
+                  <span style={{ color: '#FF6600' }}>
+                    ({NOMES_MESES[filtroMesAnoParsed.mes - 1]}/{filtroMesAnoParsed.ano})
+                  </span>
+                )}
               </h2>
               
-              {/* Seletor de Quarter */}
+              {/* Seletor de Mês/Ano */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -1320,48 +1428,31 @@ export default function ResultadosPage() {
                   fontWeight: 500,
                   marginRight: '4px'
                 }}>
-                  Quarter:
+                  Mês:
                 </span>
-                <div style={{
-                  display: 'flex',
-                  backgroundColor: '#1a1d21',
-                  borderRadius: '8px',
-                  padding: '4px',
-                  gap: '4px'
-                }}>
-                  {listaQuarters.map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => setFiltroQuarter(q)}
-                      style={{
-                        padding: '8px 16px',
-                        borderRadius: '6px',
-                        border: 'none',
-                        backgroundColor: filtroQuarter === q ? '#FF6600' : 'transparent',
-                        color: filtroQuarter === q ? '#fff' : '#adb5bd',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        fontFamily: 'Poppins, sans-serif'
-                      }}
-                      onMouseEnter={(e) => {
-                        if (filtroQuarter !== q) {
-                          e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
-                          e.currentTarget.style.color = '#FF6600';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (filtroQuarter !== q) {
-                          e.currentTarget.style.backgroundColor = 'transparent';
-                          e.currentTarget.style.color = '#adb5bd';
-                        }
-                      }}
-                    >
-                      {q}º
-                    </button>
+                <select
+                  value={filtroMesIndicador}
+                  onChange={(e) => setFiltroMesIndicador(e.target.value)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: '1px solid #495057',
+                    backgroundColor: '#1a1d21',
+                    color: '#FF6600',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    fontFamily: 'Poppins, sans-serif',
+                    outline: 'none',
+                    minWidth: '160px'
+                  }}
+                >
+                  {listaMesesHistorico.map((opcao) => (
+                    <option key={opcao} value={opcao}>
+                      {opcao}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
             </div>
 
@@ -1538,10 +1629,10 @@ export default function ResultadosPage() {
                   fontWeight: 700,
                   margin: 0
                 }}>
-                  Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarter}º Quarter)</span>
+                  Tabela Resumo <span style={{ color: '#FF6600' }}>({filtroQuarterTabela}º Quarter)</span>
                 </h2>
                 
-                {/* Seletor de Quarter */}
+                {/* Seletor de Quarter independente */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -1565,13 +1656,13 @@ export default function ResultadosPage() {
                     {listaQuarters.map((q) => (
                       <button
                         key={q}
-                        onClick={() => setFiltroQuarter(q)}
+                        onClick={() => setFiltroQuarterTabela(q)}
                         style={{
                           padding: '8px 16px',
                           borderRadius: '6px',
                           border: 'none',
-                          backgroundColor: filtroQuarter === q ? '#FF6600' : 'transparent',
-                          color: filtroQuarter === q ? '#fff' : '#adb5bd',
+                          backgroundColor: filtroQuarterTabela === q ? '#FF6600' : 'transparent',
+                          color: filtroQuarterTabela === q ? '#fff' : '#adb5bd',
                           fontSize: '0.9rem',
                           fontWeight: 600,
                           cursor: 'pointer',
@@ -1579,13 +1670,13 @@ export default function ResultadosPage() {
                           fontFamily: 'Poppins, sans-serif'
                         }}
                         onMouseEnter={(e) => {
-                          if (filtroQuarter !== q) {
+                          if (filtroQuarterTabela !== q) {
                             e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
                             e.currentTarget.style.color = '#FF6600';
                           }
                         }}
                         onMouseLeave={(e) => {
-                          if (filtroQuarter !== q) {
+                          if (filtroQuarterTabela !== q) {
                             e.currentTarget.style.backgroundColor = 'transparent';
                             e.currentTarget.style.color = '#adb5bd';
                           }
@@ -1600,7 +1691,7 @@ export default function ResultadosPage() {
               <Card>
                 <TabelaResumo
                   dados={dadosBrutos || []}
-                  quarterSelecionado={filtroQuarter}
+                  quarterSelecionado={filtroQuarterTabela}
                   clustersSelecionados={filtrosClusters}
                   consultoresSelecionados={filtrosConsultores}
                   nomeColunaConsultor={nomeColunaConsultor}
@@ -1609,6 +1700,7 @@ export default function ResultadosPage() {
                   filtrosMaturidades={filtrosMaturidades}
                   filtrosMercados={filtrosMercados}
                   filtrosPerformanceComercial={filtrosPerformanceComercial}
+                  dadosHistorico={dadosHistorico}
                 />
               </Card>
             </>
