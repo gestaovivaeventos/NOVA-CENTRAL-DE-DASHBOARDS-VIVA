@@ -9,7 +9,7 @@ import { useRouter } from 'next/router';
 import Image from 'next/image';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 import { ChevronDown, ChevronRight, Building2, MapPin, Users, TrendingUp, Briefcase } from 'lucide-react';
-import { useSheetsData, Card, PexLayout, IndicadorCardLegacy as IndicadorCard, TabelaResumo, GraficoEvolucao, useParametrosData } from '@/modules/pex';
+import { useSheetsData, Card, PexLayout, IndicadorCardLegacy as IndicadorCard, TabelaResumo, TabelaResultadosOficiais, GraficoEvolucao, useParametrosData } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
 
@@ -249,6 +249,7 @@ export default function ResultadosPage() {
   const [filtrosMercados, setFiltrosMercados] = useState<string[]>([]);
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
+  const [dadosResultadosOficiais, setDadosResultadosOficiais] = useState<any[]>([]);
   // Filtro independente de mês/ano para os cards de indicador
   const [filtroMesIndicador, setFiltroMesIndicador] = useState<string>('');
   // Filtro independente de quarter para a tabela resumo
@@ -276,6 +277,11 @@ export default function ResultadosPage() {
       .then(res => res.ok ? res.json() : [])
       .then(setDadosHistorico)
       .catch(() => setDadosHistorico([]));
+    // Carregar histórico de resultados oficiais
+    fetch('/api/pex/historico-resultados')
+      .then(res => res.ok ? res.json() : [])
+      .then(setDadosResultadosOficiais)
+      .catch(() => setDadosResultadosOficiais([]));
   }, []);
 
   // Listas para os filtros
@@ -1141,6 +1147,41 @@ export default function ResultadosPage() {
                 />
               </Card>
             </>
+
+            {/* Tabela Resultados Oficiais - Meta x Realizado */}
+            <>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '16px',
+                borderBottom: '2px solid #FF6600',
+                paddingBottom: '12px',
+                marginTop: '30px',
+                marginBottom: '20px'
+              }}>
+                <h2 style={{
+                  color: '#adb5bd',
+                  fontFamily: 'Poppins, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontSize: '1.4rem',
+                  fontWeight: 700,
+                  margin: 0
+                }}>
+                  Resultados Oficiais <span style={{ color: '#FF6600' }}>Meta x Realizado</span>
+                </h2>
+              </div>
+              <Card>
+                <TabelaResultadosOficiais
+                  dadosResultados={dadosResultadosOficiais}
+                  metas={parametrosData?.metas || []}
+                  quarterSelecionado={filtroQuarterTabela}
+                  franquiasFiltradas={filtrosUnidades.length > 0 ? filtrosUnidades : listaUnidades}
+                />
+              </Card>
+            </>
           </>
         ) : itemSelecionado ? (
           <>
@@ -1701,6 +1742,41 @@ export default function ResultadosPage() {
                   filtrosMercados={filtrosMercados}
                   filtrosPerformanceComercial={filtrosPerformanceComercial}
                   dadosHistorico={dadosHistorico}
+                />
+              </Card>
+            </>
+
+            {/* Tabela Resultados Oficiais - Meta x Realizado */}
+            <>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '16px',
+                borderBottom: '2px solid #FF6600',
+                paddingBottom: '12px',
+                marginTop: '30px',
+                marginBottom: '20px'
+              }}>
+                <h2 style={{
+                  color: '#adb5bd',
+                  fontFamily: 'Poppins, sans-serif',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  fontSize: '1.4rem',
+                  fontWeight: 700,
+                  margin: 0
+                }}>
+                  Resultados Oficiais <span style={{ color: '#FF6600' }}>Meta x Realizado</span>
+                </h2>
+              </div>
+              <Card>
+                <TabelaResultadosOficiais
+                  dadosResultados={dadosResultadosOficiais}
+                  metas={parametrosData?.metas || []}
+                  quarterSelecionado={filtroQuarterTabela}
+                  franquiasFiltradas={filtrosUnidades.length > 0 ? filtrosUnidades : listaUnidades}
                 />
               </Card>
             </>
