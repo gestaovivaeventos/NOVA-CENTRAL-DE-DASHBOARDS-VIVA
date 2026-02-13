@@ -191,6 +191,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   });
   const resultados = sortedData.map((d) => d.resultado);
   const percentuais = sortedData.map((d) => d.percentual);
+  const atingimentos = sortedData.map((d) => d.atingimento);  // Coluna G - MÉDIA NO ANO
   const grandezas = sortedData.map((d) => d.grandeza || '');
   const grandeza = grandezas[0] || '';
   const tendencia = sortedData[0]?.tendencia || '';
@@ -215,49 +216,14 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
     return null;
   }, [resultados]);
 
-  // 2. MELHOR MÊS - baseado em TENDENCIA (MENOR ou MAIOR)
-  const melhorValorInfo = useMemo(() => {
-    const isMenorMelhor = tendencia.toUpperCase().includes('MENOR');
-    let melhorValor: number | null = null;
-    let melhorIndice = -1;
-
-    for (let i = 0; i < resultados.length; i++) {
-      if (resultados[i] !== null && resultados[i] !== undefined && !isNaN(resultados[i]!)) {
-        if (melhorValor === null) {
-          melhorValor = resultados[i];
-          melhorIndice = i;
-        } else {
-          if (isMenorMelhor) {
-            if (resultados[i]! < melhorValor) {
-              melhorValor = resultados[i];
-              melhorIndice = i;
-            }
-          } else {
-            if (resultados[i]! > melhorValor) {
-              melhorValor = resultados[i];
-              melhorIndice = i;
-            }
-          }
-        }
-      }
-    }
-
-    let melhorMes = '';
-    if (melhorIndice >= 0 && labels[melhorIndice]) {
-      melhorMes = formatCompetencia(labels[melhorIndice]);
-    }
-
-    return { melhorValor, melhorMes };
-  }, [resultados, labels, tendencia]);
-
-  // 3. MÉDIA DE ATINGIMENTO - média dos percentuais
+  // 2. MÉDIA ANO - média dos atingimentos (coluna G)
   const mediaAtingimento = useMemo(() => {
-    const validos = percentuais.filter((p) => typeof p === 'number' && !isNaN(p)) as number[];
+    const validos = atingimentos.filter((p) => typeof p === 'number' && !isNaN(p)) as number[];
     if (validos.length === 0) return 0;
     return validos.reduce((acc, val) => acc + val, 0) / validos.length;
-  }, [percentuais]);
+  }, [atingimentos]);
 
-  // 4. RESULTADO NO ANO - baseado em TIPO (EVOLUÇÃO, MÉDIA NO ANO, ACUMULADO NO ANO)
+  // 3. RESULTADO NO ANO - baseado em TIPO (EVOLUÇÃO, MÉDIA NO ANO, ACUMULADO NO ANO)
   const resultadoAno = useMemo(() => {
     const validos = resultados.filter((r) => r !== null && r !== undefined && !isNaN(r!)) as number[];
     
@@ -479,7 +445,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
             const idx = context.dataIndex;
             const resultado = resultados[idx];
             const meta = metas[idx];
-            const ating = percentuais[idx];
+            const ating = atingimentos[idx];  // Coluna G - ATINGIMENTO
             const g = grandezas[idx] || grandeza;
 
             const lines: string[] = [];
@@ -621,22 +587,15 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
       <div className="chart-wrapper">
         {/* Cards laterais */}
         <aside className="kpi-sidebar">
+          {/* 1º Card: Acumulado/Média/Último resultado baseado no TIPO */}
           <div className="kpi-card">
-            <span className="kpi-label">REALIZADO (ÚLTIMO MÊS)</span>
-            <span className="kpi-value">{formatValor(ultimoResultado, grandeza) || '-'}</span>
+            <span className="kpi-label">{nomeCardAno}</span>
+            <span className="kpi-value">{formatValor(resultadoAno, grandeza) || '-'}</span>
           </div>
 
+          {/* 2º Card: Média de atingimento (%) */}
           <div className="kpi-card">
-            <span className="kpi-label">MELHOR MÊS</span>
-            <span className="kpi-value highlight" style={{ color: accentColor }}>
-              {melhorValorInfo.melhorValor !== null
-                ? `${formatValor(melhorValorInfo.melhorValor, grandeza)} (${melhorValorInfo.melhorMes})`
-                : '-'}
-            </span>
-          </div>
-
-          <div className="kpi-card">
-            <span className="kpi-label">MÉDIA DE ATINGIMENTO</span>
+            <span className="kpi-label">MÉDIA ATING. (%)</span>
             <span className="kpi-value">
               {mediaAtingimento.toLocaleString('pt-BR', {
                 minimumFractionDigits: 1,
@@ -645,9 +604,16 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
             </span>
           </div>
 
+          {/* 3º Card: Atingimento Parcial */}
           <div className="kpi-card">
-            <span className="kpi-label">{nomeCardAno}</span>
-            <span className="kpi-value">{formatValor(resultadoAno, grandeza) || '-'}</span>
+            <span className="kpi-label">ATING. PARCIAL</span>
+            <span className="kpi-value">-</span>
+          </div>
+
+          {/* 4º Card: Atingimento ano */}
+          <div className="kpi-card">
+            <span className="kpi-label">ATING. ANO</span>
+            <span className="kpi-value">-</span>
           </div>
         </aside>
 
