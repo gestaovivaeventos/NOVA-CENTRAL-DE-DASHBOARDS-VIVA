@@ -18,6 +18,7 @@ interface UpdateKpiRequest {
   grandeza: string;
   metas: Record<string, string>; // { "competencia": "valor" }
   competencias: string[];
+  username?: string; // Nome do usuário que está editando
 }
 
 interface UpdateKpiResponse {
@@ -36,6 +37,8 @@ const COL_INDEX = {
   META: 4,        // E
   GRANDEZA: 9,    // J
   TENDENCIA: 15,  // P
+  EDITADO_EM: 35,   // AJ - Data de edição
+  EDITADO_POR: 36,  // AK - Usuário que editou
 };
 
 /**
@@ -139,6 +142,18 @@ export default async function handler(
     // Preparar requisições de atualização em batch
     const requests: any[] = [];
     
+    // Data/hora atual no formato brasileiro
+    const now = new Date();
+    const dataHoraEdicao = now.toLocaleString('pt-BR', { 
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+    
     for (const { rowIndex, competencia } of rowsToUpdate) {
       // Buscar meta para esta competência
       let metaValue: string | number = '';
@@ -227,6 +242,44 @@ export default async function handler(
           rows: [{
             values: [{
               userEnteredValue: { stringValue: data.tendencia }
+            }]
+          }],
+          fields: 'userEnteredValue',
+        },
+      });
+
+      // Atualizar EDITADO EM (coluna AJ)
+      requests.push({
+        updateCells: {
+          range: {
+            sheetId: sheetId,
+            startRowIndex: rowIndex - 1,
+            endRowIndex: rowIndex,
+            startColumnIndex: COL_INDEX.EDITADO_EM,
+            endColumnIndex: COL_INDEX.EDITADO_EM + 1,
+          },
+          rows: [{
+            values: [{
+              userEnteredValue: { stringValue: dataHoraEdicao }
+            }]
+          }],
+          fields: 'userEnteredValue',
+        },
+      });
+
+      // Atualizar EDITADO POR (coluna AK)
+      requests.push({
+        updateCells: {
+          range: {
+            sheetId: sheetId,
+            startRowIndex: rowIndex - 1,
+            endRowIndex: rowIndex,
+            startColumnIndex: COL_INDEX.EDITADO_POR,
+            endColumnIndex: COL_INDEX.EDITADO_POR + 1,
+          },
+          rows: [{
+            values: [{
+              userEnteredValue: { stringValue: data.username || '' }
             }]
           }],
           fields: 'userEnteredValue',

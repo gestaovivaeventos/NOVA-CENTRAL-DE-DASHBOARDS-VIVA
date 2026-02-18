@@ -20,6 +20,7 @@ interface CreateKpiRequest {
   tendencia: string;
   grandeza: string;
   metas: Record<string, string>; // { "MM/YYYY": "valor" }
+  username?: string; // Nome do usuário que está criando
 }
 
 interface CreateKpiResponse {
@@ -42,6 +43,12 @@ const COL_INDEX = {
   TENDENCIA: 15,  // P
   COMPETENCIA: 18, // S - Competência (MM/YYYY)
   SITUACAO_KPI: 32, // AG - Situação do KPI (Ativo/Inativo)
+  CRIADO_EM: 33,    // AH - Data de criação
+  CRIADO_POR: 34,   // AI - Usuário que criou
+  EDITADO_EM: 35,   // AJ - Data de edição
+  EDITADO_POR: 36,  // AK - Usuário que editou
+  INATIVADO_EM: 37, // AL - Data de inativação
+  INATIVADO_POR: 38, // AM - Usuário que inativou
 };
 
 /**
@@ -140,10 +147,11 @@ function createRow(
   kpiName: string,
   meta: string,
   grandeza: string,
-  tendencia: string
+  tendencia: string,
+  username?: string
 ): (string | number)[] {
-  // Criar array com 33 colunas (até AG)
-  const row: (string | number)[] = new Array(33).fill('');
+  // Criar array com 39 colunas (até AM)
+  const row: (string | number)[] = new Array(39).fill('');
   
   // Processar valor da meta
   let metaValue: string | number = '';
@@ -165,6 +173,18 @@ function createRow(
   const parts = competencia.split('/');
   const competenciaMesAno = parts.length === 3 ? `${parts[1]}/${parts[2]}` : competencia;
   
+  // Data/hora atual no formato brasileiro
+  const now = new Date();
+  const dataHoraCriacao = now.toLocaleString('pt-BR', { 
+    timeZone: 'America/Sao_Paulo',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  
   row[COL_INDEX.DATA] = competencia;           // A - DATA (01/MM/YYYY)
   row[COL_INDEX.TIME] = team;                  // B - TIME
   row[COL_INDEX.ID] = kpiId;                   // C - # (ID)
@@ -174,6 +194,8 @@ function createRow(
   row[COL_INDEX.TENDENCIA] = tendencia;        // P - TENDÊNCIA
   row[COL_INDEX.COMPETENCIA] = competenciaMesAno; // S - COMPETÊNCIA (MM/YYYY)
   row[COL_INDEX.SITUACAO_KPI] = 'Ativo';       // AG - SITUAÇÃO KPI
+  row[COL_INDEX.CRIADO_EM] = dataHoraCriacao;  // AH - CRIADO EM
+  row[COL_INDEX.CRIADO_POR] = username || '';  // AI - CRIADO POR
   
   return row;
 }
@@ -246,7 +268,8 @@ export default async function handler(
         data.nome,
         meta,
         data.grandeza,
-        data.tendencia
+        data.tendencia,
+        data.username
       );
     });
 

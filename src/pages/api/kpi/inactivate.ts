@@ -13,6 +13,7 @@ const SHEET_NAME = 'KPIS';
 interface InactivateKpiRequest {
   team: string;
   kpiName: string;
+  username?: string; // Nome do usuário que está inativando
 }
 
 interface InactivateKpiResponse {
@@ -28,6 +29,8 @@ const COL_INDEX = {
   KPI: 3,           // D - Nome do KPI
   RESULTADO: 5,     // F
   SITUACAO_KPI: 32, // AG - Situação do KPI (Ativo/Inativo)
+  INATIVADO_EM: 37, // AL - Data de inativação
+  INATIVADO_POR: 38, // AM - Usuário que inativou
 };
 
 /**
@@ -68,7 +71,7 @@ export default async function handler(
   }
 
   try {
-    const { team, kpiName }: InactivateKpiRequest = req.body;
+    const { team, kpiName, username }: InactivateKpiRequest = req.body;
 
     // Validações
     if (!team) {
@@ -116,10 +119,38 @@ export default async function handler(
     }
 
     // Atualizar cada linha encontrada
-    const updateRequests = rowsToUpdate.map(rowNumber => ({
-      range: `${SHEET_NAME}!AG${rowNumber}`,
-      values: [['Inativo']]
-    }));
+    // Data/hora atual no formato brasileiro
+    const now = new Date();
+    const dataHoraInativacao = now.toLocaleString('pt-BR', { 
+      timeZone: 'America/Sao_Paulo',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+
+    const updateRequests = [];
+    
+    // Para cada linha, adicionar requisições para AG (Inativo), AL (data) e AM (usuário)
+    for (const rowNumber of rowsToUpdate) {
+      // Coluna AG - Situação
+      updateRequests.push({
+        range: `${SHEET_NAME}!AG${rowNumber}`,
+        values: [['Inativo']]
+      });
+      // Coluna AL - INATIVADO EM
+      updateRequests.push({
+        range: `${SHEET_NAME}!AL${rowNumber}`,
+        values: [[dataHoraInativacao]]
+      });
+      // Coluna AM - INATIVADO POR
+      updateRequests.push({
+        range: `${SHEET_NAME}!AM${rowNumber}`,
+        values: [[username || '']]
+      });
+    }
 
     await sheets.spreadsheets.values.batchUpdate({
       spreadsheetId: SPREADSHEET_ID,

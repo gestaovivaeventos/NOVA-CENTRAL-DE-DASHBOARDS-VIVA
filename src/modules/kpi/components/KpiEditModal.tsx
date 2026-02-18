@@ -35,6 +35,7 @@ interface KpiEditModalProps {
   kpiName: string;
   accentColor?: string;
   selectedTeam: string;
+  username?: string;
 }
 
 export const KpiEditModal: React.FC<KpiEditModalProps> = ({
@@ -45,6 +46,7 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
   kpiName,
   accentColor = '#ff6600',
   selectedTeam,
+  username = '',
 }) => {
   const [nome, setNome] = useState(kpiName);
   const [tendencia, setTendencia] = useState<'MAIOR, MELHOR' | 'MENOR, MELHOR' | ''>('');
@@ -179,6 +181,7 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
           grandeza,
           metas,
           competencias,
+          username,
         }),
       });
 
