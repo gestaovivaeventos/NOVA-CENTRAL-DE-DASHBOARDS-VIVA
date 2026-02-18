@@ -1284,7 +1284,7 @@ export default function ResultadosPage() {
                     marginTop: '12px',
                     marginBottom: '16px'
                   }}>
-                    Média de <strong style={{ color: '#F8F9FA' }}>{unidadeEfetiva}</strong> em <span style={{ color: '#FF6600' }}>todos os quarters</span>
+                    Média de <strong style={{ color: '#F8F9FA' }}>{unidadeEfetiva}</strong> em <span style={{ color: '#FF6600' }}>todos os meses</span>
                   </p>
                   
                   {/* Posições */}
