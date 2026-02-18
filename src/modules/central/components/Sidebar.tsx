@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { Search, X } from 'lucide-react';
+import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -27,7 +28,7 @@ interface DashboardGroup {
 }
 
 // Grupos de dashboards - filtrado por nível de acesso
-const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
+const getDashboardGroups = (accessLevel: number, username?: string): DashboardGroup[] => {
   // Franqueado (accessLevel = 0) tem acesso apenas ao PEX
   if (accessLevel === 0) {
     return [
@@ -64,6 +65,17 @@ const getDashboardGroups = (accessLevel: number): DashboardGroup[] => {
       ],
     },
   ];
+
+  // Branches: visível apenas para 4 usuários específicos
+  if (username && AUTHORIZED_USERNAMES.includes(username)) {
+    groups.push({
+      id: 'desenvolvimento',
+      name: 'Desenvolvimento',
+      dashboards: [
+        { id: 'branches', label: 'Gerenciar Branches', path: '/branches', icon: 'branch' },
+      ],
+    });
+  }
 
   return groups;
 };
@@ -129,6 +141,14 @@ const icons: Record<string, JSX.Element> = {
   network: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  branch: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 3v12" />
+      <circle cx="6" cy="18" r="3" fill="none" />
+      <circle cx="18" cy="6" r="3" fill="none" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9a9 9 0 01-9 9" />
     </svg>
   ),
   results: (
@@ -340,7 +360,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
 
-  const dashboardGroups = getDashboardGroups(user?.accessLevel || 0);
+  const dashboardGroups = getDashboardGroups(user?.accessLevel || 0, user?.username);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
