@@ -237,10 +237,14 @@ const OkrPageContent: React.FC = () => {
     });
   }, [objectivesMap]);
 
-  // Selecionar primeiro objetivo automaticamente quando mudar quarter
+  // Selecionar primeiro objetivo automaticamente quando mudar quarter ou time
+  // Mas não resetar se o objetivo selecionado ainda existe nos dados
   useEffect(() => {
     if (objectiveIds.length > 0) {
-      setSelectedObjective(objectiveIds[0]);
+      // Só mudar se o objetivo atual não existir mais na lista
+      if (!selectedObjective || !objectiveIds.includes(selectedObjective)) {
+        setSelectedObjective(objectiveIds[0]);
+      }
     } else {
       setSelectedObjective('');
     }
