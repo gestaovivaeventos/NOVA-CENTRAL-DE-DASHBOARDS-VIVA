@@ -426,7 +426,7 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                 </th>
               ))}
               <th className="px-3 py-3 text-center text-gray-400 font-medium min-w-[100px]">
-                Atingimento
+                Ating. do Mês
               </th>
               <th className="px-3 py-3 text-center text-gray-400 font-medium min-w-[100px]">
                 Ating. Ano
@@ -551,8 +551,13 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                   
                   {/* Atingimento médio */}
                   <td className={`px-3 py-3 text-center font-semibold ${statusColor}`}>
+                    <span>{row.avgAtingimento > 0 ? `${row.avgAtingimento.toFixed(1)}%` : '-'}</span>
+                  </td>
+                  
+                  {/* Atingimento do Ano */}
+                  <td className={`px-3 py-3 text-center font-semibold ${row.atingAno >= 100 ? 'text-green-400' : row.atingAno >= 80 ? 'text-yellow-400' : row.atingAno > 0 ? 'text-red-400' : 'text-gray-400'}`}>
                     <div className="relative inline-flex items-center gap-1">
-                      <span>{row.avgAtingimento > 0 ? `${row.avgAtingimento.toFixed(1)}%` : '-'}</span>
+                      <span>{row.atingAno > 0 ? `${row.atingAno.toFixed(1)}%` : '-'}</span>
                       <button
                         className="text-gray-500 hover:text-gray-300 transition-colors"
                         onMouseEnter={() => setActiveTooltip(row.kpiName)}
@@ -570,11 +575,6 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                         </div>
                       )}
                     </div>
-                  </td>
-                  
-                  {/* Atingimento do Ano */}
-                  <td className={`px-3 py-3 text-center font-semibold ${row.atingAno >= 100 ? 'text-green-400' : row.atingAno >= 80 ? 'text-yellow-400' : row.atingAno > 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                    {row.atingAno > 0 ? `${row.atingAno.toFixed(1)}%` : '-'}
                   </td>
                   
                   {/* Ações */}
