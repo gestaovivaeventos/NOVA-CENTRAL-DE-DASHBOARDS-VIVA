@@ -133,7 +133,9 @@ export default function GerencialPage() {
             {/* Team Performance Table */}
             <TeamPerformanceTable 
               teams={data.teamPerformance} 
-              competencia={selectedCompetencia} 
+              competencia={selectedCompetencia}
+              kpis={data.kpis}
+              novoOkrs={data.novoOkrs}
             />
 
             {/* KPIs que precisam de atenção */}

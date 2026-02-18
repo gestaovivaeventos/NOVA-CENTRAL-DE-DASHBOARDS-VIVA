@@ -57,9 +57,14 @@ export interface NovoOkrData {
   data: string;
   time: string;
   indicador: string;
+  indicadorNome: string;
+  objetivo: string;
+  idOkr: number;
+  idKr: number;
   meta: number;
   realizado: number;
   atingReal: number;
+  formaDeMedir: string;
 }
 
 export interface EbitdaYearData {

@@ -155,8 +155,14 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
   
   const colData = 0;       // Coluna A: DATA
   const colTime = 1;       // Coluna B: TIME
+  const colIdOkr = 2;      // Coluna C: ID_OKR
   const colObjetivo = 3;   // Coluna D: OBJETIVOS ESTRATÉGICOS
+  const colIdKr = 4;       // Coluna E: ID_KR
   const colIndicador = 5;  // Coluna F: INDICADORES
+  const colMeta = 7;       // Coluna H: META
+  const colRealizado = 8;  // Coluna I: REALIZADO
+  const colAtingimento = 9; // Coluna J: ATINGIMENTO
+  const colFormaDeMedir = 13; // Coluna N: FORMA DE MEDIR
   const colChave = 14;     // Coluna O: CHAVE (identificador único do KR)
   const colAtingReal = 17; // Coluna R: ATING REAL
 
@@ -175,24 +181,44 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
     
     const time = row[colTime] ? String(row[colTime]).trim() : '';
     const objetivo = row[colObjetivo] ? String(row[colObjetivo]).trim() : '';
-    const indicador = row[colIndicador] ? String(row[colIndicador]).trim() : '';
+    const indicadorNome = row[colIndicador] ? String(row[colIndicador]).trim() : '';
+    
+    // ID_OKR (coluna C) e ID_KR (coluna E)
+    const idOkr = parseInt(row[colIdOkr], 10) || 0;
+    const idKr = parseInt(row[colIdKr], 10) || 0;
     
     // Usar a coluna CHAVE se existir, senão criar chave combinando objetivo + indicador
     const chaveOriginal = row[colChave] ? String(row[colChave]).trim() : '';
-    const chaveUnica = chaveOriginal || `${objetivo}||${indicador}`;
+    const chaveUnica = chaveOriginal || `${objetivo}||${indicadorNome}`;
     
-    // Usar ATING REAL (coluna R, índice 17)
-    const atingStr = row[colAtingReal] ? String(row[colAtingReal]).replace('%', '').replace(',', '.').trim() : '';
+    // Meta (coluna H)
+    const metaStr = row[colMeta] ? String(row[colMeta]).replace('%', '').replace(',', '.').trim() : '';
+    const metaNum = parseFloat(metaStr) || 0;
+    
+    // Realizado (coluna I)
+    const realizadoStr = row[colRealizado] ? String(row[colRealizado]).replace('%', '').replace(',', '.').trim() : '';
+    const realizadoNum = parseFloat(realizadoStr) || 0;
+    
+    // Atingimento (coluna J)
+    const atingStr = row[colAtingimento] ? String(row[colAtingimento]).replace('%', '').replace(',', '.').trim() : '';
     const atingNum = parseFloat(atingStr) || 0;
     
-    if (time) {
+    // Forma de Medir (coluna N)
+    const formaDeMedir = row[colFormaDeMedir] ? String(row[colFormaDeMedir]).trim().toUpperCase() : '';
+    
+    if (time && indicadorNome) {
       processedData.push({
         data: data,
         time: time,
         indicador: chaveUnica,
-        meta: parseToNumber(row[3]),
-        realizado: parseToNumber(row[4]),
-        atingReal: atingNum
+        indicadorNome: indicadorNome,
+        objetivo: objetivo,
+        idOkr: idOkr,
+        idKr: idKr,
+        meta: metaNum,
+        realizado: realizadoNum,
+        atingReal: atingNum,
+        formaDeMedir: formaDeMedir
       });
     }
   });
