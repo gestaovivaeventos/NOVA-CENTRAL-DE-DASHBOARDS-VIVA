@@ -43,6 +43,12 @@ export interface Release {
   linkVercel: string;
   descricao: string;
   ramificacoes: string[];
+  aprovadoPor: string;
+  aprovadoPorNome: string;
+  dataAprovacao: string;
+  entreguePor: string;
+  entreguePorNome: string;
+  dataEntrega: string;
 }
 
 // ============ Branch (Ramificação) ============
@@ -59,6 +65,12 @@ export interface Branch {
   status: KanbanStatus;
   linkBranch: string;
   descricao: string;
+  aprovadoPor: string;
+  aprovadoPorNome: string;
+  dataAprovacao: string;
+  entreguePor: string;
+  entreguePorNome: string;
+  dataEntrega: string;
 }
 
 // ============ Row da planilha (unificado) ============
@@ -75,6 +87,12 @@ export interface BranchSheetRow {
   linkVercelOuBranch: string;
   descricao: string;
   releaseId: string; // vazio se for release
+  aprovadoPor: string;
+  aprovadoPorNome: string;
+  dataAprovacao: string;
+  entreguePor: string;
+  entreguePorNome: string;
+  dataEntrega: string;
 }
 
 // ============ Módulos disponíveis ============

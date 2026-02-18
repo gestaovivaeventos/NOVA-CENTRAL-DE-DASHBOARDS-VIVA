@@ -28,7 +28,7 @@ export default async function handler(
 
     const rows = await getExternalSheetData(
       SPREADSHEET_ID,
-      `${SHEET_NAME}!A:L`,
+      `${SHEET_NAME}!A:R`,
       CACHE_KEY,
       CACHE_TTL
     );

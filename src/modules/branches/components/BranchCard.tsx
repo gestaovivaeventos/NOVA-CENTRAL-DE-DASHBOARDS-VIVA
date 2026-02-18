@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Copy, Check, GitBranch, ExternalLink } from 'lucide-react';
+import { Copy, Check, GitBranch, ExternalLink, ShieldCheck, Truck, Pencil } from 'lucide-react';
 import type { Branch, KanbanColumn } from '../types';
 
 interface BranchCardProps {
@@ -56,6 +56,27 @@ export default function BranchCard({
       }}
       className="hover:brightness-110"
     >
+      {/* Botão editar */}
+      <div className="flex justify-end mb-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          style={{
+            backgroundColor: 'rgba(59,130,246,0.08)',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '4px',
+            cursor: 'pointer',
+            color: '#3b82f6',
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'all 0.2s',
+          }}
+          title="Editar ramificação"
+        >
+          <Pencil size={13} />
+        </button>
+      </div>
+
       {/* Header: módulo badge + data + status badge */}
       <div className="flex items-center gap-2 mb-2" style={{ flexWrap: 'wrap' }}>
         <GitBranch size={12} style={{ color: '#3b82f6', flexShrink: 0 }} />
@@ -159,6 +180,58 @@ export default function BranchCard({
         >
           {branch.descricao}
         </p>
+      )}
+
+      {/* Informações de aprovação */}
+      {branch.aprovadoPorNome && (
+        <div
+          style={{
+            backgroundColor: 'rgba(139, 92, 246, 0.06)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            borderRadius: '6px',
+            padding: '5px 8px',
+            marginTop: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.6rem',
+          }}
+        >
+          <ShieldCheck size={11} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+          <span style={{ color: '#8b5cf6', fontWeight: 600 }}>{branch.aprovadoPorNome}</span>
+          {branch.dataAprovacao && (
+            <>
+              <span style={{ color: '#4b5563' }}>•</span>
+              <span style={{ color: '#6c757d' }}>{branch.dataAprovacao}</span>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Informações de entrega */}
+      {branch.entreguePorNome && (
+        <div
+          style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.06)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            borderRadius: '6px',
+            padding: '5px 8px',
+            marginTop: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.6rem',
+          }}
+        >
+          <Truck size={11} style={{ color: '#10b981', flexShrink: 0 }} />
+          <span style={{ color: '#10b981', fontWeight: 600 }}>{branch.entreguePorNome}</span>
+          {branch.dataEntrega && (
+            <>
+              <span style={{ color: '#4b5563' }}>•</span>
+              <span style={{ color: '#6c757d' }}>{branch.dataEntrega}</span>
+            </>
+          )}
+        </div>
       )}
 
       {/* Link com copiar/abrir */}

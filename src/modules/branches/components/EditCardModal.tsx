@@ -1,10 +1,10 @@
 /**
  * Modal de edição de Card (Release ou Branch)
- * Abre ao clicar no card, permite editar todas as informações
+ * Dropdown para status, botão único de salvar, fecha automaticamente ao salvar
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, GitMerge, GitBranch, Copy, Check, ExternalLink, Link2, FileText, Pencil, PlusCircle } from 'lucide-react';
+import { X, GitMerge, GitBranch, Copy, Check, ExternalLink, Link2, FileText, Pencil, PlusCircle, ShieldCheck, Truck, Save } from 'lucide-react';
 import type { Release, Branch, KanbanStatus, KanbanColumn } from '../types';
 import { MODULOS_CENTRAL } from '../types';
 
@@ -18,11 +18,14 @@ interface EditCardModalProps {
   // Branch data (se for branch)
   branch?: Branch | null;
   branchColumns?: KanbanColumn[];
-  // Handlers
-  onUpdateStatus: (id: string, status: KanbanStatus) => Promise<boolean>;
-  onUpdateLink: (id: string, link: string) => Promise<boolean>;
-  onUpdateDescricao: (id: string, descricao: string) => Promise<boolean>;
-  onUpdateModulo?: (id: string, modulo: string) => Promise<boolean>;
+  // Handler unificado de salvar
+  onSaveAll: (payload: {
+    id: string;
+    status?: KanbanStatus;
+    link?: string;
+    descricao?: string;
+    modulo?: string;
+  }) => Promise<boolean>;
   onCreateBranch?: (releaseId: string, releaseVersao: number) => void;
   updating: boolean;
 }
@@ -35,10 +38,7 @@ export default function EditCardModal({
   releaseColumns = [],
   branch,
   branchColumns = [],
-  onUpdateStatus,
-  onUpdateLink,
-  onUpdateDescricao,
-  onUpdateModulo,
+  onSaveAll,
   onCreateBranch,
   updating,
 }: EditCardModalProps) {
@@ -50,8 +50,6 @@ export default function EditCardModal({
   const [link, setLink] = useState('');
   const [descricao, setDescricao] = useState('');
   const [modulo, setModulo] = useState('');
-  const [novoModulo, setNovoModulo] = useState('');
-  const [isNovoModulo, setIsNovoModulo] = useState(false);
   const [copiedName, setCopiedName] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -88,49 +86,52 @@ export default function EditCardModal({
     setTimeout(() => setter(false), 2000);
   };
 
-  const handleSaveStatus = async (newStatus: KanbanStatus) => {
-    setStatus(newStatus);
+  // Verifica se houve mudanças
+  const hasChanges = (() => {
+    const originalStatus = item.status;
+    const originalLink = isRelease ? (release?.linkVercel || '') : (branch?.linkBranch || '');
+    const originalDesc = isRelease ? (release?.descricao || '') : (branch?.descricao || '');
+    const originalModulo = !isRelease && branch ? branch.modulo : '';
+
+    if (status !== originalStatus) return true;
+    if (link !== originalLink) return true;
+    if (descricao !== originalDesc) return true;
+    if (!isRelease && modulo !== originalModulo) return true;
+    return false;
+  })();
+
+  // Salvar todas as alterações e fechar
+  const handleSave = async () => {
+    if (!hasChanges) {
+      onClose();
+      return;
+    }
+
     setSaving(true);
-    await onUpdateStatus(item.id, newStatus);
+
+    const originalStatus = item.status;
+    const originalLink = isRelease ? (release?.linkVercel || '') : (branch?.linkBranch || '');
+    const originalDesc = isRelease ? (release?.descricao || '') : (branch?.descricao || '');
+    const originalModulo = !isRelease && branch ? branch.modulo : '';
+
+    const payload: {
+      id: string;
+      status?: KanbanStatus;
+      link?: string;
+      descricao?: string;
+      modulo?: string;
+    } = { id: item.id };
+
+    if (status !== originalStatus) payload.status = status;
+    if (link !== originalLink) payload.link = link;
+    if (descricao !== originalDesc) payload.descricao = descricao;
+    if (!isRelease && modulo !== originalModulo) payload.modulo = modulo;
+
+    const ok = await onSaveAll(payload);
     setSaving(false);
-  };
 
-  const handleSaveLink = async () => {
-    const currentLink = isRelease ? release!.linkVercel : branch!.linkBranch;
-    if (link !== currentLink) {
-      setSaving(true);
-      await onUpdateLink(item.id, link);
-      setSaving(false);
-    }
-  };
-
-  const handleSaveDescricao = async () => {
-    const currentDesc = isRelease ? release!.descricao : branch!.descricao;
-    if (descricao !== currentDesc) {
-      setSaving(true);
-      await onUpdateDescricao(item.id, descricao);
-      setSaving(false);
-    }
-  };
-
-  const handleSaveModulo = async (valor: string) => {
-    if (valor && valor !== branch?.modulo && onUpdateModulo) {
-      setSaving(true);
-      await onUpdateModulo(item.id, valor);
-      setModulo(valor);
-      setSaving(false);
-    }
-    setIsNovoModulo(false);
-    setNovoModulo('');
-  };
-
-  const handleModuloChange = (v: string) => {
-    if (v === '__novo__') {
-      setIsNovoModulo(true);
-    } else {
-      setIsNovoModulo(false);
-      setModulo(v);
-      handleSaveModulo(v);
+    if (ok) {
+      onClose();
     }
   };
 
@@ -251,33 +252,25 @@ export default function EditCardModal({
             </div>
           </div>
 
-          {/* Status */}
+          {/* Status - Dropdown */}
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>Status</label>
-            <div className="flex flex-wrap gap-2">
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as KanbanStatus)}
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+                borderColor: statusInfo?.color || '#444',
+                color: statusInfo?.color || '#F8F9FA',
+              }}
+            >
               {columns.map(col => (
-                <button
-                  key={col.id}
-                  onClick={() => handleSaveStatus(col.id)}
-                  disabled={updating || saving}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: `2px solid ${col.color}`,
-                    backgroundColor: status === col.id ? `${col.color}25` : 'transparent',
-                    color: col.color,
-                    fontSize: '0.8rem',
-                    fontWeight: status === col.id ? 700 : 500,
-                    fontFamily: 'Poppins, sans-serif',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    opacity: updating || saving ? 0.6 : 1,
-                  }}
-                >
+                <option key={col.id} value={col.id} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
                   {col.label}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
           {/* Módulo (só para branch) */}
@@ -287,55 +280,18 @@ export default function EditCardModal({
                 <Pencil size={12} style={{ display: 'inline', marginRight: '4px' }} />
                 Módulo
               </label>
-              {isNovoModulo ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={novoModulo}
-                    onChange={(e) => setNovoModulo(e.target.value)}
-                    placeholder="Nome do novo módulo..."
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && novoModulo.trim()) handleSaveModulo(novoModulo.trim().toLowerCase().replace(/\s+/g, '-'));
-                      if (e.key === 'Escape') setIsNovoModulo(false);
-                    }}
-                    style={inputStyle}
-                  />
-                  <button
-                    onClick={() => novoModulo.trim() && handleSaveModulo(novoModulo.trim().toLowerCase().replace(/\s+/g, '-'))}
-                    disabled={!novoModulo.trim() || saving}
-                    style={{
-                      ...saveBtnStyle,
-                      backgroundColor: '#3b82f6',
-                    }}
-                  >
-                    Salvar
-                  </button>
-                  <button
-                    onClick={() => setIsNovoModulo(false)}
-                    style={{
-                      ...saveBtnStyle,
-                      backgroundColor: '#4b5563',
-                    }}
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <select
-                  value={modulo}
-                  onChange={(e) => handleModuloChange(e.target.value)}
-                  style={{
-                    ...inputStyle,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {MODULOS_CENTRAL.map(m => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                  <option value="__novo__">+ Novo módulo...</option>
-                </select>
-              )}
+              <select
+                value={modulo}
+                onChange={(e) => setModulo(e.target.value)}
+                style={{
+                  ...inputStyle,
+                  cursor: 'pointer',
+                }}
+              >
+                {MODULOS_CENTRAL.map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -368,8 +324,6 @@ export default function EditCardModal({
                 value={link}
                 onChange={(e) => setLink(e.target.value)}
                 placeholder="https://..."
-                onBlur={handleSaveLink}
-                onKeyDown={(e) => e.key === 'Enter' && handleSaveLink()}
                 style={inputStyle}
               />
               {link && (
@@ -413,7 +367,6 @@ export default function EditCardModal({
             <textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
-              onBlur={handleSaveDescricao}
               placeholder={isRelease ? 'Descreva o objetivo desta release...' : 'O que foi feito nessa branch...'}
               rows={4}
               style={{
@@ -423,6 +376,94 @@ export default function EditCardModal({
               }}
             />
           </div>
+
+          {/* Informações de Aprovação */}
+          {(() => {
+            const aprovadoPorNome = isRelease ? release?.aprovadoPorNome : branch?.aprovadoPorNome;
+            const aprovadoPor = isRelease ? release?.aprovadoPor : branch?.aprovadoPor;
+            const dataAprovacao = isRelease ? release?.dataAprovacao : branch?.dataAprovacao;
+            if (!aprovadoPorNome && !aprovadoPor) return null;
+            return (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>
+                  <ShieldCheck size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                  Aprovação
+                </label>
+                <div
+                  style={{
+                    backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                  }}
+                >
+                  <div className="flex items-center gap-3" style={{ flexWrap: 'wrap' }}>
+                    <div>
+                      <span style={{ color: '#6c757d', fontSize: '0.7rem' }}>Aprovado por: </span>
+                      <span style={{ color: '#8b5cf6', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                        {aprovadoPorNome || aprovadoPor || '—'}
+                      </span>
+                    </div>
+                    {dataAprovacao && (
+                      <>
+                        <span style={{ color: '#4b5563', fontSize: '0.7rem' }}>•</span>
+                        <div>
+                          <span style={{ color: '#6c757d', fontSize: '0.7rem' }}>Data: </span>
+                          <span style={{ color: '#ADB5BD', fontSize: '0.85rem', fontWeight: 500, fontFamily: 'Poppins, sans-serif' }}>
+                            {dataAprovacao}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Informações de Entrega */}
+          {(() => {
+            const entreguePorNome = isRelease ? release?.entreguePorNome : branch?.entreguePorNome;
+            const entreguePor = isRelease ? release?.entreguePor : branch?.entreguePor;
+            const dataEntrega = isRelease ? release?.dataEntrega : branch?.dataEntrega;
+            if (!entreguePorNome && !entreguePor) return null;
+            return (
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>
+                  <Truck size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                  Entrega
+                </label>
+                <div
+                  style={{
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '10px',
+                    padding: '12px 16px',
+                  }}
+                >
+                  <div className="flex items-center gap-3" style={{ flexWrap: 'wrap' }}>
+                    <div>
+                      <span style={{ color: '#6c757d', fontSize: '0.7rem' }}>Entregue por: </span>
+                      <span style={{ color: '#10b981', fontSize: '0.85rem', fontWeight: 600, fontFamily: 'Poppins, sans-serif' }}>
+                        {entreguePorNome || entreguePor || '—'}
+                      </span>
+                    </div>
+                    {dataEntrega && (
+                      <>
+                        <span style={{ color: '#4b5563', fontSize: '0.7rem' }}>•</span>
+                        <div>
+                          <span style={{ color: '#6c757d', fontSize: '0.7rem' }}>Data: </span>
+                          <span style={{ color: '#ADB5BD', fontSize: '0.85rem', fontWeight: 500, fontFamily: 'Poppins, sans-serif' }}>
+                            {dataEntrega}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Branches vinculadas (só para release) */}
           {isRelease && releaseBranches.length > 0 && (
@@ -503,6 +544,7 @@ export default function EditCardModal({
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 cursor: 'pointer',
+                marginBottom: '16px',
               }}
             >
               <PlusCircle size={18} />
@@ -510,14 +552,53 @@ export default function EditCardModal({
             </button>
           )}
 
-          {/* Indicador de salvamento */}
-          {saving && (
-            <div className="mt-3 text-center">
-              <span style={{ color: '#FF6600', fontSize: '0.75rem' }}>Salvando...</span>
-            </div>
-          )}
+          {/* Botão Salvar */}
+          <button
+            onClick={handleSave}
+            disabled={saving || updating}
+            className="w-full flex items-center justify-center gap-2 rounded-lg transition-all duration-200"
+            style={{
+              backgroundColor: hasChanges ? (isRelease ? '#FF6600' : '#3b82f6') : '#4b5563',
+              border: 'none',
+              padding: '12px',
+              color: '#fff',
+              fontFamily: 'Poppins, sans-serif',
+              fontSize: '0.9rem',
+              fontWeight: 700,
+              cursor: saving || updating ? 'not-allowed' : 'pointer',
+              opacity: saving || updating ? 0.7 : 1,
+              boxShadow: hasChanges ? `0 4px 12px ${isRelease ? 'rgba(255,102,0,0.3)' : 'rgba(59,130,246,0.3)'}` : 'none',
+            }}
+          >
+            {saving ? (
+              <>
+                <div
+                  style={{
+                    width: '16px',
+                    height: '16px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTop: '2px solid #fff',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                  }}
+                />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                {hasChanges ? 'Salvar alterações' : 'Sem alterações'}
+              </>
+            )}
+          </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 }
@@ -556,17 +637,5 @@ const btnIconStyle: React.CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   transition: 'all 0.2s',
-  flexShrink: 0,
-};
-
-const saveBtnStyle: React.CSSProperties = {
-  border: 'none',
-  borderRadius: '8px',
-  padding: '8px 16px',
-  color: '#fff',
-  fontSize: '0.8rem',
-  fontWeight: 600,
-  fontFamily: 'Poppins, sans-serif',
-  cursor: 'pointer',
   flexShrink: 0,
 };

@@ -69,6 +69,12 @@ export function rowToRelease(row: BranchSheetRow): Release {
     linkVercel: row.linkVercelOuBranch,
     descricao: row.descricao || '',
     ramificacoes: [],
+    aprovadoPor: row.aprovadoPor || '',
+    aprovadoPorNome: row.aprovadoPorNome || '',
+    dataAprovacao: row.dataAprovacao || '',
+    entreguePor: row.entreguePor || '',
+    entreguePorNome: row.entreguePorNome || '',
+    dataEntrega: row.dataEntrega || '',
   };
 }
 
@@ -89,6 +95,12 @@ export function rowToBranch(row: BranchSheetRow): Branch {
     status: row.status as KanbanStatus,
     linkBranch: row.linkVercelOuBranch,
     descricao: row.descricao,
+    aprovadoPor: row.aprovadoPor || '',
+    aprovadoPorNome: row.aprovadoPorNome || '',
+    dataAprovacao: row.dataAprovacao || '',
+    entreguePor: row.entreguePor || '',
+    entreguePorNome: row.entreguePorNome || '',
+    dataEntrega: row.dataEntrega || '',
   };
 }
 
@@ -109,6 +121,12 @@ export function releaseToRow(release: Release): string[] {
     release.linkVercel,
     release.descricao || '',
     '', // release_id (vazio para release)
+    '', // aprovado_por
+    '', // aprovado_por_nome
+    '', // data_aprovacao
+    '', // entregue_por
+    '', // entregue_por_nome
+    '', // data_entrega
   ];
 }
 
@@ -129,6 +147,12 @@ export function branchToRow(branch: Branch): string[] {
     branch.linkBranch,
     branch.descricao,
     branch.releaseId,
+    '', // aprovado_por
+    '', // aprovado_por_nome
+    '', // data_aprovacao
+    '', // entregue_por
+    '', // entregue_por_nome
+    '', // data_entrega
   ];
 }
 
@@ -165,6 +189,12 @@ export function parseSheetRows(rows: string[][]): { releases: Release[]; branche
       linkVercelOuBranch: getVal('link'),
       descricao: getVal('descricao'),
       releaseId: getVal('release_id'),
+      aprovadoPor: getVal('aprovado_por'),
+      aprovadoPorNome: getVal('aprovado_por_nome'),
+      dataAprovacao: getVal('data_aprovacao'),
+      entreguePor: getVal('entregue_por'),
+      entreguePorNome: getVal('entregue_por_nome'),
+      dataEntrega: getVal('data_entrega'),
     };
 
     if (!sheetRow.id) continue;

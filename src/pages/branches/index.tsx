@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { Plus, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Plus, RefreshCw, AlertTriangle, GitMerge, GitBranch } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import {
   BranchesHeader,
@@ -44,9 +44,11 @@ export default function BranchesPage() {
     createRelease,
     createBranch,
     updateStatus,
+    updateStatusWithTracking,
     updateLink,
     updateDescricao,
     updateModulo,
+    saveAllFields,
     initHeaders,
   } = useBranchActions();
 
@@ -136,12 +138,39 @@ export default function BranchesPage() {
     }
   }, [user, selectedReleaseId, selectedReleaseVersao, createBranch, refetch]);
 
-  // Handler para status com refetch
+  // Handler para status com refetch (com rastreamento de aprovação e entrega)
   const handleUpdateStatus = useCallback(async (id: string, status: KanbanStatus) => {
-    const ok = await updateStatus(id, status);
+    let ok: boolean;
+    if ((status === 'aprovada' || status === 'concluida') && user) {
+      ok = await updateStatusWithTracking(id, status, {
+        aprovadoPor: user.username,
+        aprovadoPorNome: user.firstName || user.username,
+      });
+    } else {
+      ok = await updateStatus(id, status);
+    }
     if (ok) await refetch();
     return ok;
-  }, [updateStatus, refetch]);
+  }, [updateStatus, updateStatusWithTracking, refetch, user]);
+
+  // Handler para salvar todos os campos de uma vez (modal de edição)
+  const handleSaveAll = useCallback(async (payload: {
+    id: string;
+    status?: KanbanStatus;
+    link?: string;
+    descricao?: string;
+    modulo?: string;
+  }) => {
+    const ok = await saveAllFields({
+      ...payload,
+      approvalInfo: user ? {
+        aprovadoPor: user.username,
+        aprovadoPorNome: user.firstName || user.username,
+      } : undefined,
+    });
+    if (ok) await refetch();
+    return ok;
+  }, [saveAllFields, refetch, user]);
 
   // Handler para link com refetch
   const handleUpdateLink = useCallback(async (id: string, link: string) => {
@@ -321,7 +350,10 @@ export default function BranchesPage() {
               {/* ========== SEÇÃO RELEASES ========== */}
               <section style={{ marginBottom: '40px' }}>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="section-title" style={{ marginBottom: 0 }}>RELEASES</h2>
+                  <h2 className="section-title section-title-gradient" style={{ marginBottom: 0 }}>
+                    <GitMerge size={20} style={{ color: '#FF6600', flexShrink: 0 }} />
+                    RELEASES
+                  </h2>
 
                   <button
                     onClick={() => setShowCreateRelease(true)}
@@ -378,7 +410,10 @@ export default function BranchesPage() {
               {/* ========== SEÇÃO RAMIFICAÇÕES ========== */}
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="section-title" style={{ marginBottom: 0 }}>RAMIFICAÇÕES</h2>
+                  <h2 className="section-title section-title-gradient" style={{ marginBottom: 0 }}>
+                    <GitBranch size={20} style={{ color: '#FF6600', flexShrink: 0 }} />
+                    RAMIFICAÇÕES
+                  </h2>
                 </div>
 
                 <KanbanBoard columns={KANBAN_COLUMNS_BRANCH} counts={branchCounts}>
@@ -431,9 +466,7 @@ export default function BranchesPage() {
         releaseBranches={editingRelease ? branches.filter(b => b.releaseId === editingRelease.id) : []}
         releaseColumns={KANBAN_COLUMNS_RELEASE}
         branchColumns={KANBAN_COLUMNS_BRANCH}
-        onUpdateStatus={handleUpdateStatus}
-        onUpdateLink={handleUpdateLink}
-        onUpdateDescricao={handleUpdateDescricao}
+        onSaveAll={handleSaveAll}
         onCreateBranch={handleOpenBranchModal}
         updating={updating}
       />
@@ -445,10 +478,7 @@ export default function BranchesPage() {
         branch={editingBranch}
         branchColumns={KANBAN_COLUMNS_BRANCH}
         releaseColumns={KANBAN_COLUMNS_RELEASE}
-        onUpdateStatus={handleUpdateStatus}
-        onUpdateLink={handleUpdateLink}
-        onUpdateDescricao={handleUpdateDescricao}
-        onUpdateModulo={handleUpdateModulo}
+        onSaveAll={handleSaveAll}
         updating={updating}
       />
     </>

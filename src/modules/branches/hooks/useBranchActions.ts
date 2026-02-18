@@ -14,6 +14,20 @@ import {
   branchToRow 
 } from '../utils';
 
+interface ApprovalInfo {
+  aprovadoPor: string;
+  aprovadoPorNome: string;
+}
+
+interface SaveAllFieldsPayload {
+  id: string;
+  status?: KanbanStatus;
+  link?: string;
+  descricao?: string;
+  modulo?: string;
+  approvalInfo?: ApprovalInfo;
+}
+
 interface UseBranchActionsReturn {
   creating: boolean;
   updating: boolean;
@@ -28,9 +42,11 @@ interface UseBranchActionsReturn {
     descricao: string
   ) => Promise<Branch | null>;
   updateStatus: (id: string, status: KanbanStatus) => Promise<boolean>;
+  updateStatusWithTracking: (id: string, status: KanbanStatus, approvalInfo?: ApprovalInfo) => Promise<boolean>;
   updateLink: (id: string, link: string) => Promise<boolean>;
   updateDescricao: (id: string, descricao: string) => Promise<boolean>;
   updateModulo: (id: string, modulo: string) => Promise<boolean>;
+  saveAllFields: (payload: SaveAllFieldsPayload) => Promise<boolean>;
   initHeaders: () => Promise<boolean>;
 }
 
@@ -65,6 +81,12 @@ export function useBranchActions(): UseBranchActionsReturn {
         linkVercel: '',
         descricao: '',
         ramificacoes: [],
+        aprovadoPor: '',
+        aprovadoPorNome: '',
+        dataAprovacao: '',
+        entreguePor: '',
+        entreguePorNome: '',
+        dataEntrega: '',
       };
 
       const row = releaseToRow(release);
@@ -117,6 +139,12 @@ export function useBranchActions(): UseBranchActionsReturn {
         status: 'em-desenvolvimento',
         linkBranch: '',
         descricao,
+        aprovadoPor: '',
+        aprovadoPorNome: '',
+        dataAprovacao: '',
+        entreguePor: '',
+        entreguePorNome: '',
+        dataEntrega: '',
       };
 
       const row = branchToRow(branch);
@@ -169,6 +197,101 @@ export function useBranchActions(): UseBranchActionsReturn {
     return updateField(id, 'status', status);
   }, [updateField]);
 
+  /**
+   * Atualiza o status e, se for 'aprovada' ou 'concluida', salva as informações de rastreamento.
+   */
+  const updateStatusWithTracking = useCallback(async (
+    id: string,
+    status: KanbanStatus,
+    approvalInfo?: ApprovalInfo
+  ): Promise<boolean> => {
+    setUpdating(true);
+    setActionError(null);
+
+    try {
+      // Atualizar o status
+      const statusOk = await updateField(id, 'status', status);
+      if (!statusOk) return false;
+
+      if (status === 'aprovada' && approvalInfo) {
+        // Salvar informações de aprovação
+        const dataAprovacao = getDataAtual();
+        await updateField(id, 'aprovado_por', approvalInfo.aprovadoPor);
+        await updateField(id, 'aprovado_por_nome', approvalInfo.aprovadoPorNome);
+        await updateField(id, 'data_aprovacao', dataAprovacao);
+      }
+
+      if (status === 'concluida' && approvalInfo) {
+        // Salvar informações de entrega
+        const dataEntrega = getDataAtual();
+        await updateField(id, 'entregue_por', approvalInfo.aprovadoPor);
+        await updateField(id, 'entregue_por_nome', approvalInfo.aprovadoPorNome);
+        await updateField(id, 'data_entrega', dataEntrega);
+      }
+
+      return true;
+    } catch (err: any) {
+      setActionError(err.message);
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  }, [updateField]);
+
+  /**
+   * Salva todos os campos editáveis de uma vez (status, link, descrição, módulo).
+   * Rastreia automaticamente aprovação e entrega.
+   */
+  const saveAllFields = useCallback(async (payload: SaveAllFieldsPayload): Promise<boolean> => {
+    setUpdating(true);
+    setActionError(null);
+
+    try {
+      const { id, status, link, descricao, modulo, approvalInfo } = payload;
+
+      // Atualizar status (com rastreamento se necessário)
+      if (status !== undefined) {
+        await updateField(id, 'status', status);
+
+        if (status === 'aprovada' && approvalInfo) {
+          const dataAprovacao = getDataAtual();
+          await updateField(id, 'aprovado_por', approvalInfo.aprovadoPor);
+          await updateField(id, 'aprovado_por_nome', approvalInfo.aprovadoPorNome);
+          await updateField(id, 'data_aprovacao', dataAprovacao);
+        }
+
+        if (status === 'concluida' && approvalInfo) {
+          const dataEntrega = getDataAtual();
+          await updateField(id, 'entregue_por', approvalInfo.aprovadoPor);
+          await updateField(id, 'entregue_por_nome', approvalInfo.aprovadoPorNome);
+          await updateField(id, 'data_entrega', dataEntrega);
+        }
+      }
+
+      // Atualizar link
+      if (link !== undefined) {
+        await updateField(id, 'link', link);
+      }
+
+      // Atualizar descrição
+      if (descricao !== undefined) {
+        await updateField(id, 'descricao', descricao);
+      }
+
+      // Atualizar módulo
+      if (modulo !== undefined) {
+        await updateField(id, 'modulo', modulo);
+      }
+
+      return true;
+    } catch (err: any) {
+      setActionError(err.message);
+      return false;
+    } finally {
+      setUpdating(false);
+    }
+  }, [updateField]);
+
   const updateLink = useCallback((id: string, link: string) => {
     return updateField(id, 'link', link);
   }, [updateField]);
@@ -199,9 +322,11 @@ export function useBranchActions(): UseBranchActionsReturn {
     createRelease,
     createBranch,
     updateStatus,
+    updateStatusWithTracking,
     updateLink,
     updateDescricao,
     updateModulo,
+    saveAllFields,
     initHeaders,
   };
 }

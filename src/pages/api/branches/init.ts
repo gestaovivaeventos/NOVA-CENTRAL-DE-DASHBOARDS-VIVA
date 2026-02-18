@@ -23,6 +23,12 @@ const HEADERS = [
   'link',
   'descricao',
   'release_id',
+  'aprovado_por',
+  'aprovado_por_nome',
+  'data_aprovacao',
+  'entregue_por',
+  'entregue_por_nome',
+  'data_entrega',
 ];
 
 export default async function handler(
@@ -37,15 +43,21 @@ export default async function handler(
     const auth = getAuthenticatedClient();
     const sheets = google.sheets({ version: 'v4', auth });
 
-    // Verificar se já existem headers
+    // Verificar se já existem headers completos
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1:L1`,
+      range: `${SHEET_NAME}!A1:R1`,
     });
 
     const existingHeaders = response.data.values?.[0];
 
-    if (existingHeaders && existingHeaders.length > 0 && existingHeaders[0] === 'id') {
+    // Verificar se os headers estão completos (todos os esperados presentes)
+    const headersComplete = existingHeaders && 
+      existingHeaders.length >= HEADERS.length && 
+      existingHeaders[0] === 'id' &&
+      existingHeaders[existingHeaders.length - 1] === HEADERS[HEADERS.length - 1];
+
+    if (headersComplete) {
       return res.status(200).json({ 
         success: true, 
         message: 'Headers já existem',
@@ -53,10 +65,10 @@ export default async function handler(
       });
     }
 
-    // Criar headers
+    // Criar ou atualizar headers (inclui migração de colunas novas)
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1:L1`,
+      range: `${SHEET_NAME}!A1:R1`,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [HEADERS],

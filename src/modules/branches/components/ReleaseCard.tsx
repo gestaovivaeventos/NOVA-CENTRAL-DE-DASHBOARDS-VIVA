@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { Copy, Check, CheckCircle2, Clock, ChevronDown, ChevronUp, ExternalLink, PlusCircle } from 'lucide-react';
+import { Copy, Check, CheckCircle2, Clock, ChevronDown, ChevronUp, ExternalLink, PlusCircle, ShieldCheck, Truck, Pencil } from 'lucide-react';
 import type { Release, Branch, KanbanColumn } from '../types';
 
 interface ReleaseCardProps {
@@ -64,6 +64,27 @@ export default function ReleaseCard({
       }}
       className="hover:brightness-110"
     >
+      {/* Botão editar */}
+      <div className="flex justify-end mb-1">
+        <button
+          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          style={{
+            backgroundColor: 'rgba(255,102,0,0.08)',
+            border: 'none',
+            borderRadius: '6px',
+            padding: '4px',
+            cursor: 'pointer',
+            color: '#FF6600',
+            display: 'flex',
+            alignItems: 'center',
+            transition: 'all 0.2s',
+          }}
+          title="Editar release"
+        >
+          <Pencil size={13} />
+        </button>
+      </div>
+
       {/* Header: versão + data + status badge */}
       <div className="flex items-center gap-2 mb-2" style={{ flexWrap: 'wrap' }}>
         <span
@@ -161,6 +182,58 @@ export default function ReleaseCard({
         >
           {release.descricao}
         </p>
+      )}
+
+      {/* Informações de aprovação */}
+      {release.aprovadoPorNome && (
+        <div
+          style={{
+            backgroundColor: 'rgba(139, 92, 246, 0.06)',
+            border: '1px solid rgba(139, 92, 246, 0.2)',
+            borderRadius: '6px',
+            padding: '5px 8px',
+            marginBottom: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.6rem',
+          }}
+        >
+          <ShieldCheck size={11} style={{ color: '#8b5cf6', flexShrink: 0 }} />
+          <span style={{ color: '#8b5cf6', fontWeight: 600 }}>{release.aprovadoPorNome}</span>
+          {release.dataAprovacao && (
+            <>
+              <span style={{ color: '#4b5563' }}>•</span>
+              <span style={{ color: '#6c757d' }}>{release.dataAprovacao}</span>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Informações de entrega */}
+      {release.entreguePorNome && (
+        <div
+          style={{
+            backgroundColor: 'rgba(16, 185, 129, 0.06)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            borderRadius: '6px',
+            padding: '5px 8px',
+            marginBottom: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontSize: '0.6rem',
+          }}
+        >
+          <Truck size={11} style={{ color: '#10b981', flexShrink: 0 }} />
+          <span style={{ color: '#10b981', fontWeight: 600 }}>{release.entreguePorNome}</span>
+          {release.dataEntrega && (
+            <>
+              <span style={{ color: '#4b5563' }}>•</span>
+              <span style={{ color: '#6c757d' }}>{release.dataEntrega}</span>
+            </>
+          )}
+        </div>
       )}
 
       {/* Link Vercel com copiar/abrir */}

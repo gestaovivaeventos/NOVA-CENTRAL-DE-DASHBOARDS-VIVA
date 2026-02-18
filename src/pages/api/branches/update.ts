@@ -31,14 +31,21 @@ export default async function handler(
 
     // Mapear field para índice da coluna
     const fieldToCol: Record<string, number> = {
-      'status': 8,      // Coluna I (índice 8)
-      'link': 9,         // Coluna J (índice 9)
-      'descricao': 10,   // Coluna K (índice 10)
+      'modulo': 6,              // Coluna G (índice 6)
+      'status': 8,              // Coluna I (índice 8)
+      'link': 9,                // Coluna J (índice 9)
+      'descricao': 10,          // Coluna K (índice 10)
+      'aprovado_por': 12,       // Coluna M (índice 12)
+      'aprovado_por_nome': 13,  // Coluna N (índice 13)
+      'data_aprovacao': 14,     // Coluna O (índice 14)
+      'entregue_por': 15,       // Coluna P (índice 15)
+      'entregue_por_nome': 16,  // Coluna Q (índice 16)
+      'data_entrega': 17,       // Coluna R (índice 17)
     };
 
     const colIndex = fieldToCol[field];
     if (colIndex === undefined) {
-      return res.status(400).json({ error: `Campo inválido: ${field}. Use: status, link, descricao` });
+      return res.status(400).json({ error: `Campo inválido: ${field}` });
     }
 
     // Invalidar cache primeiro para buscar dados frescos
@@ -50,7 +57,7 @@ export default async function handler(
     
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:L`,
+      range: `${SHEET_NAME}!A:R`,
     });
 
     const rows = response.data.values || [];

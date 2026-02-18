@@ -20,6 +20,12 @@ export const BRANCHES_SHEET_NAME = 'BASE';
 // J: link
 // K: descricao
 // L: release_id (para branches, id da release pai)
+// M: aprovado_por (login de quem aprovou)
+// N: aprovado_por_nome (nome de quem aprovou)
+// O: data_aprovacao (data da aprovação)
+// P: entregue_por (login de quem entregou)
+// Q: entregue_por_nome (nome de quem entregou)
+// R: data_entrega (data da entrega)
 
 export const SHEET_HEADERS = [
   'id',
@@ -34,6 +40,12 @@ export const SHEET_HEADERS = [
   'link',
   'descricao',
   'release_id',
+  'aprovado_por',
+  'aprovado_por_nome',
+  'data_aprovacao',
+  'entregue_por',
+  'entregue_por_nome',
+  'data_entrega',
 ];
 
 // ========== CORES ==========
