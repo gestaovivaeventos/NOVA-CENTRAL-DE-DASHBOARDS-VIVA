@@ -948,7 +948,7 @@ export default function RankingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rankingIniciantes.slice(0, 10).map((item, index) => (
+                  {rankingIniciantes.slice(0, 3).map((item, index) => (
                     <tr 
                       key={item.unidade}
                       style={{ 

@@ -183,13 +183,18 @@ export default function TabelaResultadosOficiais({
       const metaCluster = metas.find(m => m.cluster.toUpperCase().trim() === cluster);
       const indicadoresResult: Record<string, { realizado: number; meta: number; formato: string }> = {};
 
+      // Franquias de incubação usam meta da planilha direto (sem cálculo com tempo médio)
+      const isIncubacao = cluster.includes('INCUBA');
+
       INDICADORES.forEach(ind => {
         const realizado = parseValor(item[ind.colunaResultado] || '', ind.formato);
         let meta = 0;
         if (metaCluster) {
-          if (ind.metaCalculada && ind.id === 'vvrCarteira') {
+          if (ind.metaCalculada && ind.id === 'vvrCarteira' && !isIncubacao) {
+            // Para franquias NÃO incubação: calcula meta com tempo médio
             meta = (parseMetaValor(metaCluster.vvr) * tempoMedio) / 12;
           } else {
+            // Para incubação ou demais indicadores: usa meta direto da planilha
             meta = parseMetaValor((metaCluster as any)[ind.campoMeta] || '0');
           }
         }
@@ -470,7 +475,7 @@ export default function TabelaResultadosOficiais({
                             justifyContent: 'center',
                             gap: '4px'
                           }}>
-                            <span style={{ fontSize: '0.58rem', color: '#FF6600', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Real</span>
+                            <span style={{ fontSize: '0.58rem', color: '#FF6600', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.03em' }}>Real.</span>
                             {formatarValor(dados.realizado, dados.formato)}
                           </div>
                         </td>
