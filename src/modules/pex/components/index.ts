@@ -8,6 +8,7 @@ export { default as Header } from './Header';
 export { default as IndicadorCardLegacy } from './IndicadorCardLegacy';
 export { default as Sidebar } from './Sidebar';
 export { default as TabelaResumo } from './TabelaResumo';
+export { default as TabelaResultadosOficiais } from './TabelaResultadosOficiais';
 export { default as MultiSelectFilter } from './MultiSelectFilter';
 
 // Componentes refatorados
