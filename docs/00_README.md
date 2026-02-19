@@ -13,7 +13,7 @@
   - Matriz de comparação benefícios
   - Marcos de sucesso
 - **Tempo leitura**: 15-20 minutos
-- **Ação**: Aprovação de direcionamento
+- **Ação**: Aprovação de direcionamento.
 
 ### 2. **DIAGRAMS.md** ⭐ VISUALIZAÇÃO
 - **Tamanho**: ~500 linhas
