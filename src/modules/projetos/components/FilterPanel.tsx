@@ -42,9 +42,9 @@ const labelStyle: React.CSSProperties = {
 const statusOptions: Array<{ value: ProjetoStatus | 'Todos'; label: string }> = [
   { value: 'Todos', label: '📋 Todos' },
   { value: 'Em Andamento', label: '🔄 Em Andamento' },
-  { value: 'Passado', label: '⏳ Passados' },
-  { value: 'Finalizado', label: '✅ Finalizados' },
+  { value: 'Concluído', label: '✅ Concluídos' },
   { value: 'Cancelado', label: '❌ Cancelados' },
+  { value: 'Inativo', label: '🚫 Inativos' },
 ];
 
 export const FilterPanel: React.FC<FilterPanelProps> = ({

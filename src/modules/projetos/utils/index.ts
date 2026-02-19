@@ -27,8 +27,7 @@ export const getStatusColor = (situacao: ProjetoSituacao): string => {
 export const getProjetoStatusStyle = (status: ProjetoStatus) => {
   const styles: Record<ProjetoStatus, { bg: string; text: string; border: string }> = {
     'Em Andamento': { bg: 'rgba(255,102,0,0.15)', text: '#FF8533', border: '#FF6600' },
-    'Passado': { bg: 'rgba(234,179,8,0.15)', text: '#EAB308', border: '#EAB308' },
-    'Finalizado': { bg: 'rgba(34,197,94,0.15)', text: '#22C55E', border: '#22C55E' },
+    'Concluído': { bg: 'rgba(34,197,94,0.15)', text: '#22C55E', border: '#22C55E' },
     'Cancelado': { bg: 'rgba(239,68,68,0.15)', text: '#EF4444', border: '#EF4444' },
     'Inativo': { bg: 'rgba(107,114,128,0.15)', text: '#6B7280', border: '#6B7280' },
   };
@@ -42,9 +41,9 @@ export const calcularResumo = (projetos: Projeto[]): ProjetosResumo => {
   return {
     total: projetos.length,
     emAndamento: projetos.filter(p => p.status === 'Em Andamento').length,
-    passados: projetos.filter(p => p.status === 'Passado').length,
-    finalizados: projetos.filter(p => p.status === 'Finalizado').length,
+    concluidos: projetos.filter(p => p.status === 'Concluído').length,
     cancelados: projetos.filter(p => p.status === 'Cancelado').length,
+    inativos: projetos.filter(p => p.status === 'Inativo').length,
   };
 };
 
@@ -92,8 +91,15 @@ export const gerarProjetoId = (): string => {
 
 /**
  * Calcular percentual de atingimento
+ * Se tendência for 'Subir': atingido / esperado (quanto maior melhor)
+ * Se tendência for 'Descer': esperado / atingido (quanto menor melhor)
  */
-export const calcularAtingimento = (esperado: number, atingido: number): number => {
+export const calcularAtingimento = (esperado: number, atingido: number, tendencia?: string): number => {
+  if (tendencia === 'Descer') {
+    if (atingido === 0) return esperado === 0 ? 100 : 999.9;
+    return Math.round((esperado / atingido) * 100 * 10) / 10;
+  }
+  // Subir (default)
   if (esperado === 0) return 0;
   return Math.round((atingido / esperado) * 100 * 10) / 10;
 };

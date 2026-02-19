@@ -1,176 +1,27 @@
 /**
  * Hook para gerenciar dados de projetos
- * Utiliza localStorage para persistência local
+ * Busca / grava dados via API que conecta ao Google Sheets
  */
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Projeto, ProjetosDashboardData, ProjetosFiltros, NovoProjetoForm } from '../types';
-import { calcularResumo, gerarProjetoId, calcularAtingimento, getSituacao } from '../utils';
+import { calcularResumo, calcularAtingimento, getSituacao } from '../utils';
 import { TIMES_OPTIONS, INDICADORES_OPTIONS } from '../config/app.config';
 
-const STORAGE_KEY = 'projetos_dashboard_data';
-
-// Dados de exemplo para demonstração
-const DADOS_EXEMPLO: Projeto[] = [
-  {
-    id: 'proj_001',
-    criadoPor: 'João Silva',
-    time: 'MARKETING',
-    responsavel: 'Maria Santos',
-    projeto: 'Campanha Digital Q1',
-    dataInicio: '01/01/2026',
-    prazoFinal: '31/03/2026',
-    indicador: 'Conversão',
-    objetivo: 'Aumentar conversão de leads em 25%',
-    esforcoEstimado: 'Alto',
-    dataAfericao: '15/03/2026',
-    resultadoEsperado: 25,
-    resultadoAtingido: 18,
-    percentualAtingimento: 72,
-    progresso: 65,
-    situacao: 'amarelo',
-    status: 'Em Andamento',
-    tendencia: 'Subir',
-    impactoEsperado: 'Aumento de receita recorrente',
-    custo: 50000,
-  },
-  {
-    id: 'proj_002',
-    criadoPor: 'Ana Costa',
-    time: 'TI',
-    responsavel: 'Pedro Oliveira',
-    projeto: 'Migração Cloud',
-    dataInicio: '15/11/2025',
-    prazoFinal: '28/02/2026',
-    indicador: 'Produtividade',
-    objetivo: 'Migrar 100% da infraestrutura para cloud',
-    esforcoEstimado: 'Muito Alto',
-    dataAfericao: '01/02/2026',
-    resultadoEsperado: 100,
-    resultadoAtingido: 95,
-    percentualAtingimento: 95,
-    progresso: 90,
-    situacao: 'verde',
-    status: 'Em Andamento',
-    tendencia: 'Subir',
-    impactoEsperado: 'Redução de custos de infraestrutura',
-    custo: 120000,
-  },
-  {
-    id: 'proj_003',
-    criadoPor: 'Carlos Lima',
-    time: 'GESTÃO DE PESSOAS',
-    responsavel: 'Fernanda Alves',
-    projeto: 'Programa de Engajamento',
-    dataInicio: '01/07/2025',
-    prazoFinal: '31/12/2025',
-    indicador: 'Engajamento',
-    objetivo: 'Atingir 85% de engajamento na pesquisa',
-    esforcoEstimado: 'Médio',
-    dataAfericao: '20/12/2025',
-    resultadoEsperado: 85,
-    resultadoAtingido: 88,
-    percentualAtingimento: 103.5,
-    progresso: 100,
-    situacao: 'verde',
-    status: 'Finalizado',
-    tendencia: 'Subir',
-    impactoEsperado: 'Melhoria no clima organizacional',
-    custo: 30000,
-  },
-  {
-    id: 'proj_004',
-    criadoPor: 'Roberto Santos',
-    time: 'EXPANSÃO',
-    responsavel: 'Luciana Pereira',
-    projeto: 'Expansão Região Sul',
-    dataInicio: '01/03/2025',
-    prazoFinal: '30/09/2025',
-    indicador: 'Receita',
-    objetivo: 'Abrir 10 novas unidades na região sul',
-    esforcoEstimado: 'Muito Alto',
-    dataAfericao: '30/09/2025',
-    resultadoEsperado: 10,
-    resultadoAtingido: 7,
-    percentualAtingimento: 70,
-    progresso: 100,
-    situacao: 'amarelo',
-    status: 'Passado',
-    tendencia: 'Manter',
-    impactoEsperado: 'Expansão de market share',
-    custo: 500000,
-  },
-  {
-    id: 'proj_005',
-    criadoPor: 'Marcos Ribeiro',
-    time: 'ATENDIMENTO',
-    responsavel: 'Julia Mendes',
-    projeto: 'Chatbot Atendimento 24h',
-    dataInicio: '01/05/2025',
-    prazoFinal: '31/08/2025',
-    indicador: 'NPS',
-    objetivo: 'Implementar chatbot com IA para atendimento 24h',
-    esforcoEstimado: 'Alto',
-    dataAfericao: '31/08/2025',
-    resultadoEsperado: 90,
-    resultadoAtingido: 0,
-    percentualAtingimento: 0,
-    progresso: 30,
-    situacao: 'vermelho',
-    status: 'Cancelado',
-    tendencia: 'Descer',
-    impactoEsperado: 'Redução de tempo de resposta',
-    custo: 80000,
-  },
-  {
-    id: 'proj_006',
-    criadoPor: 'Paula Martins',
-    time: 'CONSULTORIA',
-    responsavel: 'Ricardo Souza',
-    projeto: 'Reestruturação Comercial',
-    dataInicio: '01/01/2026',
-    prazoFinal: '30/06/2026',
-    indicador: 'Receita',
-    objetivo: 'Aumentar receita líquida em 15%',
-    esforcoEstimado: 'Alto',
-    dataAfericao: '15/06/2026',
-    resultadoEsperado: 15,
-    resultadoAtingido: 5,
-    percentualAtingimento: 33.3,
-    progresso: 25,
-    situacao: 'vermelho',
-    status: 'Em Andamento',
-    tendencia: 'Subir',
-    impactoEsperado: 'Crescimento sustentável',
-    custo: 75000,
-  },
-];
-
-function loadFromStorage(): Projeto[] {
-  if (typeof window === 'undefined') return DADOS_EXEMPLO;
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    }
-  } catch {
-    // ignore
-  }
-  return DADOS_EXEMPLO;
-}
-
-function saveToStorage(projetos: Projeto[]) {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projetos));
-  } catch {
-    // ignore
-  }
+async function fetchProjetos(): Promise<{ projetos: Projeto[]; responsaveisPlanilha: string[] }> {
+  const res = await fetch('/api/projetos');
+  if (!res.ok) throw new Error('Erro ao buscar projetos da API');
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error || 'Erro desconhecido');
+  return {
+    projetos: json.data as Projeto[],
+    responsaveisPlanilha: (json.responsaveis || []) as string[],
+  };
 }
 
 export function useProjetosData() {
   const [projetos, setProjetos] = useState<Projeto[]>([]);
+  const [responsaveisPlanilha, setResponsaveisPlanilha] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filtros, setFiltros] = useState<ProjetosFiltros>({
@@ -180,17 +31,24 @@ export function useProjetosData() {
     busca: '',
   });
 
-  // Carregar dados iniciais
-  useEffect(() => {
+  // Carregar dados da API
+  const carregarDados = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const dados = loadFromStorage();
+      const { projetos: dados, responsaveisPlanilha: resp } = await fetchProjetos();
       setProjetos(dados);
-    } catch (err) {
-      setError('Erro ao carregar projetos');
+      setResponsaveisPlanilha(resp);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao carregar projetos');
     } finally {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    carregarDados();
+  }, [carregarDados]);
 
   // Filtrar projetos
   const projetosFiltrados = useMemo(() => {
@@ -214,98 +72,145 @@ export function useProjetosData() {
   // Resumo
   const resumo = useMemo(() => calcularResumo(projetos), [projetos]);
 
-  // Times e responsáveis únicos
+  // Times únicos
   const times = useMemo(() => {
     const set = new Set(projetos.map(p => p.time));
     TIMES_OPTIONS.forEach(t => set.add(t));
     return Array.from(set).sort();
   }, [projetos]);
 
+  // Responsáveis da coluna X da planilha
   const responsaveis = useMemo(() => {
-    return [...new Set(projetos.map(p => p.responsavel))].sort();
-  }, [projetos]);
+    return responsaveisPlanilha.length > 0 ? responsaveisPlanilha : [];
+  }, [responsaveisPlanilha]);
 
-  // Atualizar projeto existente
-  const atualizarProjeto = useCallback((id: string, campo: keyof Projeto, valor: any) => {
+  // Atualizar campo individual via API
+  const atualizarProjeto = useCallback(async (id: string, campo: keyof Projeto, valor: any) => {
+    // Otimistic update local
     setProjetos(prev => {
-      const updated = prev.map(p => {
+      return prev.map(p => {
         if (p.id !== id) return p;
         const novoProjeto = { ...p, [campo]: valor };
-        // Recalcular percentual e situação se alterou resultado atingido
         if (campo === 'resultadoAtingido' || campo === 'progresso') {
           const atingido = campo === 'resultadoAtingido' ? valor : p.resultadoAtingido;
           const esperado = p.resultadoEsperado;
-          novoProjeto.percentualAtingimento = calcularAtingimento(atingido, esperado);
+          novoProjeto.percentualAtingimento = calcularAtingimento(esperado, atingido, novoProjeto.tendencia);
           novoProjeto.situacao = getSituacao(novoProjeto.percentualAtingimento);
         }
         return novoProjeto;
       });
-      saveToStorage(updated);
-      return updated;
     });
-  }, []);
 
-  // Editar projeto completo
-  const editarProjetoCompleto = useCallback((id: string, dadosAtualizados: Partial<Projeto>) => {
+    // Persistir na planilha
+    try {
+      const projeto = projetos.find(p => p.id === id);
+      const payload: Record<string, any> = { id, [campo]: valor };
+      if (campo === 'resultadoAtingido' && projeto) {
+        payload.percentualAtingimento = calcularAtingimento(
+          projeto.resultadoEsperado,
+          valor,
+          projeto.tendencia,
+        );
+      }
+      await fetch('/api/projetos/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    } catch (err) {
+      console.error('Erro ao salvar na planilha:', err);
+      // Recarregar dados para manter consistência
+      carregarDados();
+    }
+  }, [projetos, carregarDados]);
+
+  // Editar projeto completo via API
+  const editarProjetoCompleto = useCallback(async (id: string, dadosAtualizados: Partial<Projeto>, alteradoPor?: string) => {
+    // Optimistic update local
     setProjetos(prev => {
-      const updated = prev.map(p => {
+      return prev.map(p => {
         if (p.id !== id) return p;
         const novoProjeto = { ...p, ...dadosAtualizados };
-        // Recalcular percentual e situação
-        novoProjeto.percentualAtingimento = calcularAtingimento(novoProjeto.resultadoAtingido, novoProjeto.resultadoEsperado);
+        novoProjeto.percentualAtingimento = calcularAtingimento(
+          novoProjeto.resultadoEsperado,
+          novoProjeto.resultadoAtingido,
+          novoProjeto.tendencia,
+        );
         novoProjeto.situacao = getSituacao(novoProjeto.percentualAtingimento);
+        if (alteradoPor) novoProjeto.alteradoPor = alteradoPor;
         return novoProjeto;
       });
-      saveToStorage(updated);
-      return updated;
     });
-  }, []);
 
-  // Inativar projeto
-  const inativarProjeto = useCallback((id: string) => {
-    setProjetos(prev => {
-      const updated = prev.map(p => {
-        if (p.id !== id) return p;
-        return { ...p, status: 'Inativo' as const };
+    // Persistir na planilha
+    try {
+      const merged = { ...dadosAtualizados };
+      const projeto = projetos.find(p => p.id === id);
+      if (projeto) {
+        const esp = merged.resultadoEsperado ?? projeto.resultadoEsperado;
+        const ati = merged.resultadoAtingido ?? projeto.resultadoAtingido;
+        const tend = merged.tendencia ?? projeto.tendencia;
+        merged.percentualAtingimento = calcularAtingimento(esp, ati, tend);
+      }
+      await fetch('/api/projetos/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, alteradoPor, ...merged }),
       });
-      saveToStorage(updated);
-      return updated;
-    });
-  }, []);
+    } catch (err) {
+      console.error('Erro ao salvar na planilha:', err);
+      carregarDados();
+    }
+  }, [projetos, carregarDados]);
 
-  // Adicionar projeto
-  const adicionarProjeto = useCallback((form: NovoProjetoForm, criadoPor: string) => {
-    const novoProjeto: Projeto = {
-      id: gerarProjetoId(),
-      criadoPor,
-      time: form.time,
-      responsavel: form.responsavel,
-      projeto: form.projeto,
-      dataInicio: form.dataInicio,
-      prazoFinal: form.dataFim,
-      indicador: form.indicador,
-      objetivo: form.objetivo,
-      esforcoEstimado: 'Médio',
-      dataAfericao: '',
-      resultadoEsperado: form.resultadoEsperado,
-      resultadoAtingido: 0,
-      percentualAtingimento: 0,
-      progresso: 0,
-      situacao: 'vermelho',
-      status: 'Em Andamento',
-      tendencia: form.tendencia,
-      impactoEsperado: form.impactoEsperado,
-      custo: form.custo,
-    };
+  // Inativar projeto via API
+  const inativarProjeto = useCallback(async (id: string, inativadoPor?: string) => {
+    // Optimistic update
+    setProjetos(prev => prev.map(p =>
+      p.id === id ? { ...p, status: 'Inativo' as const, inativadoPor: inativadoPor || '' } : p
+    ));
 
-    setProjetos(prev => {
-      const updated = [novoProjeto, ...prev];
-      saveToStorage(updated);
-      return updated;
-    });
+    try {
+      await fetch('/api/projetos/inactivate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, inativadoPor }),
+      });
+    } catch (err) {
+      console.error('Erro ao inativar na planilha:', err);
+      carregarDados();
+    }
+  }, [carregarDados]);
 
-    return novoProjeto;
-  }, []);
+  // Adicionar projeto via API
+  const adicionarProjeto = useCallback(async (form: NovoProjetoForm, criadoPor: string) => {
+    try {
+      const res = await fetch('/api/projetos/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projeto: form.projeto,
+          objetivo: form.objetivo,
+          dataInicio: form.dataInicio,
+          prazoFinal: form.dataFim,
+          responsavel: form.responsavel,
+          time: form.time,
+          indicador: form.indicador,
+          tendencia: form.tendencia,
+          resultadoEsperado: form.resultadoEsperado,
+          custo: form.custo,
+          criadoPor,
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      // Recarregar dados para pegar o novo projeto com ID da planilha
+      await carregarDados();
+    } catch (err) {
+      console.error('Erro ao criar projeto na planilha:', err);
+      throw err;
+    }
+  }, [carregarDados]);
 
   // Dashboard data
   const dashboardData: ProjetosDashboardData = useMemo(() => ({
@@ -327,11 +232,6 @@ export function useProjetosData() {
     atualizarProjeto,
     editarProjetoCompleto,
     inativarProjeto,
-    refetch: () => {
-      setLoading(true);
-      const dados = loadFromStorage();
-      setProjetos(dados);
-      setLoading(false);
-    },
+    refetch: carregarDados,
   };
 }

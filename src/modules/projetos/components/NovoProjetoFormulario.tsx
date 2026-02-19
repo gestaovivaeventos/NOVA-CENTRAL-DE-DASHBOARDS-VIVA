@@ -23,7 +23,6 @@ const initialForm: NovoProjetoForm = {
   indicador: '',
   tendencia: 'Subir',
   resultadoEsperado: 0,
-  impactoEsperado: '',
   custo: 0,
 };
 
@@ -424,20 +423,6 @@ export const NovoProjetoFormulario: React.FC<NovoProjetoFormularioProps> = ({
                       value={form.resultadoEsperado || ''}
                       onChange={handleChange}
                       placeholder="Ex: 100"
-                      style={inputStyle}
-                      onFocus={(e) => (e.target.style.borderColor = '#FF6600')}
-                      onBlur={(e) => (e.target.style.borderColor = '#333')}
-                    />
-                  </div>
-
-                  <div className="lg:col-span-2">
-                    <label style={labelStyle}>Impacto Esperado</label>
-                    <input
-                      type="text"
-                      name="impactoEsperado"
-                      value={form.impactoEsperado}
-                      onChange={handleChange}
-                      placeholder="Ex: Aumento de receita recorrente em 15%"
                       style={inputStyle}
                       onFocus={(e) => (e.target.style.borderColor = '#FF6600')}
                       onBlur={(e) => (e.target.style.borderColor = '#333')}

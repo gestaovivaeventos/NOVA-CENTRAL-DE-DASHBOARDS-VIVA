@@ -1,6 +1,6 @@
 /**
  * Cards de resumo executivo (KPI Cards)
- * Total | Em Andamento | Passados | Finalizados | Cancelados
+ * Total | Em Andamento | Concluídos | Cancelados | Inativos
  */
 
 import React from 'react';
@@ -70,18 +70,18 @@ export const KPICards: React.FC<KPICardsProps> = ({ resumo }) => {
       borderColor: CARD_COLORS.emAndamento.border,
     },
     {
-      label: 'Passados',
-      value: resumo.passados,
-      icon: CARD_COLORS.passados.icon,
-      bgColor: CARD_COLORS.passados.bg,
-      borderColor: CARD_COLORS.passados.border,
+      label: 'Concluídos',
+      value: resumo.concluidos,
+      icon: CARD_COLORS.concluidos.icon,
+      bgColor: CARD_COLORS.concluidos.bg,
+      borderColor: CARD_COLORS.concluidos.border,
     },
     {
-      label: 'Finalizados',
-      value: resumo.finalizados,
-      icon: CARD_COLORS.finalizados.icon,
-      bgColor: CARD_COLORS.finalizados.bg,
-      borderColor: CARD_COLORS.finalizados.border,
+      label: 'Inativos',
+      value: resumo.inativos,
+      icon: CARD_COLORS.inativos.icon,
+      bgColor: CARD_COLORS.inativos.bg,
+      borderColor: CARD_COLORS.inativos.border,
     },
     {
       label: 'Cancelados',

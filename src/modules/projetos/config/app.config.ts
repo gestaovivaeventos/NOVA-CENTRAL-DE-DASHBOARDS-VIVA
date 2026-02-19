@@ -30,9 +30,9 @@ export const STATUS_COLORS = {
 export const CARD_COLORS = {
   total: { bg: 'rgba(59, 130, 246, 0.15)', border: '#3B82F6', icon: '📊' },
   emAndamento: { bg: 'rgba(255, 102, 0, 0.15)', border: '#FF6600', icon: '🔄' },
-  passados: { bg: 'rgba(234, 179, 8, 0.15)', border: '#EAB308', icon: '⏳' },
-  finalizados: { bg: 'rgba(34, 197, 94, 0.15)', border: '#22C55E', icon: '✅' },
+  concluidos: { bg: 'rgba(34, 197, 94, 0.15)', border: '#22C55E', icon: '✅' },
   cancelados: { bg: 'rgba(239, 68, 68, 0.15)', border: '#EF4444', icon: '❌' },
+  inativos: { bg: 'rgba(107, 114, 128, 0.15)', border: '#6B7280', icon: '🚫' },
 };
 
 // Opções de times
@@ -71,7 +71,6 @@ export const INDICADORES_OPTIONS = [
 export const TENDENCIA_OPTIONS = [
   { value: 'Subir', label: '📈 Subir' },
   { value: 'Descer', label: '📉 Descer' },
-  { value: 'Manter', label: '➡️ Manter' },
 ];
 
 // Configurações de layout

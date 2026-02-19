@@ -3,36 +3,42 @@
  */
 
 // Status possíveis de um projeto
-export type ProjetoStatus = 'Em Andamento' | 'Passado' | 'Finalizado' | 'Cancelado' | 'Inativo';
+export type ProjetoStatus = 'Em Andamento' | 'Concluído' | 'Cancelado' | 'Inativo';
 
 // Situação do projeto (semáforo)
 export type ProjetoSituacao = 'verde' | 'amarelo' | 'vermelho';
 
 // Tendência do indicador
-export type Tendencia = 'Subir' | 'Descer' | 'Manter';
+export type Tendencia = 'Subir' | 'Descer';
 
 // Interface principal do Projeto
 export interface Projeto {
   id: string;
-  criadoPor: string;
-  time: string;
-  responsavel: string;
   projeto: string;
+  objetivo: string;
   dataInicio: string;
   prazoFinal: string;
+  responsavel: string;
+  time: string;
   indicador: string;
-  objetivo: string;
-  esforcoEstimado: string;
-  dataAfericao: string;
+  tendencia: Tendencia;
   resultadoEsperado: number;
   resultadoAtingido: number;
   percentualAtingimento: number;
+  dataAfericao: string;        // Quando terá impacto
+  custo: number;
+  criadoPor: string;
+  dataCriacao: string;
+  alteradoPor: string;
+  dataAlteracao: string;
+  inativadoPor: string;
+  dataInativacao: string;
+  status: ProjetoStatus;
+  // Campos calculados
   progresso: number;
   situacao: ProjetoSituacao;
-  status: ProjetoStatus;
-  tendencia: Tendencia;
+  esforcoEstimado: string;
   impactoEsperado: string;
-  custo: number;
 }
 
 // Formulário de novo projeto - Seção 1: Dados do Projeto
@@ -50,7 +56,6 @@ export interface NovoProjetoMetricas {
   indicador: string;
   tendencia: Tendencia;
   resultadoEsperado: number;
-  impactoEsperado: string;
   custo: number;
 }
 
@@ -61,9 +66,9 @@ export interface NovoProjetoForm extends NovoProjetoDados, NovoProjetoMetricas {
 export interface ProjetosResumo {
   total: number;
   emAndamento: number;
-  passados: number;
-  finalizados: number;
+  concluidos: number;
   cancelados: number;
+  inativos: number;
 }
 
 // Dados do dashboard

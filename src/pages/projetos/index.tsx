@@ -185,6 +185,7 @@ export default function ProjetosPage() {
               onEditFull={editarProjetoCompleto}
               onInativar={inativarProjeto}
               responsaveis={data.responsaveis}
+              currentUserName={user?.firstName || user?.username || 'Usuário'}
             />
           </main>
 
