@@ -167,14 +167,80 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
 
   // Função para salvar dados na planilha
   const handleSaveData = async () => {
-    setIsSaving(true);
     setSaveMessage(null);
+
+    // Validar campos obrigatórios
+    const responsavelValue = responsavelRef.current?.value?.trim() || '';
+    if (!responsavelValue || responsavelValue.toUpperCase() === 'N/A') {
+      setSaveMessage({ type: 'error', text: 'O campo Responsável é obrigatório. Insira um nome válido.' });
+      responsavelRef.current?.focus();
+      return;
+    }
+
+    // Validar se todas as metas estão preenchidas
+    const metasVazias: string[] = [];
+    sortedData.forEach((entry, idx) => {
+      const metaInput = metaInputsRef.current[idx];
+      const metaValue = metaInput?.value?.trim() || '';
+      if (!metaValue) {
+        const mesNome = entry.data ? entry.data.toLocaleDateString('pt-BR', { month: 'long' }) : `Mês ${idx + 1}`;
+        metasVazias.push(mesNome);
+      }
+    });
+
+    if (metasVazias.length > 0) {
+      setSaveMessage({ 
+        type: 'error', 
+        text: `A Meta é obrigatória para todos os meses. Preencha: ${metasVazias.join(', ')}.` 
+      });
+      // Focar no primeiro input vazio
+      const primeiroVazioIdx = sortedData.findIndex((_, idx) => !metaInputsRef.current[idx]?.value?.trim());
+      if (primeiroVazioIdx >= 0) {
+        metaInputsRef.current[primeiroVazioIdx]?.focus();
+      }
+      return;
+    }
+
+    setIsSaving(true);
 
     try {
       // Obter valores selecionados
       const formaDeMedirValue = formaDeMedirRef.current?.value || '';
       const responsavelValue = responsavelRef.current?.value || '';
       const medidaValue = medidaRef.current?.value || '';
+      const medidaUpper = medidaValue.toUpperCase();
+
+      // Função para formatar número com vírgula como separador decimal (formato brasileiro)
+      const formatNumberBR = (num: number): string => {
+        return num.toLocaleString('pt-BR', { 
+          minimumFractionDigits: 0, 
+          maximumFractionDigits: 2 
+        });
+      };
+
+      // Função para converter valor para formato da planilha
+      const parseValueForSave = (inputValue: string): string => {
+        if (!inputValue || inputValue.trim() === '') return '';
+        
+        // Limpar formatação: remover %, R$, pontos de milhar, trocar vírgula por ponto para parsing
+        let cleanValue = inputValue
+          .replace(/[R$\s]/g, '')
+          .replace('%', '')
+          .replace(/\./g, '')  // Remove pontos de milhar
+          .replace(',', '.')   // Troca vírgula decimal por ponto para parseFloat
+          .trim();
+        
+        const numValue = parseFloat(cleanValue);
+        if (isNaN(numValue)) return inputValue;
+        
+        // Se a medida é PORCENTAGEM, enviar como "15%" para o Google Sheets interpretar corretamente
+        if (medidaUpper.includes('PORCENTAGEM')) {
+          return formatNumberBR(numValue) + '%';
+        }
+        
+        // Retorna com vírgula como separador decimal
+        return formatNumberBR(numValue);
+      };
 
       // Coletar dados dos inputs
       const updates = sortedData.map((entry, idx) => {
@@ -183,8 +249,8 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
 
         return {
           rowIndex: entry.rowIndex,
-          meta: metaInput?.value || '',
-          realizado: realizadoInput?.value || '',
+          meta: parseValueForSave(metaInput?.value || ''),
+          realizado: parseValueForSave(realizadoInput?.value || ''),
           formaDeMedir: formaDeMedirValue,
           responsavel: responsavelValue,
           medida: medidaValue,
@@ -292,11 +358,27 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
       : (sortedData.length > 0 ? sortedData[sortedData.length - 1] : null);
     const realizadoUltimoMes = lastMonthEntry ? (lastMonthEntry.realizado ?? 0) : 0;
 
+    // Atingimento da Meta Parcial (coluna Q: ATING META MES)
+    // Pegar o último valor preenchido
+    const entradasComAtingMes = sortedData.filter(d =>
+      d.atingMetaMes !== null &&
+      d.atingMetaMes !== undefined &&
+      d.atingMetaMes !== ''
+    );
+    const ultimoAtingMetaMes = entradasComAtingMes.length > 0
+      ? entradasComAtingMes[entradasComAtingMes.length - 1].atingMetaMes
+      : '';
+    // Converter para número (ex: "85%" -> 85)
+    const atingMetaParcial = ultimoAtingMetaMes
+      ? parseFloat(ultimoAtingMetaMes.replace('%', '').replace(',', '.').trim()) || 0
+      : 0;
+
     return {
       somaRealizado,
       somaMeta,
       realizadoUltimoMes,
       atingimentoFinal,
+      atingMetaParcial,
     };
   }, [sortedData]);
 
@@ -539,6 +621,31 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
     },
   };
 
+  // Configuração do gráfico de atingimento parcial (doughnut)
+  const atingMetaParcialPercent = metrics.atingMetaParcial;
+  const doughnutParcialConfig = {
+    data: {
+      datasets: [{
+        data: [atingMetaParcialPercent, Math.max(100 - atingMetaParcialPercent, 0)],
+        backgroundColor: [doughnutGradient, '#2a2a2a'],
+        borderWidth: 0,
+        borderRadius: 2,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '75%',
+      rotation: 270,
+      circumference: 360,
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false },
+        datalabels: { display: false },
+      },
+    },
+  };
+
   // Determinar se menor ou maior é melhor (baseado na coluna TENDENCIA)
   const isMenorMelhor = tendencia.includes('DIMINUIR');
   const tendenciaLabel = isMenorMelhor ? 'MENOR, MELHOR' : 'MAIOR, MELHOR';
@@ -728,9 +835,9 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
           <div className="chart-wrapper">
             {/* Sidebar com KPIs */}
             <aside className="kpi-sidebar">
-              {/* Card de Atingimento com gráfico doughnut */}
+              {/* Card de Atingimento do Quarter com gráfico doughnut */}
               <div className="kpi-card kpi-card-atingimento">
-                <span className="kpi-label atingimento-label">ATINGIMENTO DA META</span>
+                <span className="kpi-label atingimento-label">ATINGIMENTO DA META DO QUARTER</span>
                 <div className="atingimento-chart-container">
                   <Doughnut ref={doughnutRef} data={doughnutConfig.data} options={doughnutConfig.options} />
                   <div className="atingimento-center-text">
@@ -738,6 +845,19 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
                   </div>
                 </div>
               </div>
+
+              {/* Card de Atingimento da Meta Parcial com gráfico doughnut */}
+              {atingMetaParcialPercent > 0 && (
+                <div className="kpi-card kpi-card-atingimento">
+                  <span className="kpi-label atingimento-label">ATINGIMENTO DA META PARCIAL</span>
+                  <div className="atingimento-chart-container">
+                    <Doughnut data={doughnutParcialConfig.data} options={doughnutParcialConfig.options} />
+                    <div className="atingimento-center-text">
+                      {Math.round(atingMetaParcialPercent)}%
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Card de Realizado Acumulado - apenas para forma ACUMULADO */}
               {formaDeMedir === 'ACUMULADO' && (
@@ -748,12 +868,6 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
                   </span>
                 </div>
               )}
-
-              {/* Card de Realizado Último Mês */}
-              <div className="kpi-card">
-                <span className="kpi-label">REALIZADO (ÚLTIMO MÊS)</span>
-                <span className="kpi-value">{formatValue(metrics.realizadoUltimoMes, medida)}</span>
-              </div>
 
               {/* Card de Responsável */}
               <div className="kpi-card">

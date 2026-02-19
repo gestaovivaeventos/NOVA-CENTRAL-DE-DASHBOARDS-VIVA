@@ -191,6 +191,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   });
   const resultados = sortedData.map((d) => d.resultado);
   const percentuais = sortedData.map((d) => d.percentual);
+  const atingimentos = sortedData.map((d) => d.atingimento);  // Coluna G - MÉDIA NO ANO
   const grandezas = sortedData.map((d) => d.grandeza || '');
   const grandeza = grandezas[0] || '';
   const tendencia = sortedData[0]?.tendencia || '';
@@ -215,49 +216,14 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
     return null;
   }, [resultados]);
 
-  // 2. MELHOR MÊS - baseado em TENDENCIA (MENOR ou MAIOR)
-  const melhorValorInfo = useMemo(() => {
-    const isMenorMelhor = tendencia.toUpperCase().includes('MENOR');
-    let melhorValor: number | null = null;
-    let melhorIndice = -1;
-
-    for (let i = 0; i < resultados.length; i++) {
-      if (resultados[i] !== null && resultados[i] !== undefined && !isNaN(resultados[i]!)) {
-        if (melhorValor === null) {
-          melhorValor = resultados[i];
-          melhorIndice = i;
-        } else {
-          if (isMenorMelhor) {
-            if (resultados[i]! < melhorValor) {
-              melhorValor = resultados[i];
-              melhorIndice = i;
-            }
-          } else {
-            if (resultados[i]! > melhorValor) {
-              melhorValor = resultados[i];
-              melhorIndice = i;
-            }
-          }
-        }
-      }
-    }
-
-    let melhorMes = '';
-    if (melhorIndice >= 0 && labels[melhorIndice]) {
-      melhorMes = formatCompetencia(labels[melhorIndice]);
-    }
-
-    return { melhorValor, melhorMes };
-  }, [resultados, labels, tendencia]);
-
-  // 3. MÉDIA DE ATINGIMENTO - média dos percentuais
+  // 2. MÉDIA ANO - média dos atingimentos (coluna G)
   const mediaAtingimento = useMemo(() => {
-    const validos = percentuais.filter((p) => typeof p === 'number' && !isNaN(p)) as number[];
+    const validos = atingimentos.filter((p) => typeof p === 'number' && !isNaN(p)) as number[];
     if (validos.length === 0) return 0;
     return validos.reduce((acc, val) => acc + val, 0) / validos.length;
-  }, [percentuais]);
+  }, [atingimentos]);
 
-  // 4. RESULTADO NO ANO - baseado em TIPO (EVOLUÇÃO, MÉDIA NO ANO, ACUMULADO NO ANO)
+  // 3. RESULTADO NO ANO - baseado em TIPO (EVOLUÇÃO, MÉDIA NO ANO, ACUMULADO NO ANO)
   const resultadoAno = useMemo(() => {
     const validos = resultados.filter((r) => r !== null && r !== undefined && !isNaN(r!)) as number[];
     
@@ -282,6 +248,110 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   } else if (tipo.toUpperCase() === 'ACUMULADO NO ANO') {
     nomeCardAno = 'ACUMULADO NO ANO';
   }
+
+  // Helper para verificar tendência
+  const isMenorMelhor = tendencia.toUpperCase().includes('MENOR');
+
+  // 4. ATING. PARCIAL - Cálculo baseado no TIPO
+  const atingParcial = useMemo(() => {
+    const tipoUpper = tipo.toUpperCase();
+    
+    // Encontrar último índice com resultado
+    let ultimoIdxComResultado = -1;
+    for (let i = resultados.length - 1; i >= 0; i--) {
+      if (resultados[i] !== null && resultados[i] !== undefined && !isNaN(resultados[i]!)) {
+        ultimoIdxComResultado = i;
+        break;
+      }
+    }
+    
+    if (ultimoIdxComResultado === -1) return null;
+    
+    if (tipoUpper === 'EVOLUÇÃO' || tipoUpper === 'MÉDIA NO ANO') {
+      // EVOLUÇÃO / MÉDIA NO ANO: Último Resultado / Meta do mesmo mês
+      const ultimoRes = resultados[ultimoIdxComResultado];
+      const metaDoMes = metas[ultimoIdxComResultado];
+      
+      if (ultimoRes === null || metaDoMes === null || typeof metaDoMes !== 'number' || metaDoMes === 0) return null;
+      
+      if (isMenorMelhor) {
+        return ultimoRes > 0 ? (metaDoMes / ultimoRes) * 100 : null;
+      } else {
+        return (ultimoRes / metaDoMes) * 100;
+      }
+    } else if (tipoUpper === 'ACUMULADO NO ANO') {
+      // ACUMULADO: Soma Resultado até momento / Soma Meta até momento
+      let somaResultado = 0;
+      let somaMetaParcial = 0;
+      for (let i = 0; i <= ultimoIdxComResultado; i++) {
+        somaResultado += resultados[i] || 0;
+        const metaVal = metas[i];
+        if (typeof metaVal === 'number' && !isNaN(metaVal)) {
+          somaMetaParcial += metaVal;
+        }
+      }
+      
+      if (somaMetaParcial === 0) return null;
+      
+      if (isMenorMelhor) {
+        return somaResultado > 0 ? (somaMetaParcial / somaResultado) * 100 : null;
+      } else {
+        return (somaResultado / somaMetaParcial) * 100;
+      }
+    }
+    
+    return null;
+  }, [resultados, metas, tipo, isMenorMelhor]);
+
+  // 5. ATING. ANO - Cálculo baseado no TIPO
+  const atingAno = useMemo(() => {
+    const tipoUpper = tipo.toUpperCase();
+    
+    // Encontrar último índice com resultado
+    let ultimoIdxComResultado = -1;
+    for (let i = resultados.length - 1; i >= 0; i--) {
+      if (resultados[i] !== null && resultados[i] !== undefined && !isNaN(resultados[i]!)) {
+        ultimoIdxComResultado = i;
+        break;
+      }
+    }
+    
+    if (ultimoIdxComResultado === -1) return null;
+    
+    if (tipoUpper === 'EVOLUÇÃO' || tipoUpper === 'MÉDIA NO ANO') {
+      // EVOLUÇÃO / MÉDIA NO ANO: Último Resultado / Meta de dezembro (último mês)
+      const ultimoRes = resultados[ultimoIdxComResultado];
+      // Meta de dezembro é o último índice do array de metas
+      const metaDezembro = metas[metas.length - 1];
+      
+      if (ultimoRes === null || metaDezembro === null || typeof metaDezembro !== 'number' || metaDezembro === 0) return null;
+      
+      if (isMenorMelhor) {
+        return ultimoRes > 0 ? (metaDezembro / ultimoRes) * 100 : null;
+      } else {
+        return (ultimoRes / metaDezembro) * 100;
+      }
+    } else if (tipoUpper === 'ACUMULADO NO ANO') {
+      // ACUMULADO: Soma Resultado até momento / Meta total do ano
+      const somaResultado = resultados
+        .filter((r) => r !== null && r !== undefined && !isNaN(r!))
+        .reduce((acc, val) => acc + (val || 0), 0);
+      
+      const somaMetaTotal = metas
+        .filter((m) => typeof m === 'number' && !isNaN(m))
+        .reduce((acc, val) => acc + (val || 0), 0);
+      
+      if (somaMetaTotal === 0) return null;
+      
+      if (isMenorMelhor) {
+        return somaResultado > 0 ? (somaMetaTotal / somaResultado) * 100 : null;
+      } else {
+        return (somaResultado / somaMetaTotal) * 100;
+      }
+    }
+    
+    return null;
+  }, [resultados, metas, tipo, isMenorMelhor]);
 
   // Calcular limites do eixo Y
   const { minY, maxY } = useMemo(() => {
@@ -479,7 +549,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
             const idx = context.dataIndex;
             const resultado = resultados[idx];
             const meta = metas[idx];
-            const ating = percentuais[idx];
+            const ating = atingimentos[idx];  // Coluna G - ATINGIMENTO
             const g = grandezas[idx] || grandeza;
 
             const lines: string[] = [];
@@ -551,8 +621,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
     },
   };
 
-  // Determinar se menor ou maior é melhor
-  const isMenorMelhor = tendencia.toUpperCase().includes('MENOR');
+  // Label de tendência para exibição
   const tendenciaLabel = isMenorMelhor ? 'MENOR, MELHOR' : 'MAIOR, MELHOR';
 
   // Converter cor hex para rgba
@@ -621,22 +690,15 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
       <div className="chart-wrapper">
         {/* Cards laterais */}
         <aside className="kpi-sidebar">
+          {/* 1º Card: Acumulado/Média/Último resultado baseado no TIPO */}
           <div className="kpi-card">
-            <span className="kpi-label">REALIZADO (ÚLTIMO MÊS)</span>
-            <span className="kpi-value">{formatValor(ultimoResultado, grandeza) || '-'}</span>
+            <span className="kpi-label">{nomeCardAno}</span>
+            <span className="kpi-value">{formatValor(resultadoAno, grandeza) || '-'}</span>
           </div>
 
+          {/* 2º Card: Média de atingimento (%) */}
           <div className="kpi-card">
-            <span className="kpi-label">MELHOR MÊS</span>
-            <span className="kpi-value highlight" style={{ color: accentColor }}>
-              {melhorValorInfo.melhorValor !== null
-                ? `${formatValor(melhorValorInfo.melhorValor, grandeza)} (${melhorValorInfo.melhorMes})`
-                : '-'}
-            </span>
-          </div>
-
-          <div className="kpi-card">
-            <span className="kpi-label">MÉDIA DE ATINGIMENTO</span>
+            <span className="kpi-label">MÉDIA ATING. (%)</span>
             <span className="kpi-value">
               {mediaAtingimento.toLocaleString('pt-BR', {
                 minimumFractionDigits: 1,
@@ -645,9 +707,24 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
             </span>
           </div>
 
+          {/* 3º Card: Atingimento Parcial */}
           <div className="kpi-card">
-            <span className="kpi-label">{nomeCardAno}</span>
-            <span className="kpi-value">{formatValor(resultadoAno, grandeza) || '-'}</span>
+            <span className="kpi-label">ATING. PARCIAL</span>
+            <span className="kpi-value">
+              {atingParcial !== null
+                ? `${atingParcial.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                : '-'}
+            </span>
+          </div>
+
+          {/* 4º Card: Atingimento ano */}
+          <div className="kpi-card">
+            <span className="kpi-label">ATING. ANO</span>
+            <span className="kpi-value">
+              {atingAno !== null
+                ? `${atingAno.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+                : '-'}
+            </span>
           </div>
         </aside>
 

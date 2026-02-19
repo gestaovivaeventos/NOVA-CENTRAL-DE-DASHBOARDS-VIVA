@@ -169,6 +169,7 @@ export default function KpiPage() {
       },
       body: JSON.stringify({
         team: selectedTeam,
+        username: user?.username || '',
         ...formData,
       }),
     });
@@ -217,7 +218,8 @@ export default function KpiPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           team: selectedTeam,
-          kpiName: kpiName
+          kpiName: kpiName,
+          username: user?.username || ''
         })
       });
 
@@ -414,6 +416,7 @@ export default function KpiPage() {
                     accentColor={accentColor}
                     onEdit={handleOpenEditModal}
                     onInactivate={handleInactivateKpi}
+                    allKpiData={allKpiData.filter(d => d.time === selectedTeam)}
                   />
                 )}
               </div>
@@ -442,6 +445,7 @@ export default function KpiPage() {
               kpiName={editingKpi.name}
               accentColor={accentColor}
               selectedTeam={selectedTeam}
+              username={user?.username || ''}
             />
           )}
         </div>

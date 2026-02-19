@@ -60,11 +60,11 @@ const MESES_CURTO: Record<string, string> = {
   '12': 'dez',
 };
 
-// Gerar lista de anos (ano atual até 5 anos à frente)
+// Gerar lista de anos (2 anos anteriores até 10 anos à frente)
 const gerarAnos = (): string[] => {
   const anoAtual = new Date().getFullYear();
   const anos: string[] = [];
-  for (let i = 0; i <= 5; i++) {
+  for (let i = -2; i <= 10; i++) {
     anos.push((anoAtual + i).toString());
   }
   return anos;
@@ -90,6 +90,7 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [metasFilter, setMetasFilter] = useState<{ anoFiltro: string }>({ anoFiltro: new Date().getFullYear().toString() });
 
   const anos = useMemo(() => gerarAnos(), []);
 
@@ -107,26 +108,48 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
         metas: {},
       });
       setError(null);
+      setMetasFilter({ anoFiltro: new Date().getFullYear().toString() });
     }
   }, [isOpen]);
 
-  // Filtrar meses disponíveis (a partir do mês atual para o ano atual)
+  // Filtrar meses disponíveis - todos os meses disponíveis para qualquer ano
   const mesesDisponiveis = useMemo(() => {
-    const anoAtual = new Date().getFullYear().toString();
-    const mesAtual = parseInt(getMesAtual());
-    
-    if (formData.inicioAno === anoAtual) {
-      // Para o ano atual, mostrar apenas mêses a partir do atual
-      return MESES.filter((m) => parseInt(m.value) >= mesAtual);
-    }
-    // Para anos futuros, mostrar todos os meses
+    // Todos os meses disponíveis para seleção
     return MESES;
   }, [formData.inicioAno]);
 
-  // Atualizar terminoAno quando inicioAno mudar
+  // Meses disponíveis para término (baseado no início selecionado)
+  const mesesTerminoDisponiveis = useMemo(() => {
+    // Se mesmo ano do início, mostrar apenas meses >= mês de início
+    if (formData.terminoAno === formData.inicioAno) {
+      const inicioMes = parseInt(formData.inicioMes);
+      return MESES.filter((m) => parseInt(m.value) >= inicioMes);
+    }
+    return MESES;
+  }, [formData.inicioAno, formData.inicioMes, formData.terminoAno]);
+
+  // Anos disponíveis para término (>= ano de início)
+  const anosTerminoDisponiveis = useMemo(() => {
+    const inicioAno = parseInt(formData.inicioAno);
+    return anos.filter((ano) => parseInt(ano) >= inicioAno);
+  }, [anos, formData.inicioAno]);
+
+  // Ajustar término quando início mudar (garantir consistência)
   useEffect(() => {
-    setFormData((prev) => ({ ...prev, terminoAno: prev.inicioAno, terminoMes: '12' }));
-  }, [formData.inicioAno]);
+    const inicioAno = parseInt(formData.inicioAno);
+    const terminoAno = parseInt(formData.terminoAno);
+    const inicioMes = parseInt(formData.inicioMes);
+    const terminoMes = parseInt(formData.terminoMes);
+    
+    // Se término ficar antes do início, ajustar
+    if (terminoAno < inicioAno || (terminoAno === inicioAno && terminoMes < inicioMes)) {
+      setFormData((prev) => ({ 
+        ...prev, 
+        terminoAno: formData.inicioAno, 
+        terminoMes: '12' 
+      }));
+    }
+  }, [formData.inicioAno, formData.inicioMes]);
 
   // Gerar lista de meses para as metas baseado no início e término
   const mesesMetas = useMemo(() => {
@@ -163,6 +186,41 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
 
     return meses;
   }, [formData.inicioMes, formData.inicioAno, formData.terminoMes, formData.terminoAno]);
+
+  // Anos disponíveis para filtro das metas (limitado até ano atual + 1)
+  const anosParaFiltro = useMemo(() => {
+    const anoLimite = new Date().getFullYear() + 1; // Ano seguinte ao atual
+    const anosUnicos = new Set(mesesMetas.map((m) => m.ano));
+    return Array.from(anosUnicos)
+      .filter((ano) => parseInt(ano) <= anoLimite)
+      .sort();
+  }, [mesesMetas]);
+
+  // Meses filtrados para exibição
+  const mesesMetasFiltrados = useMemo(() => {
+    // Se o filtro está vazio ou o ano filtrado não está nos anos disponíveis, mostrar primeiro ano
+    if (!metasFilter.anoFiltro || !anosParaFiltro.includes(metasFilter.anoFiltro)) {
+      // Mostrar meses do primeiro ano disponível
+      if (anosParaFiltro.length > 0) {
+        return mesesMetas.filter((m) => m.ano === anosParaFiltro[0]);
+      }
+      return mesesMetas;
+    }
+    return mesesMetas.filter((m) => m.ano === metasFilter.anoFiltro);
+  }, [mesesMetas, metasFilter.anoFiltro, anosParaFiltro]);
+
+  // Ajustar filtro de ano quando os anos disponíveis mudarem
+  useEffect(() => {
+    if (anosParaFiltro.length > 0 && !anosParaFiltro.includes(metasFilter.anoFiltro)) {
+      // Priorizar ano atual se disponível, senão primeiro ano
+      const anoAtual = new Date().getFullYear().toString();
+      if (anosParaFiltro.includes(anoAtual)) {
+        setMetasFilter({ anoFiltro: anoAtual });
+      } else {
+        setMetasFilter({ anoFiltro: anosParaFiltro[0] });
+      }
+    }
+  }, [anosParaFiltro]);
 
   // Atualizar metas quando os meses mudarem
   useEffect(() => {
@@ -311,8 +369,8 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
             />
           </div>
 
-          {/* Período - Início */}
-          <div className="mb-4">
+          {/* Período - Início e Término */}
+          <div className="mb-4 grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Início do KPI <span className="text-red-400">*</span>
@@ -342,9 +400,37 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
                   ))}
                 </select>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                O KPI será criado do mês selecionado até dezembro/{formData.inicioAno}
-              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Término do KPI <span className="text-red-400">*</span>
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={formData.terminoMes}
+                  onChange={(e) => handleChange('terminoMes', e.target.value)}
+                  className="flex-1 px-3 py-3 rounded-lg bg-dark-primary border border-gray-600 text-white focus:outline-none focus:border-orange-500"
+                >
+                  <option value="">Mês</option>
+                  {mesesTerminoDisponiveis.map((mes) => (
+                    <option key={mes.value} value={mes.value}>
+                      {mes.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={formData.terminoAno}
+                  onChange={(e) => handleChange('terminoAno', e.target.value)}
+                  className="w-24 px-3 py-3 rounded-lg bg-dark-primary border border-gray-600 text-white focus:outline-none focus:border-orange-500"
+                >
+                  {anosTerminoDisponiveis.map((ano) => (
+                    <option key={ano} value={ano}>
+                      {ano}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -391,11 +477,27 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
           {/* Metas por mês */}
           {mesesMetas.length > 0 && (
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-300 mb-3">
-                Metas Mensais <span className="text-red-400">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-3">
+                <label className="block text-sm font-medium text-gray-300">
+                  Metas Mensais <span className="text-red-400">*</span>
+                  <span className="text-xs text-gray-500 ml-2">({mesesMetas.length} meses)</span>
+                </label>
+                {anosParaFiltro.length > 1 && (
+                  <select
+                    value={metasFilter.anoFiltro || anosParaFiltro[0]}
+                    onChange={(e) => setMetasFilter({ anoFiltro: e.target.value })}
+                    className="px-3 py-1.5 rounded-lg bg-dark-primary border border-gray-600 text-white text-sm focus:outline-none focus:border-orange-500"
+                  >
+                    {anosParaFiltro.map((ano) => (
+                      <option key={ano} value={ano}>
+                        {ano}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                {mesesMetas.map(({ mes, ano, label }) => {
+                {mesesMetasFiltrados.map(({ mes, ano, label }) => {
                   const key = `${mes}/${ano}`;
                   return (
                     <div key={key}>
