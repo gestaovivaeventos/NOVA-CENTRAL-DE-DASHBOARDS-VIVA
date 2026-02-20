@@ -1,11 +1,15 @@
 // Hook para buscar dados do dashboard
 
 import { useState, useEffect, useCallback } from 'react';
-import { DashboardData, OkrData, KpiData, NovoOkrData, EbitdaYearData, TeamPerformance } from '../types';
+import { DashboardData, OkrData, KpiData, NovoOkrData, EbitdaYearData, TeamPerformance, ProjectData } from '../types';
 import { API_CONFIG } from '../config/app.config';
 
 const buildSheetUrl = (sheetName: string) => {
   return `https://sheets.googleapis.com/v4/spreadsheets/${API_CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}?key=${API_CONFIG.API_KEY}`;
+};
+
+const buildProjectsSheetUrl = () => {
+  return `https://sheets.googleapis.com/v4/spreadsheets/${API_CONFIG.PROJECTS_SPREADSHEET_ID}/values/${encodeURIComponent(API_CONFIG.SHEETS.PROJETOS)}?key=${API_CONFIG.API_KEY}`;
 };
 
 async function fetchSheetData(sheetName: string): Promise<any[][]> {
@@ -18,6 +22,21 @@ async function fetchSheetData(sheetName: string): Promise<any[][]> {
     return data.values || [];
   } catch (error) {
     console.error(`Erro ao buscar dados de ${sheetName}:`, error);
+    return [];
+  }
+}
+
+// Buscar dados de projetos (planilha separada)
+async function fetchProjectsData(): Promise<any[][]> {
+  try {
+    const response = await fetch(buildProjectsSheetUrl());
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar Projetos: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.values || [];
+  } catch (error) {
+    console.error('Erro ao buscar dados de Projetos:', error);
     return [];
   }
 }
@@ -162,6 +181,7 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
   const colMeta = 7;       // Coluna H: META
   const colRealizado = 8;  // Coluna I: REALIZADO
   const colAtingimento = 9; // Coluna J: ATINGIMENTO
+  const colQuarter = 10;   // Coluna K: QUARTER
   const colFormaDeMedir = 13; // Coluna N: FORMA DE MEDIR
   const colChave = 14;     // Coluna O: CHAVE (identificador único do KR)
   const colAtingReal = 17; // Coluna R: ATING REAL
@@ -186,6 +206,9 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
     // ID_OKR (coluna C) e ID_KR (coluna E)
     const idOkr = parseInt(row[colIdOkr], 10) || 0;
     const idKr = parseInt(row[colIdKr], 10) || 0;
+    
+    // QUARTER (coluna K)
+    const quarter = parseInt(row[colQuarter], 10) || 0;
     
     // Usar a coluna CHAVE se existir, senão criar chave combinando objetivo + indicador
     const chaveOriginal = row[colChave] ? String(row[colChave]).trim() : '';
@@ -215,6 +238,7 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
         objetivo: objetivo,
         idOkr: idOkr,
         idKr: idKr,
+        quarter: quarter,
         meta: metaNum,
         realizado: realizadoNum,
         atingReal: atingNum,
@@ -245,6 +269,75 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
   });
 
   return { data: processedData, competencias: competenciasFiltradas };
+}
+
+// Processar dados de Projetos
+function processProjectsData(rows: any[][]): ProjectData[] {
+  if (rows.length < 2) return [];
+  
+  // Colunas da planilha de Projetos (índice 0-based)
+  const colId = 0;              // A: ID
+  const colNome = 1;            // B: NOME DO PROJETO
+  const colObjetivo = 2;        // C: OBJETIVO DO PROJETO
+  const colInicio = 3;          // D: INÍCIO DO PROJETO
+  const colConclusao = 4;       // E: DATA DE CONCLUSÃO PREVISTA
+  const colResponsavel = 5;     // F: RESPONSÁVEL
+  const colTime = 6;            // G: TIME
+  const colIndicador = 7;       // H: INDICADOR
+  const colTendencia = 8;       // I: TENDÊNCIA
+  const colResultadoEsperado = 9; // J: RESULTADO ESPERADO
+  const colResultado = 10;      // K: RESULTADO
+  const colAtingimento = 11;    // L: % ATINGIMENTO
+  const colQuandoImpacto = 12;  // M: QUANDO TERÁ IMPACTO
+  const colCusto = 13;          // N: CUSTO
+  const colStatus = 20;         // U: STATUS
+
+  const processedData: ProjectData[] = [];
+
+  rows.slice(1).forEach((row) => {
+    const id = row[colId] ? String(row[colId]).trim() : '';
+    const nome = row[colNome] ? String(row[colNome]).trim() : '';
+    const time = row[colTime] ? String(row[colTime]).trim().toUpperCase() : '';
+    
+    // Ignorar linhas sem ID ou nome
+    if (!id || !nome || !time) return;
+    
+    // Parse do atingimento (pode vir como "80%" ou "0.8")
+    const atingimentoStr = row[colAtingimento] ? String(row[colAtingimento]).replace('%', '').replace(',', '.').trim() : '';
+    let atingimentoNum = parseFloat(atingimentoStr) || 0;
+    // Se o valor for menor que 2, provavelmente é um decimal (0.8 = 80%)
+    if (atingimentoNum > 0 && atingimentoNum < 2) {
+      atingimentoNum = atingimentoNum * 100;
+    }
+    
+    // Parse do resultado esperado
+    const resultadoEsperadoStr = row[colResultadoEsperado] ? String(row[colResultadoEsperado]).replace('%', '').replace(',', '.').trim() : '';
+    let resultadoEsperadoNum = parseFloat(resultadoEsperadoStr) || 0;
+    
+    // Parse do resultado
+    const resultadoStr = row[colResultado] ? String(row[colResultado]).replace('%', '').replace(',', '.').trim() : '';
+    let resultadoNum = parseFloat(resultadoStr) || 0;
+
+    processedData.push({
+      id,
+      nome,
+      objetivo: row[colObjetivo] ? String(row[colObjetivo]).trim() : '',
+      inicioProejto: row[colInicio] ? String(row[colInicio]).trim() : '',
+      dataConclusao: row[colConclusao] ? String(row[colConclusao]).trim() : '',
+      responsavel: row[colResponsavel] ? String(row[colResponsavel]).trim() : '',
+      time,
+      indicador: row[colIndicador] ? String(row[colIndicador]).trim() : '',
+      tendencia: row[colTendencia] ? String(row[colTendencia]).trim() : '',
+      resultadoEsperado: resultadoEsperadoNum,
+      resultado: resultadoNum,
+      atingimento: atingimentoNum,
+      quandoImpacto: row[colQuandoImpacto] ? String(row[colQuandoImpacto]).trim() : '',
+      custo: row[colCusto] ? String(row[colCusto]).trim() : '',
+      status: row[colStatus] ? String(row[colStatus]).trim() : ''
+    });
+  });
+
+  return processedData;
 }
 
 // Calcular EBITDA por ano
@@ -469,16 +562,18 @@ export function useDashboardData() {
 
     try {
       // Buscar dados de todas as planilhas em paralelo
-      const [kpisRaw, okrsRaw, novoOkrRaw] = await Promise.all([
+      const [kpisRaw, okrsRaw, novoOkrRaw, projetosRaw] = await Promise.all([
         fetchSheetData(API_CONFIG.SHEETS.KPIS),
         fetchSheetData(API_CONFIG.SHEETS.OKRS),
-        fetchSheetData(API_CONFIG.SHEETS.PAINEL_OKR)
+        fetchSheetData(API_CONFIG.SHEETS.PAINEL_OKR),
+        fetchProjectsData()
       ]);
 
       // Processar dados
       const kpis = processKpiData(kpisRaw);
       const okrs = processOkrsData(okrsRaw);
       const { data: novoOkrs, competencias } = processNovoOkrData(novoOkrRaw);
+      const projetos = processProjectsData(projetosRaw);
 
       // Selecionar competência mais recente se não houver selecionada
       const currentCompetencia = selectedCompetencia || competencias[0] || '';
@@ -506,6 +601,7 @@ export function useDashboardData() {
         okrs,
         kpis,
         novoOkrs,
+        projetos,
         competencias,
         selectedCompetencia: currentCompetencia,
         teamPerformance,
