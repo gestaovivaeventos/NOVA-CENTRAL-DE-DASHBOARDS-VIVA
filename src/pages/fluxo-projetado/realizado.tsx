@@ -8,150 +8,19 @@
  * 3. Realizado por Ano - compilado anual (2025 e 2026 parcial)
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas, RealizadoAnualCard, ReceitasRealizadasFundo } from '@/modules/fluxo-projetado';
-import { FundoFee } from '@/modules/fluxo-projetado/components/RecebimentoFeeFundo';
+import { useFluxoRealizado } from '@/modules/fluxo-projetado/hooks';
 import { FundoReceita } from '@/modules/fluxo-projetado/components/ReceitasRealizadasFundo';
 import { ReceitaMensalAgrupada } from '@/modules/fluxo-projetado/components/ReceitasMensaisAgrupadas';
 import { DadosRealizadoAnual } from '@/modules/fluxo-projetado/components/RealizadoAnualCard';
 import { Loader2, BarChart3 } from 'lucide-react';
 import { withAuthAndFranchiser } from '@/utils/auth';
 
-// Função para gerar fundos mock em massa (simula 100+ fundos)
-// Nova estrutura: feeTotal, feeAntecipacaoTotal, feeAntecipacaoRecebido, saldoFundo
-const gerarFundosMockFee = (): FundoFee[] => {
-  const unidades = [
-    'Colégio São Paulo', 'Instituto Educacional', 'Escola Municipal', 'Centro de Ensino',
-    'Colégio Estadual', 'Escola Particular', 'Instituto Federal', 'Escola Técnica',
-    'Colégio Adventista', 'Escola Batista', 'Instituto Santa Maria', 'Colégio Dom Bosco',
-    'Escola Integrada', 'Centro Educacional', 'Colégio Objetivo', 'Escola Positivo'
-  ];
-  
-  const fundos: FundoFee[] = [];
-  
-  for (let i = 1; i <= 85; i++) {
-    const unidade = unidades[i % unidades.length];
-    const ano = 2024 + Math.floor(i / 40);
-    
-    // Gerar valores realistas
-    const feeTotal = Math.floor(Math.random() * 40000) + 15000; // 15k a 55k
-    // FEE Antecipação = 60% do FEE Total (padrão)
-    const percentualAntecipacao = 0.60;
-    const feeAntecipacaoTotal = Math.floor(feeTotal * percentualAntecipacao);
-    
-    // Determinar cenário: finalizado, saque disponível, saldo parcial ou saldo insuficiente
-    const cenario = i % 6; // Distribuição entre os 4 status
-    
-    let feeAntecipacaoRecebido: number;
-    let saldoFundo: number;
-    
-    if (cenario === 5) {
-      // FINALIZADO: antecipação 100% recebida
-      feeAntecipacaoRecebido = feeAntecipacaoTotal;
-      saldoFundo = Math.floor(Math.random() * 10000); // Saldo residual
-    } else if (cenario === 4) {
-      // SALDO INSUFICIENTE: saldo = 0 e falta receber > 0
-      feeAntecipacaoRecebido = Math.floor(feeAntecipacaoTotal * (0.3 + Math.random() * 0.4)); // 30-70% recebido
-      saldoFundo = 0; // Saldo zero
-    } else if (cenario === 3) {
-      // SALDO PARCIAL: falta receber > 0, saldo > 0 mas saldo < falta receber
-      feeAntecipacaoRecebido = Math.floor(feeAntecipacaoTotal * (0.3 + Math.random() * 0.3)); // 30-60% recebido
-      const faltaReceber = feeAntecipacaoTotal - feeAntecipacaoRecebido;
-      saldoFundo = Math.floor(faltaReceber * (0.3 + Math.random() * 0.5)); // Saldo entre 30-80% do que falta
-    } else {
-      // SAQUE DISPONÍVEL: saldo >= falta receber
-      feeAntecipacaoRecebido = Math.floor(feeAntecipacaoTotal * (0.2 + Math.random() * 0.5)); // 20-70% recebido
-      const faltaReceber = feeAntecipacaoTotal - feeAntecipacaoRecebido;
-      saldoFundo = Math.floor(faltaReceber * (1.1 + Math.random() * 1.5)); // Saldo 110-260% do que falta
-    }
-    
-    fundos.push({
-      id: i.toString(),
-      nome: `Turma ${String(i).padStart(3, '0')} - ${unidade} ${ano}`,
-      unidade: unidade,
-      feeTotal: feeTotal,
-      feeAntecipacaoTotal: feeAntecipacaoTotal,
-      feeAntecipacaoRecebido: feeAntecipacaoRecebido,
-      saldoFundo: saldoFundo,
-    });
-  }
-  
-  return fundos;
-};
-
-const dadosMockFundosFee: FundoFee[] = gerarFundosMockFee();
-
-// Função para gerar dados mock de Receitas Realizadas por Fundo
-const gerarFundosMockReceita = (): FundoReceita[] => {
-  const unidades = [
-    'Colégio São Paulo', 'Instituto Educacional', 'Escola Municipal', 'Centro de Ensino',
-    'Colégio Estadual', 'Escola Particular', 'Instituto Federal', 'Escola Técnica',
-    'Colégio Adventista', 'Escola Batista', 'Instituto Santa Maria', 'Colégio Dom Bosco',
-    'Escola Integrada', 'Centro Educacional', 'Colégio Objetivo', 'Escola Positivo'
-  ];
-  
-  const fundos: FundoReceita[] = [];
-  
-  for (let i = 1; i <= 85; i++) {
-    const unidade = unidades[i % unidades.length];
-    const ano = 2024 + Math.floor(i / 40);
-    
-    // Gerar valores realistas
-    const valorFee = Math.floor(Math.random() * 40000) + 15000; // 15k a 55k
-    
-    // MARGEM TOTAL = FEE + Demais Receitas (margem deve ser maior que o FEE)
-    // Demais Receitas = entre 20% e 50% do FEE
-    const demaisReceitas = Math.floor(valorFee * (0.2 + Math.random() * 0.3));
-    const margemTotal = valorFee + demaisReceitas; // Margem = FEE + Demais Receitas
-    
-    // FEE Recebido = entre 0% e 100% do valorFee
-    const percentualRecebido = Math.random(); // 0 a 1
-    const feeRecebido = Math.floor(valorFee * percentualRecebido);
-    
-    // Margem Recebida = mesmo percentual aplicado à margem total
-    const margemRecebida = Math.floor(margemTotal * percentualRecebido);
-    
-    // Calcular falta receber (FEE + Margem faltante)
-    const faltaReceber = (valorFee - feeRecebido) + (margemTotal - margemRecebida);
-    
-    // Gerar saldo do fundo com diferentes cenários
-    const tipoStatus = i % 4;
-    let saldoFundo: number;
-    
-    if (percentualRecebido >= 0.99) {
-      // FINALIZADO: já recebeu tudo
-      saldoFundo = Math.floor(Math.random() * 5000); // saldo restante baixo
-    } else if (tipoStatus === 0) {
-      // SALDO INSUFICIENTE: saldo = 0
-      saldoFundo = 0;
-    } else if (tipoStatus === 1) {
-      // SALDO PARCIAL: saldo > 0 mas < falta receber
-      saldoFundo = Math.floor(faltaReceber * (0.1 + Math.random() * 0.5)); // 10-60% do falta
-    } else {
-      // SAQUE DISPONÍVEL: saldo >= falta receber
-      saldoFundo = Math.floor(faltaReceber * (1.1 + Math.random() * 0.5)); // 110-160% do falta
-    }
-    
-    fundos.push({
-      id: i.toString(),
-      nome: `Turma ${String(i).padStart(3, '0')} - ${unidade} ${ano}`,
-      unidade: unidade,
-      valorFee: valorFee,
-      feeRecebido: feeRecebido,
-      margemTotal: margemTotal,
-      margemRecebida: margemRecebida,
-      saldoFundo: saldoFundo,
-    });
-  }
-  
-  return fundos;
-};
-
-const dadosMockFundosReceita: FundoReceita[] = gerarFundosMockReceita();
-
 // Mock de receitas mensais agrupadas (consolidado da franquia, não por fundo)
+// TODO: Conectar com dados reais da planilha
 const dadosMockReceitasMensais: ReceitaMensalAgrupada[] = [
   // 2025
   { mes: '01/2025', mesNome: 'Janeiro', ano: 2025, valorTotal: 18500.00, antecipacaoFee: 9200.00, ultimaParcelaFee: 0, demaisReceitas: 9300.00 },
@@ -170,7 +39,8 @@ const dadosMockReceitasMensais: ReceitaMensalAgrupada[] = [
   { mes: '01/2026', mesNome: 'Janeiro', ano: 2026, valorTotal: 28400.00, antecipacaoFee: 14200.00, ultimaParcelaFee: 0, demaisReceitas: 14200.00 },
 ];
 
-
+// Mock de dados anuais
+// TODO: Conectar com dados reais da planilha
 const dadosMockRealizadoAnual: DadosRealizadoAnual[] = [
   {
     ano: 2025,
@@ -196,6 +66,14 @@ const dadosMockRealizadoAnual: DadosRealizadoAnual[] = [
   },
 ];
 
+// Mock de receitas por fundo (até integrar com a planilha)
+// TODO: Conectar com dados reais da planilha
+const gerarFundosMockReceita = (): FundoReceita[] => {
+  return []; // Retorna vazio por enquanto
+};
+
+const dadosMockFundosReceita: FundoReceita[] = gerarFundosMockReceita();
+
 function FluxoRealizadoDashboard() {
   const router = useRouter();
   
@@ -205,12 +83,13 @@ function FluxoRealizadoDashboard() {
   // Estado para a franquia selecionada
   const [franquiaSelecionada, setFranquiaSelecionada] = useState<string>('');
 
-  // Estados para dados (atualmente usando mocks)
-  const [fundosFee, setFundosFee] = useState<FundoFee[]>([]);
+  // Hook para buscar dados reais de FEE por fundo
+  const { fundos: fundosFee, loading: loadingFee, error: errorFee } = useFluxoRealizado(franquiaSelecionada);
+
+  // Estados para dados ainda mockados (outros blocos)
   const [fundosReceita, setFundosReceita] = useState<FundoReceita[]>([]);
   const [receitasMensais, setReceitasMensais] = useState<ReceitaMensalAgrupada[]>([]);
   const [dadosAnuais, setDadosAnuais] = useState<DadosRealizadoAnual[]>([]);
-  const [loading, setLoading] = useState(false);
   const [anoSelecionado, setAnoSelecionado] = useState<number | null>(null);
 
   // Ler franquia da URL quando a página carrega
@@ -221,20 +100,14 @@ function FluxoRealizadoDashboard() {
     }
   }, [router.isReady, router.query.franquia]);
 
-  // Carrega dados mock quando franquia é selecionada
+  // Carrega dados mock para os outros blocos quando franquia é selecionada
+  // TODO: Substituir por dados reais quando integrar as outras seções
   useEffect(() => {
     if (franquiaSelecionada) {
-      setLoading(true);
-      // Simula carregamento de API
-      setTimeout(() => {
-        setFundosFee(dadosMockFundosFee);
-        setFundosReceita(dadosMockFundosReceita);
-        setReceitasMensais(dadosMockReceitasMensais);
-        setDadosAnuais(dadosMockRealizadoAnual);
-        setLoading(false);
-      }, 500);
+      setFundosReceita(dadosMockFundosReceita);
+      setReceitasMensais(dadosMockReceitasMensais);
+      setDadosAnuais(dadosMockRealizadoAnual);
     } else {
-      setFundosFee([]);
       setFundosReceita([]);
       setReceitasMensais([]);
       setDadosAnuais([]);
@@ -279,7 +152,7 @@ function FluxoRealizadoDashboard() {
                   Utilize o filtro na barra lateral para selecionar sua franquia e visualizar o fluxo de caixa realizado.
                 </p>
               </div>
-            ) : loading ? (
+            ) : loadingFee ? (
               // Loading
               <div className="flex items-center justify-center py-24">
                 <Loader2 className="w-8 h-8 text-orange-500 animate-spin" />
@@ -291,7 +164,7 @@ function FluxoRealizadoDashboard() {
                 {/* BLOCO 1: Recebimento FEE por Fundo */}
                 <RecebimentoFeeFundo 
                   fundos={fundosFee}
-                  loading={false}
+                  loading={loadingFee}
                 />
 
                 {/* BLOCO 2: Receitas Mensais Agrupadas (consolidado da franquia) */}
