@@ -257,7 +257,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-6 mb-8">
       <Card>
         <SectionTitle 
           title="EVOLUÇÃO DO ATINGIMENTO" 
@@ -271,30 +271,30 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
           <div className="flex gap-2">
             <button
               onClick={() => setFilterType('kpi')}
-              className={`px-4 py-2 rounded font-medium transition-all ${
+              className={`px-4 py-2 rounded font-medium transition-all border ${
                 filterType === 'kpi'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  ? 'bg-slate-800 text-orange-400 border-orange-500'
+                  : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-500'
               }`}
             >
               KPIs
             </button>
             <button
               onClick={() => setFilterType('okr')}
-              className={`px-4 py-2 rounded font-medium transition-all ${
+              className={`px-4 py-2 rounded font-medium transition-all border ${
                 filterType === 'okr'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  ? 'bg-slate-800 text-orange-400 border-orange-500'
+                  : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-500'
               }`}
             >
               OKRs
             </button>
             <button
               onClick={() => setFilterType('projeto')}
-              className={`px-4 py-2 rounded font-medium transition-all ${
+              className={`px-4 py-2 rounded font-medium transition-all border ${
                 filterType === 'projeto'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  ? 'bg-slate-800 text-orange-400 border-orange-500'
+                  : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-500'
               }`}
             >
               Projetos
@@ -323,13 +323,13 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
               <button
                 key={year}
                 onClick={() => toggleYear(year)}
-                className={`px-3 py-1 rounded text-sm font-medium transition-all border-2 ${
+                className={`px-3 py-1 rounded text-sm font-medium transition-all border-2 bg-slate-800 ${
                   selectedYears.includes(year)
-                    ? 'text-white'
-                    : 'bg-slate-800 text-slate-400 border-slate-600 hover:border-slate-500'
+                    ? ''
+                    : 'text-slate-400 border-slate-600 hover:border-slate-500'
                 }`}
                 style={{
-                  backgroundColor: selectedYears.includes(year) ? getYearColor(year) : undefined,
+                  color: selectedYears.includes(year) ? getYearColor(year) : undefined,
                   borderColor: selectedYears.includes(year) ? getYearColor(year) : undefined
                 }}
               >

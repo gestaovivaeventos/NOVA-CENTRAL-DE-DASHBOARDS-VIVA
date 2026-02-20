@@ -84,9 +84,18 @@ function processKpiData(rows: any[][]): KpiData[] {
       resultadoValue /= 100;
     }
     
+    // Usar coluna DATA (coluna A) como fonte da competência
     const dataValue = row[colIndices.data] || '';
-    const yearParts = dataValue.split('/');
-    const year = yearParts.length === 3 ? parseInt(yearParts[2], 10) : null;
+    const dataParts = dataValue.split('/');
+    let year: number | null = null;
+    let competenciaFromData = '';
+    
+    if (dataParts.length === 3) {
+      const mes = dataParts[1].padStart(2, '0');
+      const ano = dataParts[2];
+      year = parseInt(ano, 10) || null;
+      competenciaFromData = `${mes}/${ano}`;
+    }
     
     // Processar % METAS REAL - se vazio ou 0, considerar null
     const metasRealStr = (row[colIndices.metasReal] || '').toString().trim();
@@ -99,7 +108,7 @@ function processKpiData(rows: any[][]): KpiData[] {
     }
     
     return {
-      competencia: row[colIndices.competencia] || '',
+      competencia: competenciaFromData,
       organizacao: row[colIndices.organizacao] || '',
       time: row[colIndices.time] || '',
       kpi: row[colIndices.kpi] || '',
@@ -182,8 +191,10 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
   const colRealizado = 8;  // Coluna I: REALIZADO
   const colAtingimento = 9; // Coluna J: ATINGIMENTO
   const colQuarter = 10;   // Coluna K: QUARTER
+  const colMedida = 12;    // Coluna M: MEDIDA
   const colFormaDeMedir = 13; // Coluna N: FORMA DE MEDIR
   const colChave = 14;     // Coluna O: CHAVE (identificador único do KR)
+  const colAtingMetaMes = 16; // Coluna Q: ATING META MES
   const colAtingReal = 17; // Coluna R: ATING REAL
 
   const processedData: NovoOkrData[] = [];
@@ -222,12 +233,19 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
     const realizadoStr = row[colRealizado] ? String(row[colRealizado]).replace('%', '').replace(',', '.').trim() : '';
     const realizadoNum = parseFloat(realizadoStr) || 0;
     
-    // Atingimento (coluna J)
-    const atingStr = row[colAtingimento] ? String(row[colAtingimento]).replace('%', '').replace(',', '.').trim() : '';
+    // Atingimento Real (coluna R) - limitado a 100%
+    const atingStr = row[colAtingReal] ? String(row[colAtingReal]).replace('%', '').replace(',', '.').trim() : '';
     const atingNum = parseFloat(atingStr) || 0;
+    
+    // Atingimento Meta Mês (coluna Q)
+    const atingMetaMesStr = row[colAtingMetaMes] ? String(row[colAtingMetaMes]).replace('%', '').replace(',', '.').trim() : '';
+    const atingMetaMesNum = parseFloat(atingMetaMesStr) || 0;
     
     // Forma de Medir (coluna N)
     const formaDeMedir = row[colFormaDeMedir] ? String(row[colFormaDeMedir]).trim().toUpperCase() : '';
+    
+    // Medida (coluna M) - MOEDA, PORCENTAGEM, NÚMERO INTEIRO
+    const medida = row[colMedida] ? String(row[colMedida]).trim().toUpperCase() : '';
     
     if (time && indicadorNome) {
       processedData.push({
@@ -242,7 +260,9 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
         meta: metaNum,
         realizado: realizadoNum,
         atingReal: atingNum,
-        formaDeMedir: formaDeMedir
+        atingMetaMes: atingMetaMesNum,
+        formaDeMedir: formaDeMedir,
+        medida: medida
       });
     }
   });
@@ -340,23 +360,44 @@ function processProjectsData(rows: any[][]): ProjectData[] {
   return processedData;
 }
 
-// Calcular EBITDA por ano
-function calculateEbitdaByYear(kpis: KpiData[]): Record<number, EbitdaYearData> {
+// Calcular EBITDA acumulado até a competência selecionada
+function calculateEbitdaByYear(kpis: KpiData[], competencia: string): Record<number, EbitdaYearData> {
   const ebitdaData = kpis.filter(item => item.kpi.toUpperCase() === 'EBITDA');
+  
+  // Extrair mês e ano da competência selecionada (formato MM/YYYY)
+  const [mesCompStr, anoCompStr] = competencia.split('/');
+  const mesComp = parseInt(mesCompStr) || 12;
+  const anoComp = parseInt(anoCompStr) || new Date().getFullYear();
+  
+  console.log('calculateEbitdaByYear - competencia:', competencia, '- mesComp:', mesComp, '- anoComp:', anoComp);
+  console.log('calculateEbitdaByYear - ebitdaData sample:', ebitdaData.slice(0, 3).map(e => ({ competencia: e.competencia, year: e.year, meta: e.meta })));
+  
   const accumulator: Record<number, EbitdaYearData> = {};
 
   for (const item of ebitdaData) {
     const year = item.year;
     if (!year) continue;
     
+    // Se o ano do registro for diferente do ano da competência, ignorar
+    if (year !== anoComp) {
+      continue;
+    }
+    
+    // Extrair mês da competência do registro (formato MM/YYYY)
+    const [mesRegStr] = item.competencia.split('/');
+    const mesReg = parseInt(mesRegStr) || 0;
+    
+    // Somar apenas registros até o mês da competência selecionada
+    if (mesReg > mesComp) continue;
+    
     if (!accumulator[year]) {
       accumulator[year] = { year: year, meta: 0, resultado: 0, metasReal: 0 };
     }
     accumulator[year].meta += item.meta;
-    if (item.status === 'Finalizado') {
-      accumulator[year].resultado += item.resultado;
-    }
+    accumulator[year].resultado += item.resultado;
   }
+
+  console.log('calculateEbitdaByYear - accumulator:', accumulator);
 
   // Calcular percentual
   Object.values(accumulator).forEach(yearData => {
@@ -581,8 +622,8 @@ export function useDashboardData() {
         setSelectedCompetencia(competencias[0]);
       }
 
-      // Calcular EBITDA por ano
-      const ebitdaByYear = calculateEbitdaByYear(kpis);
+      // Calcular EBITDA acumulado até a competência selecionada
+      const ebitdaByYear = calculateEbitdaByYear(kpis, currentCompetencia);
 
       // Calcular performance por time
       const teamPerformance = calculateTeamPerformance(kpis, novoOkrs, currentCompetencia);

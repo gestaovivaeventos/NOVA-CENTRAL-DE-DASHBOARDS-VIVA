@@ -65,7 +65,9 @@ export interface NovoOkrData {
   meta: number;
   realizado: number;
   atingReal: number;
+  atingMetaMes: number;
   formaDeMedir: string;
+  medida: string;
 }
 
 export interface ProjectData {

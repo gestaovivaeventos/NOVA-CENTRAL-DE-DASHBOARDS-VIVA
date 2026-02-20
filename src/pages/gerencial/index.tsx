@@ -125,7 +125,7 @@ export default function GerencialPage() {
           <main className="p-5 pb-12">
             {/* EBITDA Section */}
             <div className="mb-6">
-              <EbitdaCard ebitdaByYear={data.ebitdaByYear} />
+              <EbitdaCard ebitdaByYear={data.ebitdaByYear} competencia={selectedCompetencia} />
             </div>
 
             {/* OKRs Section */}
