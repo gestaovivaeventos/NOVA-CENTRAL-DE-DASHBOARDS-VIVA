@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Info } from 'lucide-react';
 import Card from './Card';
 import SectionTitle from './SectionTitle';
 import { TeamPerformance, KpiData, NovoOkrData, ProjectData } from '../types';
@@ -21,6 +21,23 @@ const getStatusColor = (percent: number | null) => {
   if (percent >= 100) return '#22C55E'; // Verde
   if (percent >= 61) return '#FF6600';  // Laranja
   return '#EF4444';                      // Vermelho
+};
+
+// Função para gerar texto explicativo do cálculo de Ating. Ano
+const getAtingimentoAnoExplanation = (tipo: string, tendencia: string): string => {
+  const tipoUpper = (tipo || '').toUpperCase().trim();
+  const isMenorMelhor = tendencia?.toUpperCase().includes('MENOR');
+  
+  if (tipoUpper === 'ACUMULADO NO ANO') {
+    if (isMenorMelhor) {
+      return 'Acumulado no Ano: Soma das Metas ÷ Soma dos Resultados × 100 (invertido por ser MENOR, MELHOR)';
+    }
+    return 'Acumulado no Ano: Soma dos Resultados ÷ Soma das Metas do ano × 100';
+  } else if (tipoUpper === 'MÉDIA NO ANO') {
+    return 'Média no Ano: Último Resultado ÷ Meta de dezembro × 100';
+  } else {
+    return 'Evolução: Último Resultado ÷ Meta de dezembro × 100';
+  }
 };
 
 const ProgressBar: React.FC<{ value: number | null; isBold?: boolean }> = ({ value, isBold }) => {
@@ -63,6 +80,7 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
   const [expandedTeam, setExpandedTeam] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState<SelectionMode>('kpi');
   const [modoVisualizacao, setModoVisualizacao] = useState<'anual' | 'mensal'>('anual');
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   
   // Extrair ano da competência
   const [mesCompetencia, anoCompetencia] = competencia.split('/').map(Number);
@@ -103,11 +121,78 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
   
   // Nomes dos meses
   const mesesNomes = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+  // Função para calcular Ating. Ano (mesma lógica do módulo KPI)
+  const calcularAtingimentoAno = (
+    kpiData: KpiData[],
+    meses: Record<number, { meta: number; resultado: number; atingimento: number | null } | null>
+  ): number | null => {
+    if (kpiData.length === 0) return null;
+    
+    const tipo = kpiData[0]?.tipo || '';
+    const tendencia = kpiData[0]?.tendencia || '';
+    const tipoUpper = tipo.toUpperCase().trim();
+    const isMenorMelhor = tendencia.toUpperCase().includes('MENOR');
+    
+    // Ordenar meses e encontrar o último com resultado
+    const mesesKeys = Object.keys(meses).map(Number).sort((a, b) => a - b);
+    let ultimoMesComResultado = -1;
+    for (let i = mesesKeys.length - 1; i >= 0; i--) {
+      const dadosMes = meses[mesesKeys[i]];
+      if (dadosMes && dadosMes.resultado !== null && dadosMes.resultado !== undefined) {
+        ultimoMesComResultado = mesesKeys[i];
+        break;
+      }
+    }
+    
+    if (ultimoMesComResultado === -1) return null;
+    
+    if (tipoUpper === 'EVOLUÇÃO' || tipoUpper === 'MÉDIA NO ANO') {
+      // EVOLUÇÃO / MÉDIA NO ANO: Último Resultado / Meta de dezembro (mês 12)
+      const dadosUltimoMes = meses[ultimoMesComResultado];
+      const ultimoRes = dadosUltimoMes?.resultado || 0;
+      // Meta de dezembro
+      const metaDezembro = meses[12]?.meta || meses[ultimoMesComResultado]?.meta || 0;
+      
+      if (metaDezembro === 0) return null;
+      
+      if (isMenorMelhor) {
+        return ultimoRes > 0 ? (metaDezembro / ultimoRes) * 100 : null;
+      } else {
+        return (ultimoRes / metaDezembro) * 100;
+      }
+    } else {
+      // ACUMULADO NO ANO (default): Soma dos resultados / Soma total das metas do ano
+      let somaResultado = 0;
+      let somaMetaTotal = 0;
+      
+      // Somar resultados até o último mês com resultado
+      for (const mesKey of mesesKeys) {
+        const dadosMes = meses[mesKey];
+        if (dadosMes) {
+          if (mesKey <= ultimoMesComResultado) {
+            somaResultado += dadosMes.resultado || 0;
+          }
+          somaMetaTotal += dadosMes.meta || 0;
+        }
+      }
+      
+      if (somaMetaTotal === 0) return null;
+      
+      if (isMenorMelhor) {
+        return somaResultado > 0 ? (somaMetaTotal / somaResultado) * 100 : null;
+      } else {
+        return (somaResultado / somaMetaTotal) * 100;
+      }
+    }
+  };
   
   // Agrupar KPIs por nome para formato pivotado (meses em colunas)
   type KpiPivotRow = {
     kpi: string;
     grandeza: string;
+    tipo: string;
+    tendencia: string;
     meses: Record<number, { meta: number; resultado: number; atingimento: number | null } | null>;
     atingimentoMes: number | null;
     atingimentoAno: number | null;
@@ -126,6 +211,8 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     // Criar linhas pivotadas
     return Object.entries(kpiGroups).map(([kpiName, kpiData]) => {
       const grandeza = kpiData[0]?.grandeza || '';
+      const tipo = kpiData[0]?.tipo || '';
+      const tendencia = kpiData[0]?.tendencia || '';
       const meses: KpiPivotRow['meses'] = {};
       
       // Extrair mês de cada KPI pela competência
@@ -148,15 +235,14 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
       const dadosMesSelecionado = meses[mesCompetencia];
       const atingimentoMes = dadosMesSelecionado?.atingimento ?? null;
       
-      // Calcular atingimento do ano (média dos meses finalizados)
-      const mesesFinalizados = Object.values(meses).filter(m => m !== null && m.atingimento !== null);
-      const atingimentoAno = mesesFinalizados.length > 0
-        ? mesesFinalizados.reduce((acc, m) => acc + (m?.atingimento || 0), 0) / mesesFinalizados.length
-        : null;
+      // Calcular atingimento do ano usando a mesma lógica do módulo KPI
+      const atingimentoAno = calcularAtingimentoAno(kpiData, meses);
       
       return {
         kpi: kpiName,
         grandeza,
+        tipo,
+        tendencia,
         meses,
         atingimentoMes,
         atingimentoAno
@@ -782,12 +868,29 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                                                   })}
                                                   <td className="py-2 px-2 text-center bg-slate-800/50">
                                                     {row.atingimentoAno !== null ? (
-                                                      <span 
-                                                        className="font-semibold"
-                                                        style={{ color: getStatusColor(row.atingimentoAno) }}
-                                                      >
-                                                        {row.atingimentoAno.toFixed(1)}%
-                                                      </span>
+                                                      <div className="relative inline-flex items-center gap-1">
+                                                        <span 
+                                                          className="font-semibold"
+                                                          style={{ color: getStatusColor(row.atingimentoAno) }}
+                                                        >
+                                                          {row.atingimentoAno.toFixed(1)}%
+                                                        </span>
+                                                        <button
+                                                          className="text-gray-500 hover:text-gray-300 transition-colors"
+                                                          onMouseEnter={() => setActiveTooltip(`kpi-${rowIndex}`)}
+                                                          onMouseLeave={() => setActiveTooltip(null)}
+                                                          onClick={() => setActiveTooltip(activeTooltip === `kpi-${rowIndex}` ? null : `kpi-${rowIndex}`)}
+                                                        >
+                                                          <Info size={12} />
+                                                        </button>
+                                                        {activeTooltip === `kpi-${rowIndex}` && (
+                                                          <div className="absolute bottom-full right-0 mb-2 z-50 w-56 p-2 bg-gray-800 border border-gray-600 rounded-lg shadow-xl text-xs text-gray-300 font-normal">
+                                                            <div className="font-semibold text-white mb-1">{row.tipo || 'EVOLUÇÃO'}</div>
+                                                            {getAtingimentoAnoExplanation(row.tipo, row.tendencia)}
+                                                            <div className="absolute bottom-0 right-4 transform translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800 border-r border-b border-gray-600"></div>
+                                                          </div>
+                                                        )}
+                                                      </div>
                                                     ) : (
                                                       <span className="text-slate-600">-</span>
                                                     )}

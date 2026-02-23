@@ -43,6 +43,8 @@ export interface KpiData {
   status: string;
   grandeza: string;
   year: number | null;
+  tendencia: string;  // MAIOR, MELHOR ou MENOR, MELHOR
+  tipo: string;       // EVOLUÇÃO, MÉDIA NO ANO, ACUMULADO NO ANO
   fato?: string;
   causa?: string;
   efeito?: string;
