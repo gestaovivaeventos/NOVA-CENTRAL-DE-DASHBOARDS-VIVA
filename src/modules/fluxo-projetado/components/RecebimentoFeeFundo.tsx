@@ -18,8 +18,9 @@ export interface FundoFee {
   // Dados principais
   feeTotal: number;           // FEE TOTAL DO CONTRATO
   feeAntecipacaoTotal: number;// FEE ANTECIPAÇÃO (valor total liberado para antecipação)
-  feeAntecipacaoRecebido: number; // FEE ANTECIPAÇÃO JÁ RECEBIDO
-  saldoFundo: number;         // SALDO DO FUNDO
+  feeAntecipacaoRecebido: number; // FEE ANTECIPAÇÃO JÁ RECEBIDO (M + N)
+  saldoFundo: number;         // SALDO DO FUNDO (Coluna L)
+  faltaReceber?: number;      // FALTA RECEBER (Coluna O - opcional, calculado se não existir)
   // Legado - manter para compatibilidade
   feeRecebido?: number;        
   feeDisponivelAntecipacao?: number;
@@ -48,7 +49,8 @@ type OrdenacaoDirecao = 'asc' | 'desc';
 
 // Função para calcular o status do fundo
 const calcularStatus = (fundo: FundoFee): StatusFundo => {
-  const faltaReceber = fundo.feeAntecipacaoTotal - fundo.feeAntecipacaoRecebido;
+  // Usa faltaReceber da planilha (coluna O) se disponível, senão calcula
+  const faltaReceber = fundo.faltaReceber ?? (fundo.feeAntecipacaoTotal - fundo.feeAntecipacaoRecebido);
   
   // FINALIZADO: quando todo o valor do FEE antecipação já foi recebido
   if (faltaReceber <= 0) {
@@ -75,8 +77,12 @@ const calcularPercentualAntecipacaoRecebido = (fundo: FundoFee): number => {
   return (fundo.feeAntecipacaoRecebido / fundo.feeAntecipacaoTotal) * 100;
 };
 
-// Função para calcular valor faltando receber
+// Função para obter valor faltando receber (usa coluna O se disponível)
 const calcularFaltaReceber = (fundo: FundoFee): number => {
+  // Prioriza o valor da planilha (coluna O), senão calcula
+  if (fundo.faltaReceber !== undefined) {
+    return fundo.faltaReceber;
+  }
   return Math.max(0, fundo.feeAntecipacaoTotal - fundo.feeAntecipacaoRecebido);
 };
 

@@ -152,12 +152,13 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     const feePago = parseNumber(row[COLUNAS.FEE_PAGO]);
     const valorPagoRpFee = parseNumber(row[COLUNAS.VALOR_PAGO_RP_FEE]); // Coluna N
     const saldo = parseNumber(row[COLUNAS.SALDO]); // Coluna L
+    const valorRestanteFee = parseNumber(row[COLUNAS.VALOR_RESTANTE_FEE]); // Coluna O
     
     // Antecipação recebida = M + N (FEE Pago + Valor Pago RP FEE)
     const antecipacaoRecebida = feePago + valorPagoRpFee;
     
-    // Falta Receber = FEE Inicial - Antecipação Recebida (calculado, não usa coluna O)
-    const faltaReceber = Math.max(0, feeInicial - antecipacaoRecebida);
+    // Falta Receber = Coluna O (VALOR RESTANTE DE FEE) diretamente da planilha
+    const faltaReceber = valorRestanteFee;
     
     // Ignora linhas sem código de fundo
     if (!codFundo) continue;
@@ -170,7 +171,7 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
       feeAntecipacaoTotal: feeInicial,
       feeAntecipacaoRecebido: antecipacaoRecebida, // M + N
       saldoFundo: saldo, // L
-      faltaReceber: faltaReceber, // Calculado: FEE - (M + N)
+      faltaReceber: faltaReceber, // Coluna O - VALOR RESTANTE DE FEE
     };
     
     fundos.push(fundo);
