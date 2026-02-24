@@ -73,12 +73,39 @@ export default function TabelaResumo({
     return clusterUpper.includes('INCUBA');
   };
 
+  // Colunas que mostram percentual de atingimento (mesma lista usada na renderização)
+  const colunasPercentual = [
+    'vvr_12_meses', 'vvr_carteira', 'indice_margem_entrega',
+    'Indice_endividamento', 'churn', 'nps_geral', 'reclame_aqui',
+    'conformidades', 'estrutura_organizacioanl', 'enps_rede',
+    'colaboradores_mais_1_ano'
+  ];
+
+  // Colunas que devem ser zeradas quando quarter inativo
+  const colunasZeraveis = [
+    ...colunasPercentual,
+    'pontuacao_com_bonus', 'pontuacao_sem_bonus', 'bonus'
+  ];
+
   // Função para exportar para Excel
   const exportarParaExcel = () => {
     const dadosParaExportar = dadosOrdenados.map(item => {
+      const quarterAtivo = (item.quarter_ativo || '').toString().toLowerCase() === 'ativo';
       const linha: any = {};
       colunas.forEach(col => {
-        linha[col.label] = item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : '';
+        const key = col.key;
+        const valorOriginal = item[key];
+        const deveZerar = colunasZeraveis.includes(key) && !quarterAtivo;
+
+        if (deveZerar) {
+          linha[col.label] = '-';
+        } else if (colunasPercentual.includes(key)) {
+          // Exportar o percentual (%) igual ao exibido no painel
+          const result = calcularPercentual(valorOriginal, key);
+          linha[col.label] = result ? `${result.percentual.toFixed(1)}%` : '-';
+        } else {
+          linha[col.label] = valorOriginal !== undefined && valorOriginal !== null ? valorOriginal : '';
+        }
       });
       return linha;
     });
@@ -505,20 +532,6 @@ export default function TabelaResumo({
                 {colunas.map((coluna) => {
                   const key = coluna.key;
                   const valorOriginal = item[key];
-                  
-                  // Colunas que mostram percentual de atingimento
-                  const colunasPercentual = [
-                    'vvr_12_meses', 'vvr_carteira', 'indice_margem_entrega', 
-                    'Indice_endividamento', 'churn', 'nps_geral', 'reclame_aqui',
-                    'conformidades', 'estrutura_organizacioanl', 'enps_rede', 
-                    'colaboradores_mais_1_ano'
-                  ];
-                  
-                  // Colunas que devem ser zeradas quando quarter inativo
-                  const colunasZeraveis = [
-                    ...colunasPercentual,
-                    'pontuacao_com_bonus', 'pontuacao_sem_bonus', 'bonus'
-                  ];
                   
                   const isPercentual = colunasPercentual.includes(key);
                   const isPontuacaoComBonus = key === 'pontuacao_com_bonus';
