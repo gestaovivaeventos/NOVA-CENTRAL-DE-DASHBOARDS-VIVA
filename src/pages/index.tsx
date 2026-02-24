@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
 
 // Função para pré-carregar dados de vendas em background
 const prefetchVendasData = () => {
@@ -38,16 +39,26 @@ const allDashboards: Dashboard[] = [
   { id: 'pex', name: 'Dashboard PEX', description: 'Visão geral do PEX', path: '/pex', icon: 'dashboard' },
   { id: 'carteira', name: 'Dashboard Carteira', description: 'Análise de fundos e franquias', path: '/carteira', icon: 'wallet' },
   { id: 'fluxo-projetado', name: 'Gestão de Caixa', description: 'Projeção de fluxo de caixa', path: '/fluxo-projetado', icon: 'fluxo' },
+  { id: 'branches', name: 'Gerenciar Branches', description: 'Gerenciamento de branches', path: '/branches', icon: 'branch' },
 ];
 
-// Dashboards permitidos por nível de acesso
-const getDashboardsPermitidos = (accessLevel: number): string[] => {
+// Dashboards permitidos por nível de acesso e usuário
+const getDashboardsPermitidos = (accessLevel: number, username?: string): string[] => {
   // Franqueado (accessLevel = 0) só tem acesso ao PEX
   if (accessLevel === 0) {
     return ['pex'];
   }
-  // Franqueadora (accessLevel >= 1) tem acesso a todos
-  return allDashboards.map(d => d.id);
+  // Franqueadora (accessLevel >= 1) tem acesso a todos, exceto branches (apenas autorizados)
+  const baseDashboards = allDashboards
+    .filter(d => d.id !== 'branches')
+    .map(d => d.id);
+  
+  // Adicionar branches se usuário está autorizado
+  if (username && AUTHORIZED_USERNAMES.includes(username)) {
+    baseDashboards.push('branches');
+  }
+  
+  return baseDashboards;
 };
 
 // Ícones SVG inline (mesmos da Sidebar)
@@ -85,6 +96,14 @@ const dashboardIcons: Record<string, JSX.Element> = {
   fluxo: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+    </svg>
+  ),
+  branch: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 3v12" />
+      <circle cx="6" cy="18" r="3" fill="none" />
+      <circle cx="18" cy="6" r="3" fill="none" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9c0 6-12 6-12 6" />
     </svg>
   ),
 };
@@ -231,11 +250,11 @@ export default function HomePage() {
 
   // Dashboards favoritos (filtrados pelo nível de acesso do usuário)
   const favoriteDashboards = useMemo(() => {
-    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0);
+    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0, user?.username);
     return allDashboards.filter(d => 
       favorites.includes(d.id) && dashboardsPermitidos.includes(d.id)
     );
-  }, [favorites, user?.accessLevel]);
+  }, [favorites, user?.accessLevel, user?.username]);
 
   // Mostrar loading enquanto verifica auth
   if (isLoading || !isAuthenticated) {

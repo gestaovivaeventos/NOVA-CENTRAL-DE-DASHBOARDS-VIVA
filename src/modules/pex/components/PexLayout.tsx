@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Trophy, BarChart3, Settings, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Home, LogOut, Filter, Menu, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import MultiSelectFilter from './MultiSelectFilter';
+import Footer from './Footer';
 
 interface FilterConfig {
   showQuarter?: boolean;
@@ -765,6 +766,7 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
         }}
       >
         {children}
+        <Footer />
       </main>
     </div>
   );
