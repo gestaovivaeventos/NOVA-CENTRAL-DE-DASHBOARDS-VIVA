@@ -6,26 +6,27 @@ import { EbitdaYearData } from '../types';
 
 interface EbitdaCardProps {
   ebitdaByYear: Record<number, EbitdaYearData>;
+  competencia: string;
 }
 
 const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(value);
 };
 
-export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear }) => {
-  const currentYear = new Date().getFullYear();
+export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear, competencia }) => {
+  // O ebitdaByYear já vem filtrado pelo hook com apenas o ano da competência
   const years = Object.keys(ebitdaByYear)
     .map(Number)
-    .filter(year => year <= currentYear)
     .sort((a, b) => a - b);
 
-  const currentYearData = ebitdaByYear[currentYear];
-  const atingimentoPercent = currentYearData?.metasReal ? currentYearData.metasReal * 100 : 0;
+  // Usar o primeiro (e único) ano disponível nos dados filtrados
+  const yearData = years.length > 0 ? ebitdaByYear[years[0]] : null;
+  const atingimentoPercent = yearData?.metasReal ? yearData.metasReal * 100 : 0;
 
   // Definir cor baseada no atingimento (mesmas cores do VENDAS REFATORADO)
   const getStatusColor = (percent: number) => {
@@ -64,8 +65,8 @@ export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear }) => {
           EBITDA
         </h3>
         
-        {/* Barra de progresso do ano atual */}
-        {currentYearData && (
+        {/* Barra de progresso do ano selecionado */}
+        {yearData && (
           <div className="mb-6 text-center">
             <div 
               className="w-full h-4 rounded-full overflow-hidden mb-2"
@@ -80,9 +81,9 @@ export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear }) => {
               />
             </div>
             <p className="text-2xl font-bold" style={{ color: statusColor }}>
-              {atingimentoPercent.toFixed(1)}%
+              {atingimentoPercent.toFixed(2)}%
             </p>
-            <p className="text-sm" style={{ color: '#ADB5BD' }}>ATINGIMENTO {currentYear}</p>
+            <p className="text-sm" style={{ color: '#ADB5BD' }}>ATINGIMENTO ATÉ {competencia}</p>
           </div>
         )}
 
@@ -119,7 +120,7 @@ export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear }) => {
                     className="font-bold text-xl"
                     style={{ color: item.resultado > 0 ? yearColor : '#6c757d' }}
                   >
-                    {item.resultado > 0 ? `${yearAtingimento.toFixed(1)}%` : '-'}
+                    {item.resultado > 0 ? `${yearAtingimento.toFixed(2)}%` : '-'}
                   </span>
                 </div>
               </div>

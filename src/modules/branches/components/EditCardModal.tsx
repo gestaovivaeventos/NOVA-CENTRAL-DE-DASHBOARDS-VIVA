@@ -288,6 +288,10 @@ export default function EditCardModal({
                   cursor: 'pointer',
                 }}
               >
+                {/* Se o módulo atual não está na lista padrão, adiciona como primeira opção */}
+                {!MODULOS_CENTRAL.includes(modulo as any) && modulo && (
+                  <option key={modulo} value={modulo}>{modulo} (customizado)</option>
+                )}
                 {MODULOS_CENTRAL.map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}

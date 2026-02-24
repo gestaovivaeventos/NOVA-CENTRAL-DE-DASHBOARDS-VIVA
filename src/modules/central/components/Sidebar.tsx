@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { Search, X } from 'lucide-react';
 import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
+import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -62,6 +63,8 @@ const getDashboardGroups = (accessLevel: number, username?: string): DashboardGr
         { id: 'vendas', label: 'Dashboard Vendas', path: '/vendas', icon: 'money' },
         { id: 'carteira', label: 'Dashboard Carteira', path: '/carteira', icon: 'wallet' },
         { id: 'fluxo-projetado', label: 'Gestão de Caixa', path: '/fluxo-projetado', icon: 'fluxo' },
+        // Projetos: visível apenas para usuários autorizados durante validação
+        ...(username && PROJETOS_AUTHORIZED_USERNAMES.includes(username) ? [{ id: 'projetos', label: 'Painel de Projetos', path: '/projetos', icon: 'projetos' }] : []),
       ],
     },
   ];
@@ -141,6 +144,11 @@ const icons: Record<string, JSX.Element> = {
   network: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  projetos: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
     </svg>
   ),
   branch: (

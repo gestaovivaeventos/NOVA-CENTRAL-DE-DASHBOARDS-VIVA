@@ -43,6 +43,8 @@ export interface KpiData {
   status: string;
   grandeza: string;
   year: number | null;
+  tendencia: string;  // MAIOR, MELHOR ou MENOR, MELHOR
+  tipo: string;       // EVOLUÇÃO, MÉDIA NO ANO, ACUMULADO NO ANO
   fato?: string;
   causa?: string;
   efeito?: string;
@@ -57,9 +59,35 @@ export interface NovoOkrData {
   data: string;
   time: string;
   indicador: string;
+  indicadorNome: string;
+  objetivo: string;
+  idOkr: number;
+  idKr: number;
+  quarter: number;
   meta: number;
   realizado: number;
   atingReal: number;
+  atingMetaMes: number;
+  formaDeMedir: string;
+  medida: string;
+}
+
+export interface ProjectData {
+  id: string;
+  nome: string;
+  objetivo: string;
+  inicioProejto: string;
+  dataConclusao: string;
+  responsavel: string;
+  time: string;
+  indicador: string;
+  tendencia: string;
+  resultadoEsperado: number;
+  resultado: number;
+  atingimento: number;
+  quandoImpacto: string;
+  custo: string;
+  status: string;
 }
 
 export interface EbitdaYearData {
@@ -108,6 +136,7 @@ export interface DashboardData {
   okrs: OkrData[];
   kpis: KpiData[];
   novoOkrs: NovoOkrData[];
+  projetos: ProjectData[];
   competencias: string[];
   selectedCompetencia: string;
   teamPerformance: TeamPerformance[];

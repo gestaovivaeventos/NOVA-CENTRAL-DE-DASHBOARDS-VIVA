@@ -4,11 +4,13 @@
 
 export const API_CONFIG = {
   SPREADSHEET_ID: '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs',
+  PROJECTS_SPREADSHEET_ID: '182mM7NKo8IxLe1QKP7kSvAP-pNTZQbWPEaLje7oE7s4',
   API_KEY: 'AIzaSyBuGRH91CnRuDtN5RGsb5DvHEfhTxJnWSs',
   SHEETS: {
     KPIS: 'KPIS!A:AD', // Inclui colunas FCA até REALIZADO
     OKRS: 'OKRS VC',
-    PAINEL_OKR: 'NOVO PAINEL OKR'
+    PAINEL_OKR: 'NOVO PAINEL OKR',
+    PROJETOS: 'Projetos'
   }
 };
 

@@ -12,4 +12,5 @@ export { OkrsSection } from './OkrsSection';
 export { KpisAtencaoTable } from './KpisAtencaoTable';
 export { FilterPanel } from './FilterPanel';
 export { TeamPerformanceTable } from './TeamPerformanceTable';
+export { PerformanceChart } from './PerformanceChart';
 export { default as SingleSelect } from './SingleSelect';

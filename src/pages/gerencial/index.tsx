@@ -14,6 +14,7 @@ import {
   OkrsSection,
   KpisAtencaoTable,
   TeamPerformanceTable,
+  PerformanceChart,
   Card
 } from '../../modules/painel-gerencial/components';
 import { useDashboardData } from '../../modules/painel-gerencial/hooks';
@@ -124,7 +125,7 @@ export default function GerencialPage() {
           <main className="p-5 pb-12">
             {/* EBITDA Section */}
             <div className="mb-6">
-              <EbitdaCard ebitdaByYear={data.ebitdaByYear} />
+              <EbitdaCard ebitdaByYear={data.ebitdaByYear} competencia={selectedCompetencia} />
             </div>
 
             {/* OKRs Section */}
@@ -133,7 +134,17 @@ export default function GerencialPage() {
             {/* Team Performance Table */}
             <TeamPerformanceTable 
               teams={data.teamPerformance} 
-              competencia={selectedCompetencia} 
+              competencia={selectedCompetencia}
+              kpis={data.kpis}
+              novoOkrs={data.novoOkrs}
+              projetos={data.projetos}
+            />
+
+            {/* Gráfico de Evolução do Atingimento */}
+            <PerformanceChart 
+              kpis={data.kpis}
+              novoOkrs={data.novoOkrs}
+              projetos={data.projetos}
             />
 
             {/* KPIs que precisam de atenção */}
