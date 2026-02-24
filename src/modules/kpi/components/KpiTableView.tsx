@@ -105,8 +105,10 @@ const parseComp = (s: string) => {
   return 0;
 };
 
-// Função para calcular atingimento baseado no TIPO
-const calculateAtingimento = (
+// Função para calcular ATING. PARCIAL - igual ao card de apresentação
+// Para EVOLUÇÃO / MÉDIA NO ANO: Último Resultado / Meta do mesmo mês
+// Para ACUMULADO NO ANO: Soma Resultado até momento / Soma Meta até momento
+const calculateAtingParcial = (
   data: KpiData[],
   tipo: string,
   tendencia: string
@@ -114,60 +116,56 @@ const calculateAtingimento = (
   if (!data || data.length === 0) return 0;
   
   const tipoUpper = (tipo || '').toUpperCase().trim();
+  const isMenorMelhor = tendencia === 'MENOR, MELHOR';
   
   // Ordenar dados por competência
   const sortedData = [...data].sort((a, b) => parseComp(a.competencia) - parseComp(b.competencia));
   
-  if (tipoUpper === 'ACUMULADO NO ANO') {
-    // Encontrar o último mês com resultado
-    let lastIndexWithResult = -1;
-    for (let i = sortedData.length - 1; i >= 0; i--) {
-      if (sortedData[i].resultado !== null && sortedData[i].resultado !== undefined) {
-        lastIndexWithResult = i;
-        break;
-      }
+  // Encontrar último índice com resultado
+  let ultimoIdxComResultado = -1;
+  for (let i = sortedData.length - 1; i >= 0; i--) {
+    if (sortedData[i].resultado !== null && sortedData[i].resultado !== undefined) {
+      ultimoIdxComResultado = i;
+      break;
     }
-    
-    if (lastIndexWithResult === -1) return 0;
-    
-    // Somar resultados e metas do início até o último mês com resultado
-    let somaResultado = 0;
-    let somaMeta = 0;
-    for (let i = 0; i <= lastIndexWithResult; i++) {
-      somaResultado += sortedData[i].resultado || 0;
-      somaMeta += sortedData[i].meta || 0;
-    }
-    
-    if (somaMeta === 0) return 0;
-    
-    if (tendencia === 'MAIOR, MELHOR') {
-      return (somaResultado / somaMeta) * 100;
-    } else {
-      // MENOR, MELHOR - conta inversa
-      return somaResultado !== 0 ? (somaMeta / somaResultado) * 100 : 0;
-    }
-  } else if (tipoUpper === 'MÉDIA NO ANO') {
-    // Média dos valores da coluna % ATINGIMENTO (atingimento)
-    const itemsWithAtingimento = data.filter(
-      (item) => item.atingimento !== null && item.atingimento !== undefined
-    );
-    if (itemsWithAtingimento.length === 0) return 0;
-    
-    const totalAtingimento = itemsWithAtingimento.reduce(
-      (acc, item) => acc + (item.atingimento || 0),
-      0
-    );
-    return totalAtingimento / itemsWithAtingimento.length;
-  } else {
-    // EVOLUÇÃO ou outros - último valor da coluna % ATINGIMENTO
-    // Pegar o último item com atingimento preenchido
-    for (let i = sortedData.length - 1; i >= 0; i--) {
-      if (sortedData[i].atingimento !== null && sortedData[i].atingimento !== undefined) {
-        return sortedData[i].atingimento || 0;
-      }
-    }
-    return 0;
   }
+  
+  if (ultimoIdxComResultado === -1) return 0;
+  
+  if (tipoUpper === 'EVOLUÇÃO' || tipoUpper === 'MÉDIA NO ANO') {
+    // EVOLUÇÃO / MÉDIA NO ANO: Último Resultado / Meta do mesmo mês
+    const ultimoRes = sortedData[ultimoIdxComResultado].resultado || 0;
+    const metaDoMes = sortedData[ultimoIdxComResultado].meta || 0;
+    
+    if (metaDoMes === 0) return 0;
+    
+    if (isMenorMelhor) {
+      return ultimoRes > 0 ? (metaDoMes / ultimoRes) * 100 : 0;
+    } else {
+      return (ultimoRes / metaDoMes) * 100;
+    }
+  } else if (tipoUpper === 'ACUMULADO NO ANO') {
+    // ACUMULADO: Soma Resultado até momento / Soma Meta até momento
+    let somaResultado = 0;
+    let somaMetaParcial = 0;
+    for (let i = 0; i <= ultimoIdxComResultado; i++) {
+      somaResultado += sortedData[i].resultado || 0;
+      const metaVal = sortedData[i].meta || 0;
+      if (!isNaN(metaVal)) {
+        somaMetaParcial += metaVal;
+      }
+    }
+    
+    if (somaMetaParcial === 0) return 0;
+    
+    if (isMenorMelhor) {
+      return somaResultado > 0 ? (somaMetaParcial / somaResultado) * 100 : 0;
+    } else {
+      return (somaResultado / somaMetaParcial) * 100;
+    }
+  }
+  
+  return 0;
 };
 
 // Função para calcular Atingimento do Ano
@@ -262,8 +260,8 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
         }
       });
       
-      // Calcular atingimento baseado no TIPO
-      const calculatedAtingimento = calculateAtingimento(data, tipo, tendencia);
+      // Calcular atingimento parcial baseado no TIPO (igual ao card de apresentação)
+      const calculatedAtingimento = calculateAtingParcial(data, tipo, tendencia);
       
       // Calcular atingimento do ano
       const atingimentoAno = calculateAtingimentoAno(data, tipo, tendencia);
@@ -426,7 +424,7 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                 </th>
               ))}
               <th className="px-3 py-3 text-center text-gray-400 font-medium min-w-[100px]">
-                Ating. do Mês
+                Ating. Parcial
               </th>
               <th className="px-3 py-3 text-center text-gray-400 font-medium min-w-[100px]">
                 Ating. Ano

@@ -1,11 +1,15 @@
 // Hook para buscar dados do dashboard
 
 import { useState, useEffect, useCallback } from 'react';
-import { DashboardData, OkrData, KpiData, NovoOkrData, EbitdaYearData, TeamPerformance } from '../types';
+import { DashboardData, OkrData, KpiData, NovoOkrData, EbitdaYearData, TeamPerformance, ProjectData } from '../types';
 import { API_CONFIG } from '../config/app.config';
 
 const buildSheetUrl = (sheetName: string) => {
   return `https://sheets.googleapis.com/v4/spreadsheets/${API_CONFIG.SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}?key=${API_CONFIG.API_KEY}`;
+};
+
+const buildProjectsSheetUrl = () => {
+  return `https://sheets.googleapis.com/v4/spreadsheets/${API_CONFIG.PROJECTS_SPREADSHEET_ID}/values/${encodeURIComponent(API_CONFIG.SHEETS.PROJETOS)}?key=${API_CONFIG.API_KEY}`;
 };
 
 async function fetchSheetData(sheetName: string): Promise<any[][]> {
@@ -18,6 +22,21 @@ async function fetchSheetData(sheetName: string): Promise<any[][]> {
     return data.values || [];
   } catch (error) {
     console.error(`Erro ao buscar dados de ${sheetName}:`, error);
+    return [];
+  }
+}
+
+// Buscar dados de projetos (planilha separada)
+async function fetchProjectsData(): Promise<any[][]> {
+  try {
+    const response = await fetch(buildProjectsSheetUrl());
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar Projetos: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.values || [];
+  } catch (error) {
+    console.error('Erro ao buscar dados de Projetos:', error);
     return [];
   }
 }
@@ -43,6 +62,8 @@ function processKpiData(rows: any[][]): KpiData[] {
     metasReal: headers.indexOf('% METAS REAL'),
     status: headers.indexOf('STATUS'),
     grandeza: headers.indexOf('GRANDEZA'),
+    tendencia: headers.indexOf('TENDÊNCIA'),
+    tipo: headers.indexOf('TIPO'),
     data: headers.indexOf('DATA'),
     criadoEm: headers.indexOf('CRIADO EM'),
     fato: headers.indexOf('FATO'),
@@ -65,9 +86,18 @@ function processKpiData(rows: any[][]): KpiData[] {
       resultadoValue /= 100;
     }
     
+    // Usar coluna DATA (coluna A) como fonte da competência
     const dataValue = row[colIndices.data] || '';
-    const yearParts = dataValue.split('/');
-    const year = yearParts.length === 3 ? parseInt(yearParts[2], 10) : null;
+    const dataParts = dataValue.split('/');
+    let year: number | null = null;
+    let competenciaFromData = '';
+    
+    if (dataParts.length === 3) {
+      const mes = dataParts[1].padStart(2, '0');
+      const ano = dataParts[2];
+      year = parseInt(ano, 10) || null;
+      competenciaFromData = `${mes}/${ano}`;
+    }
     
     // Processar % METAS REAL - se vazio ou 0, considerar null
     const metasRealStr = (row[colIndices.metasReal] || '').toString().trim();
@@ -80,7 +110,7 @@ function processKpiData(rows: any[][]): KpiData[] {
     }
     
     return {
-      competencia: row[colIndices.competencia] || '',
+      competencia: competenciaFromData,
       organizacao: row[colIndices.organizacao] || '',
       time: row[colIndices.time] || '',
       kpi: row[colIndices.kpi] || '',
@@ -90,6 +120,8 @@ function processKpiData(rows: any[][]): KpiData[] {
       status: row[colIndices.status] || '',
       grandeza: grandeza || '',
       year: year,
+      tendencia: colIndices.tendencia >= 0 ? (row[colIndices.tendencia] || '').toString().toUpperCase().trim() : '',
+      tipo: colIndices.tipo >= 0 ? (row[colIndices.tipo] || '').toString().toUpperCase().trim() : '',
       criadoEm: row[colIndices.criadoEm] || '',
       fato: row[colIndices.fato] || '',
       causa: row[colIndices.causa] || '',
@@ -155,9 +187,18 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
   
   const colData = 0;       // Coluna A: DATA
   const colTime = 1;       // Coluna B: TIME
+  const colIdOkr = 2;      // Coluna C: ID_OKR
   const colObjetivo = 3;   // Coluna D: OBJETIVOS ESTRATÉGICOS
+  const colIdKr = 4;       // Coluna E: ID_KR
   const colIndicador = 5;  // Coluna F: INDICADORES
+  const colMeta = 7;       // Coluna H: META
+  const colRealizado = 8;  // Coluna I: REALIZADO
+  const colAtingimento = 9; // Coluna J: ATINGIMENTO
+  const colQuarter = 10;   // Coluna K: QUARTER
+  const colMedida = 12;    // Coluna M: MEDIDA
+  const colFormaDeMedir = 13; // Coluna N: FORMA DE MEDIR
   const colChave = 14;     // Coluna O: CHAVE (identificador único do KR)
+  const colAtingMetaMes = 16; // Coluna Q: ATING META MES
   const colAtingReal = 17; // Coluna R: ATING REAL
 
   const processedData: NovoOkrData[] = [];
@@ -175,24 +216,57 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
     
     const time = row[colTime] ? String(row[colTime]).trim() : '';
     const objetivo = row[colObjetivo] ? String(row[colObjetivo]).trim() : '';
-    const indicador = row[colIndicador] ? String(row[colIndicador]).trim() : '';
+    const indicadorNome = row[colIndicador] ? String(row[colIndicador]).trim() : '';
+    
+    // ID_OKR (coluna C) e ID_KR (coluna E)
+    const idOkr = parseInt(row[colIdOkr], 10) || 0;
+    const idKr = parseInt(row[colIdKr], 10) || 0;
+    
+    // QUARTER (coluna K)
+    const quarter = parseInt(row[colQuarter], 10) || 0;
     
     // Usar a coluna CHAVE se existir, senão criar chave combinando objetivo + indicador
     const chaveOriginal = row[colChave] ? String(row[colChave]).trim() : '';
-    const chaveUnica = chaveOriginal || `${objetivo}||${indicador}`;
+    const chaveUnica = chaveOriginal || `${objetivo}||${indicadorNome}`;
     
-    // Usar ATING REAL (coluna R, índice 17)
+    // Meta (coluna H)
+    const metaStr = row[colMeta] ? String(row[colMeta]).replace('%', '').replace(',', '.').trim() : '';
+    const metaNum = parseFloat(metaStr) || 0;
+    
+    // Realizado (coluna I)
+    const realizadoStr = row[colRealizado] ? String(row[colRealizado]).replace('%', '').replace(',', '.').trim() : '';
+    const realizadoNum = parseFloat(realizadoStr) || 0;
+    
+    // Atingimento Real (coluna R) - limitado a 100%
     const atingStr = row[colAtingReal] ? String(row[colAtingReal]).replace('%', '').replace(',', '.').trim() : '';
     const atingNum = parseFloat(atingStr) || 0;
     
-    if (time) {
+    // Atingimento Meta Mês (coluna Q)
+    const atingMetaMesStr = row[colAtingMetaMes] ? String(row[colAtingMetaMes]).replace('%', '').replace(',', '.').trim() : '';
+    const atingMetaMesNum = parseFloat(atingMetaMesStr) || 0;
+    
+    // Forma de Medir (coluna N)
+    const formaDeMedir = row[colFormaDeMedir] ? String(row[colFormaDeMedir]).trim().toUpperCase() : '';
+    
+    // Medida (coluna M) - MOEDA, PORCENTAGEM, NÚMERO INTEIRO
+    const medida = row[colMedida] ? String(row[colMedida]).trim().toUpperCase() : '';
+    
+    if (time && indicadorNome) {
       processedData.push({
         data: data,
         time: time,
         indicador: chaveUnica,
-        meta: parseToNumber(row[3]),
-        realizado: parseToNumber(row[4]),
-        atingReal: atingNum
+        indicadorNome: indicadorNome,
+        objetivo: objetivo,
+        idOkr: idOkr,
+        idKr: idKr,
+        quarter: quarter,
+        meta: metaNum,
+        realizado: realizadoNum,
+        atingReal: atingNum,
+        atingMetaMes: atingMetaMesNum,
+        formaDeMedir: formaDeMedir,
+        medida: medida
       });
     }
   });
@@ -221,23 +295,113 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
   return { data: processedData, competencias: competenciasFiltradas };
 }
 
-// Calcular EBITDA por ano
-function calculateEbitdaByYear(kpis: KpiData[]): Record<number, EbitdaYearData> {
+// Processar dados de Projetos
+function processProjectsData(rows: any[][]): ProjectData[] {
+  if (rows.length < 2) return [];
+  
+  // Colunas da planilha de Projetos (índice 0-based)
+  const colId = 0;              // A: ID
+  const colNome = 1;            // B: NOME DO PROJETO
+  const colObjetivo = 2;        // C: OBJETIVO DO PROJETO
+  const colInicio = 3;          // D: INÍCIO DO PROJETO
+  const colConclusao = 4;       // E: DATA DE CONCLUSÃO PREVISTA
+  const colResponsavel = 5;     // F: RESPONSÁVEL
+  const colTime = 6;            // G: TIME
+  const colIndicador = 7;       // H: INDICADOR
+  const colTendencia = 8;       // I: TENDÊNCIA
+  const colResultadoEsperado = 9; // J: RESULTADO ESPERADO
+  const colResultado = 10;      // K: RESULTADO
+  const colAtingimento = 11;    // L: % ATINGIMENTO
+  const colQuandoImpacto = 12;  // M: QUANDO TERÁ IMPACTO
+  const colCusto = 13;          // N: CUSTO
+  const colStatus = 20;         // U: STATUS
+
+  const processedData: ProjectData[] = [];
+
+  rows.slice(1).forEach((row) => {
+    const id = row[colId] ? String(row[colId]).trim() : '';
+    const nome = row[colNome] ? String(row[colNome]).trim() : '';
+    const time = row[colTime] ? String(row[colTime]).trim().toUpperCase() : '';
+    
+    // Ignorar linhas sem ID ou nome
+    if (!id || !nome || !time) return;
+    
+    // Parse do atingimento (pode vir como "80%" ou "0.8")
+    const atingimentoStr = row[colAtingimento] ? String(row[colAtingimento]).replace('%', '').replace(',', '.').trim() : '';
+    let atingimentoNum = parseFloat(atingimentoStr) || 0;
+    // Se o valor for menor que 2, provavelmente é um decimal (0.8 = 80%)
+    if (atingimentoNum > 0 && atingimentoNum < 2) {
+      atingimentoNum = atingimentoNum * 100;
+    }
+    
+    // Parse do resultado esperado
+    const resultadoEsperadoStr = row[colResultadoEsperado] ? String(row[colResultadoEsperado]).replace('%', '').replace(',', '.').trim() : '';
+    let resultadoEsperadoNum = parseFloat(resultadoEsperadoStr) || 0;
+    
+    // Parse do resultado
+    const resultadoStr = row[colResultado] ? String(row[colResultado]).replace('%', '').replace(',', '.').trim() : '';
+    let resultadoNum = parseFloat(resultadoStr) || 0;
+
+    processedData.push({
+      id,
+      nome,
+      objetivo: row[colObjetivo] ? String(row[colObjetivo]).trim() : '',
+      inicioProejto: row[colInicio] ? String(row[colInicio]).trim() : '',
+      dataConclusao: row[colConclusao] ? String(row[colConclusao]).trim() : '',
+      responsavel: row[colResponsavel] ? String(row[colResponsavel]).trim() : '',
+      time,
+      indicador: row[colIndicador] ? String(row[colIndicador]).trim() : '',
+      tendencia: row[colTendencia] ? String(row[colTendencia]).trim() : '',
+      resultadoEsperado: resultadoEsperadoNum,
+      resultado: resultadoNum,
+      atingimento: atingimentoNum,
+      quandoImpacto: row[colQuandoImpacto] ? String(row[colQuandoImpacto]).trim() : '',
+      custo: row[colCusto] ? String(row[colCusto]).trim() : '',
+      status: row[colStatus] ? String(row[colStatus]).trim() : ''
+    });
+  });
+
+  return processedData;
+}
+
+// Calcular EBITDA acumulado até a competência selecionada
+function calculateEbitdaByYear(kpis: KpiData[], competencia: string): Record<number, EbitdaYearData> {
   const ebitdaData = kpis.filter(item => item.kpi.toUpperCase() === 'EBITDA');
+  
+  // Extrair mês e ano da competência selecionada (formato MM/YYYY)
+  const [mesCompStr, anoCompStr] = competencia.split('/');
+  const mesComp = parseInt(mesCompStr) || 12;
+  const anoComp = parseInt(anoCompStr) || new Date().getFullYear();
+  
+  console.log('calculateEbitdaByYear - competencia:', competencia, '- mesComp:', mesComp, '- anoComp:', anoComp);
+  console.log('calculateEbitdaByYear - ebitdaData sample:', ebitdaData.slice(0, 3).map(e => ({ competencia: e.competencia, year: e.year, meta: e.meta })));
+  
   const accumulator: Record<number, EbitdaYearData> = {};
 
   for (const item of ebitdaData) {
     const year = item.year;
     if (!year) continue;
     
+    // Se o ano do registro for diferente do ano da competência, ignorar
+    if (year !== anoComp) {
+      continue;
+    }
+    
+    // Extrair mês da competência do registro (formato MM/YYYY)
+    const [mesRegStr] = item.competencia.split('/');
+    const mesReg = parseInt(mesRegStr) || 0;
+    
+    // Somar apenas registros até o mês da competência selecionada
+    if (mesReg > mesComp) continue;
+    
     if (!accumulator[year]) {
       accumulator[year] = { year: year, meta: 0, resultado: 0, metasReal: 0 };
     }
     accumulator[year].meta += item.meta;
-    if (item.status === 'Finalizado') {
-      accumulator[year].resultado += item.resultado;
-    }
+    accumulator[year].resultado += item.resultado;
   }
+
+  console.log('calculateEbitdaByYear - accumulator:', accumulator);
 
   // Calcular percentual
   Object.values(accumulator).forEach(yearData => {
@@ -443,16 +607,18 @@ export function useDashboardData() {
 
     try {
       // Buscar dados de todas as planilhas em paralelo
-      const [kpisRaw, okrsRaw, novoOkrRaw] = await Promise.all([
+      const [kpisRaw, okrsRaw, novoOkrRaw, projetosRaw] = await Promise.all([
         fetchSheetData(API_CONFIG.SHEETS.KPIS),
         fetchSheetData(API_CONFIG.SHEETS.OKRS),
-        fetchSheetData(API_CONFIG.SHEETS.PAINEL_OKR)
+        fetchSheetData(API_CONFIG.SHEETS.PAINEL_OKR),
+        fetchProjectsData()
       ]);
 
       // Processar dados
       const kpis = processKpiData(kpisRaw);
       const okrs = processOkrsData(okrsRaw);
       const { data: novoOkrs, competencias } = processNovoOkrData(novoOkrRaw);
+      const projetos = processProjectsData(projetosRaw);
 
       // Selecionar competência mais recente se não houver selecionada
       const currentCompetencia = selectedCompetencia || competencias[0] || '';
@@ -460,8 +626,8 @@ export function useDashboardData() {
         setSelectedCompetencia(competencias[0]);
       }
 
-      // Calcular EBITDA por ano
-      const ebitdaByYear = calculateEbitdaByYear(kpis);
+      // Calcular EBITDA acumulado até a competência selecionada
+      const ebitdaByYear = calculateEbitdaByYear(kpis, currentCompetencia);
 
       // Calcular performance por time
       const teamPerformance = calculateTeamPerformance(kpis, novoOkrs, currentCompetencia);
@@ -480,6 +646,7 @@ export function useDashboardData() {
         okrs,
         kpis,
         novoOkrs,
+        projetos,
         competencias,
         selectedCompetencia: currentCompetencia,
         teamPerformance,

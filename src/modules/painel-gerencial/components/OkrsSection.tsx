@@ -65,9 +65,19 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
   
   const quarterCompetencia = getQuarter(mesCompetencia);
   
-  // Função para buscar o último resultado de um KR específico
+  // Filtrar OKRs que têm meta para o ano da competência selecionada
+  // Isso garante que apenas objetivos com dados no ano correto sejam exibidos
+  const okrsDoAno = okrs.filter(okr => {
+    if (!okr.data) return false;
+    const parts = okr.data.split('/');
+    if (parts.length !== 3) return false;
+    const ano = parseInt(parts[2], 10);
+    return ano === anoCompetencia;
+  });
+  
+  // Função para buscar o último resultado de um KR específico (apenas do ano da competência)
   const findLastResultForKR = (indicator: string): OkrData | null => {
-    const indicatorOkrs = okrs.filter(okr => okr.indicator === indicator);
+    const indicatorOkrs = okrsDoAno.filter(okr => okr.indicator === indicator);
     if (indicatorOkrs.length === 0) return null;
     
     const exactMatch = indicatorOkrs.find(okr => {
@@ -88,7 +98,6 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
       const mes = parseInt(parts[1], 10);
       const ano = parseInt(parts[2], 10);
       
-      if (ano < anoCompetencia) return true;
       if (ano === anoCompetencia && mes <= mesCompetencia) return true;
       return false;
     });
@@ -104,7 +113,8 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
     return sorted[0];
   };
   
-  const indicadoresUnicos = [...new Set(okrs.map(okr => okr.indicator))];
+  // Pegar indicadores únicos apenas dos OKRs do ano selecionado
+  const indicadoresUnicos = [...new Set(okrsDoAno.map(okr => okr.indicator))];
   const filteredOkrs = indicadoresUnicos
     .map(indicator => findLastResultForKR(indicator))
     .filter((okr): okr is OkrData => okr !== null);
@@ -130,9 +140,9 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
     );
   }
 
-  // Encontrar a meta mais recente para cada indicador
+  // Encontrar a meta mais recente para cada indicador (apenas do ano selecionado)
   const findLatestMeta = (indicator: string): number => {
-    const allIndicatorOkrs = okrs.filter(okr => okr.indicator === indicator && okr.meta);
+    const allIndicatorOkrs = okrsDoAno.filter(okr => okr.indicator === indicator && okr.meta);
     if (allIndicatorOkrs.length === 0) return 0;
     
     const sorted = allIndicatorOkrs.sort((a, b) => {
