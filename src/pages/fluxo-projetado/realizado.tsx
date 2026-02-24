@@ -12,32 +12,11 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas, RealizadoAnualCard, ReceitasRealizadasFundo } from '@/modules/fluxo-projetado';
-import { useFluxoRealizado } from '@/modules/fluxo-projetado/hooks';
+import { useFluxoRealizado, useReceitasMensais } from '@/modules/fluxo-projetado/hooks';
 import { FundoReceita } from '@/modules/fluxo-projetado/components/ReceitasRealizadasFundo';
-import { ReceitaMensalAgrupada } from '@/modules/fluxo-projetado/components/ReceitasMensaisAgrupadas';
 import { DadosRealizadoAnual } from '@/modules/fluxo-projetado/components/RealizadoAnualCard';
 import { Loader2, BarChart3 } from 'lucide-react';
 import { withAuthAndFranchiser } from '@/utils/auth';
-
-// Mock de receitas mensais agrupadas (consolidado da franquia, não por fundo)
-// TODO: Conectar com dados reais da planilha
-const dadosMockReceitasMensais: ReceitaMensalAgrupada[] = [
-  // 2025
-  { mes: '01/2025', mesNome: 'Janeiro', ano: 2025, valorTotal: 18500.00, antecipacaoFee: 9200.00, ultimaParcelaFee: 0, demaisReceitas: 9300.00 },
-  { mes: '02/2025', mesNome: 'Fevereiro', ano: 2025, valorTotal: 22800.00, antecipacaoFee: 11400.00, ultimaParcelaFee: 0, demaisReceitas: 11400.00 },
-  { mes: '03/2025', mesNome: 'Março', ano: 2025, valorTotal: 19600.00, antecipacaoFee: 9800.00, ultimaParcelaFee: 0, demaisReceitas: 9800.00 },
-  { mes: '04/2025', mesNome: 'Abril', ano: 2025, valorTotal: 24300.00, antecipacaoFee: 12150.00, ultimaParcelaFee: 0, demaisReceitas: 12150.00 },
-  { mes: '05/2025', mesNome: 'Maio', ano: 2025, valorTotal: 21500.00, antecipacaoFee: 10750.00, ultimaParcelaFee: 0, demaisReceitas: 10750.00 },
-  { mes: '06/2025', mesNome: 'Junho', ano: 2025, valorTotal: 26100.00, antecipacaoFee: 13050.00, ultimaParcelaFee: 0, demaisReceitas: 13050.00 },
-  { mes: '07/2025', mesNome: 'Julho', ano: 2025, valorTotal: 18900.00, antecipacaoFee: 9450.00, ultimaParcelaFee: 0, demaisReceitas: 9450.00 },
-  { mes: '08/2025', mesNome: 'Agosto', ano: 2025, valorTotal: 23400.00, antecipacaoFee: 11700.00, ultimaParcelaFee: 0, demaisReceitas: 11700.00 },
-  { mes: '09/2025', mesNome: 'Setembro', ano: 2025, valorTotal: 20100.00, antecipacaoFee: 10050.00, ultimaParcelaFee: 0, demaisReceitas: 10050.00 },
-  { mes: '10/2025', mesNome: 'Outubro', ano: 2025, valorTotal: 25600.00, antecipacaoFee: 12800.00, ultimaParcelaFee: 0, demaisReceitas: 12800.00 },
-  { mes: '11/2025', mesNome: 'Novembro', ano: 2025, valorTotal: 48000.00, antecipacaoFee: 8000.00, ultimaParcelaFee: 32000.00, demaisReceitas: 8000.00 },
-  { mes: '12/2025', mesNome: 'Dezembro', ano: 2025, valorTotal: 31200.00, antecipacaoFee: 5200.00, ultimaParcelaFee: 20800.00, demaisReceitas: 5200.00 },
-  // 2026
-  { mes: '01/2026', mesNome: 'Janeiro', ano: 2026, valorTotal: 28400.00, antecipacaoFee: 14200.00, ultimaParcelaFee: 0, demaisReceitas: 14200.00 },
-];
 
 // Mock de dados anuais
 // TODO: Conectar com dados reais da planilha
@@ -68,11 +47,58 @@ const dadosMockRealizadoAnual: DadosRealizadoAnual[] = [
 
 // Mock de receitas por fundo (até integrar com a planilha)
 // TODO: Conectar com dados reais da planilha
-const gerarFundosMockReceita = (): FundoReceita[] => {
-  return []; // Retorna vazio por enquanto
-};
-
-const dadosMockFundosReceita: FundoReceita[] = gerarFundosMockReceita();
+const dadosMockFundosReceita: FundoReceita[] = [
+  {
+    id: '001',
+    nome: 'TURMA 9º ANO A - COLÉGIO VIVA',
+    unidade: 'Barbacena',
+    valorFee: 45000.00,        // VALOR FEE do contrato
+    feeRecebido: 28500.00,     // FEE RECEBIDO (antecipação)
+    margemTotal: 8500.00,      // MARGEM TOTAL do contrato
+    margemRecebida: 4200.00,   // MARGEM JÁ RECEBIDA
+    saldoFundo: 52300.00,      // SALDO disponível no fundo
+  },
+  {
+    id: '002',
+    nome: 'TURMA 3º ANO EM - ESCOLA NOVA',
+    unidade: 'Barbacena',
+    valorFee: 38000.00,
+    feeRecebido: 38000.00,     // 100% recebido
+    margemTotal: 7200.00,
+    margemRecebida: 7200.00,   // 100% recebida
+    saldoFundo: 15800.00,
+  },
+  {
+    id: '003',
+    nome: 'TURMA 8º ANO B - COLÉGIO CENTRAL',
+    unidade: 'Barbacena',
+    valorFee: 52000.00,
+    feeRecebido: 31200.00,     // 60% recebido
+    margemTotal: 9800.00,
+    margemRecebida: 0,         // Margem pendente
+    saldoFundo: 78500.00,
+  },
+  {
+    id: '004',
+    nome: 'TURMA 7º ANO - ESCOLA ESPERANÇA',
+    unidade: 'Barbacena',
+    valorFee: 29500.00,
+    feeRecebido: 14750.00,     // 50% recebido
+    margemTotal: 5600.00,
+    margemRecebida: 2800.00,   // 50% recebida
+    saldoFundo: 33200.00,
+  },
+  {
+    id: '005',
+    nome: 'TURMA FORMANDOS 2025 - COLÉGIO ABC',
+    unidade: 'Barbacena',
+    valorFee: 67500.00,
+    feeRecebido: 54000.00,     // 80% recebido
+    margemTotal: 12500.00,
+    margemRecebida: 10000.00,  // 80% recebida
+    saldoFundo: 125000.00,
+  },
+];
 
 function FluxoRealizadoDashboard() {
   const router = useRouter();
@@ -86,9 +112,11 @@ function FluxoRealizadoDashboard() {
   // Hook para buscar dados reais de FEE por fundo
   const { fundos: fundosFee, loading: loadingFee, error: errorFee } = useFluxoRealizado(franquiaSelecionada);
 
+  // Hook para buscar dados reais de receitas mensais (aba RPS FEE E MARGEM)
+  const { receitas: receitasMensais, loading: loadingReceitas } = useReceitasMensais(franquiaSelecionada);
+
   // Estados para dados ainda mockados (outros blocos)
   const [fundosReceita, setFundosReceita] = useState<FundoReceita[]>([]);
-  const [receitasMensais, setReceitasMensais] = useState<ReceitaMensalAgrupada[]>([]);
   const [dadosAnuais, setDadosAnuais] = useState<DadosRealizadoAnual[]>([]);
   const [anoSelecionado, setAnoSelecionado] = useState<number | null>(null);
 
@@ -105,11 +133,9 @@ function FluxoRealizadoDashboard() {
   useEffect(() => {
     if (franquiaSelecionada) {
       setFundosReceita(dadosMockFundosReceita);
-      setReceitasMensais(dadosMockReceitasMensais);
       setDadosAnuais(dadosMockRealizadoAnual);
     } else {
       setFundosReceita([]);
-      setReceitasMensais([]);
       setDadosAnuais([]);
     }
   }, [franquiaSelecionada]);
@@ -170,7 +196,7 @@ function FluxoRealizadoDashboard() {
                 {/* BLOCO 2: Receitas Mensais Agrupadas (consolidado da franquia) */}
                 <ReceitasMensaisAgrupadas 
                   receitas={receitasMensais}
-                  loading={false}
+                  loading={loadingReceitas}
                 />
 
                 {/* BLOCO 3: Receitas Realizadas por Fundo */}
@@ -193,6 +219,14 @@ function FluxoRealizadoDashboard() {
                         Compilado anual do fluxo de caixa realizado
                       </p>
                     </div>
+                  </div>
+
+                  {/* Aviso de dados mockados */}
+                  <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <p className="text-xs text-amber-300">
+                      <span className="font-semibold">Dados de exemplo:</span> Esta seção está exibindo dados mockados para demonstração. A integração com a planilha real está pendente.
+                    </p>
                   </div>
                   
                   {/* Cards de Anos */}

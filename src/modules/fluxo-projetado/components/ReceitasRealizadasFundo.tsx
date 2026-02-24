@@ -178,6 +178,13 @@ export default function ReceitasRealizadasFundo({ fundos, loading = false }: Rec
       {/* Conteúdo */}
       {expandido && (
         <div className="p-4">
+          {/* Aviso de dados mockados */}
+          <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center gap-2">
+            <Info className="w-4 h-4 text-amber-400 flex-shrink-0" />
+            <p className="text-xs text-amber-300">
+              <span className="font-semibold">Dados de exemplo:</span> Esta tabela está exibindo dados mockados para demonstração. A integração com a planilha real está pendente.
+            </p>
+          </div>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
