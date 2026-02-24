@@ -1,0 +1,28 @@
+/**
+ * Componente Loading - Indicador de carregamento
+ * Estilo idêntico aos demais módulos para consistência visual
+ */
+
+import React from 'react';
+
+interface LoadingProps {
+  mensagem?: string;
+}
+
+export const Loading: React.FC<LoadingProps> = ({ mensagem = 'Carregando...' }) => {
+  return (
+    <div className="flex items-center justify-center h-96">
+      <div className="text-center">
+        <div
+          className="animate-spin rounded-full h-16 w-16 border-b-2 mx-auto"
+          style={{ borderColor: '#FF6600' }}
+        />
+        <p className="mt-4 text-lg" style={{ color: '#adb5bd' }}>
+          {mensagem}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default Loading;
