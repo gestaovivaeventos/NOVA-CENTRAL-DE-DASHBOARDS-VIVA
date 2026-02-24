@@ -16,6 +16,7 @@ import {
   SectionTitle,
 } from '../../modules/projetos/components';
 import { useProjetosData } from '../../modules/projetos/hooks';
+import { PROJETOS_AUTHORIZED_USERNAMES } from '../../modules/projetos/types';
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -40,13 +41,14 @@ export default function ProjetosPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Verificar autenticação e nível de acesso
+  // Verificar autenticação e acesso autorizado
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    if (!authLoading && user && user.accessLevel === 0) {
-      router.push('/pex');
+    // Apenas usuários autorizados podem acessar (em validação)
+    if (!authLoading && user && !PROJETOS_AUTHORIZED_USERNAMES.includes(user.username)) {
+      router.push('/');
     }
   }, [isAuthenticated, authLoading, router, user]);
 

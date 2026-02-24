@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { Search, X } from 'lucide-react';
 import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
+import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -62,7 +63,8 @@ const getDashboardGroups = (accessLevel: number, username?: string): DashboardGr
         { id: 'vendas', label: 'Dashboard Vendas', path: '/vendas', icon: 'money' },
         { id: 'carteira', label: 'Dashboard Carteira', path: '/carteira', icon: 'wallet' },
         { id: 'fluxo-projetado', label: 'Gestão de Caixa', path: '/fluxo-projetado', icon: 'fluxo' },
-        { id: 'projetos', label: 'Painel de Projetos', path: '/projetos', icon: 'projetos' },
+        // Projetos: visível apenas para usuários autorizados durante validação
+        ...(username && PROJETOS_AUTHORIZED_USERNAMES.includes(username) ? [{ id: 'projetos', label: 'Painel de Projetos', path: '/projetos', icon: 'projetos' }] : []),
       ],
     },
   ];

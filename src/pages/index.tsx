@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
 
 // Função para pré-carregar dados de vendas em background
 const prefetchVendasData = () => {
@@ -41,14 +42,23 @@ const allDashboards: Dashboard[] = [
   { id: 'projetos', name: 'Painel de Projetos', description: 'Gerenciamento de projetos', path: '/projetos', icon: 'projetos' },
 ];
 
-// Dashboards permitidos por nível de acesso
-const getDashboardsPermitidos = (accessLevel: number): string[] => {
+// Dashboards permitidos por nível de acesso e username
+const getDashboardsPermitidos = (accessLevel: number, username?: string): string[] => {
   // Franqueado (accessLevel = 0) só tem acesso ao PEX
   if (accessLevel === 0) {
     return ['pex'];
   }
-  // Franqueadora (accessLevel >= 1) tem acesso a todos
-  return allDashboards.map(d => d.id);
+  // Franqueadora (accessLevel >= 1) tem acesso a todos, exceto projetos (em validação)
+  const dashboards = allDashboards
+    .filter(d => {
+      // Projetos: apenas usuários autorizados durante validação
+      if (d.id === 'projetos') {
+        return username && PROJETOS_AUTHORIZED_USERNAMES.includes(username);
+      }
+      return true;
+    })
+    .map(d => d.id);
+  return dashboards;
 };
 
 // Ícones SVG inline (mesmos da Sidebar)
@@ -235,13 +245,13 @@ export default function HomePage() {
     }
   }, [isAuthenticated, isLoading]);
 
-  // Dashboards favoritos (filtrados pelo nível de acesso do usuário)
+  // Dashboards favoritos (filtrados pelo nível de acesso e username do usuário)
   const favoriteDashboards = useMemo(() => {
-    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0);
+    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0, user?.username);
     return allDashboards.filter(d => 
       favorites.includes(d.id) && dashboardsPermitidos.includes(d.id)
     );
-  }, [favorites, user?.accessLevel]);
+  }, [favorites, user?.accessLevel, user?.username]);
 
   // Mostrar loading enquanto verifica auth
   if (isLoading || !isAuthenticated) {

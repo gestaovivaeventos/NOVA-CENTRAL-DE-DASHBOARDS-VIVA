@@ -104,3 +104,13 @@ export interface ProjetosFiltros {
   responsavel: string;
   busca: string;
 }
+
+// Usuários autorizados a acessar o Painel de Projetos (em validação)
+export const PROJETOS_AUTHORIZED_USERNAMES = [
+  'vitor',
+  'cris',
+  'gabriel.braz',
+  'marcos.castro',
+  'reis.igor',
+  'theo.diniz'
+];
