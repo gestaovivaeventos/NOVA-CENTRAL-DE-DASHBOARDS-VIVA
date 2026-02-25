@@ -379,7 +379,7 @@ export default function BranchesPage() {
                   </button>
                 </div>
 
-                <KanbanBoard columns={KANBAN_COLUMNS_RELEASE} counts={releaseCounts}>
+                <KanbanBoard columns={KANBAN_COLUMNS_RELEASE} counts={releaseCounts} onDrop={(id, newStatus) => handleUpdateStatus(id, newStatus)}>
                   {(status: KanbanStatus) =>
                     filteredReleases
                       .filter(r => r.status === status)
@@ -416,7 +416,7 @@ export default function BranchesPage() {
                   </h2>
                 </div>
 
-                <KanbanBoard columns={KANBAN_COLUMNS_BRANCH} counts={branchCounts}>
+                <KanbanBoard columns={KANBAN_COLUMNS_BRANCH} counts={branchCounts} onDrop={(id, newStatus) => handleUpdateStatus(id, newStatus)}>
                   {(status: KanbanStatus) =>
                     filteredBranches
                       .filter(b => b.status === status)

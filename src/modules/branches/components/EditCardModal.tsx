@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, GitMerge, GitBranch, Copy, Check, ExternalLink, Link2, FileText, Pencil, PlusCircle, ShieldCheck, Truck, Save } from 'lucide-react';
 import type { Release, Branch, KanbanStatus, KanbanColumn } from '../types';
-import { MODULOS_CENTRAL } from '../types';
+import { useModulos } from '../hooks/useModulos';
 
 interface EditCardModalProps {
   isOpen: boolean;
@@ -53,6 +53,7 @@ export default function EditCardModal({
   const [copiedName, setCopiedName] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [saving, setSaving] = useState(false);
+  const { modulos } = useModulos();
 
   // Sync state when item changes
   useEffect(() => {
@@ -288,11 +289,11 @@ export default function EditCardModal({
                   cursor: 'pointer',
                 }}
               >
-                {/* Se o módulo atual não está na lista padrão, adiciona como primeira opção */}
-                {!MODULOS_CENTRAL.includes(modulo as any) && modulo && (
+                {/* Se o módulo atual não está na lista dinâmica, adiciona como primeira opção */}
+                {!modulos.includes(modulo) && modulo && (
                   <option key={modulo} value={modulo}>{modulo} (customizado)</option>
                 )}
-                {MODULOS_CENTRAL.map(m => (
+                {modulos.map(m => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>

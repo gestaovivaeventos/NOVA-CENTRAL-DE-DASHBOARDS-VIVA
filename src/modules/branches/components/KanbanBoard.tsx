@@ -3,7 +3,7 @@
  * Coluna "Descartada" inicia minimizada e pode ser expandida
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 import type { KanbanStatus, KanbanColumn } from '../types';
 
@@ -11,10 +11,36 @@ interface KanbanBoardProps {
   columns: KanbanColumn[];
   children: (status: KanbanStatus) => React.ReactNode;
   counts: Record<KanbanStatus, number>;
+  onDrop?: (itemId: string, newStatus: KanbanStatus) => void;
 }
 
-export default function KanbanBoard({ columns, children, counts }: KanbanBoardProps) {
+export default function KanbanBoard({ columns, children, counts, onDrop }: KanbanBoardProps) {
   const [descartadaExpanded, setDescartadaExpanded] = useState(false);
+  const [dragOverColumn, setDragOverColumn] = useState<KanbanStatus | null>(null);
+
+  const handleDragOver = useCallback((e: React.DragEvent, columnId: KanbanStatus) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverColumn(columnId);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Só limpa se saiu da coluna de verdade (não para filhos)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const { clientX, clientY } = e;
+    if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
+      setDragOverColumn(null);
+    }
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, columnId: KanbanStatus) => {
+    e.preventDefault();
+    setDragOverColumn(null);
+    const itemId = e.dataTransfer.getData('text/plain');
+    if (itemId && onDrop) {
+      onDrop(itemId, columnId);
+    }
+  }, [onDrop]);
 
   const mainColumns = columns.filter(c => c.id !== 'descartada');
   const descartadaColumn = columns.find(c => c.id === 'descartada');
@@ -35,12 +61,19 @@ export default function KanbanBoard({ columns, children, counts }: KanbanBoardPr
         {mainColumns.map((column) => (
           <div
             key={column.id}
+            onDragOver={(e) => handleDragOver(e, column.id)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, column.id)}
             style={{
               backgroundColor: '#1a1d21',
               borderRadius: '12px',
-              border: `1px solid ${column.color}30`,
+              border: dragOverColumn === column.id
+                ? `2px dashed ${column.color}`
+                : `1px solid ${column.color}30`,
               overflow: 'hidden',
               minWidth: 0,
+              transition: 'border 0.2s, background-color 0.2s',
+              ...(dragOverColumn === column.id ? { backgroundColor: `${column.color}08` } : {}),
             }}
           >
             {/* Header da coluna */}
@@ -131,7 +164,9 @@ export default function KanbanBoard({ columns, children, counts }: KanbanBoardPr
           style={{
             backgroundColor: '#1a1d21',
             borderRadius: '12px',
-            border: `1px solid ${descartadaColumn.color}30`,
+            border: dragOverColumn === 'descartada'
+              ? `2px dashed ${descartadaColumn.color}`
+              : `1px solid ${descartadaColumn.color}30`,
             overflow: 'hidden',
             width: descartadaExpanded ? '280px' : '44px',
             minWidth: descartadaExpanded ? '280px' : '44px',
@@ -140,7 +175,15 @@ export default function KanbanBoard({ columns, children, counts }: KanbanBoardPr
           }}
         >
           {descartadaExpanded ? (
-            <>
+            <div
+              onDragOver={(e) => handleDragOver(e, 'descartada')}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, 'descartada')}
+              style={{
+                height: '100%',
+                ...(dragOverColumn === 'descartada' ? { backgroundColor: `${descartadaColumn.color}08` } : {}),
+              }}
+            >
               {/* Header expandido */}
               <div
                 style={{
@@ -232,7 +275,7 @@ export default function KanbanBoard({ columns, children, counts }: KanbanBoardPr
                   </div>
                 )}
               </div>
-            </>
+            </div>
           ) : (
             /* Header minimizado - vertical */
             <button

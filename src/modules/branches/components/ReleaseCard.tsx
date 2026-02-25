@@ -49,8 +49,21 @@ export default function ReleaseCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('text/plain', release.id);
+    e.dataTransfer.effectAllowed = 'move';
+    (e.currentTarget as HTMLElement).style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.opacity = '1';
+  };
+
   return (
     <div
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       onClick={onClick}
       style={{
         backgroundColor: '#2d3239',
@@ -60,7 +73,7 @@ export default function ReleaseCard({
         marginBottom: '10px',
         transition: 'all 0.2s',
         boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
-        cursor: 'pointer',
+        cursor: 'grab',
       }}
       className="hover:brightness-110"
     >
