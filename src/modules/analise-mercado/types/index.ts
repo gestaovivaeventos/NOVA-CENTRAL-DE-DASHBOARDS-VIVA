@@ -1,5 +1,4 @@
 // ============================================
-// Tipos - Módulo Análise de Mercado
+// Tipos — Barrel Export
 // ============================================
-
 export * from './analise-mercado.types';

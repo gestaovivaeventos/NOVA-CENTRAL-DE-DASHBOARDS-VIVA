@@ -1,43 +1,50 @@
 /**
- * AnaliseMercadoLayout - Layout wrapper para páginas do módulo Análise de Mercado
- * Padrão visual igual ao Fluxo Projetado
+ * AnaliseMercadoLayout — Layout principal com sidebar de franquias
+ * Sidebar: lista de franquias para filtro territorial
+ * Content: área principal com os dashboards
  */
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronDown,
-  Home, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Home,
   LogOut,
-  BarChart3,
-  GraduationCap,
-  BookOpen,
-  Stethoscope,
-  Filter
+  MapPin,
+  Building2,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import type { NivelEnsino } from '@/modules/analise-mercado/types';
+import type { Franquia, FiltrosAnaliseMercado, TipoInstituicao } from '../types';
 
 interface AnaliseMercadoLayoutProps {
   children: React.ReactNode;
   titulo?: string;
-  nivelEnsino?: NivelEnsino;
-  onNivelChange?: (nivel: NivelEnsino) => void;
+  franquias: Franquia[];
+  franquiaSelecionada: string | null;
+  onFranquiaChange: (id: string | null) => void;
+  filtros: FiltrosAnaliseMercado;
+  onFiltrosChange: (filtros: Partial<FiltrosAnaliseMercado>) => void;
+  anosDisponiveis: number[];
+  areasDisponiveis: string[];
 }
 
 const SIDEBAR_WIDTH_EXPANDED = 280;
 const SIDEBAR_WIDTH_COLLAPSED = 60;
 
-const FILTER_OPTIONS: { id: NivelEnsino; label: string; short: string; icon: typeof GraduationCap; color: string }[] = [
-  { id: 'superior', label: 'Ensino Superior', short: 'SUP', icon: GraduationCap, color: '#3B82F6' },
-  { id: 'medio', label: 'Ensino Médio', short: 'MED', icon: BookOpen, color: '#10B981' },
-  { id: 'medicina', label: 'Medicina', short: 'MED', icon: Stethoscope, color: '#8B5CF6' },
-];
-
-export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE MERCADO', nivelEnsino, onNivelChange }: AnaliseMercadoLayoutProps) {
+export default function AnaliseMercadoLayout({
+  children,
+  titulo = 'ANÁLISE DE MERCADO',
+  franquias,
+  franquiaSelecionada,
+  onFranquiaChange,
+  filtros,
+  onFiltrosChange,
+  anosDisponiveis,
+  areasDisponiveis,
+}: AnaliseMercadoLayoutProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
@@ -47,20 +54,16 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
     }
     return false;
   });
-  const [dataAtual, setDataAtual] = useState<string>('');
-  const [filterOpen, setFilterOpen] = useState(false);
+  const [dataAtual, setDataAtual] = useState('');
 
-  // Persistir estado da sidebar
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('analise_mercado_sidebar_collapsed', String(isCollapsed));
     }
   }, [isCollapsed]);
 
-  // Data atual
   useEffect(() => {
-    const hoje = new Date();
-    setDataAtual(hoje.toLocaleDateString('pt-BR'));
+    setDataAtual(new Date().toLocaleDateString('pt-BR'));
   }, []);
 
   const handleLogout = async () => {
@@ -68,90 +71,52 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
     router.push('/login');
   };
 
+  const franquiaAtiva = franquias.find(f => f.id === franquiaSelecionada);
+
   return (
     <div className="min-h-screen bg-dark-primary">
-      {/* Sidebar */}
+      {/* ━━━ Sidebar ━━━ */}
       <aside
         className="fixed left-0 top-0 bottom-0 overflow-y-auto transition-all duration-300 z-50"
         style={{
-          width: isCollapsed ? `${SIDEBAR_WIDTH_COLLAPSED}px` : `${SIDEBAR_WIDTH_EXPANDED}px`,
+          width: isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
           backgroundColor: '#1a1d21',
           borderRight: '1px solid #333',
         }}
       >
-        {/* Header com Perfil do Usuário */}
-        <div
-          style={{
-            padding: isCollapsed ? '16px 10px' : '16px 20px',
-            borderBottom: '1px solid #333',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '12px',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            {/* Info do Usuário */}
+        {/* Header — Perfil */}
+        <div style={{
+          padding: isCollapsed ? '16px 10px' : '16px 20px',
+          borderBottom: '1px solid #333',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
             {!isCollapsed && (
               <div style={{ flex: 1, minWidth: 0 }}>
-                <h2
-                  style={{
-                    color: '#F8F9FA',
-                    fontSize: '0.95rem',
-                    fontWeight: 600,
-                    fontFamily: "'Poppins', sans-serif",
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    marginBottom: '2px',
-                    lineHeight: '1.2',
-                  }}
-                >
+                <h2 style={{
+                  color: '#F8F9FA', fontSize: '0.95rem', fontWeight: 600,
+                  fontFamily: "'Poppins', sans-serif",
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                  marginBottom: 2, lineHeight: 1.2,
+                }}>
                   {user?.firstName || user?.username || 'Usuário'}
                 </h2>
-                <p
-                  style={{
-                    color: '#6c757d',
-                    fontSize: '0.7rem',
-                    marginBottom: '2px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    lineHeight: '1.2',
-                  }}
-                >
-                  Franqueadora
-                </p>
-                <p
-                  style={{
-                    color: '#4a5568',
-                    fontSize: '0.6rem',
-                  }}
-                >
+                <p style={{ color: '#6c757d', fontSize: '0.7rem', marginBottom: 2 }}>Franqueadora</p>
+                <p style={{ color: '#4a5568', fontSize: '0.6rem' }}>
                   Atualizado: {dataAtual || new Date().toLocaleDateString('pt-BR')}
                 </p>
               </div>
             )}
           </div>
-
-          {/* Botão Toggle */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="hover:bg-orange-500/20"
             style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '6px',
-              backgroundColor: '#1a1d21',
-              border: '1px solid #FF6600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              color: '#FF6600',
-              transition: 'all 0.2s',
-              flexShrink: 0,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+              width: 32, height: 32, borderRadius: 6,
+              backgroundColor: '#1a1d21', border: '1px solid #FF6600',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', color: '#FF6600', transition: 'all 0.2s',
+              flexShrink: 0, boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
             }}
             title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
           >
@@ -159,151 +124,206 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
           </button>
         </div>
 
-        {/* Conteúdo da Sidebar */}
-        <div 
-          className={`${isCollapsed ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
+        {/* Conteúdo Sidebar */}
+        <div
+          className={`${isCollapsed ? 'px-2 pt-4' : 'p-4 pt-4'} flex flex-col`}
           style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
         >
-          {/* Navegação */}
-          {!isCollapsed && (
-            <div className="space-y-2 mb-4">
-              <button 
-                onClick={() => router.push('/analise-mercado')}
-                className="flex items-center gap-2 w-full px-3 py-2.5 bg-orange-500/20 border border-orange-500 text-orange-400 rounded-lg transition-all text-sm"
-              >
-                <BarChart3 className="w-4 h-4" />
-                <span>Visão Geral</span>
-              </button>
-            </div>
-          )}
+          {/* ── Seção: Filtros de Dados ── */}
+          {!isCollapsed ? (
+            <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              {/* Filtros (Ano, Instituição, Área) */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                  <Filter size={14} color="#FF6600" />
+                  <span style={{
+                    color: '#FF6600', fontSize: '0.72rem', fontWeight: 700,
+                    textTransform: 'uppercase', letterSpacing: '0.05em',
+                    fontFamily: "'Poppins', sans-serif",
+                  }}>
+                    Filtros
+                  </span>
+                </div>
 
-          {/* Ícones quando recolhido */}
-          {isCollapsed && (
+                {(() => {
+                  const sidebarSelectStyle: React.CSSProperties = {
+                    width: '100%',
+                    backgroundColor: '#2D3238',
+                    color: '#F8F9FA',
+                    border: '1px solid #495057',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    fontSize: '0.75rem',
+                    fontFamily: "'Poppins', sans-serif",
+                    cursor: 'pointer',
+                    outline: 'none',
+                  };
+                  const sidebarLabelStyle: React.CSSProperties = {
+                    color: '#6C757D',
+                    fontSize: '0.62rem',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    marginBottom: 3,
+                    display: 'block',
+                  };
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div>
+                        <label style={sidebarLabelStyle}>Ano</label>
+                        <select
+                          style={sidebarSelectStyle}
+                          value={filtros.ano}
+                          onChange={e => onFiltrosChange({ ano: Number(e.target.value) })}
+                        >
+                          {anosDisponiveis.map(a => (
+                            <option key={a} value={a}>{a}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label style={sidebarLabelStyle}>Instituição</label>
+                        <select
+                          style={sidebarSelectStyle}
+                          value={filtros.tipoInstituicao}
+                          onChange={e => onFiltrosChange({ tipoInstituicao: e.target.value as TipoInstituicao })}
+                        >
+                          <option value="todos">Todas</option>
+                          <option value="publica">Pública</option>
+                          <option value="privada">Privada</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={sidebarLabelStyle}>Área</label>
+                        <select
+                          style={sidebarSelectStyle}
+                          value={filtros.areaConhecimento || ''}
+                          onChange={e => onFiltrosChange({ areaConhecimento: e.target.value || null })}
+                        >
+                          <option value="">Todas as áreas</option>
+                          {areasDisponiveis.map(a => (
+                            <option key={a} value={a}>{a}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Badge estado selecionado */}
+                      {filtros.estado && (
+                        <div style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          backgroundColor: 'rgba(255,102,0,0.12)', border: '1px solid #FF6600',
+                          borderRadius: 6, padding: '6px 10px',
+                        }}>
+                          <span style={{ color: '#FF6600', fontSize: '0.72rem', fontWeight: 600 }}>
+                            Estado: {filtros.estado}
+                          </span>
+                          <button
+                            onClick={() => onFiltrosChange({ estado: null })}
+                            style={{
+                              background: 'none', border: 'none', color: '#FF6600',
+                              cursor: 'pointer', fontSize: '1rem', lineHeight: 1,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '0 0 12px' }} />
+
+              {/* ── Seção: Franquia (dropdown) ── */}
+              <div>
+                <label style={{
+                  color: '#6C757D',
+                  fontSize: '0.62rem',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.04em',
+                  marginBottom: 3,
+                  display: 'block',
+                }}>Franquia</label>
+                <select
+                  style={{
+                    width: '100%',
+                    backgroundColor: '#2D3238',
+                    color: '#F8F9FA',
+                    border: '1px solid #495057',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    fontSize: '0.75rem',
+                    fontFamily: "'Poppins', sans-serif",
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                  value={franquiaSelecionada || ''}
+                  onChange={e => onFranquiaChange(e.target.value || null)}
+                >
+                  <option value="">Todas (Visão Brasil)</option>
+                  {franquias.map(f => (
+                    <option key={f.id} value={f.id}>{f.nome}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            /* Ícones quando recolhido */
             <div className="flex flex-col items-center gap-3">
               <button
-                onClick={() => router.push('/analise-mercado')}
-                className="p-2.5 rounded-lg transition-all bg-orange-500/30 text-orange-400"
-                title="Visão Geral"
+                onClick={() => { setIsCollapsed(false); }}
+                className="p-2.5 rounded-lg transition-all"
+                style={{
+                  backgroundColor: 'rgba(255,102,0,0.2)',
+                  color: '#FF6600',
+                }}
+                title="Filtro de Franquias"
               >
-                <BarChart3 size={20} />
+                <Building2 size={20} />
               </button>
+              {franquiaAtiva && (
+                <div
+                  className="p-2.5 rounded-lg"
+                  style={{
+                    backgroundColor: 'rgba(59,130,246,0.15)',
+                    border: '1px solid rgba(59,130,246,0.4)',
+                  }}
+                  title={`Franquia: ${franquiaAtiva.nome}`}
+                >
+                  <MapPin size={16} color="#3B82F6" />
+                </div>
+              )}
             </div>
           )}
 
-          {/* Filtro por Nível de Ensino — expansível */}
-          {nivelEnsino && onNivelChange && (() => {
-            const current = FILTER_OPTIONS.find(f => f.id === nivelEnsino) || FILTER_OPTIONS[0];
-            return isCollapsed ? (
-              <div className="flex flex-col items-center gap-2" style={{ marginTop: 12 }}>
-                <button
-                  onClick={() => setFilterOpen(!filterOpen)}
-                  className="p-2.5 rounded-lg transition-all"
-                  style={{ backgroundColor: `${current.color}25`, border: `1px solid ${current.color}`, color: current.color }}
-                  title={`Filtro: ${current.label}`}
-                >
-                  <Filter size={18} />
-                </button>
-                {filterOpen && FILTER_OPTIONS.filter(f => f.id !== nivelEnsino).map(f => (
-                  <button
-                    key={f.id}
-                    onClick={() => { onNivelChange(f.id); setFilterOpen(false); }}
-                    className="p-2.5 rounded-lg transition-all"
-                    style={{ backgroundColor: 'transparent', border: '1px solid #495057', color: '#6C757D' }}
-                    title={f.label}
-                  >
-                    <f.icon size={18} />
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div style={{ marginTop: 12 }}>
-                {/* Botão principal — mostra seleção atual */}
-                <button
-                  onClick={() => setFilterOpen(!filterOpen)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-                    padding: '9px 12px', borderRadius: 8, cursor: 'pointer',
-                    backgroundColor: `${current.color}18`,
-                    border: `1px solid ${current.color}`,
-                    color: current.color,
-                    fontFamily: "'Poppins', sans-serif", fontSize: '0.82rem', fontWeight: 600,
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <current.icon size={16} />
-                  <span style={{ flex: 1, textAlign: 'left' }}>{current.label}</span>
-                  <ChevronDown size={14} style={{ transform: filterOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                </button>
-
-                {/* Opções expansíveis */}
-                <div style={{
-                  overflow: 'hidden',
-                  maxHeight: filterOpen ? '200px' : '0px',
-                  transition: 'max-height 0.25s ease',
-                  marginTop: filterOpen ? 4 : 0,
-                }}>
-                  {FILTER_OPTIONS.filter(f => f.id !== nivelEnsino).map(f => (
-                    <button
-                      key={f.id}
-                      onClick={() => { onNivelChange(f.id); setFilterOpen(false); }}
-                      className="flex items-center gap-2 w-full rounded-lg transition-all text-sm"
-                      style={{
-                        padding: '8px 12px', marginTop: 2,
-                        backgroundColor: 'transparent',
-                        border: '1px solid transparent',
-                        color: '#ADB5BD', fontWeight: 400,
-                        fontFamily: "'Poppins', sans-serif",
-                        cursor: 'pointer',
-                      }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = `${f.color}15`; (e.currentTarget as HTMLButtonElement).style.color = f.color; }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; (e.currentTarget as HTMLButtonElement).style.color = '#ADB5BD'; }}
-                    >
-                      <f.icon size={15} />
-                      <span>{f.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Espaçador flexível */}
+          {/* Espaçador */}
           <div className="flex-grow" />
 
           {/* Área inferior: Central + Sair */}
           <div className={`${isCollapsed ? 'pb-4' : 'pb-6'}`}>
             <hr className="border-gray-700/50 mb-4" />
-            
-            {/* Link para Central de Dashboards */}
             <a
               href="/"
               className={`
                 flex items-center rounded-lg transition-all duration-200 text-gray-300 bg-[#252830] border border-gray-700 hover:border-orange-500/50 hover:bg-[#2a2e38] hover:text-white
                 ${isCollapsed ? 'justify-center p-2.5 w-full' : 'gap-3 px-3 py-2.5 w-full'}
               `}
-              style={{
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-              }}
+              style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.875rem', fontWeight: 500 }}
               title="Central de Dashboards"
             >
               <Home size={18} strokeWidth={2} className="text-orange-400" />
               {!isCollapsed && <span>Central de Dashboards</span>}
             </a>
 
-            {/* Botão de Logout */}
             <button
               onClick={handleLogout}
               className={`
                 flex items-center rounded-lg transition-all duration-200 text-gray-300 bg-[#252830] border border-gray-700 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400
                 ${isCollapsed ? 'justify-center p-2.5 w-full mt-2' : 'gap-3 px-3 py-2.5 w-full mt-2'}
               `}
-              style={{
-                fontFamily: 'Poppins, sans-serif',
-                fontSize: '0.875rem',
-                fontWeight: 500,
-              }}
+              style={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.875rem', fontWeight: 500 }}
               title={isCollapsed ? 'Sair' : undefined}
             >
               <LogOut size={18} strokeWidth={2} />
@@ -313,18 +333,20 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
         </div>
       </aside>
 
-      {/* Conteúdo Principal */}
-      <main 
+      {/* ━━━ Conteúdo Principal ━━━ */}
+      <main
         className="min-h-screen transition-all duration-300 flex flex-col"
         style={{
-          marginLeft: isCollapsed ? `${SIDEBAR_WIDTH_COLLAPSED}px` : `${SIDEBAR_WIDTH_EXPANDED}px`,
-          width: isCollapsed ? `calc(100% - ${SIDEBAR_WIDTH_COLLAPSED}px)` : `calc(100% - ${SIDEBAR_WIDTH_EXPANDED}px)`,
+          marginLeft: isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
+          width: isCollapsed
+            ? `calc(100% - ${SIDEBAR_WIDTH_COLLAPSED}px)`
+            : `calc(100% - ${SIDEBAR_WIDTH_EXPANDED}px)`,
         }}
       >
         {/* Header */}
         <header className="bg-dark-primary transition-all duration-300">
           <div className="px-5 py-4">
-            <div 
+            <div
               className="bg-dark-secondary p-5 rounded-lg flex justify-between items-center"
               style={{
                 boxShadow: '0 4px 10px rgba(255,102,0,0.12)',
@@ -332,22 +354,19 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
               }}
             >
               <div className="flex items-center gap-6">
-                {/* Logo */}
                 <div className="relative w-44 h-14">
-                  <Image 
-                    src="/images/logo_viva.png" 
-                    alt="Viva Eventos" 
+                  <Image
+                    src="/images/logo_viva.png"
+                    alt="Viva Eventos"
                     fill
                     style={{ objectFit: 'contain' }}
                     priority
                   />
                 </div>
-                
-                {/* Título */}
                 <div className="border-l border-gray-600 pl-6 h-14 flex items-center">
-                  <h1 
+                  <h1
                     className="text-3xl font-bold uppercase tracking-wider"
-                    style={{ 
+                    style={{
                       fontFamily: "'Orbitron', 'Poppins', sans-serif",
                       background: 'linear-gradient(to bottom, #F8F9FA 0%, #ADB5BD 100%)',
                       WebkitBackgroundClip: 'text',
@@ -360,8 +379,8 @@ export default function AnaliseMercadoLayout({ children, titulo = 'ANÁLISE DE M
                 </div>
               </div>
 
-              {/* Badge de validação */}
-              <div 
+              {/* Badge */}
+              <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded-md"
                 style={{
                   backgroundColor: 'rgba(245, 158, 11, 0.15)',

@@ -1,5 +1,4 @@
 // ============================================
-// Hooks - Módulo Análise de Mercado
+// Hooks — Barrel Export
 // ============================================
-
 export * from './useAnaliseMercado';

@@ -1,127 +1,134 @@
 // ============================================
-// Tipos Análise de Mercado
+// Tipos — Módulo Análise de Mercado (Reestruturado)
 // ============================================
 
-/**
- * Dados de evolução do mercado educacional
- */
-export interface DadosEvolucaoMercado {
+// ─── Filtros ──────────────────────────────────
+export type TipoInstituicao = 'todos' | 'publica' | 'privada';
+export type VisaoAtiva = 'alunos' | 'turmas';
+
+export interface FiltrosAnaliseMercado {
   ano: number;
-  matriculados_total: number;
-  concluintes_total: number;
-  matriculados_presencial: number;
-  matriculados_ead: number;
-  concluintes_presencial: number;
-  concluintes_ead: number;
-  matriculados_medicina: number;
-  concluintes_medicina: number;
-  matriculados_ensino_medio: number;
-  concluintes_ensino_medio: number;
+  tipoInstituicao: TipoInstituicao;
+  franquiaId: string | null;
+  estado: string | null;
+  areaConhecimento: string | null;
 }
 
-/**
- * Dados de participação de mercado Viva
- */
-export interface ParticipacaoMercado {
-  ano: number;
-  mercado_total: number;
-  viva_total: number;
-  participacao_total: number; // %
-  mercado_presencial: number;
-  viva_presencial: number;
-  participacao_presencial: number; // %
-  mercado_medicina: number;
-  viva_medicina: number;
-  participacao_medicina: number; // %
-  mercado_ensino_medio: number;
-  viva_ensino_medio: number;
-  participacao_ensino_medio: number; // %
-  mercado_ead: number;
-  viva_ead: number;
-  participacao_ead: number; // %
-}
-
-/**
- * Segmento estratégico
- */
-export interface SegmentoEstrategico {
+// ─── Franquia (sidebar) ──────────────────────
+export interface Franquia {
   id: string;
   nome: string;
-  tipo: 'premium' | 'volume' | 'crescimento' | 'estavel';
-  ticket_medio: number;
-  volume_anual: number;
-  previsibilidade: 'alta' | 'media' | 'baixa';
-  tendencia: 'crescimento' | 'estavel' | 'declinio';
-  margem_percentual: number;
-  destaque?: string;
 }
 
-/**
- * Tendência de mercado
- */
-export interface TendenciaMercado {
-  id: string;
-  titulo: string;
-  descricao: string;
-  impacto: 'positivo' | 'negativo' | 'neutro';
-  probabilidade: 'alta' | 'media' | 'baixa';
-  horizonte: '1-2 anos' | '3-5 anos' | '5+ anos';
-  categoria: 'tecnologia' | 'regulatorio' | 'demografico' | 'economico' | 'comportamental';
-}
-
-/**
- * Risco regulatório
- */
-export interface RiscoRegulatorio {
-  id: string;
-  titulo: string;
-  descricao: string;
-  severidade: 'alta' | 'media' | 'baixa';
-  probabilidade: 'alta' | 'media' | 'baixa';
-  status: 'monitorando' | 'em_andamento' | 'aprovado' | 'arquivado';
-  orgao_regulador: string;
-  data_limite?: string;
-  acoes_mitigacao?: string[];
-}
-
-/**
- * KPI do mercado
- */
-export interface KPIMercado {
+// ─── KPI Cards ───────────────────────────────
+export interface IndicadorCard {
   id: string;
   titulo: string;
   valor: number;
-  unidade: string;
-  variacao: number; // % em relação ao período anterior
+  variacao: number;
   tendencia: 'up' | 'down' | 'stable';
-  cor?: string;
+  cor: string;
+  subtitulo?: string;
+  comparativoBrasil?: number;
 }
 
-/**
- * Nível de ensino para filtro
- */
-export type NivelEnsino = 'superior' | 'medio' | 'medicina';
-
-/**
- * Filtros disponíveis
- */
-export interface FiltrosAnaliseMercado {
-  ano?: number;
-  segmento?: string;
-  regiao?: string;
-  modalidade?: 'presencial' | 'ead' | 'todos';
-  nivelEnsino?: NivelEnsino;
+// ─── Evolução Histórica ─────────────────────
+export interface DadosEvolucaoAnual {
+  ano: number;
+  matriculas: number;
+  concluintes: number;
+  ingressantes: number;
+  presencial: number;
+  ead: number;
+  publica: number;
+  privada: number;
 }
 
-/**
- * Dados consolidados do dashboard
- */
+// ─── Distribuição por Estado ────────────────
+export interface DadosEstado {
+  uf: string;
+  nome: string;
+  matriculas: number;
+  concluintes: number;
+  turmas: number;
+  instituicoes: number;
+  percentual: number;
+}
+
+// ─── Ranking de Cursos ──────────────────────
+export interface DadosCurso {
+  nome: string;
+  area: string;
+  matriculas: number;
+  concluintes: number;
+  turmas: number;
+  percentual: number;
+}
+
+// ─── Turmas ─────────────────────────────────
+export interface DadosTurma {
+  ano: number;
+  totalTurmas: number;
+  mediaPorTurma: number;
+  medianaPorTurma: number;
+  turmasPresencial: number;
+  turmasEad: number;
+  turmasPublica: number;
+  turmasPrivada: number;
+}
+
+export interface TurmaPorSemestre {
+  periodo: string;
+  total: number;
+}
+
+// ─── Grupos Educacionais ────────────────────
+export interface GrupoEducacional {
+  nome: string;
+  turmas: number;
+  matriculas: number;
+  percentual: number;
+  tipo: 'privada' | 'publica';
+}
+
+// ─── Demografia ─────────────────────────────
+export interface DadosDemografia {
+  faixaEtaria: { faixa: string; total: number; percentual: number }[];
+  genero: { tipo: string; total: number; percentual: number }[];
+}
+
+// ─── Dados da Franquia (territorial) ────────
+export interface DadosFranquia {
+  franquia: Franquia;
+  matriculasLocal: number;
+  concluintesLocal: number;
+  turmasLocal: number;
+  participacaoTerritorio: number;
+  gapOportunidade: number;
+  carteiraAtual: number;
+  comparativoBrasil: {
+    matriculasBrasil: number;
+    concluintesBrasil: number;
+    turmasBrasil: number;
+    percentualDoTotal: number;
+  };
+}
+
+// ─── Dados Consolidados ─────────────────────
 export interface DadosAnaliseMercado {
-  evolucao: DadosEvolucaoMercado[];
-  participacao: ParticipacaoMercado[];
-  segmentos: SegmentoEstrategico[];
-  tendencias: TendenciaMercado[];
-  riscos: RiscoRegulatorio[];
-  kpis: KPIMercado[];
-  ultima_atualizacao: string;
+  indicadores: IndicadorCard[];
+  evolucaoAlunos: DadosEvolucaoAnual[];
+  distribuicaoEstados: DadosEstado[];
+  rankingCursos: DadosCurso[];
+  demografia: DadosDemografia;
+  evolucaoTurmas: DadosTurma[];
+  turmasPorSemestre: TurmaPorSemestre[];
+  gruposEducacionais: GrupoEducacional[];
+  franquias: Franquia[];
+  dadosFranquia?: DadosFranquia;
+  ultimaAtualizacao: string;
+  fonte: string;
 }
+
+// ─── Legado (compatibilidade) ───────────────
+export type NivelEnsino = 'superior' | 'medio' | 'medicina';
