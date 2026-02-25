@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   ChevronDown, ChevronUp, Wallet, AlertCircle, CheckCircle, 
-  Building2, Search, Filter, ChevronLeft, ChevronRight,
+  Building2, Search, Filter,
   ArrowUpDown, X, Lock, Ban
 } from 'lucide-react';
 
@@ -21,6 +21,8 @@ export interface FundoFee {
   feeAntecipacaoRecebido: number; // FEE ANTECIPAÇÃO JÁ RECEBIDO (M + N)
   saldoFundo: number;         // SALDO DO FUNDO (Coluna L)
   faltaReceber?: number;      // FALTA RECEBER (Coluna O - opcional, calculado se não existir)
+  dataContrato?: string;      // DATA DO CONTRATO (Coluna G)
+  dataBaile?: string;         // DATA DO BAILE (Coluna I)
   // Legado - manter para compatibilidade
   feeRecebido?: number;        
   feeDisponivelAntecipacao?: number;
@@ -41,8 +43,6 @@ const formatarMoeda = (valor: number): string => {
 const formatarPercentual = (valor: number): string => {
   return `${valor.toFixed(0)}%`;
 };
-
-const ITENS_POR_PAGINA = 10;
 
 type OrdenacaoCampo = 'nome' | 'feeTotal' | 'percentualRecebido' | 'faltaReceber' | 'saldoFundo' | 'status';
 type OrdenacaoDirecao = 'asc' | 'desc';
@@ -89,10 +89,9 @@ const calcularFaltaReceber = (fundo: FundoFee): number => {
 export default function RecebimentoFeeFundo({ fundos, loading = false }: RecebimentoFeeFundoProps) {
   const [expandido, setExpandido] = useState(true);
   
-  // Estados para busca, filtro e paginação
+  // Estados para busca e filtro
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'todos' | StatusFundo>('todos');
-  const [paginaAtual, setPaginaAtual] = useState(1);
   const [ordenacao, setOrdenacao] = useState<{ campo: OrdenacaoCampo; direcao: OrdenacaoDirecao }>({ 
     campo: 'feeTotal', 
     direcao: 'desc' 
@@ -148,18 +147,6 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
     
     return resultado;
   }, [fundos, busca, filtroStatus, ordenacao]);
-
-  // Paginação
-  const totalPaginas = Math.ceil(fundosFiltrados.length / ITENS_POR_PAGINA);
-  const fundosPaginados = useMemo(() => {
-    const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
-    return fundosFiltrados.slice(inicio, inicio + ITENS_POR_PAGINA);
-  }, [fundosFiltrados, paginaAtual]);
-
-  // Reset página quando filtros mudam
-  useMemo(() => {
-    setPaginaAtual(1);
-  }, [busca, filtroStatus]);
 
   // Calcula totais
   const totalFeeContrato = fundos.reduce((acc, f) => acc + f.feeTotal, 0);
@@ -260,12 +247,15 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
               <p className="text-xs text-gray-400">
                 {totalFundos} fundos • {contagemStatus['saque-disponivel']} com saque disponível
               </p>
+              <p className="text-xs text-cyan-400 mt-0.5 font-medium">
+                ⚠️ Dados apenas de fundos SPDX
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-xs text-gray-400">Falta Receber Antecipação</p>
-              <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalFaltaReceber)}</p>
+              <p className="text-xs text-orange-400">Falta Receber Antecipação</p>
+              <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
             </div>
             {expandido ? (
               <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -449,8 +439,8 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                   </button>
                 </div>
               ) : (
-                <div className="space-y-1">
-                  {fundosPaginados.map((fundo) => {
+                <div className="space-y-1 max-h-[500px] overflow-y-auto pr-2">
+                  {fundosFiltrados.map((fundo) => {
                     const status = calcularStatus(fundo);
                     const percentualRecebido = calcularPercentualAntecipacaoRecebido(fundo);
                     const faltaReceber = calcularFaltaReceber(fundo);
@@ -463,16 +453,26 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                         {/* Layout em linha única com flex */}
                         <div className="flex items-center gap-3">
                           {/* Nome e unidade */}
-                          <div className="flex items-center gap-2 min-w-0 w-[200px] flex-shrink-0">
+                          <div className="flex items-center gap-2 min-w-0 w-[200px] flex-shrink-0" title={fundo.nome}>
                             {getStatusBadge(status, true)}
-                            <div className="min-w-0 flex-1">
-                              <span className="text-sm font-medium text-white truncate block">{fundo.nome}</span>
+                            <div className="min-w-0 flex-1 cursor-help">
+                              <span className="text-sm font-medium text-white truncate block" title={fundo.nome}>{fundo.nome}</span>
                               <span className="text-xs text-gray-500 truncate block">{fundo.unidade}</span>
                             </div>
                           </div>
                           
                           {/* Colunas de valores */}
-                          <div className="flex-1 grid grid-cols-6 gap-2">
+                          <div className="flex-1 grid grid-cols-8 gap-2">
+                            <div className="text-center">
+                              <p className="text-[10px] text-gray-500 uppercase">Dt. Cadastro</p>
+                              <p className="text-sm font-medium text-gray-300">{fundo.dataContrato || '-'}</p>
+                            </div>
+                            
+                            <div className="text-center">
+                              <p className="text-[10px] text-gray-500 uppercase">Dt. Baile</p>
+                              <p className="text-sm font-medium text-gray-300">{fundo.dataBaile || '-'}</p>
+                            </div>
+                            
                             <div className="text-right">
                               <p className="text-[10px] text-gray-500 uppercase">Valor FEE</p>
                               <p className="text-sm font-medium text-white">{formatarMoeda(fundo.feeTotal)}</p>
@@ -517,59 +517,12 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                 </div>
               )}
 
-              {/* Paginação */}
-              {totalPaginas > 1 && (
-                <div className="flex items-center justify-between pt-4 border-t border-gray-700/30">
+              {/* Info de total */}
+              {fundosFiltrados.length > 0 && (
+                <div className="flex items-center justify-center pt-3 border-t border-gray-700/30">
                   <span className="text-xs text-gray-500">
-                    Página {paginaAtual} de {totalPaginas} • {fundosFiltrados.length} fundos
+                    {fundosFiltrados.length} fundos exibidos
                   </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
-                      disabled={paginaAtual === 1}
-                      className="p-2 rounded-lg bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    
-                    {/* Números de página */}
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
-                        let pagina: number;
-                        if (totalPaginas <= 5) {
-                          pagina = i + 1;
-                        } else if (paginaAtual <= 3) {
-                          pagina = i + 1;
-                        } else if (paginaAtual >= totalPaginas - 2) {
-                          pagina = totalPaginas - 4 + i;
-                        } else {
-                          pagina = paginaAtual - 2 + i;
-                        }
-                        
-                        return (
-                          <button
-                            key={pagina}
-                            onClick={() => setPaginaAtual(pagina)}
-                            className={`w-8 h-8 rounded-lg text-xs font-medium transition-all ${
-                              paginaAtual === pagina
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white'
-                            }`}
-                          >
-                            {pagina}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    
-                    <button
-                      onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
-                      disabled={paginaAtual === totalPaginas}
-                      className="p-2 rounded-lg bg-gray-800/50 text-gray-400 hover:bg-gray-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
                 </div>
               )}
             </div>

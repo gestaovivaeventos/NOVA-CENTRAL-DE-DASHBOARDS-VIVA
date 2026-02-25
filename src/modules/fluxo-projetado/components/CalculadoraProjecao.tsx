@@ -940,9 +940,9 @@ export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia,
                       />
                     </div>
                     
-                    {/* Percentual Antecipação */}
+                    {/* Percentual Antecipação do FEE */}
                     <div className="space-y-1.5">
-                      <label className="text-[10px] text-gray-400 uppercase tracking-wide">Percentual Antecipação</label>
+                      <label className="text-[10px] text-gray-400 uppercase tracking-wide">Percentual Antecipação do FEE</label>
                       <div className="flex items-center">
                         <input
                           type="text"
