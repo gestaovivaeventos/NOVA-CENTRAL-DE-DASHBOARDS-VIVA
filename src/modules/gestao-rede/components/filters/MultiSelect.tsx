@@ -390,7 +390,7 @@ export default function MultiSelect({
                     </span>
                   </div>
                   
-                  {/* Botão "Somente" */}
+                  {/* Botão "Somente" - ícone de check com borda redonda */}
                   <button
                     onClick={(e) => handleSelectOnly(option.key, e)}
                     style={{
@@ -406,20 +406,28 @@ export default function MultiSelect({
                       transition: 'all 0.2s',
                       flexShrink: 0,
                       opacity: 0.6,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '20px',
+                      height: '20px',
+                      lineHeight: 1,
                     }}
                     onMouseEnter={(e) => { 
+                      e.currentTarget.style.color = '#FF6600'; 
                       e.currentTarget.style.borderColor = '#FF6600';
-                      e.currentTarget.style.color = '#FF6600';
                       e.currentTarget.style.opacity = '1';
+                      e.currentTarget.style.background = 'rgba(255, 102, 0, 0.1)';
                     }}
                     onMouseLeave={(e) => { 
+                      e.currentTarget.style.color = '#6c757d'; 
                       e.currentTarget.style.borderColor = '#444';
-                      e.currentTarget.style.color = '#6c757d';
                       e.currentTarget.style.opacity = '0.6';
+                      e.currentTarget.style.background = 'transparent';
                     }}
-                    title={`Selecionar apenas ${option.label}`}
+                    title={`Selecionar somente "${option.label}"`}
                   >
-                    ●
+                    ✓
                   </button>
                 </div>
               );
