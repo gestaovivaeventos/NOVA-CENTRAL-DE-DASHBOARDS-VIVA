@@ -5,6 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Calculator, RotateCcw, Settings, X, Check, ChevronRight, ChevronDown } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
 
 // Interface dos parâmetros da simulação
 interface ParametrosSimulacao {
@@ -302,6 +303,7 @@ function CardSimulacao({ resultado, isFirst, parametros, parametrosEfetivos, par
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia, vvrAnual = 0, franquia, dadosProjecao = [], onRefresh }: CalculadoraProjecaoProps) {
+  const { user } = useAuth();
   const [modalAberto, setModalAberto] = useState(false);
   const [usandoParametrosPadrao, setUsandoParametrosPadrao] = useState(false);
   const [expandido, setExpandido] = useState(false);
@@ -887,10 +889,11 @@ export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia,
                   </div>
                 </div>
 
-                {/* Divisor */}
-                <div className="border-t border-gray-700/50" />
+                {/* Divisor - só aparece se seção de parâmetros estiver visível */}
+                {user?.accessLevel !== 0 && <div className="border-t border-gray-700/50" />}
 
-                {/* Seleção de Modo: Parâmetros Padrão ou Definir Parâmetros */}
+                {/* Seleção de Modo: Parâmetros Padrão ou Definir Parâmetros - apenas para franqueadoras (accessLevel >= 1) */}
+                {user?.accessLevel !== 0 && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-3">
                     {/* Botão Utilizar Parâmetros Padrão - apenas ação, não fica selecionado */}
@@ -1011,6 +1014,7 @@ export function CalculadoraProjecao({ anoSelecionado = 2026, parametrosFranquia,
                   </div>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Footer do Modal */}

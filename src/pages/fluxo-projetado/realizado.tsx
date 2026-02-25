@@ -13,7 +13,7 @@ import { useRouter } from 'next/router';
 import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas } from '@/modules/fluxo-projetado';
 import { useFluxoRealizado, useReceitasMensais } from '@/modules/fluxo-projetado/hooks';
 import { Loader2, BarChart3 } from 'lucide-react';
-import { withAuthAndFranchiser } from '@/utils/auth';
+import { withAuthFluxoProjetado } from '@/utils/auth';
 
 function FluxoRealizadoDashboard() {
   const router = useRouter();
@@ -106,4 +106,4 @@ function FluxoRealizadoDashboard() {
 }
 
 // Exporta com proteção de rota - apenas franqueadoras (accessLevel = 1) podem acessar
-export default withAuthAndFranchiser(FluxoRealizadoDashboard);
+export default withAuthFluxoProjetado(FluxoRealizadoDashboard);
