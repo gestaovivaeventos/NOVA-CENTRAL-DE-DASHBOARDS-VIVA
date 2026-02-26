@@ -1,5 +1,5 @@
 /**
- * Footer - Componente de rodapé com informações de desenvolvimento
+ * Footer - Componente de rodapé, com informações de desenvolvimento
  * Baseado no padrão do módulo de Vendas
  */
 

@@ -9,7 +9,7 @@ import { useRouter } from 'next/router';
 import { Header, FluxoAnualCard, DetalhamentoMensal, Sidebar, CalculadoraProjecao } from '@/modules/fluxo-projetado';
 import { DadosFluxoAnual, ParametrosFranquiaCard } from '@/modules/fluxo-projetado/components/FluxoAnualCard';
 import { Loader2 } from 'lucide-react';
-import { withAuthAndFranchiser } from '@/utils/auth';
+import { withAuthFluxoProjetado } from '@/utils/auth';
 
 function FluxoProjetadoDashboard() {
   const router = useRouter();
@@ -458,4 +458,4 @@ function FluxoProjetadoDashboard() {
 }
 
 // Exporta com proteção de rota - apenas franqueadoras (accessLevel = 1) podem acessar
-export default withAuthAndFranchiser(FluxoProjetadoDashboard);
+export default withAuthFluxoProjetado(FluxoProjetadoDashboard);

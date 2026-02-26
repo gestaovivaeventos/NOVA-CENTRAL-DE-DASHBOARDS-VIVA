@@ -75,8 +75,8 @@ export default function TabelaParametros({ isOpen, onClose, onSave }: TabelaPara
   // Colunas da tabela - campos percentuais devem ter suffix '%'
   const colunas = [
     { key: 'inicioPgFee', label: 'INÍCIO PG FEE', suffix: '', isPercentual: false },
-    { key: 'percentualAntecipacao', label: '% ANTECIPAÇÃO', suffix: '%', isPercentual: true },
-    { key: 'percentualFechamento', label: '% FECHAMENTO', suffix: '%', isPercentual: true },
+    { key: 'percentualAntecipacao', label: '% ANTECIPAÇÃO DO FEE', suffix: '%', isPercentual: true },
+    { key: 'percentualFechamento', label: '% FECHAMENTO DO FEE', suffix: '%', isPercentual: true },
     { key: 'numParcelasAntecipacao', label: 'Nº PARCELAS ANTECIPAÇÃO', suffix: '', isPercentual: false },
     { key: 'quebraOrcamentoFinal', label: 'QUEBRA ORÇ. FINAL', suffix: '%', isPercentual: true },
     { key: 'diasBaileAnteciparUltimaParcela', label: 'DIAS BAILE', suffix: '', isPercentual: false },

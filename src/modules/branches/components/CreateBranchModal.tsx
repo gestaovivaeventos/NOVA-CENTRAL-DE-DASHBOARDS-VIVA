@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { X, GitBranch, PlusCircle } from 'lucide-react';
-import { MODULOS_CENTRAL } from '../types';
+import { useModulos } from '../hooks/useModulos';
 import { gerarNomeBranch, getDataAtual } from '../utils';
 
 interface CreateBranchModalProps {
@@ -31,6 +31,7 @@ export default function CreateBranchModal({
   const [novoModulo, setNovoModulo] = useState('');
   const [isNovoModulo, setIsNovoModulo] = useState(false);
   const [descricao, setDescricao] = useState('');
+  const { modulos } = useModulos();
 
   if (!isOpen) return null;
 
@@ -185,7 +186,7 @@ export default function CreateBranchModal({
             }}
           >
             <option value="">Selecione o módulo...</option>
-            {MODULOS_CENTRAL.map((mod) => (
+            {modulos.map((mod) => (
               <option key={mod} value={mod}>
                 {mod}
               </option>

@@ -68,6 +68,8 @@ interface FundoRealizado {
   feeAntecipacaoRecebido: number;
   saldoFundo: number;
   faltaReceber: number;  // Coluna O - Valor Restante de FEE
+  dataContrato?: string;  // Coluna G - Data do contrato
+  dataBaile?: string;     // Coluna I - Data do baile
 }
 
 // Função para obter cliente autenticado
@@ -153,6 +155,8 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     const valorPagoRpFee = parseNumber(row[COLUNAS.VALOR_PAGO_RP_FEE]); // Coluna N
     const saldo = parseNumber(row[COLUNAS.SALDO]); // Coluna L
     const valorRestanteFee = parseNumber(row[COLUNAS.VALOR_RESTANTE_FEE]); // Coluna O
+    const dataContrato = row[COLUNAS.DT_CONTRATO] || ''; // Coluna G
+    const dataBaile = row[COLUNAS.DT_BAILE] || ''; // Coluna I
     
     // Antecipação recebida = M + N (FEE Pago + Valor Pago RP FEE)
     const antecipacaoRecebida = feePago + valorPagoRpFee;
@@ -172,6 +176,8 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
       feeAntecipacaoRecebido: antecipacaoRecebida, // M + N
       saldoFundo: saldo, // L
       faltaReceber: faltaReceber, // Coluna O - VALOR RESTANTE DE FEE
+      dataContrato: dataContrato, // Coluna G
+      dataBaile: dataBaile, // Coluna I
     };
     
     fundos.push(fundo);

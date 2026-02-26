@@ -5,13 +5,12 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Search, ChevronLeft, ChevronRight, AlertTriangle, Users, Shield, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Search, AlertTriangle, Users, Shield, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
 import { Franquia, SaudeFranquia } from '../types';
 
 interface TabelaFranquiasProps {
   franquias: Franquia[];
   titulo?: string;
-  itensPorPagina?: number;
   filtros?: {
     maturidade?: string[];
     classificacao?: string[];
@@ -19,7 +18,7 @@ interface TabelaFranquiasProps {
   };
 }
 
-type CampoOrdenacao = 'nome' | 'dataInauguracao' | 'maturidade' | 'pontuacaoPex' | 'saude' | 'mesesNaSaudeAtual';
+type CampoOrdenacao = 'nome' | 'status' | 'dataInauguracao' | 'maturidade' | 'pontuacaoPex' | 'saude' | 'mesesNaSaudeAtual';
 
 // Cores e labels para saúde (classificação PEX) - Paleta de cores definida pelo usuário
 const SAUDE_CONFIG: Record<SaudeFranquia, { label: string; cor: string; bg: string; borderColor: string }> = {
@@ -70,20 +69,15 @@ const calcularTempoAtivo = (dataInauguracao: string): string => {
   }
 };
 
-export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15, filtros }: TabelaFranquiasProps) {
+export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFranquiasProps) {
   const [busca, setBusca] = useState('');
-  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [mostrarAtivas, setMostrarAtivas] = useState(true);
   const [ordenacao, setOrdenacao] = useState<{ campo: CampoOrdenacao; direcao: 'asc' | 'desc' }>({
     campo: 'nome',
     direcao: 'asc'
   });
 
   const getStatusLabel = (franquia: Franquia): string => {
-    if (franquia.status === 'INATIVA') {
-      return franquia.statusInativacao === 'ENCERRADA_OPERACAO' 
-        ? 'Encerrada (Op.)' 
-        : 'Encerrada (Impl.)';
-    }
     return franquia.maturidade;
   };
 
@@ -97,6 +91,10 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
   const franquiasFiltradas = useMemo(() => {
     return franquias
       .filter(f => {
+        // Filtro de status (ativa/inativa)
+        if (mostrarAtivas && f.status !== 'ATIVA') return false;
+        if (!mostrarAtivas && f.status !== 'INATIVA') return false;
+
         // Filtro de busca
         const matchBusca = f.nome.toLowerCase().includes(busca.toLowerCase());
         
@@ -136,6 +134,10 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
             valorA = a.nome;
             valorB = b.nome;
             break;
+          case 'status':
+            valorA = a.status;
+            valorB = b.status;
+            break;
           case 'dataInauguracao':
             valorA = a.dataInauguracao;
             valorB = b.dataInauguracao;
@@ -163,17 +165,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
         }
         return valorA < valorB ? 1 : -1;
       });
-  }, [franquias, busca, ordenacao, filtros]);
-
-  // Paginação
-  const totalPaginas = Math.ceil(franquiasFiltradas.length / itensPorPagina);
-  const indiceInicio = (paginaAtual - 1) * itensPorPagina;
-  const franquiasPaginadas = franquiasFiltradas.slice(indiceInicio, indiceInicio + itensPorPagina);
-
-  // Reset página quando filtro muda
-  React.useEffect(() => {
-    setPaginaAtual(1);
-  }, [busca, filtros]);
+  }, [franquias, busca, ordenacao, filtros, mostrarAtivas]);
 
   const handleOrdenacao = (campo: CampoOrdenacao) => {
     setOrdenacao(prev => ({
@@ -286,17 +278,69 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
         flexWrap: 'wrap',
         gap: '12px'
       }}>
-        <h3 style={{
-          color: '#adb5bd',
-          fontSize: '1rem',
-          fontWeight: 600,
-          textTransform: 'uppercase',
-          letterSpacing: '0.06em',
-          fontFamily: 'Poppins, sans-serif',
-          margin: 0,
-        }}>
-          {titulo || 'Lista de Franquias'} ({franquiasFiltradas.length})
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <h3 style={{
+            color: '#adb5bd',
+            fontSize: '1rem',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            fontFamily: 'Poppins, sans-serif',
+            margin: 0,
+          }}>
+            {titulo || 'Lista de Franquias'} ({franquiasFiltradas.length})
+          </h3>
+
+          {/* Toggle Ativas / Inativas */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              color: !mostrarAtivas ? '#FF6600' : '#6c757d',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              transition: 'color 0.3s',
+            }}>
+              Inativas
+            </span>
+            <label style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={mostrarAtivas}
+                onChange={() => setMostrarAtivas(prev => !prev)}
+                style={{ position: 'absolute', width: 0, height: 0, opacity: 0 }}
+              />
+              <div style={{
+                width: '44px',
+                height: '22px',
+                borderRadius: '11px',
+                background: mostrarAtivas
+                  ? 'linear-gradient(180deg, #ff8a33 0%, #FF6600 50%, #e65500 100%)'
+                  : '#4B5563',
+                transition: 'background 0.3s',
+                position: 'relative',
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '2px',
+                  left: '2px',
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  backgroundColor: '#FFF',
+                  transition: 'transform 0.3s',
+                  transform: mostrarAtivas ? 'translateX(22px)' : 'translateX(0)',
+                }} />
+              </div>
+            </label>
+            <span style={{
+              color: mostrarAtivas ? '#FF6600' : '#6c757d',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              transition: 'color 0.3s',
+            }}>
+              Ativas
+            </span>
+          </div>
+        </div>
 
         <div style={{ position: 'relative' }}>
           <Search 
@@ -329,18 +373,19 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
       </div>
 
       {/* Tabela */}
-      <div style={{ overflowX: 'auto' }}>
+      <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: '520px' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {[
                 { campo: 'nome' as CampoOrdenacao, label: 'Franquia', width: '180px' },
+                { campo: 'status' as CampoOrdenacao, label: 'Status', width: '80px' },
                 { campo: 'dataInauguracao' as CampoOrdenacao, label: 'Inauguração', width: '110px' },
                 { campo: 'maturidade' as CampoOrdenacao, label: 'Maturidade', width: '100px' },
                 { campo: 'pontuacaoPex' as CampoOrdenacao, label: 'PEX', width: '80px' },
-                { campo: 'saude' as CampoOrdenacao, label: 'Saúde Atual', width: '110px' },
-                { campo: 'saude' as CampoOrdenacao, label: 'Saúde Anterior', width: '110px' },
-                { campo: 'mesesNaSaudeAtual' as CampoOrdenacao, label: 'Tempo na Saúde', width: '100px' },
+                { campo: 'saude' as CampoOrdenacao, label: 'Classificação Atual', width: '120px' },
+                { campo: 'saude' as CampoOrdenacao, label: 'Classificação Anterior', width: '130px' },
+                { campo: 'mesesNaSaudeAtual' as CampoOrdenacao, label: 'Tempo na Classificação', width: '120px' },
               ].map((col, colIdx) => (
                 <th 
                   key={`col-${colIdx}`}
@@ -355,8 +400,12 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                     letterSpacing: '0.05em',
                     borderBottom: '2px solid #555',
                     cursor: 'pointer',
-                    whiteSpace: 'nowrap',
+                    whiteSpace: 'normal',
                     width: col.width,
+                    position: 'sticky' as const,
+                    top: 0,
+                    backgroundColor: '#343A40',
+                    zIndex: 10,
                   }}
                 >
                   <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -366,7 +415,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                 </th>
               ))}
               <th style={{
-                textAlign: 'center',
+                textAlign: 'left',
                 padding: '12px 8px',
                 color: '#adb5bd',
                 fontSize: '0.75rem',
@@ -375,13 +424,17 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                 letterSpacing: '0.05em',
                 borderBottom: '2px solid #555',
                 width: '80px',
+                position: 'sticky' as const,
+                top: 0,
+                backgroundColor: '#343A40',
+                zIndex: 10,
               }}>
                 Flags
               </th>
             </tr>
           </thead>
           <tbody>
-            {franquiasPaginadas.map((franquia, index) => {
+            {franquiasFiltradas.map((franquia, index) => {
               const saudeConfig = SAUDE_CONFIG[franquia.saude] || SAUDE_CONFIG['SEM_AVALIACAO'];
               const isImplantacao = franquia.maturidade === 'IMPLANTACAO';
               const isInativa = franquia.status === 'INATIVA';
@@ -409,6 +462,18 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                     fontWeight: 500,
                   }}>
                     {franquia.nome}
+                  </td>
+                  <td style={{ 
+                    padding: '10px 8px',
+                    borderBottom: '1px solid #444',
+                  }}>
+                    <span style={{
+                      color: franquia.status === 'ATIVA' ? '#27ae60' : '#c0392b',
+                      fontSize: '0.8rem',
+                      fontWeight: 600,
+                    }}>
+                      {franquia.status === 'ATIVA' ? 'Ativa' : 'Inativa'}
+                    </span>
                   </td>
                   <td style={{ 
                     padding: '10px 8px',
@@ -446,7 +511,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                   <td style={{ 
                     padding: '10px 8px',
                     borderBottom: '1px solid #444',
-                    textAlign: 'center',
+                    textAlign: 'left',
                   }}>
                     {isImplantacao || isInativa ? (
                       <span style={{ color: '#6c757d', fontSize: '0.85rem' }}>-</span>
@@ -523,12 +588,12 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                   <td style={{ 
                     padding: '10px 8px',
                     borderBottom: '1px solid #444',
-                    textAlign: 'center',
+                    textAlign: 'left',
                   }}>
                     {isImplantacao || isInativa || !franquia.mesesNaSaudeAtual ? (
                       <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>-</span>
                     ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                         <span style={{
                           color: franquia.mesesNaSaudeAtual >= 3 ? '#e67e22' : '#adb5bd',
                           fontSize: '0.9rem',
@@ -549,7 +614,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
                   <td style={{ 
                     padding: '10px 8px',
                     borderBottom: '1px solid #444',
-                    textAlign: 'center',
+                    textAlign: 'left',
                   }}>
                     {isImplantacao || isInativa ? (
                       <span style={{ color: '#6c757d' }}>-</span>
@@ -563,7 +628,7 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
           </tbody>
         </table>
 
-        {franquiasPaginadas.length === 0 && (
+        {franquiasFiltradas.length === 0 && (
           <div style={{
             textAlign: 'center',
             padding: '40px',
@@ -573,73 +638,6 @@ export default function TabelaFranquias({ franquias, titulo, itensPorPagina = 15
           </div>
         )}
       </div>
-
-      {/* Paginação */}
-      {totalPaginas > 1 && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginTop: '16px',
-          paddingTop: '16px',
-          borderTop: '1px solid #555',
-        }}>
-          <span style={{ color: '#6c757d', fontSize: '0.85rem' }}>
-            Mostrando {indiceInicio + 1}-{Math.min(indiceInicio + itensPorPagina, franquiasFiltradas.length)} de {franquiasFiltradas.length}
-          </span>
-          
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button
-              onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
-              disabled={paginaAtual === 1}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #555',
-                backgroundColor: paginaAtual === 1 ? '#2d3238' : '#343A40',
-                color: paginaAtual === 1 ? '#6c757d' : '#F8F9FA',
-                cursor: paginaAtual === 1 ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <ChevronLeft size={16} />
-              Anterior
-            </button>
-            
-            <span style={{
-              padding: '6px 12px',
-              backgroundColor: '#FF6600',
-              color: '#000',
-              borderRadius: '6px',
-              fontWeight: 600,
-              fontSize: '0.85rem',
-            }}>
-              {paginaAtual} / {totalPaginas}
-            </span>
-            
-            <button
-              onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
-              disabled={paginaAtual === totalPaginas}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: '1px solid #555',
-                backgroundColor: paginaAtual === totalPaginas ? '#2d3238' : '#343A40',
-                color: paginaAtual === totalPaginas ? '#6c757d' : '#F8F9FA',
-                cursor: paginaAtual === totalPaginas ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              Próxima
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Legenda de flags */}
       <div style={{
