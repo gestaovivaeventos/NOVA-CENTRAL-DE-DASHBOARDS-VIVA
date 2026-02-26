@@ -196,16 +196,18 @@ export default function Sidebar({
               {/* Divisor */}
               <hr className="border-gray-700/50" />
 
-              {/* Botão de Parâmetros */}
-              <div>
-                <button 
-                  onClick={() => setShowConfig(true)}
-                  className="flex items-center gap-2 w-full px-3 py-2.5 bg-[#252830] border border-gray-700 hover:border-orange-500/50 hover:bg-[#2a2e38] text-gray-300 hover:text-white rounded-lg transition-all text-sm"
-                >
-                  <Settings className="w-4 h-4 text-orange-400" />
-                  <span>Parâmetros</span>
-                </button>
-              </div>
+              {/* Botão de Parâmetros - apenas para franqueadoras (accessLevel >= 1) */}
+              {user?.accessLevel !== 0 && (
+                <div>
+                  <button 
+                    onClick={() => setShowConfig(true)}
+                    className="flex items-center gap-2 w-full px-3 py-2.5 bg-[#252830] border border-gray-700 hover:border-orange-500/50 hover:bg-[#2a2e38] text-gray-300 hover:text-white rounded-lg transition-all text-sm"
+                  >
+                    <Settings className="w-4 h-4 text-orange-400" />
+                    <span>Parâmetros</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -238,14 +240,16 @@ export default function Sidebar({
                 <ClipboardCheck size={20} />
               </button>
               
-              {/* Botão Parâmetros (ícone) */}
-              <button
-                onClick={() => setShowConfig(true)}
-                className="p-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-lg transition-all"
-                title="Parâmetros"
-              >
-                <Settings size={20} />
-              </button>
+              {/* Botão Parâmetros (ícone) - apenas para franqueadoras (accessLevel >= 1) */}
+              {user?.accessLevel !== 0 && (
+                <button
+                  onClick={() => setShowConfig(true)}
+                  className="p-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-lg transition-all"
+                  title="Parâmetros"
+                >
+                  <Settings size={20} />
+                </button>
+              )}
             </div>
           )}
 

@@ -207,10 +207,10 @@ export default function ModalParametrosFranquia({
                 />
               </div>
 
-              {/* C - % ANTECIPAÇÃO */}
+              {/* C - % ANTECIPAÇÃO DO FEE */}
               <div className="space-y-1">
                 <label className="text-xs text-gray-400 uppercase tracking-wide">
-                  % Antecipação
+                  % Antecipação do FEE
                 </label>
                 <div className="flex items-center">
                   <input
@@ -223,10 +223,10 @@ export default function ModalParametrosFranquia({
                 </div>
               </div>
 
-              {/* D - % FECHAMENTO */}
+              {/* D - % FECHAMENTO DO FEE */}
               <div className="space-y-1">
                 <label className="text-xs text-gray-400 uppercase tracking-wide">
-                  % Fechamento
+                  % Fechamento do FEE
                 </label>
                 <div className="flex items-center">
                   <input

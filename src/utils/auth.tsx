@@ -85,6 +85,54 @@ export function withAuthAndFranchiser(Component: React.ComponentType<any>) {
   };
 }
 
+/**
+ * Wrapper de autenticação para o módulo Fluxo Projetado
+ * Permite acesso para ambos os níveis:
+ * - accessLevel = 0 (Franqueado)
+ * - accessLevel = 1 (Franqueadora)
+ */
+export function withAuthFluxoProjetado(Component: React.ComponentType<any>) {
+  return function ProtectedComponent(props: any) {
+    const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+      const accessLevel = typeof window !== 'undefined' ? localStorage.getItem('accessLevel') : null;
+
+      if (!token) {
+        router.push('/login');
+      } else if (accessLevel === '0' || accessLevel === '1') {
+        // Tanto franqueado (0) quanto franqueadora (1) têm acesso ao Fluxo Projetado
+        setIsAuthenticated(true);
+      } else {
+        // Nível de acesso não reconhecido
+        router.push('/login');
+      }
+
+      setIsLoading(false);
+    }, [router]);
+
+    if (isLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212529' }}>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 mx-auto" style={{ borderColor: '#FF6600' }}></div>
+            <p className="mt-4" style={{ color: '#adb5bd' }}>Carregando...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isAuthenticated) {
+      return null;
+    }
+
+    return <Component {...props} />;
+  };
+}
+
 export function useAuth() {
   const [user, setUser] = useState<UserPermissions | null>(null);
   const [isLoading, setIsLoading] = useState(true);
