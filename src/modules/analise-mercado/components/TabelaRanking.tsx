@@ -31,7 +31,6 @@ export default function TabelaRanking<T extends Record<string, any>>({
 }: TabelaRankingProps<T>) {
   const [sortKey, setSortKey] = useState<string>(colunas[1]?.key || colunas[0]?.key || '');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [expandido, setExpandido] = useState(false);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -53,24 +52,27 @@ export default function TabelaRanking<T extends Record<string, any>>({
       : String(vb).localeCompare(String(va));
   });
 
-  const dadosExibidos = expandido ? dadosOrdenados : dadosOrdenados.slice(0, linhasVisiveis);
-
   const formatarValor = (valor: any, tipo: string) => {
     if (tipo === 'percentual') return fmtPct(valor);
     if (tipo === 'numero') return typeof valor === 'number' && valor >= 1000 ? fmtInteiro(valor) : String(valor);
     return String(valor);
   };
 
+  // Altura máxima do corpo da tabela (linhasVisiveis * ~40px por linha)
+  const maxBodyHeight = linhasVisiveis * 40;
+
   return (
     <div style={{ backgroundColor: '#343A40', borderRadius: 12, border: '1px solid #495057', overflow: 'hidden' }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid #495057' }}>
-        <h3 style={{
-          color: '#F8F9FA', fontSize: '1rem', fontWeight: 600, margin: 0,
-          fontFamily: "'Poppins', sans-serif",
-        }}>
-          {titulo}
-        </h3>
-      </div>
+      {titulo && (
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #495057' }}>
+          <h3 style={{
+            color: '#F8F9FA', fontSize: '1rem', fontWeight: 600, margin: 0,
+            fontFamily: "'Poppins', sans-serif",
+          }}>
+            {titulo}
+          </h3>
+        </div>
+      )}
 
       <div style={{ overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
@@ -105,8 +107,14 @@ export default function TabelaRanking<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-          <tbody>
-            {dadosExibidos.map((row, i) => (
+        </table>
+        <div style={{
+          maxHeight: maxBodyHeight,
+          overflowY: dadosOrdenados.length > linhasVisiveis ? 'auto' : 'hidden',
+        }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+            <tbody>
+              {dadosOrdenados.map((row, i) => (
               <tr
                 key={i}
                 style={{
@@ -141,22 +149,8 @@ export default function TabelaRanking<T extends Record<string, any>>({
             ))}
           </tbody>
         </table>
-      </div>
-
-      {dados.length > linhasVisiveis && (
-        <div style={{ padding: '8px 20px', borderTop: '1px solid #495057', textAlign: 'center' }}>
-          <button
-            onClick={() => setExpandido(!expandido)}
-            style={{
-              color: '#FF6600', fontSize: '0.75rem', fontWeight: 600,
-              background: 'none', border: 'none', cursor: 'pointer',
-              padding: '4px 8px',
-            }}
-          >
-            {expandido ? 'Mostrar menos ▲' : `Mostrar todos (${dados.length}) ▼`}
-          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

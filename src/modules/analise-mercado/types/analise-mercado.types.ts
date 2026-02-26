@@ -5,6 +5,7 @@
 // ─── Filtros ──────────────────────────────────
 export type TipoInstituicao = 'todos' | 'publica' | 'privada';
 export type VisaoAtiva = 'alunos' | 'turmas';
+export type MetricaAtiva = 'matriculas' | 'concluintes' | 'ingressantes';
 
 export interface FiltrosAnaliseMercado {
   ano: number;
@@ -12,6 +13,8 @@ export interface FiltrosAnaliseMercado {
   franquiaId: string | null;
   estado: string | null;
   areaConhecimento: string | null;
+  curso: string | null;
+  metricasAtivas: MetricaAtiva[];
 }
 
 // ─── Franquia (sidebar) ──────────────────────
@@ -42,6 +45,20 @@ export interface DadosEvolucaoAnual {
   ead: number;
   publica: number;
   privada: number;
+  genero: { feminino: number; masculino: number };
+}
+
+// ─── Nº Cursos por Instituição ──────────────
+export interface DadosInstituicao {
+  nome: string;
+  tipo: 'publica' | 'privada';
+  modalidade: 'presencial' | 'ead' | 'ambas';
+  cursos: number;
+  matriculas: number;
+  concluintes: number;
+  ingressantes: number;
+  turmas: number;
+  uf: string;
 }
 
 // ─── Distribuição por Estado ────────────────
@@ -55,14 +72,34 @@ export interface DadosEstado {
   percentual: number;
 }
 
+// ─── Dados por Cidade (drill-down) ──────────
+export interface DadosCidade {
+  nome: string;
+  uf: string;
+  lat: number;
+  lng: number;
+  matriculas: number;
+  concluintes: number;
+  turmas: number;
+  instituicoes: number;
+}
+
 // ─── Ranking de Cursos ──────────────────────
 export interface DadosCurso {
   nome: string;
   area: string;
   matriculas: number;
   concluintes: number;
+  ingressantes: number;
   turmas: number;
+  mediaPorTurma: number;
+  instituicoes: number;
   percentual: number;
+  presencial: number;
+  ead: number;
+  publica: number;
+  privada: number;
+  genero: { feminino: number; masculino: number };
 }
 
 // ─── Turmas ─────────────────────────────────
@@ -72,14 +109,8 @@ export interface DadosTurma {
   mediaPorTurma: number;
   medianaPorTurma: number;
   turmasPresencial: number;
-  turmasEad: number;
   turmasPublica: number;
   turmasPrivada: number;
-}
-
-export interface TurmaPorSemestre {
-  periodo: string;
-  total: number;
 }
 
 // ─── Grupos Educacionais ────────────────────
@@ -119,10 +150,11 @@ export interface DadosAnaliseMercado {
   indicadores: IndicadorCard[];
   evolucaoAlunos: DadosEvolucaoAnual[];
   distribuicaoEstados: DadosEstado[];
+  cidadesPorEstado: Record<string, DadosCidade[]>;
   rankingCursos: DadosCurso[];
+  instituicoes: DadosInstituicao[];
   demografia: DadosDemografia;
   evolucaoTurmas: DadosTurma[];
-  turmasPorSemestre: TurmaPorSemestre[];
   gruposEducacionais: GrupoEducacional[];
   franquias: Franquia[];
   dadosFranquia?: DadosFranquia;

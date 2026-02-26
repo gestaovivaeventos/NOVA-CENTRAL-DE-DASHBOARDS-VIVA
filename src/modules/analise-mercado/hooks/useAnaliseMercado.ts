@@ -18,6 +18,8 @@ const FILTROS_INICIAIS: FiltrosAnaliseMercado = {
   franquiaId: null,
   estado: null,
   areaConhecimento: null,
+  curso: null,
+  metricasAtivas: ['matriculas'],
 };
 
 interface UseAnaliseMercadoReturn {
@@ -29,6 +31,7 @@ interface UseAnaliseMercadoReturn {
   setVisaoAtiva: (v: VisaoAtiva) => void;
   anosDisponiveis: number[];
   areasDisponiveis: string[];
+  cursosDisponiveis: string[];
 }
 
 export function useAnaliseMercado(): UseAnaliseMercadoReturn {
@@ -43,9 +46,16 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     return () => clearTimeout(timer);
   }, []);
 
-  // Atualizar filtros (merge parcial)
+  // Atualizar filtros (merge parcial — limpa curso se área mudar)
   const setFiltros = useCallback((patch: Partial<FiltrosAnaliseMercado>) => {
-    setFiltrosState(prev => ({ ...prev, ...patch }));
+    setFiltrosState(prev => {
+      const next = { ...prev, ...patch };
+      // Se a área mudou, resetar o curso selecionado
+      if ('areaConhecimento' in patch && patch.areaConhecimento !== prev.areaConhecimento) {
+        next.curso = null;
+      }
+      return next;
+    });
   }, []);
 
   // Anos disponíveis
@@ -59,16 +69,37 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     return Array.from(areas).sort();
   }, [dadosBase]);
 
+  // Cursos disponíveis (filtrados por área selecionada)
+  const cursosDisponiveis = useMemo(() => {
+    let cursos = dadosBase.rankingCursos;
+    if (filtros.areaConhecimento) {
+      cursos = cursos.filter(c => c.area === filtros.areaConhecimento);
+    }
+    return cursos.map(c => c.nome).sort();
+  }, [dadosBase, filtros.areaConhecimento]);
+
   // Dados processados (filtragem + franquia)
   const dados = useMemo(() => {
     let resultado = { ...dadosBase };
 
-    // Filtrar ranking de cursos por área
+    // Filtrar ranking de cursos por área e/ou curso
+    let cursosFiltrados = dadosBase.rankingCursos;
     if (filtros.areaConhecimento) {
+      cursosFiltrados = cursosFiltrados.filter(c => c.area === filtros.areaConhecimento);
+    }
+    if (filtros.curso) {
+      cursosFiltrados = cursosFiltrados.filter(c => c.nome === filtros.curso);
+    }
+    if (filtros.areaConhecimento || filtros.curso) {
+      resultado = { ...resultado, rankingCursos: cursosFiltrados };
+    }
+
+    // Filtrar instituições por tipo
+    if (filtros.tipoInstituicao !== 'todos') {
       resultado = {
         ...resultado,
-        rankingCursos: dadosBase.rankingCursos.filter(
-          c => c.area === filtros.areaConhecimento
+        instituicoes: dadosBase.instituicoes.filter(
+          inst => inst.tipo === filtros.tipoInstituicao
         ),
       };
     }
@@ -138,5 +169,6 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     setVisaoAtiva,
     anosDisponiveis,
     areasDisponiveis,
+    cursosDisponiveis,
   };
 }

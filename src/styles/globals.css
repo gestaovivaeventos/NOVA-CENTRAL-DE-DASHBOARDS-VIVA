@@ -6,6 +6,31 @@
    Global Styles - Projeto Central
    ============================================ */
 
+/* ─── Leaflet tooltip dark theme ─── */
+.leaflet-tooltip-dark {
+  background-color: #212529 !important;
+  border: 1px solid #FF6600 !important;
+  border-radius: 8px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5) !important;
+  color: #F8F9FA !important;
+}
+.leaflet-tooltip-dark::before {
+  border-top-color: #FF6600 !important;
+}
+.leaflet-container {
+  font-family: 'Poppins', sans-serif !important;
+}
+/* Hide Leaflet zoom control borders for dark theme */
+.leaflet-bar a {
+  background-color: #343A40 !important;
+  color: #F8F9FA !important;
+  border-color: #495057 !important;
+}
+.leaflet-bar a:hover {
+  background-color: #495057 !important;
+}
+
 /* Animação para tooltips */
 @keyframes fadeIn {
   from {

@@ -29,6 +29,7 @@ interface AnaliseMercadoLayoutProps {
   onFiltrosChange: (filtros: Partial<FiltrosAnaliseMercado>) => void;
   anosDisponiveis: number[];
   areasDisponiveis: string[];
+  cursosDisponiveis: string[];
 }
 
 const SIDEBAR_WIDTH_EXPANDED = 280;
@@ -44,6 +45,7 @@ export default function AnaliseMercadoLayout({
   onFiltrosChange,
   anosDisponiveis,
   areasDisponiveis,
+  cursosDisponiveis,
 }: AnaliseMercadoLayoutProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -206,6 +208,23 @@ export default function AnaliseMercadoLayout({
                           ))}
                         </select>
                       </div>
+
+                      {/* Curso (aparece quando área selecionada) */}
+                      {filtros.areaConhecimento && cursosDisponiveis.length > 0 && (
+                        <div>
+                          <label style={sidebarLabelStyle}>Curso</label>
+                          <select
+                            style={sidebarSelectStyle}
+                            value={filtros.curso || ''}
+                            onChange={e => onFiltrosChange({ curso: e.target.value || null })}
+                          >
+                            <option value="">Todos os cursos</option>
+                            {cursosDisponiveis.map(c => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
                       {/* Badge estado selecionado */}
                       {filtros.estado && (

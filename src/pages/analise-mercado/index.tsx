@@ -16,7 +16,22 @@ import {
   SecaoTurmas,
   PainelFranquia,
 } from '@/modules/analise-mercado/components';
-import type { VisaoAtiva } from '@/modules/analise-mercado/types';
+import type { VisaoAtiva, MetricaAtiva } from '@/modules/analise-mercado/types';
+
+const METRICAS_OPTIONS: { key: MetricaAtiva; label: string; cor: string }[] = [
+  { key: 'matriculas', label: 'Matriculados', cor: '#3B82F6' },
+  { key: 'concluintes', label: 'Concluintes', cor: '#10B981' },
+  { key: 'ingressantes', label: 'Ingressantes', cor: '#8B5CF6' },
+];
+
+/** Toggle a metric in/out of the active set (min 1) */
+function toggleMetrica(current: MetricaAtiva[], key: MetricaAtiva): MetricaAtiva[] {
+  if (current.includes(key)) {
+    if (current.length === 1) return current; // mínimo 1
+    return current.filter(k => k !== key);
+  }
+  return [...current, key];
+}
 
 export default function AnaliseMercadoPage() {
   const router = useRouter();
@@ -30,6 +45,7 @@ export default function AnaliseMercadoPage() {
     setVisaoAtiva,
     anosDisponiveis,
     areasDisponiveis,
+    cursosDisponiveis,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
 
@@ -86,6 +102,7 @@ export default function AnaliseMercadoPage() {
         onFiltrosChange={setFiltros}
         anosDisponiveis={anosDisponiveis}
         areasDisponiveis={areasDisponiveis}
+        cursosDisponiveis={cursosDisponiveis}
       >
         {/* Aviso mockado */}
         <div style={{
@@ -118,6 +135,47 @@ export default function AnaliseMercadoPage() {
               compacto={dados.indicadores.length > 4}
             />
           ))}
+        </div>
+
+        {/* Seletor de Métrica (Matriculados / Concluintes / Ingressantes) */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          marginBottom: 16,
+        }}>
+          <span style={{
+            color: '#6C757D', fontSize: '0.7rem', fontWeight: 600,
+            textTransform: 'uppercase', letterSpacing: '0.04em',
+            fontFamily: "'Poppins', sans-serif",
+          }}>
+            Métrica:
+          </span>
+          {METRICAS_OPTIONS.map(m => {
+            const ativo = filtros.metricasAtivas.includes(m.key);
+            return (
+              <button
+                key={m.key}
+                onClick={() => setFiltros({ metricasAtivas: toggleMetrica(filtros.metricasAtivas, m.key) })}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '6px 16px', borderRadius: 20,
+                  backgroundColor: ativo ? `${m.cor}20` : 'transparent',
+                  border: `1.5px solid ${ativo ? m.cor : '#495057'}`,
+                  color: ativo ? m.cor : '#6C757D',
+                  fontSize: '0.76rem', fontWeight: ativo ? 700 : 500,
+                  cursor: 'pointer',
+                  fontFamily: "'Poppins', sans-serif",
+                  transition: 'all 0.2s',
+                }}
+              >
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  backgroundColor: ativo ? m.cor : '#495057',
+                  transition: 'all 0.2s',
+                }} />
+                {m.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Tabs: Alunos / Turmas */}
