@@ -93,34 +93,32 @@ export default function GestaoRedeDashboard() {
 
   if (authLoading || isLoading) {
     return (
-      <div style={{
-        minHeight: '100vh',
-        backgroundColor: '#212529',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
-        <div style={{
-          textAlign: 'center',
-          color: '#adb5bd',
-        }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            border: '4px solid #FF6600',
-            borderTopColor: 'transparent',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px',
-          }} />
-          <p>Carregando...</p>
-        </div>
-        <style jsx>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
+      <>
+        <Head>
+          <title>Gestão Rede - Viva Eventos</title>
+          <link 
+            href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" 
+            rel="stylesheet" 
+          />
+        </Head>
+        <GestaoRedeLayout
+          currentPage="dashboard"
+          filtros={filtros}
+          onFiltrosChange={setFiltros}
+        >
+          <div className="flex-1 flex items-center justify-center" style={{ minHeight: '80vh' }}>
+            <div className="text-center">
+              <div 
+                className="animate-spin rounded-full h-16 w-16 border-b-2 mx-auto" 
+                style={{ borderColor: '#FF6600' }}
+              />
+              <p className="mt-4 text-lg" style={{ color: '#adb5bd' }}>
+                Carregando...
+              </p>
+            </div>
+          </div>
+        </GestaoRedeLayout>
+      </>
     );
   }
 
@@ -532,15 +530,9 @@ export default function GestaoRedeDashboard() {
 
           {/* Tabela de Franquias */}
           <TabelaFranquias 
-            franquias={franquiasFiltradas}
+            franquias={franquias}
             filtros={filtros}
-            titulo={
-              filtroStatus === 'TODOS' 
-                ? 'Todas as Franquias' 
-                : filtroStatus === 'ATIVA' 
-                  ? 'Franquias Ativas' 
-                  : 'Franquias Inativas'
-            }
+            titulo="Todas as Franquias"
           />
 
           {/* Footer */}

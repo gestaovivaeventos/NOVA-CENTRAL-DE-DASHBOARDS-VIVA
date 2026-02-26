@@ -1,14 +1,12 @@
 /**
  * GestaoRedeLayout - Layout wrapper para o módulo
  * Inclui sidebar de navegação e estrutura principal
- * Segue o padrão do módulo de Vendas
+ * Segue o padrão do módulo de Vendas (Sidebar.tsx)
  */
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import { 
-  LayoutDashboard, 
   ChevronLeft, 
   ChevronRight, 
   Home, 
@@ -37,7 +35,7 @@ export default function GestaoRedeLayout({
   onFiltrosChange
 }: GestaoRedeLayoutProps) {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('gestao_rede_sidebar_collapsed');
@@ -67,15 +65,6 @@ export default function GestaoRedeLayout({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const menuItems = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: LayoutDashboard,
-      href: '/gestao-rede',
-    },
-  ];
-
   const handleLogout = async () => {
     await logout();
     router.push('/login');
@@ -86,6 +75,8 @@ export default function GestaoRedeLayout({
       onFiltrosChange({ ...filtros, ...novosFiltros });
     }
   };
+
+  const sidebarWidth = isMobile ? SIDEBAR_WIDTH_EXPANDED : (isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED);
 
   return (
     <div style={{ 
@@ -130,62 +121,65 @@ export default function GestaoRedeLayout({
 
       {/* Sidebar */}
       <aside
+        className="fixed left-0 top-0 bottom-0 overflow-y-auto transition-all duration-300 z-50"
         style={{
-          position: 'fixed',
-          top: 0,
-          left: isMobile ? (isMobileMenuOpen ? 0 : '-100%') : 0,
-          height: '100vh',
-          width: isMobile ? SIDEBAR_WIDTH_EXPANDED : (isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
+          width: isMobile ? (isMobileMenuOpen ? `${SIDEBAR_WIDTH_EXPANDED}px` : '0px') : `${sidebarWidth}px`,
           backgroundColor: '#1a1d21',
           borderRight: '1px solid #333',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'all 0.3s ease',
-          zIndex: 45,
-          overflowY: 'auto',
-          overflowX: 'hidden',
+          left: isMobile ? (isMobileMenuOpen ? 0 : '-100%') : 0,
         }}
       >
-        {/* Header da Sidebar */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '16px',
-          borderBottom: '1px solid #333',
-          minHeight: '64px',
-        }}>
+        {/* Header com Perfil do Usuário */}
+        <div
+          style={{
+            padding: isCollapsed && !isMobile ? '16px 10px' : '16px 20px',
+            borderBottom: '1px solid #333',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: (isCollapsed && !isMobile) ? 'center' : 'space-between',
+            gap: '12px',
+          }}
+        >
           {(!isCollapsed || isMobile) && (
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}>
-              <div style={{
-                width: '40px',
-                height: '40px',
-                borderRadius: '8px',
-                background: 'linear-gradient(135deg, #FF6600 0%, #FF8533 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <LayoutDashboard size={20} color="#fff" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h2
+                  style={{
+                    color: '#F8F9FA',
+                    fontSize: '0.95rem',
+                    fontWeight: 600,
+                    fontFamily: "'Poppins', sans-serif",
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    marginBottom: '2px',
+                    lineHeight: '1.2',
+                  }}
+                >
+                  {user?.firstName || user?.username || 'Usuário'}
+                </h2>
+                <p
+                  style={{
+                    color: '#6c757d',
+                    fontSize: '0.7rem',
+                    marginBottom: '2px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    lineHeight: '1.2',
+                  }}
+                >
+                  {user?.unitPrincipal || user?.unitNames?.[0] || 'Gestão Rede'}
+                </p>
               </div>
-              <span style={{
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                color: '#F8F9FA',
-                fontFamily: 'Poppins, sans-serif',
-              }}>
-                Gestão Rede
-              </span>
             </div>
           )}
-          
+
+          {/* Botão Toggle */}
           {!isMobile && (
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hover:bg-orange-500/20"
               style={{
                 width: '32px',
                 height: '32px',
@@ -197,127 +191,90 @@ export default function GestaoRedeLayout({
                 justifyContent: 'center',
                 cursor: 'pointer',
                 color: '#FF6600',
+                transition: 'all 0.2s',
                 flexShrink: 0,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
               }}
+              title={isCollapsed ? 'Expandir Menu' : 'Recolher Menu'}
             >
-              {isCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+              {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             </button>
           )}
         </div>
 
-        {/* Menu Items */}
-        <nav style={{ padding: '16px 8px' }}>
-          {menuItems.map((item) => {
-            const isActive = currentPage === item.id;
-            const Icon = item.icon;
+        {/* Conteúdo da Sidebar - com scroll */}
+        <div 
+          className={`${(isCollapsed && !isMobile) ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
+          style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
+        >
+          {/* Filtros - só mostra quando expandido */}
+          {(!isCollapsed || isMobile) && onFiltrosChange && filtros && (
+            <>
+              <hr className="border-dark-tertiary my-4" />
+              <div className="filters-content">
+                <FilterPanel
+                  filtros={filtros}
+                  onFiltrosChange={handleFiltrosChange}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Espaçador flexível para empurrar os botões para baixo */}
+          <div className="flex-grow" />
+
+          {/* Área inferior: Central + Sair */}
+          <div className={`${(isCollapsed && !isMobile) ? 'pb-4' : 'pb-6'}`}>
+            <hr className="border-dark-tertiary mb-4" />
             
-            return (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={() => isMobile && setIsMobileMenuOpen(false)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px',
-                  borderRadius: '8px',
-                  marginBottom: '4px',
-                  backgroundColor: isActive ? '#FF660020' : 'transparent',
-                  color: isActive ? '#FF6600' : '#adb5bd',
-                  textDecoration: 'none',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <Icon size={20} />
-                {(!isCollapsed || isMobile) && (
-                  <span style={{
-                    fontSize: '0.9rem',
-                    fontWeight: isActive ? 600 : 400,
-                    fontFamily: 'Poppins, sans-serif',
-                  }}>
-                    {item.label}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
+            {/* Link para Central de Dashboards */}
+            <a
+              href="/"
+              className={`
+                flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-white/5
+                ${(isCollapsed && !isMobile) ? 'justify-center p-2.5 w-full' : 'gap-3 px-4 py-2.5 w-full'}
+              `}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                textDecoration: 'none',
+              }}
+              title="Central de Dashboards"
+            >
+              <Home size={20} strokeWidth={2} />
+              {(!isCollapsed || isMobile) && <span>Central de Dashboards</span>}
+            </a>
 
-        {/* Seção de Filtros */}
-        {(!isCollapsed || isMobile) && onFiltrosChange && filtros && (
-          <>
-            <hr style={{ border: 'none', borderTop: '1px solid #333', margin: '0 16px' }} />
-            <div style={{ padding: '0 16px', flex: 1 }}>
-              <FilterPanel
-                filtros={filtros}
-                onFiltrosChange={handleFiltrosChange}
-              />
-            </div>
-          </>
-        )}
-
-        {/* Espaçador flexível */}
-        <div style={{ flex: 1 }} />
-
-        {/* Footer da Sidebar */}
-        <div style={{
-          padding: '16px 8px',
-          borderTop: '1px solid #333',
-        }}>
-          <Link
-            href="/"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px',
-              borderRadius: '8px',
-              color: '#adb5bd',
-              textDecoration: 'none',
-              transition: 'all 0.2s',
-            }}
-          >
-            <Home size={20} />
-            {(!isCollapsed || isMobile) && (
-              <span style={{ fontSize: '0.9rem', fontFamily: 'Poppins, sans-serif' }}>
-                Central
-              </span>
-            )}
-          </Link>
-          
-          <button
-            onClick={handleLogout}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '12px',
-              borderRadius: '8px',
-              color: '#adb5bd',
-              backgroundColor: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              width: '100%',
-              textAlign: 'left',
-              transition: 'all 0.2s',
-            }}
-          >
-            <LogOut size={20} />
-            {(!isCollapsed || isMobile) && (
-              <span style={{ fontSize: '0.9rem', fontFamily: 'Poppins, sans-serif' }}>
-                Sair
-              </span>
-            )}
-          </button>
+            {/* Botão de Logout */}
+            <button
+              onClick={handleLogout}
+              className={`
+                flex items-center rounded-lg transition-all duration-200 text-gray-400 border border-gray-600/50 hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/50
+                ${(isCollapsed && !isMobile) ? 'justify-center p-2.5 w-full mt-2' : 'gap-3 px-4 py-2.5 w-full mt-2'}
+              `}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                backgroundColor: 'transparent',
+              }}
+              title={(isCollapsed && !isMobile) ? 'Sair' : undefined}
+            >
+              <LogOut size={20} strokeWidth={2} />
+              {(!isCollapsed || isMobile) && <span>Sair</span>}
+            </button>
+          </div>
         </div>
       </aside>
 
       {/* Conteúdo Principal */}
       <main style={{
         flex: 1,
-        marginLeft: isMobile ? 0 : (isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED),
-        width: isMobile ? '100%' : `calc(100% - ${isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED}px)`,
+        marginLeft: isMobile ? 0 : sidebarWidth,
+        width: isMobile ? '100%' : `calc(100% - ${sidebarWidth}px)`,
         transition: 'margin-left 0.3s ease, width 0.3s ease',
         minHeight: '100vh',
         backgroundColor: '#212529',
