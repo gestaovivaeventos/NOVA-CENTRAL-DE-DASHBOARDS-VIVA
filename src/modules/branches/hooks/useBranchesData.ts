@@ -13,6 +13,8 @@ interface UseBranchesDataReturn {
   error: string | null;
   refetch: () => Promise<void>;
   lastUpdate: Date | null;
+  setReleases: React.Dispatch<React.SetStateAction<Release[]>>;
+  setBranches: React.Dispatch<React.SetStateAction<Branch[]>>;
 }
 
 export function useBranchesData(): UseBranchesDataReturn {
@@ -61,5 +63,5 @@ export function useBranchesData(): UseBranchesDataReturn {
     await fetchData(true);
   }, [fetchData]);
 
-  return { releases, branches, loading, error, refetch, lastUpdate };
+  return { releases, branches, loading, error, refetch, lastUpdate, setReleases, setBranches };
 }

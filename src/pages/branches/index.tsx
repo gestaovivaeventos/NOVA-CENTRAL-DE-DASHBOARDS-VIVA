@@ -30,13 +30,34 @@ import {
 import type { KanbanStatus } from '@/modules/branches/types';
 import { getProximaVersao, gerarNomeRelease, getDataAtual } from '@/modules/branches/utils';
 
+/** Converte data DD.MM.YYYY em timestamp para ordenação */
+function parseDataToTimestamp(data: string): number {
+  if (!data) return 0;
+  const parts = data.split('.');
+  if (parts.length !== 3) return 0;
+  const [dia, mes, ano] = parts;
+  return new Date(Number(ano), Number(mes) - 1, Number(dia)).getTime();
+}
+
+/** Ordena itens da coluna 'concluida' do mais recente ao mais antigo */
+function sortByEntrega<T extends { status: string; dataEntrega?: string; dataCriacao: string }>(items: T[], status: string): T[] {
+  if (status === 'concluida') {
+    return [...items].sort((a, b) => {
+      const tA = parseDataToTimestamp((a as any).dataEntrega || a.dataCriacao);
+      const tB = parseDataToTimestamp((b as any).dataEntrega || b.dataCriacao);
+      return tB - tA; // mais recente primeiro
+    });
+  }
+  return items;
+}
+
 const SIDEBAR_WIDTH_EXPANDED = 260;
 const SIDEBAR_WIDTH_COLLAPSED = 60;
 
 export default function BranchesPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
-  const { releases, branches, loading, error, refetch } = useBranchesData();
+  const { releases, branches, loading, error, refetch, setReleases, setBranches } = useBranchesData();
   const {
     creating,
     updating,
@@ -152,6 +173,47 @@ export default function BranchesPage() {
     if (ok) await refetch();
     return ok;
   }, [updateStatus, updateStatusWithTracking, refetch, user]);
+
+  // Handler optimistic para drag-and-drop (move o card instantaneamente)
+  const handleDragUpdateStatus = useCallback(async (id: string, newStatus: KanbanStatus) => {
+    // Salva snapshots para rollback
+    const prevReleases = [...releases];
+    const prevBranches = [...branches];
+
+    // Optimistic update — move o card imediatamente na UI
+    const isRelease = releases.some(r => r.id === id);
+    if (isRelease) {
+      setReleases(prev => prev.map(r => r.id === id ? { ...r, status: newStatus } : r));
+    } else {
+      setBranches(prev => prev.map(b => b.id === id ? { ...b, status: newStatus } : b));
+    }
+
+    // Chama API em background
+    let ok: boolean;
+    try {
+      if ((newStatus === 'aprovada' || newStatus === 'concluida') && user) {
+        ok = await updateStatusWithTracking(id, newStatus, {
+          aprovadoPor: user.username,
+          aprovadoPorNome: user.firstName || user.username,
+        });
+      } else {
+        ok = await updateStatus(id, newStatus);
+      }
+
+      if (!ok) {
+        // Rollback se falhou
+        setReleases(prevReleases);
+        setBranches(prevBranches);
+      } else {
+        // Refetch silencioso para sincronizar dados completos (sem bloquear UI)
+        refetch();
+      }
+    } catch {
+      // Rollback em caso de erro
+      setReleases(prevReleases);
+      setBranches(prevBranches);
+    }
+  }, [releases, branches, setReleases, setBranches, updateStatus, updateStatusWithTracking, refetch, user]);
 
   // Handler para salvar todos os campos de uma vez (modal de edição)
   const handleSaveAll = useCallback(async (payload: {
@@ -379,11 +441,12 @@ export default function BranchesPage() {
                   </button>
                 </div>
 
-                <KanbanBoard columns={KANBAN_COLUMNS_RELEASE} counts={releaseCounts} onDrop={(id, newStatus) => handleUpdateStatus(id, newStatus)}>
+                <KanbanBoard columns={KANBAN_COLUMNS_RELEASE} counts={releaseCounts} onDrop={(id, newStatus) => handleDragUpdateStatus(id, newStatus)}>
                   {(status: KanbanStatus) =>
-                    filteredReleases
-                      .filter(r => r.status === status)
-                      .map(release => (
+                    sortByEntrega(
+                      filteredReleases.filter(r => r.status === status),
+                      status
+                    ).map(release => (
                         <ReleaseCard
                           key={release.id}
                           release={release}
@@ -416,11 +479,12 @@ export default function BranchesPage() {
                   </h2>
                 </div>
 
-                <KanbanBoard columns={KANBAN_COLUMNS_BRANCH} counts={branchCounts} onDrop={(id, newStatus) => handleUpdateStatus(id, newStatus)}>
+                <KanbanBoard columns={KANBAN_COLUMNS_BRANCH} counts={branchCounts} onDrop={(id, newStatus) => handleDragUpdateStatus(id, newStatus)}>
                   {(status: KanbanStatus) =>
-                    filteredBranches
-                      .filter(b => b.status === status)
-                      .map(branch => (
+                    sortByEntrega(
+                      filteredBranches.filter(b => b.status === status),
+                      status
+                    ).map(branch => (
                         <BranchCard
                           key={branch.id}
                           branch={branch}
