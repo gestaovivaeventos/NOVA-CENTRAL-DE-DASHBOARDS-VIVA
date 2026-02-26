@@ -462,45 +462,40 @@ export default function RecebimentoFeeFundo({ fundos, loading = false }: Recebim
                           </div>
                           
                           {/* Colunas de valores */}
-                          <div className="flex-1 grid grid-cols-8 gap-2">
-                            <div className="text-center">
+                          <div className="flex-1 grid grid-cols-7 gap-2">
+                            <div className="text-left">
                               <p className="text-[10px] text-gray-500 uppercase">Dt. Cadastro</p>
                               <p className="text-sm font-medium text-gray-300">{fundo.dataContrato || '-'}</p>
                             </div>
                             
-                            <div className="text-center">
+                            <div className="text-left">
                               <p className="text-[10px] text-gray-500 uppercase">Dt. Baile</p>
                               <p className="text-sm font-medium text-gray-300">{fundo.dataBaile || '-'}</p>
                             </div>
                             
-                            <div className="text-right">
+                            <div className="text-left">
                               <p className="text-[10px] text-gray-500 uppercase">Valor FEE</p>
                               <p className="text-sm font-medium text-white">{formatarMoeda(fundo.feeTotal)}</p>
                             </div>
                             
-                            <div className="text-right">
-                              <p className="text-[10px] text-gray-500 uppercase">FEE Antecip.</p>
-                              <p className="text-sm font-medium text-cyan-400">{formatarMoeda(fundo.feeAntecipacaoTotal)}</p>
-                            </div>
-                            
-                            <div className="text-right">
+                            <div className="text-left">
                               <p className="text-[10px] text-gray-500 uppercase">Antecip. Receb.</p>
                               <p className="text-sm font-medium text-emerald-400">{formatarMoeda(fundo.feeAntecipacaoRecebido)}</p>
                             </div>
                             
-                            <div className="text-right">
+                            <div className="text-left">
                               <p className="text-[10px] text-gray-500 uppercase">% Receb.</p>
                               <p className={`text-sm font-bold ${percentualRecebido >= 100 ? 'text-blue-400' : percentualRecebido >= 50 ? 'text-emerald-400' : 'text-yellow-400'}`}>
                                 {formatarPercentual(percentualRecebido)}
                               </p>
                             </div>
                             
-                            <div className="text-right">
+                            <div className="text-left">
                               <p className="text-[10px] text-gray-500 uppercase">Falta Receber</p>
                               <p className="text-sm font-medium text-orange-400">{formatarMoeda(faltaReceber)}</p>
                             </div>
                             
-                            <div className="text-right">
+                            <div className="text-left">
                               <p className="text-[10px] text-gray-500 uppercase">Saldo Fundo</p>
                               <p className="text-sm font-medium text-blue-400">{formatarMoeda(fundo.saldoFundo)}</p>
                             </div>
