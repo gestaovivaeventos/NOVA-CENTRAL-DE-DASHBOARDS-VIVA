@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@types/react-simple-maps": "^3.0.6",
+    "@vercel/analytics": "^1.6.1",
     "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.1",
     "chartjs-adapter-date-fns": "^3.0.0",

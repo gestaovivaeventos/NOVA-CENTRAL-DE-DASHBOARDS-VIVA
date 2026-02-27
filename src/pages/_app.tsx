@@ -1,6 +1,7 @@
 import '@/styles/globals.css';
 import type { AppProps } from 'next/app';
 import Head from 'next/head';
+import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from '@/context/AuthContext';
 import { SheetsDataProvider, ParametrosProvider } from '@/modules/pex';
 import { Shell } from '@/modules/central';
@@ -58,6 +59,7 @@ export default function App({ Component, pageProps }: AppProps) {
           </ParametrosProvider>
         </SheetsDataProvider>
       </AuthProvider>
+      <Analytics />
     </>
   );
 }
