@@ -60,7 +60,15 @@ export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvoluc
           usePointStyle: true, pointStyleWidth: 12,
         },
       },
-      datalabels: { display: false },
+      datalabels: {
+        display: true,
+        color: '#F8F9FA',
+        font: { size: 10, weight: 'bold' as const, family: "'Poppins', sans-serif" },
+        anchor: 'end' as const,
+        align: 'top' as const,
+        offset: 4,
+        formatter: (v: number) => fmtNum(v),
+      },
       tooltip: {
         backgroundColor: '#1a1d21',
         borderColor: '#495057',

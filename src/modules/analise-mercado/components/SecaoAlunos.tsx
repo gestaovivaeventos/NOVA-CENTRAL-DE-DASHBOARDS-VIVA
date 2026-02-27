@@ -386,11 +386,19 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
               <Bar data={instBarData} options={{
                 ...miniChartOpts,
                 indexAxis: 'x' as const,
-                plugins: { ...miniChartOpts.plugins, datalabels: {
-                  color: '#F8F9FA', font: { size: 8, weight: 'bold' as const },
-                  anchor: 'end' as const, align: 'top' as const,
-                  formatter: (v: number) => fmtInteiro(v),
-                } },
+                plugins: { ...miniChartOpts.plugins,
+                  tooltip: { ...miniChartOpts.plugins.tooltip,
+                    callbacks: {
+                      ...miniChartOpts.plugins.tooltip.callbacks,
+                      title: (items: any[]) => items.length ? top5Inst[items[0].dataIndex]?.nome || '' : '',
+                    },
+                  },
+                  datalabels: {
+                    color: '#F8F9FA', font: { size: 8, weight: 'bold' as const },
+                    anchor: 'end' as const, align: 'top' as const,
+                    formatter: (v: number) => fmtInteiro(v),
+                  },
+                },
               }} />
             </div>
             {/* Tabela completa */}

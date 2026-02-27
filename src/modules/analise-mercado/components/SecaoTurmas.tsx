@@ -112,15 +112,6 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
         tension: 0.4, fill: true,
         pointRadius: 4, pointBackgroundColor: CORES.laranja, borderWidth: 2,
       },
-      {
-        label: 'Presencial',
-        data: evolucaoTurmas.map(e => e.turmasPresencial),
-        borderColor: CORES.verde,
-        backgroundColor: 'transparent',
-        tension: 0.4, fill: false,
-        pointRadius: 3, pointBackgroundColor: CORES.verde, borderWidth: 1.5,
-        borderDash: [4, 3],
-      },
     ],
   };
 
@@ -259,7 +250,6 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
           cor={CORES.verde}
           icone={<BarChart3 size={16} />}
           resumo={[
-            { label: 'Presencial', valor: fmtNum(ultimoAno?.turmasPresencial || 0), cor: CORES.verde },
             { label: 'Pública', valor: fmtNum(ultimoAno?.turmasPublica || 0), cor: CORES.azul },
             { label: 'Privada', valor: fmtNum(ultimoAno?.turmasPrivada || 0), cor: CORES.laranja },
           ]}
@@ -332,7 +322,7 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2D3238' }}>
-                  {['Ano', 'Total Turmas', 'Média/Turma', 'Mediana', 'Presencial', 'Pública', 'Privada'].map((h, i) => (
+                  {['Ano', 'Total Turmas', 'Média/Turma', 'Mediana', 'Pública', 'Privada'].map((h, i) => (
                     <th key={h} style={{
                       color: '#6C757D', fontWeight: 600, padding: '10px 10px',
                       textAlign: i === 0 ? 'left' : 'right', fontSize: '0.7rem',
@@ -364,7 +354,6 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
                       </td>
                       <td style={{ padding: '10px', textAlign: 'right', color: CORES.azul, fontWeight: 600 }}>{e.mediaPorTurma}</td>
                       <td style={{ padding: '10px', textAlign: 'right', color: CORES.amarelo, fontWeight: 600 }}>{e.medianaPorTurma}</td>
-                      <td style={{ padding: '10px', textAlign: 'right', color: '#ADB5BD' }}>{fmtInteiro(e.turmasPresencial)}</td>
                       <td style={{ padding: '10px', textAlign: 'right', color: '#ADB5BD' }}>{fmtInteiro(e.turmasPublica)}</td>
                       <td style={{ padding: '10px', textAlign: 'right', color: '#ADB5BD' }}>{fmtInteiro(e.turmasPrivada)}</td>
                     </tr>

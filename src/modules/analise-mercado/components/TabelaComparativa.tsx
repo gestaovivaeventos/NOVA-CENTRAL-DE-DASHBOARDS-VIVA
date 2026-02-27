@@ -170,6 +170,38 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                         })}
                       </tr>
 
+                      {/* Pública → Presencial */}
+                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        <td style={{
+                          padding: '5px 14px 5px 72px',
+                          position: 'sticky', left: 0, zIndex: 1,
+                          backgroundColor: '#343A40',
+                          color: CORES.verde, fontSize: '0.68rem', fontWeight: 400,
+                        }}>
+                          ├ Presencial
+                        </td>
+                        {dados.map((e, i) => {
+                          const vals = dados.map(d => d.presencial);
+                          return renderCell(e.presencial, variacao(vals, i), CORES.verde, true);
+                        })}
+                      </tr>
+
+                      {/* Pública → EAD */}
+                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        <td style={{
+                          padding: '5px 14px 5px 72px',
+                          position: 'sticky', left: 0, zIndex: 1,
+                          backgroundColor: '#343A40',
+                          color: CORES.roxo, fontSize: '0.68rem', fontWeight: 400,
+                        }}>
+                          └ EAD
+                        </td>
+                        {dados.map((e, i) => {
+                          const vals = dados.map(d => d.ead);
+                          return renderCell(e.ead, variacao(vals, i), CORES.roxo, true);
+                        })}
+                      </tr>
+
                       {/* Privada */}
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td style={{
@@ -186,13 +218,13 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                         })}
                       </tr>
 
-                      {/* Presencial */}
+                      {/* Privada → Presencial */}
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td style={{
-                          padding: '7px 14px 7px 48px',
+                          padding: '5px 14px 5px 72px',
                           position: 'sticky', left: 0, zIndex: 1,
                           backgroundColor: '#343A40',
-                          color: CORES.verde, fontSize: '0.72rem', fontWeight: 500,
+                          color: CORES.verde, fontSize: '0.68rem', fontWeight: 400,
                         }}>
                           ├ Presencial
                         </td>
@@ -202,13 +234,13 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                         })}
                       </tr>
 
-                      {/* EAD */}
+                      {/* Privada → EAD */}
                       <tr style={{ borderBottom: '1px solid #3D4349', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td style={{
-                          padding: '7px 14px 7px 48px',
+                          padding: '5px 14px 5px 72px',
                           position: 'sticky', left: 0, zIndex: 1,
                           backgroundColor: '#343A40',
-                          color: CORES.roxo, fontSize: '0.72rem', fontWeight: 500,
+                          color: CORES.roxo, fontSize: '0.68rem', fontWeight: 400,
                         }}>
                           └ EAD
                         </td>

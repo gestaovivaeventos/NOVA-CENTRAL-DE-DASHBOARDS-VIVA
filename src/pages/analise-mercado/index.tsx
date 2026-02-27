@@ -137,7 +137,8 @@ export default function AnaliseMercadoPage() {
           ))}
         </div>
 
-        {/* Seletor de Métrica (Matriculados / Concluintes / Ingressantes) */}
+        {/* Seletor de Métrica (apenas na visão Alunos) */}
+        {visaoAtiva === 'alunos' && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           marginBottom: 16,
@@ -177,6 +178,7 @@ export default function AnaliseMercadoPage() {
             );
           })}
         </div>
+        )}
 
         {/* Tabs: Alunos / Turmas */}
         <div style={{

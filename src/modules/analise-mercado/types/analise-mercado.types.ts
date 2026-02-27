@@ -108,7 +108,6 @@ export interface DadosTurma {
   totalTurmas: number;
   mediaPorTurma: number;
   medianaPorTurma: number;
-  turmasPresencial: number;
   turmasPublica: number;
   turmasPrivada: number;
 }

@@ -308,7 +308,7 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                   {/* ─── Detalhe expandido ─── */}
                   {isOpen && (
                     <>
-                      {/* BLOCO: Distribuição por Tipo de Instituição */}
+                      {/* BLOCO: Distribuição por Tipo de Instituição + Modalidade aninhada */}
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.015)' }}>
                         <td colSpan={2} style={{
                           padding: '8px 14px 4px 48px', color: '#6C757D',
@@ -320,60 +320,104 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                         </td>
                         <td colSpan={4}></td>
                       </tr>
-                      {[
-                        { label: 'Pública', valor: curso.publica, cor: CORES.azul },
-                        { label: 'Privada', valor: curso.privada, cor: CORES.laranja },
-                      ].map(item => (
-                        <tr key={item.label} style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
-                          <td colSpan={2} style={{
-                            padding: '4px 14px 4px 60px', color: item.cor, fontSize: '0.72rem',
-                            position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
-                          }}>
-                            {item.label}
-                          </td>
-                          <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
-                            {fmtNum(item.valor)}
-                          </td>
-                          <td style={{ padding: '4px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.68rem' }}>
-                            {fmtPct((item.valor / (curso.matriculas || 1)) * 100)}
-                          </td>
-                          <td colSpan={2}></td>
-                        </tr>
-                      ))}
 
-                      {/* BLOCO: Distribuição por Modalidade */}
-                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.015)' }}>
+                      {/* ── Pública ── */}
+                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td colSpan={2} style={{
-                          padding: '10px 14px 4px 48px', color: '#6C757D',
-                          fontSize: '0.68rem', fontWeight: 600, textTransform: 'uppercase',
-                          letterSpacing: '0.03em',
+                          padding: '4px 14px 4px 60px', color: CORES.azul, fontSize: '0.72rem', fontWeight: 500,
                           position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
                         }}>
-                          Por Modalidade
+                          ├ Pública
                         </td>
-                        <td colSpan={4}></td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
+                          {fmtNum(curso.publica)}
+                        </td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.68rem' }}>
+                          {fmtPct((curso.publica / (curso.matriculas || 1)) * 100)}
+                        </td>
+                        <td colSpan={2}></td>
                       </tr>
-                      {[
-                        { label: 'Presencial', valor: curso.presencial, cor: CORES.verde },
-                        { label: 'EAD', valor: curso.ead, cor: CORES.roxo },
-                      ].map(item => (
-                        <tr key={item.label} style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
-                          <td colSpan={2} style={{
-                            padding: '4px 14px 4px 60px', color: item.cor, fontSize: '0.72rem',
-                            position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
-                          }}>
-                            {item.label}
-                          </td>
-                          <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
-                            {fmtNum(item.valor)}
-                          </td>
-                          <td style={{ padding: '4px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.68rem' }}>
-                            {item.valor > 0 ? fmtPct((item.valor / (curso.matriculas || 1)) * 100) : '—'}
-                          </td>
-                          <td colSpan={2}></td>
-                        </tr>
-                      ))}
+                      {/* Pública → Presencial */}
+                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        <td colSpan={2} style={{
+                          padding: '3px 14px 3px 82px', color: CORES.verde, fontSize: '0.68rem', fontWeight: 400,
+                          position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
+                        }}>
+                          ├ Presencial
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.presencial)}
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
+                          {curso.presencial > 0 ? fmtPct((curso.presencial / (curso.matriculas || 1)) * 100) : '—'}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
+                      {/* Pública → EAD */}
+                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        <td colSpan={2} style={{
+                          padding: '3px 14px 3px 82px', color: CORES.roxo, fontSize: '0.68rem', fontWeight: 400,
+                          position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
+                        }}>
+                          └ EAD
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.ead)}
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
+                          {curso.ead > 0 ? fmtPct((curso.ead / (curso.matriculas || 1)) * 100) : '—'}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
 
+                      {/* ── Privada ── */}
+                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        <td colSpan={2} style={{
+                          padding: '4px 14px 4px 60px', color: CORES.laranja, fontSize: '0.72rem', fontWeight: 500,
+                          position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
+                        }}>
+                          ├ Privada
+                        </td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
+                          {fmtNum(curso.privada)}
+                        </td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.68rem' }}>
+                          {fmtPct((curso.privada / (curso.matriculas || 1)) * 100)}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
+                      {/* Privada → Presencial */}
+                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        <td colSpan={2} style={{
+                          padding: '3px 14px 3px 82px', color: CORES.verde, fontSize: '0.68rem', fontWeight: 400,
+                          position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
+                        }}>
+                          ├ Presencial
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.presencial)}
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
+                          {curso.presencial > 0 ? fmtPct((curso.presencial / (curso.matriculas || 1)) * 100) : '—'}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
+                      {/* Privada → EAD */}
+                      <tr style={{ borderBottom: '1px solid #3D4349', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        <td colSpan={2} style={{
+                          padding: '3px 14px 3px 82px', color: CORES.roxo, fontSize: '0.68rem', fontWeight: 400,
+                          position: 'sticky', left: 0, zIndex: 1, backgroundColor: '#343A40',
+                        }}>
+                          └ EAD
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.ead)}
+                        </td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
+                          {curso.ead > 0 ? fmtPct((curso.ead / (curso.matriculas || 1)) * 100) : '—'}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
                     </>
                   )}
                 </React.Fragment>

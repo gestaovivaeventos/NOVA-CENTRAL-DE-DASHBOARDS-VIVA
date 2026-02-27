@@ -22,9 +22,9 @@ const indicadores: IndicadorCard[] = [
   { id: 'mat', titulo: 'Matrículas Ativas', valor: 9_750_000, variacao: 1.8, tendencia: 'up', cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
   { id: 'conc', titulo: 'Concluintes/Ano', valor: 1_480_000, variacao: 3.5, tendencia: 'up', cor: '#10B981', subtitulo: 'Potenciais Formandos' },
   { id: 'ing', titulo: 'Ingressantes/Ano', valor: 3_690_000, variacao: 1.1, tendencia: 'up', cor: '#8B5CF6', subtitulo: 'Novos alunos' },
-  { id: 'turmas', titulo: 'Turmas Estimadas', valor: 46_800, variacao: 4.0, tendencia: 'up', cor: '#FF6600', subtitulo: 'TAM — Contratos potenciais' },
   { id: 'ies', titulo: 'Ensino Superior', valor: 2_574, variacao: -0.8, tendencia: 'down', cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
   { id: 'cursos', titulo: 'Cursos Ativos', valor: 44_580, variacao: 1.9, tendencia: 'up', cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
+  { id: 'turmas', titulo: 'Turmas Estimadas', valor: 46_800, variacao: 4.0, tendencia: 'up', cor: '#FF6600', subtitulo: 'TAM — Contratos potenciais' },
 ];
 
 // ─── Evolução Alunos (INEP 2022–2024) ──────
@@ -110,9 +110,9 @@ const instituicoes: DadosInstituicao[] = [
 
 // ─── Evolução de Turmas (INEP 2022–2024) ───
 const evolucaoTurmas: DadosTurma[] = [
-  { ano: 2022, totalTurmas: 43_200, mediaPorTurma: 31, medianaPorTurma: 29, turmasPresencial: 20_200, turmasPublica: 9_400, turmasPrivada: 33_800 },
-  { ano: 2023, totalTurmas: 45_000, mediaPorTurma: 32, medianaPorTurma: 29, turmasPresencial: 19_500, turmasPublica: 9_350, turmasPrivada: 35_650 },
-  { ano: 2024, totalTurmas: 46_800, mediaPorTurma: 32, medianaPorTurma: 30, turmasPresencial: 19_000, turmasPublica: 9_300, turmasPrivada: 37_500 },
+  { ano: 2022, totalTurmas: 43_200, mediaPorTurma: 31, medianaPorTurma: 29, turmasPublica: 9_400, turmasPrivada: 33_800 },
+  { ano: 2023, totalTurmas: 45_000, mediaPorTurma: 32, medianaPorTurma: 29, turmasPublica: 9_350, turmasPrivada: 35_650 },
+  { ano: 2024, totalTurmas: 46_800, mediaPorTurma: 32, medianaPorTurma: 30, turmasPublica: 9_300, turmasPrivada: 37_500 },
 ];
 
 // ─── Grupos Educacionais ────────────────────
