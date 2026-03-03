@@ -93,20 +93,14 @@ const ORIGINAL_MENU: MenuItem[] = [
     ],
   },
   {
-    id: 'dashboards', label: 'Dashboards', icon: 'fa-dashboard',
-    children: [
-      { id: 'dash-vendas-mv', label: 'Dashboard de vendas', icon: '', href: 'https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_vendas' },
-      { id: 'dash-clientes-mv', label: 'Dashboard de clientes', icon: '', href: 'https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_clientes' },
-      { id: 'dash-nps-mv', label: 'Dashboard de pesquisas (NPS)', icon: '', href: 'https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_pesquisa' },
-      { id: 'dash-eventos-mv', label: 'Dashboard de eventos', icon: '', href: 'https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_eventos' },
-    ],
+    id: 'dashboards', label: 'Central de Dashboards', icon: 'fa-dashboard',
+    href: '/',
   },
   {
     id: 'clientes', label: 'Clientes', icon: 'fa-user-plus',
     children: [
       { id: 'ger-fundos', label: 'Gerenciar Fundos', icon: '', children: [
         { id: 'fundos', label: 'Fundos', icon: 'fa-circle-o', href: 'https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_listar' },
-        { id: 'dash-fundo', label: 'Dashboard Fundo', icon: 'fa-circle-o', href: 'https://mundovivaextranet.vivaeventos.com.br/dashboardFundo' },
         { id: 'req-pgto', label: 'Req de Pagamento', icon: 'fa-circle-o', href: 'https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_requisicao_pagamento_listar' },
         { id: 'extrato', label: 'Extrato', icon: 'fa-circle-o', href: 'https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_extrato' },
         { id: 'desp-contr', label: 'Despesas Contratuais', icon: 'fa-circle-o', href: 'https://mundovivaextranet.vivaeventos.com.br/despesas-contratuais/listar' },
@@ -202,71 +196,105 @@ const ORIGINAL_MENU: MenuItem[] = [
   },
 ];
 
-// ====== MENU NOVO: Ferramentas UNI agrupadas por time > categoria ======
-function buildFerramentasMenu(): MenuItem[] {
-  const timeConfig: Record<string, { label: string; icon: string }> = {
-    'VENDAS': { label: '🚀 Vendas', icon: 'fa-rocket' },
-    'RELACIONAMENTO': { label: '🤝 Relacionamento', icon: 'fa-handshake-o' },
-    'ATENDIMENTO': { label: '📞 Atendimento', icon: 'fa-phone' },
-    'PRODUÇÃO': { label: '🎪 Produção', icon: 'fa-calendar' },
-    'PERFORMANCE': { label: '📈 Performance', icon: 'fa-line-chart' },
-    'GP': { label: '👥 Gestão de Pessoas', icon: 'fa-group' },
-    'ADMINISTRATIVO': { label: '🏢 Administrativo', icon: 'fa-briefcase' },
-  };
+// ====== INTEGRAÇÃO: Ferramentas da planilha nos menus existentes ======
 
-  const catLabels: Record<string, string> = {
-    'DASHBOARDS': '📊 Dashboards',
-    'FERRAMENTAS (GESTÃO PROCESSO)': '⚙️ Gestão de Processo',
-    'FERRAMENTAS (SISTEMA)': '🖥️ Sistemas / Web Apps',
-    'FERRAMENTAS (OPERACIONAL)': '🛠️ Operacional',
-    'FERRAMENTAS (ABRIR CHAMADO)': '🎫 Abrir Chamado',
-    'FERRAMENTAS (ATENDIMENTO ALUNO)': '👤 Atendimento Aluno',
-    'DOCUMENTOS PADRÕES': '📄 Documentos Padrões',
-    'INSTRUÇÕES DE TRABALHO (TREINAMENTO)': '🎓 Treinamento',
-    'INSTRUÇÕES DE TRABALHO (MATERIAIS DE APOIO)': '📚 Materiais de Apoio',
-  };
+// Mapeamento: TIME da planilha → id do menu existente
+const TIME_TO_MENU_ID: Record<string, string> = {
+  'VENDAS': 'comercial',
+  'RELACIONAMENTO': 'relacionamento',
+  'ADMINISTRATIVO': 'admin-unidade',
+};
 
-  const times = ['VENDAS', 'RELACIONAMENTO', 'ATENDIMENTO', 'PRODUÇÃO', 'PERFORMANCE', 'GP', 'ADMINISTRATIVO'];
+// Times que viram menus novos (não existem no MV original)
+const NEW_MENU_TIMES: { time: string; label: string; icon: string }[] = [
+  { time: 'ATENDIMENTO', label: 'Atendimento', icon: 'fa-headphones' },
+  { time: 'PRODUÇÃO', label: 'Produção', icon: 'fa-calendar-check-o' },
+  { time: 'PERFORMANCE', label: 'Performance', icon: 'fa-line-chart' },
+  { time: 'GP', label: 'Gestão de Pessoas', icon: 'fa-group' },
+];
 
-  return times.map(time => {
-    const items = ferramentasData.filter(f => f.time === time);
-    const catMap: Record<string, Ferramenta[]> = {};
-    items.forEach(f => {
-      const cat = f.categoria || 'OUTROS';
-      if (!catMap[cat]) catMap[cat] = [];
-      catMap[cat].push(f);
-    });
+const CAT_LABELS: Record<string, string> = {
+  'FERRAMENTAS (GESTÃO PROCESSO)': 'Gestão de Processo',
+  'FERRAMENTAS (SISTEMA)': 'Sistemas / Web Apps',
+  'FERRAMENTAS (OPERACIONAL)': 'Operacional',
+  'FERRAMENTAS (ABRIR CHAMADO)': 'Abrir Chamado',
+  'FERRAMENTAS (ATENDIMENTO ALUNO)': 'Atendimento Aluno',
+  'DOCUMENTOS PADRÕES': 'Documentos Padrões',
+  'INSTRUÇÕES DE TRABALHO (TREINAMENTO)': 'Treinamento',
+  'INSTRUÇÕES DE TRABALHO (MATERIAIS DE APOIO)': 'Materiais de Apoio',
+};
 
-    const children: MenuItem[] = Object.entries(catMap).map(([cat, ferramentas]) => {
-      const catLabel = catLabels[cat] || cat;
-      const catChildren = ferramentas
-        .filter(f => f.link && f.link.startsWith('http'))
-        .map((f, idx) => ({
-          id: `${time}-${cat}-${idx}`,
-          label: f.nome,
-          icon: 'fa-circle-o',
-          href: f.link,
-          target: '_blank' as string,
-        }));
+/** Gera submenus de ferramentas agrupados por categoria para um time */
+function getFerramentasForTime(time: string): MenuItem[] {
+  const items = ferramentasData.filter(f =>
+    f.time === time &&
+    f.categoria !== 'DASHBOARDS' && // dashboards vão pra Central
+    f.link && f.link.startsWith('http')
+  );
 
-      if (catChildren.length === 0) return null;
+  const catMap: Record<string, Ferramenta[]> = {};
+  items.forEach(f => {
+    const cat = f.categoria || 'OUTROS';
+    if (!catMap[cat]) catMap[cat] = [];
+    catMap[cat].push(f);
+  });
 
+  return Object.entries(catMap)
+    .map(([cat, ferramentas]) => {
+      const label = CAT_LABELS[cat] || cat;
+      const children = ferramentas.map((f, idx) => ({
+        id: `ferr-${time}-${cat}-${idx}`,
+        label: f.nome,
+        icon: 'fa-circle-o',
+        href: f.link,
+        target: '_blank' as string,
+      }));
       return {
-        id: `${time}-${cat}`,
-        label: catLabel,
+        id: `ferr-cat-${time}-${cat}`,
+        label: `🔧 ${label}`,
         icon: '',
-        children: catChildren,
+        children,
       };
-    }).filter(Boolean) as MenuItem[];
+    })
+    .filter(c => c.children.length > 0);
+}
 
-    const config = timeConfig[time] || { label: time, icon: 'fa-folder' };
+/** Constroi menu integrado: original + ferramentas injetadas */
+function buildIntegratedMenu(): MenuItem[] {
+  // Enriquecer menus existentes com ferramentas do time correspondente
+  const menu = ORIGINAL_MENU.map(item => {
+    const time = Object.entries(TIME_TO_MENU_ID).find(([, menuId]) => menuId === item.id)?.[0];
+    if (!time) return item;
+
+    const ferrChildren = getFerramentasForTime(time);
+    if (ferrChildren.length === 0) return item;
+
     return {
-      id: `ferramentas-${time.toLowerCase()}`,
-      label: config.label,
-      icon: config.icon,
-      children,
+      ...item,
+      children: [...(item.children || []), ...ferrChildren],
     };
   });
+
+  // Inserir menus novos antes de Administrativo Unidade
+  const adminIdx = menu.findIndex(m => m.id === 'admin-unidade');
+  const insertIdx = adminIdx >= 0 ? adminIdx : menu.length;
+
+  const newMenus: MenuItem[] = NEW_MENU_TIMES
+    .map(({ time, label, icon }) => {
+      const ferrChildren = getFerramentasForTime(time);
+      if (ferrChildren.length === 0) return null;
+      return {
+        id: `${time.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}-menu`,
+        label,
+        icon,
+        children: ferrChildren,
+      };
+    })
+    .filter(Boolean) as MenuItem[];
+
+  menu.splice(insertIdx, 0, ...newMenus);
+
+  return menu;
 }
 
 // ====== COMPONENTES DE SUBMENU ======
@@ -438,12 +466,25 @@ function MainMenuItem({ item }: { item: MenuItem }) {
 // ====== COMPONENTE PRINCIPAL ======
 export function MundoVivaMenu() {
   const [sidebarVisible, setSidebarVisible] = useState(true);
-  const [activeView, setActiveView] = useState<'home' | 'ferramentas'>('home');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarSearch, setSidebarSearch] = useState('');
 
-  const ferramentasMenu = useMemo(() => buildFerramentasMenu(), []);
+  const integratedMenu = useMemo(() => buildIntegratedMenu(), []);
 
-  // Busca
+  // Busca na sidebar (filtra ferramentas como resultados diretos)
+  const sidebarResults = useMemo(() => {
+    if (!sidebarSearch.trim()) return [];
+    const term = sidebarSearch.toLowerCase();
+    return ferramentasData.filter(f =>
+      f.link && f.link.startsWith('http') &&
+      (f.nome.toLowerCase().includes(term) ||
+       f.finalidade.toLowerCase().includes(term) ||
+       f.time.toLowerCase().includes(term) ||
+       f.categoria.toLowerCase().includes(term))
+    );
+  }, [sidebarSearch]);
+
+  // Busca no conteúdo principal
   const searchResults = useMemo(() => {
     if (!searchTerm.trim()) return [];
     const term = searchTerm.toLowerCase();
@@ -486,7 +527,7 @@ export function MundoVivaMenu() {
             transition: 'width 0.3s',
             flexShrink: 0,
           }}>
-            <a href="#" onClick={e => { e.preventDefault(); setActiveView('home'); }} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <a href="#" onClick={e => { e.preventDefault(); }} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
               <img
                 src="https://mundovivaextranet.vivaeventos.com.br/images/logo-extranet-menu.png"
                 alt="Mundo Viva"
@@ -537,64 +578,93 @@ export function MundoVivaMenu() {
               top: '50px',
               height: 'calc(100vh - 50px)',
             }}>
-              {/* Tabs: Menu Original vs Ferramentas UNI */}
-              <div style={{
-                display: 'flex',
-                borderBottom: '2px solid #1e3242',
-              }}>
-                <button
-                  onClick={() => { setActiveView('home'); setSearchTerm(''); }}
-                  style={{
-                    flex: 1,
-                    padding: '10px 8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: activeView === 'home' ? '#FF8537' : '#8ba5b5',
-                    backgroundColor: activeView === 'home' ? '#1d3040' : 'transparent',
-                    borderBottom: activeView === 'home' ? '2px solid #FF8537' : '2px solid transparent',
-                    transition: 'all 0.2s',
-                    fontFamily: "'Roboto', sans-serif",
-                  }}
-                >
-                  <i className="fa fa-home" style={{ marginRight: '4px' }} /> Menu MV
-                </button>
-                <button
-                  onClick={() => { setActiveView('ferramentas'); setSearchTerm(''); }}
-                  style={{
-                    flex: 1,
-                    padding: '10px 8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: activeView === 'ferramentas' ? '#FF8537' : '#8ba5b5',
-                    backgroundColor: activeView === 'ferramentas' ? '#1d3040' : 'transparent',
-                    borderBottom: activeView === 'ferramentas' ? '2px solid #FF8537' : '2px solid transparent',
-                    transition: 'all 0.2s',
-                    fontFamily: "'Roboto', sans-serif",
-                  }}
-                >
-                  <i className="fa fa-wrench" style={{ marginRight: '4px' }} /> Ferramentas
-                </button>
+              {/* Barra de busca no topo da sidebar */}
+              <div style={{ padding: '10px 10px 6px' }}>
+                <div style={{ position: 'relative' }}>
+                  <i className="fa fa-search" style={{
+                    position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
+                    color: '#6a8a9d', fontSize: '12px',
+                  }} />
+                  <input
+                    type="text"
+                    placeholder="Buscar no menu..."
+                    value={sidebarSearch}
+                    onChange={e => setSidebarSearch(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '7px 10px 7px 30px',
+                      fontSize: '12px',
+                      border: '1px solid #1e3242',
+                      borderRadius: '4px',
+                      backgroundColor: '#1d3040',
+                      color: '#c9dbe6',
+                      outline: 'none',
+                      boxSizing: 'border-box',
+                      fontFamily: "'Roboto', sans-serif",
+                    }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#FF8537'; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#1e3242'; }}
+                  />
+                  {sidebarSearch && (
+                    <button
+                      onClick={() => setSidebarSearch('')}
+                      style={{
+                        position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', color: '#6a8a9d', cursor: 'pointer',
+                        fontSize: '14px', padding: '2px',
+                      }}
+                    >
+                      <i className="fa fa-times" />
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {/* Nav list */}
-              <nav>
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {activeView === 'home' && ORIGINAL_MENU.map(item => (
-                    <MainMenuItem key={item.id} item={item} />
-                  ))}
-                  {activeView === 'ferramentas' && ferramentasMenu.map(group => (
-                    <MainMenuItem key={group.id} item={group} />
-                  ))}
-                </ul>
-              </nav>
+              {/* Resultados da busca na sidebar */}
+              {sidebarSearch.trim() ? (
+                <nav>
+                  <div style={{ padding: '4px 12px 8px', fontSize: '10px', color: '#6a8a9d', fontWeight: 600, textTransform: 'uppercase' }}>
+                    {sidebarResults.length} resultado(s)
+                  </div>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    {sidebarResults.map((item, idx) => (
+                      <li key={idx} style={{ borderBottom: '1px solid #1e3242' }}>
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            display: 'block',
+                            padding: '8px 14px',
+                            fontSize: '13px',
+                            color: '#c9dbe6',
+                            textDecoration: 'none',
+                            transition: 'all 0.15s',
+                            fontFamily: "'Roboto', sans-serif",
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1d3040'; e.currentTarget.style.color = '#fff'; }}
+                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#c9dbe6'; }}
+                        >
+                          <div style={{ fontWeight: 600, fontSize: '13px' }}>{item.nome}</div>
+                          <div style={{ fontSize: '10px', color: '#6a8a9d', marginTop: '2px' }}>
+                            {item.time} · {CAT_LABELS[item.categoria] || item.categoria}
+                            <i className="fa fa-external-link" style={{ marginLeft: '6px', fontSize: '9px', opacity: 0.5 }} />
+                          </div>
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
+              ) : (
+                /* Nav list integrado */
+                <nav>
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    {integratedMenu.map(item => (
+                      <MainMenuItem key={item.id} item={item} />
+                    ))}
+                  </ul>
+                </nav>
+              )}
 
               {/* Footer Sprint */}
               <div style={{
@@ -667,6 +737,8 @@ export function MundoVivaMenu() {
                     fontFamily: "'Roboto', sans-serif",
                     outline: 'none',
                     boxSizing: 'border-box',
+                    backgroundColor: '#fff',
+                    color: '#333',
                   }}
                   onFocus={e => { e.currentTarget.style.borderColor = '#4a7c9f'; }}
                   onBlur={e => { e.currentTarget.style.borderColor = '#ddd'; }}
@@ -793,7 +865,7 @@ export function MundoVivaMenu() {
                           cursor: 'pointer',
                           transition: 'all 0.2s',
                         }}
-                        onClick={() => { setActiveView('ferramentas'); }}
+                        onClick={() => { /* scroll to ferramentas section */ }}
                         onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; e.currentTarget.style.borderColor = t.color; }}
                         onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e0e0e0'; }}
                       >
