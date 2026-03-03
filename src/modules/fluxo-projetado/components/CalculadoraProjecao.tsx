@@ -92,7 +92,7 @@ interface CalculadoraProjecaoProps {
 }
 
 const formatarMoeda = (valor: number): string => {
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 });
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 // Componente para card de simulação individual

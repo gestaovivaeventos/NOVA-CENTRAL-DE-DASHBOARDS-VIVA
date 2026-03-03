@@ -18,13 +18,7 @@ interface CardReceitaAnualProps {
 }
 
 const formatarMoeda = (valor: number): string => {
-  if (valor >= 1000000) {
-    return `R$ ${(valor / 1000000).toFixed(2).replace('.', ',')}M`;
-  }
-  if (valor >= 1000) {
-    return `R$ ${(valor / 1000).toFixed(0)}K`;
-  }
-  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
 export default function CardReceitaAnual({ receitasPorAno, anoSelecionado, onAnoClick }: CardReceitaAnualProps) {

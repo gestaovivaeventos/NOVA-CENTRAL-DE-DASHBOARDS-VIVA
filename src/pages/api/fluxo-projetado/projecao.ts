@@ -216,18 +216,27 @@ async function getProjecao(franquia: string, skipCache: boolean = false): Promis
     const dateInfo = parseDate(row[COLUNAS.MES]);
     if (!dateInfo) continue;
 
+    // Regra: desconsiderar colunas G-L (Novas Vendas e Calculadora Franqueado)
+    // para meses que sejam o mês atual ou anteriores à data de hoje
+    const hoje = new Date();
+    const mesAtual = hoje.getMonth() + 1; // 1-indexed
+    const anoAtual = hoje.getFullYear();
+    const anoRow = parseNumber(row[COLUNAS.ANO]) || dateInfo.ano;
+    const isMesPassadoOuAtual = (anoRow < anoAtual) || (anoRow === anoAtual && dateInfo.mes <= mesAtual);
+
     dadosMensais.push({
       mes: row[COLUNAS.MES],
       mesNumero: dateInfo.mes,
-      ano: parseNumber(row[COLUNAS.ANO]) || dateInfo.ano,
+      ano: anoRow,
       franquia: franquiaRow,
       antecipacaoCarteira: parseNumber(row[COLUNAS.ANTECIPACAO_CARTEIRA]),           // D
       fechamentoCarteira: parseNumber(row[COLUNAS.FECHAMENTO_CARTEIRA]),             // E
       demaisReceitasCarteira: parseNumber(row[COLUNAS.DEMAIS_RECEITAS_CARTEIRA]),    // F
-      antecipacaoNovasVendas: parseNumber(row[COLUNAS.ANTECIPACAO_NOVAS_VENDAS]),    // G
-      fechamentoNovasVendas: parseNumber(row[COLUNAS.FECHAMENTO_NOVAS_VENDAS]),      // H
-      demaisReceitasNovasVendas: parseNumber(row[COLUNAS.DEMAIS_RECEITAS_NOVAS_VENDAS]), // I
-      // Dados calculadora franqueado (colunas J+K+L)
+      // Colunas G-I: zerar se mês atual ou anterior
+      antecipacaoNovasVendas: isMesPassadoOuAtual ? 0 : parseNumber(row[COLUNAS.ANTECIPACAO_NOVAS_VENDAS]),    // G
+      fechamentoNovasVendas: isMesPassadoOuAtual ? 0 : parseNumber(row[COLUNAS.FECHAMENTO_NOVAS_VENDAS]),      // H
+      demaisReceitasNovasVendas: isMesPassadoOuAtual ? 0 : parseNumber(row[COLUNAS.DEMAIS_RECEITAS_NOVAS_VENDAS]), // I
+      // Colunas J-L: Calculadora Franqueado - NÃO filtrar por data (usadas na Calculadora)
       antecipacaoCalcFranqueado: parseNumber(row[COLUNAS.ANTECIPACAO_CALC_FRANQUEADO]),    // J
       fechamentoCalcFranqueado: parseNumber(row[COLUNAS.FECHAMENTO_CALC_FRANQUEADO]),     // K
       demaisReceitasCalcFranqueado: parseNumber(row[COLUNAS.DEMAIS_RECEITAS_CALC_FRANQUEADO]), // L
