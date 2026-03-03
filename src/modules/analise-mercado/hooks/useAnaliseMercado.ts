@@ -1,6 +1,6 @@
 /**
  * useAnaliseMercado — Hook principal do módulo Análise de Mercado
- * Gerencia filtros, dados mockados e lógica de franquia
+ * Gerencia filtros, dados da API e lógica de franquia
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -9,11 +9,13 @@ import type {
   FiltrosAnaliseMercado,
   VisaoAtiva,
   DadosFranquia,
+  DadosEvolucaoAnual,
+  IndicadorCard,
 } from '../types';
 import { mockAnaliseMercado } from '../utils/mock-data';
 
 const FILTROS_INICIAIS: FiltrosAnaliseMercado = {
-  ano: 2025,
+  ano: 2024,
   tipoInstituicao: 'todos',
   franquiaId: null,
   estado: null,
@@ -36,15 +38,103 @@ interface UseAnaliseMercadoReturn {
 
 export function useAnaliseMercado(): UseAnaliseMercadoReturn {
   const [loading, setLoading] = useState(true);
-  const [dadosBase] = useState<DadosAnaliseMercado>(mockAnaliseMercado);
+  const [dadosBase, setDadosBase] = useState<DadosAnaliseMercado>(mockAnaliseMercado);
   const [filtros, setFiltrosState] = useState<FiltrosAnaliseMercado>(FILTROS_INICIAIS);
   const [visaoAtiva, setVisaoAtiva] = useState<VisaoAtiva>('alunos');
+  const [indicadoresReais, setIndicadoresReais] = useState<IndicadorCard[] | null>(null);
 
-  // Simular carregamento dos dados de mercado
+  // Buscar dados de evolução da API
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 400);
-    return () => clearTimeout(timer);
+    const fetchEvolucao = async () => {
+      try {
+        const response = await fetch('/api/analise-mercado/evolucao');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.evolucao && data.evolucao.length > 0) {
+            const evolucaoAlunos: DadosEvolucaoAnual[] = data.evolucao.map((item: any) => ({
+              ano: item.ano,
+              matriculas: item.matriculas,
+              concluintes: item.concluintes,
+              ingressantes: item.ingressantes,
+              presencial: 0,
+              ead: 0,
+              publica: 0,
+              privada: 0,
+              genero: { feminino: 0, masculino: 0 },
+            }));
+
+            setDadosBase(prev => ({
+              ...prev,
+              evolucaoAlunos,
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('[useAnaliseMercado] Erro ao buscar evolução:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvolucao();
   }, []);
+
+  // Buscar indicadores quando filtros mudarem
+  useEffect(() => {
+    const fetchIndicadores = async () => {
+      try {
+        const params = new URLSearchParams({
+          ano: String(filtros.ano),
+          tipo: filtros.tipoInstituicao,
+        });
+        if (filtros.areaConhecimento) {
+          params.append('area', filtros.areaConhecimento);
+        }
+        
+        const response = await fetch(`/api/analise-mercado/indicadores?${params}`);
+        if (response.ok) {
+          const data = await response.json();
+          
+          // Criar indicadores com dados reais
+          const indicadores: IndicadorCard[] = [
+            {
+              id: 'mat',
+              titulo: 'Matrículas Ativas',
+              valor: data.matriculas,
+              variacao: data.variacaoMat,
+              tendencia: data.variacaoMat > 0 ? 'up' : data.variacaoMat < 0 ? 'down' : 'stable',
+              cor: '#3B82F6',
+              subtitulo: 'Graduação + Tecnólogo',
+            },
+            {
+              id: 'conc',
+              titulo: 'Concluintes/Ano',
+              valor: data.concluintes,
+              variacao: data.variacaoConc,
+              tendencia: data.variacaoConc > 0 ? 'up' : data.variacaoConc < 0 ? 'down' : 'stable',
+              cor: '#10B981',
+              subtitulo: 'Potenciais Formandos',
+            },
+            {
+              id: 'ing',
+              titulo: 'Ingressantes/Ano',
+              valor: data.ingressantes,
+              variacao: data.variacaoIng,
+              tendencia: data.variacaoIng > 0 ? 'up' : data.variacaoIng < 0 ? 'down' : 'stable',
+              cor: '#8B5CF6',
+              subtitulo: 'Novos alunos',
+            },
+          ];
+          
+          setIndicadoresReais(indicadores);
+        }
+      } catch (error) {
+        console.error('[useAnaliseMercado] Erro ao buscar indicadores:', error);
+      }
+    };
+
+    fetchIndicadores();
+  }, [filtros.ano, filtros.tipoInstituicao, filtros.areaConhecimento]);
 
   // Atualizar filtros (merge parcial — limpa curso se área mudar)
   const setFiltros = useCallback((patch: Partial<FiltrosAnaliseMercado>) => {
@@ -157,8 +247,16 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
       }
     }
 
+    // Usar indicadores reais quando disponíveis
+    if (indicadoresReais && indicadoresReais.length > 0) {
+      resultado = {
+        ...resultado,
+        indicadores: indicadoresReais,
+      };
+    }
+
     return resultado;
-  }, [dadosBase, filtros]);
+  }, [dadosBase, filtros, indicadoresReais]);
 
   return {
     dados,

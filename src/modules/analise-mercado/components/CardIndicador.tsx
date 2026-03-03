@@ -6,7 +6,7 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { IndicadorCard } from '../types';
-import { fmtNum, fmtVariacao, corVariacao } from '../utils/formatters';
+import { fmtInteiro, fmtVariacao, corVariacao } from '../utils/formatters';
 
 interface CardIndicadorProps {
   indicador: IndicadorCard;
@@ -53,7 +53,7 @@ export default function CardIndicador({ indicador, comparativo, compacto }: Card
         fontFamily: "'Orbitron', sans-serif",
         lineHeight: 1.1,
       }}>
-        {fmtNum(indicador.valor)}
+        {fmtInteiro(indicador.valor)}
       </div>
 
       {/* Subtítulo */}
@@ -68,7 +68,7 @@ export default function CardIndicador({ indicador, comparativo, compacto }: Card
         <div style={{ margin: '8px 0 0', padding: '6px 0', borderTop: '1px solid #495057' }}>
           <p style={{ color: '#6C757D', fontSize: '0.6rem', textTransform: 'uppercase', margin: '0 0 2px' }}>{comparativo.label}</p>
           <span style={{ color: '#FF6600', fontSize: '1rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif" }}>
-            {fmtNum(comparativo.valor)}
+            {fmtInteiro(comparativo.valor)}
           </span>
         </div>
       )}

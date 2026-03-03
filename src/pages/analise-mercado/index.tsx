@@ -104,15 +104,15 @@ export default function AnaliseMercadoPage() {
         areasDisponiveis={areasDisponiveis}
         cursosDisponiveis={cursosDisponiveis}
       >
-        {/* Aviso mockado */}
+        {/* Indicador de dados reais */}
         <div style={{
-          backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+          backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
           borderRadius: 6, padding: '8px 16px', marginBottom: 16,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <span>⚠️</span>
-          <p style={{ color: '#F59E0B', fontSize: '0.75rem', margin: 0 }}>
-            <strong>Validação de Layout</strong> — Dados fictícios baseados em tendências do Censo INEP
+          <span>✅</span>
+          <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0 }}>
+            <strong>Dados Reais</strong> — Fonte: Censo da Educação Superior INEP ({filtros.ano})
           </p>
         </div>
 

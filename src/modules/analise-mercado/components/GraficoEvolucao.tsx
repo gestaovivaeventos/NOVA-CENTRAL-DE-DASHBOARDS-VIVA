@@ -6,7 +6,7 @@
 import React from 'react';
 import { Line } from 'react-chartjs-2';
 import type { DadosEvolucaoAnual, MetricaAtiva } from '../types';
-import { fmtNum, CORES } from '../utils/formatters';
+import { fmtInteiro, CORES } from '../utils/formatters';
 
 interface MetricaConfig {
   key: MetricaAtiva;
@@ -67,7 +67,7 @@ export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvoluc
         anchor: 'end' as const,
         align: 'top' as const,
         offset: 4,
-        formatter: (v: number) => fmtNum(v),
+        formatter: (v: number) => fmtInteiro(v),
       },
       tooltip: {
         backgroundColor: '#1a1d21',
@@ -77,7 +77,7 @@ export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvoluc
         bodyColor: '#ADB5BD',
         padding: 12,
         callbacks: {
-          label: (ctx: any) => `${ctx.dataset.label}: ${fmtNum(ctx.raw)}`,
+          label: (ctx: any) => `${ctx.dataset.label}: ${fmtInteiro(ctx.raw)}`,
         },
       },
     },
@@ -88,7 +88,7 @@ export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvoluc
       },
       y: {
         position: 'left' as const,
-        ticks: { color: '#6C757D', font: { size: 10 }, callback: (v: any) => fmtNum(v) },
+        ticks: { color: '#6C757D', font: { size: 10 }, callback: (v: any) => fmtInteiro(v) },
         grid: { color: '#3D4349' },
       },
     },
