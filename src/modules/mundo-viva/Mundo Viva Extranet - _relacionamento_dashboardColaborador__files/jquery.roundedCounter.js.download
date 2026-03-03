@@ -1,0 +1,38 @@
+if (typeof(jQuery) !== "undefined"){
+    (function(jQuery) {
+        /**
+        * Plugin que constrói contadores circulares com descrições retangulaes
+        * logo abaixo do contador
+        * 
+        * @author Marcello Costa <marcello.gviva@gmail.com>
+        *
+        * @displayValue       Valor que exibido dentro do círculo
+        * @displayValueColor  Cor do texto dentro do círculo
+        * 
+        * @descText           Texto descritivo que será exibido abaixo do círculo
+        * @descTextColor     Cor do texto descritivo
+        * 
+        * @bgColor            Cor do preenchimento do círculo e background do 
+        *                     texto descritivo
+        */
+        jQuery.fn.roundedCounter = function(displayValue, displayValueColor, descText, descTextColor, bgColor) {
+            container = $(this).selector;
+
+            var filteredId = container.replace('.',"").replace('#',"");
+            
+            tmpl="<div class='roundedCounterContainer'>"+
+                 "  <div class='roundedCounter' style='color: "+displayValueColor+"; border-color: "+bgColor+"'>"+
+                 "      "+displayValue+
+                 "  </div>"+
+                 "  <div class='roundedDescriptor' style='color: "+descTextColor+"; border-color: "+bgColor+"; background: "+bgColor+"'>"+
+                 "      "+descText+
+                 "  </div>"+
+                 " </div>";
+
+            jQuery(container).append(tmpl);
+        };
+    })(jQuery);
+}
+else{
+    console.error("Jquery não carregado para o plugin jquery.roundedCounter")
+}

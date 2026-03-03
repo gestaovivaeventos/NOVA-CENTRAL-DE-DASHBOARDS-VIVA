@@ -1,0 +1,2186 @@
+<!DOCTYPE html>
+<!-- saved from url=(0082)https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador/# -->
+<html lang="pt-br"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <!-- Google Tag Manager -->
+        <script type="text/javascript" async="" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/js"></script><script async="" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/gtm.js.download"></script><script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+        new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','GTM-5SJMF6ML');</script>
+        <!-- End Google Tag Manager -->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        
+        <title>Mundo Viva Extranet - /relacionamento/dashboardColaborador/</title>
+        <script>
+            const urlCompleta = window.location.href;
+            const dominio = ".com.br";
+            const indiceDominio = urlCompleta.indexOf(dominio);
+
+            let parteAposDominio = "";
+
+            if (indiceDominio !== -1) {
+                parteAposDominio = urlCompleta.substring(indiceDominio + dominio.length);
+            }
+            document.title = `Mundo Viva Extranet - ${parteAposDominio}`;
+        </script>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+        <meta name="theme-color" content="#f47d35"> 
+                <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/bootstrap.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/font-awesome.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.gritter.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery-ui.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace-fonts.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/select2.min.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/chosen.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/pace-theme-minimal.css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.css" class="ace-main-stylesheet" id="main-ace-style">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/viva.css">
+        <link rel="stylesheet" type="text/css" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/bootstrap-datepicker3.css">
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace-extra.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/socket.io.js.download"></script>
+        <script>
+            const GOOGLE_API_KEY = 'AIzaSyCHyfGAbsdkQUx0fpUaIkbsqG0LB5vVwr8';
+            const GOOGLE_CLIENT_ID = '862011428165-cbgi3e3l4smhbik9qdiamaheq5f1jsfb.apps.googleusercontent.com';
+        </script>
+        <link href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/css" rel="stylesheet" type="text/css">
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/template.css">
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/generic.js.download"></script>
+                <style>@media (min-width: 768px) {
+    #anotacoesContent {
+        height: 280px;
+        overflow: auto;
+    }
+}
+
+.itemdiv > .body {
+    margin-left: 0;
+}
+
+.excluirAnotacaoBtn {
+    border: 1px solid #bbb;
+    padding: 2px;
+    background-color: #ccc;
+    border-radius: 2px;
+    color: #fff;
+    position: relative;
+    right: -20px;
+}
+
+.excluirAnotacaoBtn:hover {
+    background-color: #aaa;
+    cursor: pointer;
+}
+
+.zoomItem {
+    transition: all 0.3s ease-in-out;
+}
+
+.zoomItem:hover {
+    zoom: 1;
+    -ms-zoom: 1;
+    -webkit-zoom: 1;
+    -moz-transform: scale(1, 1);
+    -moz-transform-origin: center center;
+    cursor: pointer;
+}
+
+#roundedCounterContainer1,
+#roundedCounterContainer2,
+#roundedCounterContainer3 {
+    cursor: pointer;
+}
+
+#graficoReunioesDoSemestre,
+#graficoAltaInadimplencia,
+#graficoPlanejamentosFaltantes,
+#graficoLotesSemAprovacao,
+#graficoAlertasDeDesligamento,
+#graficoReqSemPrimeiraAprovacao {
+    margin-bottom: 100px;
+}
+
+.comercialEmAberto {
+    padding: 5px;
+    text-align: center;
+    background-color: #ffab51;
+    color: #fff;
+}
+
+.comercialFechado {
+    padding: 5px;
+    text-align: center;
+    background-color: #5cb85c;
+    color: #fff;
+}
+
+.comercialPerdidos {
+    padding: 5px;
+    text-align: center;
+    background-color: #d9534f;
+    color: #fff;
+}
+
+.profile-usertitle {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.profile-usertitle-name {
+    color: #5a7391;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.shape {
+    border-style: solid;
+    border-width: 0 70px 40px 0;
+    float: right;
+    height: 0px;
+    width: 0px;
+    -ms-transform: rotate(360deg); /* IE 9 */
+    -o-transform: rotate(360deg); /* Opera 10.5 */
+    -webkit-transform: rotate(360deg); /* Safari and Chrome */
+    transform: rotate(360deg);
+    border-color: rgba(255, 255, 255, 0) #d9534f rgba(255, 255, 255, 0) rgba(255, 255, 255, 0);
+}
+
+.shape-text {
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    position: relative;
+    right: -40px;
+    top: 2px;
+    white-space: nowrap;
+    -ms-transform: rotate(30deg); /* IE 9 */
+    -o-transform: rotate(360deg); /* Opera 10.5 */
+    -webkit-transform: rotate(30deg); /* Safari and Chrome */
+    transform: rotate(30deg);
+}
+
+.offer-content {
+    padding: 20px;
+    height: 95px;
+    margin-bottom: 15px;
+    color: #fff;
+}
+
+.offer-content h4 {
+    font-size: 13px !important;
+    color: #fff;
+}
+
+.offer-content a:hover {
+    text-decoration: none !important;
+}
+
+#img-dashFinanceiro {
+    width: 250px;
+    height: 38px;
+}
+
+#img-dashUnidade {
+    width: 250px;
+    height: 38px;
+}
+
+.aBtn {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 1rem;
+}
+</style>
+        <style>.link-cartao-evento {
+    text-decoration: none !important;
+    color: inherit;
+}
+
+.link-cartao-evento:hover {
+    text-decoration: none;
+}
+
+.icone-confirmacao {
+    margin-right: 5px;
+}
+
+.container-agenda {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 10px;
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.titulo-agenda {
+    font-size: 18px;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    margin: 0 0 10px 0;
+    padding-bottom: 5px;
+}
+
+.titulo-proximos-eventos {
+    font-size: 14px;
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.cartao-evento {
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    border-left: 5px solid;
+    border-right: 1px solid #ddd;
+    background-color: white;
+    color: white;
+}
+
+.data-evento,
+.titulo-evento,
+.descricao-evento,
+.hora-evento {
+    margin-bottom: 3px;
+    color: inherit;
+}
+
+.data-evento {
+    font-size: 16px;
+}
+
+.titulo-evento,
+.descricao-evento {
+    font-size: 12px;
+}
+
+.hora-evento {
+    font-size: 11px;
+}
+
+.ver-calendario {
+    text-align: right;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #e74c3c;
+}
+
+.link-calendario {
+    color: #e74c3c;
+}
+
+.verde {
+    background-color: #2e8b57db;
+    border-left-color: #6db98e;
+}
+
+.amarelo {
+    background-color: #e4b20ddb;
+    border-left-color: #dac06e;
+}
+
+.roxo {
+    background-color: #6a0daddb;
+    border-left-color: #8c61ac;
+}
+
+.laranja {
+    background-color: #f4784bdb;
+    border-left-color: #f3bdaa;
+}
+
+.azul {
+    background-color: #1e3a8adb;
+    border-left-color: #3a4f88;
+}
+
+.rosa {
+    background-color: #c71585db;
+    border-left-color: #e573ab;
+}
+
+.vermelho {
+    background-color: #b22222db;
+    border-left-color: #d94c4c;
+}
+
+.popover-body {
+    display: flex;
+    flex-direction: column;
+    max-width: 200px;
+}
+
+.legenda-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.legenda-item .cor {
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.legenda-item .nome {
+    font-size: 14px;
+    color: #333;
+}
+
+.btn-legenda {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 0;
+    padding: 8px 12px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.btn-legenda i {
+    margin-right: 5px;
+}
+
+.mensagem-sem-eventos {
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+    margin-top: 20px;
+}
+</style>
+    
+        <!-- Hotjar Tracking Code for https://mundovivaextranet.vivaeventos.com.br/ -->
+		<script>
+			(function(h,o,t,j,a,r){
+				h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+				h._hjSettings={hjid:5220381,hjsv:6};
+				a=o.getElementsByTagName('head')[0];
+				r=o.createElement('script');r.async=1;
+				r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+				a.appendChild(r);
+			})(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+		</script><script async="" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/hotjar-5220381.js.download"></script>
+    <script async="" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/modules.ddd41caee2adfc4aedb8.js.download" charset="utf-8"></script><style>:root{--swal2-outline: 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-container-padding: 0.625em;--swal2-backdrop: rgba(0, 0, 0, 0.4);--swal2-backdrop-transition: background-color 0.15s;--swal2-width: 32em;--swal2-padding: 0 0 1.25em;--swal2-border: none;--swal2-border-radius: 0.3125rem;--swal2-background: white;--swal2-color: #545454;--swal2-show-animation: swal2-show 0.3s;--swal2-hide-animation: swal2-hide 0.15s forwards;--swal2-icon-zoom: 1;--swal2-icon-animations: true;--swal2-title-padding: 0.8em 1em 0;--swal2-html-container-padding: 1em 1.6em 0.3em;--swal2-input-border: 1px solid #d9d9d9;--swal2-input-border-radius: 0.1875em;--swal2-input-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-background: transparent;--swal2-input-transition: border-color 0.2s, box-shadow 0.2s;--swal2-input-hover-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px transparent;--swal2-input-focus-border: 1px solid #b4dbed;--swal2-input-focus-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.06), 0 0 0 3px rgba(100, 150, 200, 0.5);--swal2-progress-step-background: #add8e6;--swal2-validation-message-background: #f0f0f0;--swal2-validation-message-color: #666;--swal2-footer-border-color: #eee;--swal2-footer-background: transparent;--swal2-footer-color: inherit;--swal2-timer-progress-bar-background: rgba(0, 0, 0, 0.3);--swal2-close-button-position: initial;--swal2-close-button-inset: auto;--swal2-close-button-font-size: 2.5em;--swal2-close-button-color: #ccc;--swal2-close-button-transition: color 0.2s, box-shadow 0.2s;--swal2-close-button-outline: initial;--swal2-close-button-box-shadow: inset 0 0 0 3px transparent;--swal2-close-button-focus-box-shadow: inset var(--swal2-outline);--swal2-close-button-hover-transform: none;--swal2-actions-justify-content: center;--swal2-actions-width: auto;--swal2-actions-margin: 1.25em auto 0;--swal2-actions-padding: 0;--swal2-actions-border-radius: 0;--swal2-actions-background: transparent;--swal2-action-button-transition: background-color 0.2s, box-shadow 0.2s;--swal2-action-button-hover: black 10%;--swal2-action-button-active: black 10%;--swal2-confirm-button-box-shadow: none;--swal2-confirm-button-border-radius: 0.25em;--swal2-confirm-button-background-color: #7066e0;--swal2-confirm-button-color: #fff;--swal2-deny-button-box-shadow: none;--swal2-deny-button-border-radius: 0.25em;--swal2-deny-button-background-color: #dc3741;--swal2-deny-button-color: #fff;--swal2-cancel-button-box-shadow: none;--swal2-cancel-button-border-radius: 0.25em;--swal2-cancel-button-background-color: #6e7881;--swal2-cancel-button-color: #fff;--swal2-toast-show-animation: swal2-toast-show 0.5s;--swal2-toast-hide-animation: swal2-toast-hide 0.1s forwards;--swal2-toast-border: none;--swal2-toast-box-shadow: 0 0 1px hsl(0deg 0% 0% / 0.075), 0 1px 2px hsl(0deg 0% 0% / 0.075), 1px 2px 4px hsl(0deg 0% 0% / 0.075), 1px 3px 8px hsl(0deg 0% 0% / 0.075), 2px 4px 16px hsl(0deg 0% 0% / 0.075)}[data-swal2-theme=dark]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}@media(prefers-color-scheme: dark){[data-swal2-theme=auto]{--swal2-dark-theme-black: #19191a;--swal2-dark-theme-white: #e1e1e1;--swal2-background: var(--swal2-dark-theme-black);--swal2-color: var(--swal2-dark-theme-white);--swal2-footer-border-color: #555;--swal2-input-background: color-mix(in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10%);--swal2-validation-message-background: color-mix( in srgb, var(--swal2-dark-theme-black), var(--swal2-dark-theme-white) 10% );--swal2-validation-message-color: var(--swal2-dark-theme-white);--swal2-timer-progress-bar-background: rgba(255, 255, 255, 0.7)}}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow:hidden}body.swal2-height-auto{height:auto !important}body.swal2-no-backdrop .swal2-container{background-color:rgba(0,0,0,0) !important;pointer-events:none}body.swal2-no-backdrop .swal2-container .swal2-popup{pointer-events:all}body.swal2-no-backdrop .swal2-container .swal2-modal{box-shadow:0 0 10px var(--swal2-backdrop)}body.swal2-toast-shown .swal2-container{box-sizing:border-box;width:360px;max-width:100%;background-color:rgba(0,0,0,0);pointer-events:none}body.swal2-toast-shown .swal2-container.swal2-top{inset:0 auto auto 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-top-end,body.swal2-toast-shown .swal2-container.swal2-top-right{inset:0 0 auto auto}body.swal2-toast-shown .swal2-container.swal2-top-start,body.swal2-toast-shown .swal2-container.swal2-top-left{inset:0 auto auto 0}body.swal2-toast-shown .swal2-container.swal2-center-start,body.swal2-toast-shown .swal2-container.swal2-center-left{inset:50% auto auto 0;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-center{inset:50% auto auto 50%;transform:translate(-50%, -50%)}body.swal2-toast-shown .swal2-container.swal2-center-end,body.swal2-toast-shown .swal2-container.swal2-center-right{inset:50% 0 auto auto;transform:translateY(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-start,body.swal2-toast-shown .swal2-container.swal2-bottom-left{inset:auto auto 0 0}body.swal2-toast-shown .swal2-container.swal2-bottom{inset:auto auto 0 50%;transform:translateX(-50%)}body.swal2-toast-shown .swal2-container.swal2-bottom-end,body.swal2-toast-shown .swal2-container.swal2-bottom-right{inset:auto 0 0 auto}@media print{body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown){overflow-y:scroll !important}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown)>[aria-hidden=true]{display:none}body.swal2-shown:not(.swal2-no-backdrop,.swal2-toast-shown) .swal2-container{position:static !important}}div:where(.swal2-container){display:grid;position:fixed;z-index:1060;inset:0;box-sizing:border-box;grid-template-areas:"top-start     top            top-end" "center-start  center         center-end" "bottom-start  bottom-center  bottom-end";grid-template-rows:minmax(min-content, auto) minmax(min-content, auto) minmax(min-content, auto);height:100%;padding:var(--swal2-container-padding);overflow-x:hidden;transition:var(--swal2-backdrop-transition);-webkit-overflow-scrolling:touch}div:where(.swal2-container).swal2-backdrop-show,div:where(.swal2-container).swal2-noanimation{background:var(--swal2-backdrop)}div:where(.swal2-container).swal2-backdrop-hide{background:rgba(0,0,0,0) !important}div:where(.swal2-container).swal2-top-start,div:where(.swal2-container).swal2-center-start,div:where(.swal2-container).swal2-bottom-start{grid-template-columns:minmax(0, 1fr) auto auto}div:where(.swal2-container).swal2-top,div:where(.swal2-container).swal2-center,div:where(.swal2-container).swal2-bottom{grid-template-columns:auto minmax(0, 1fr) auto}div:where(.swal2-container).swal2-top-end,div:where(.swal2-container).swal2-center-end,div:where(.swal2-container).swal2-bottom-end{grid-template-columns:auto auto minmax(0, 1fr)}div:where(.swal2-container).swal2-top-start>.swal2-popup{align-self:start}div:where(.swal2-container).swal2-top>.swal2-popup{grid-column:2;place-self:start center}div:where(.swal2-container).swal2-top-end>.swal2-popup,div:where(.swal2-container).swal2-top-right>.swal2-popup{grid-column:3;place-self:start end}div:where(.swal2-container).swal2-center-start>.swal2-popup,div:where(.swal2-container).swal2-center-left>.swal2-popup{grid-row:2;align-self:center}div:where(.swal2-container).swal2-center>.swal2-popup{grid-column:2;grid-row:2;place-self:center center}div:where(.swal2-container).swal2-center-end>.swal2-popup,div:where(.swal2-container).swal2-center-right>.swal2-popup{grid-column:3;grid-row:2;place-self:center end}div:where(.swal2-container).swal2-bottom-start>.swal2-popup,div:where(.swal2-container).swal2-bottom-left>.swal2-popup{grid-column:1;grid-row:3;align-self:end}div:where(.swal2-container).swal2-bottom>.swal2-popup{grid-column:2;grid-row:3;place-self:end center}div:where(.swal2-container).swal2-bottom-end>.swal2-popup,div:where(.swal2-container).swal2-bottom-right>.swal2-popup{grid-column:3;grid-row:3;place-self:end end}div:where(.swal2-container).swal2-grow-row>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-column:1/4;width:100%}div:where(.swal2-container).swal2-grow-column>.swal2-popup,div:where(.swal2-container).swal2-grow-fullscreen>.swal2-popup{grid-row:1/4;align-self:stretch}div:where(.swal2-container).swal2-no-transition{transition:none !important}div:where(.swal2-container)[popover]{width:auto;border:0}div:where(.swal2-container) div:where(.swal2-popup){display:none;position:relative;box-sizing:border-box;grid-template-columns:minmax(0, 100%);width:var(--swal2-width);max-width:100%;padding:var(--swal2-padding);border:var(--swal2-border);border-radius:var(--swal2-border-radius);background:var(--swal2-background);color:var(--swal2-color);font-family:inherit;font-size:1rem;container-name:swal2-popup}div:where(.swal2-container) div:where(.swal2-popup):focus{outline:none}div:where(.swal2-container) div:where(.swal2-popup).swal2-loading{overflow-y:hidden}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable{cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-draggable div:where(.swal2-icon){cursor:grab}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging{cursor:grabbing}div:where(.swal2-container) div:where(.swal2-popup).swal2-dragging div:where(.swal2-icon){cursor:grabbing}div:where(.swal2-container) h2:where(.swal2-title){position:relative;max-width:100%;margin:0;padding:var(--swal2-title-padding);color:inherit;font-size:1.875em;font-weight:600;text-align:center;text-transform:none;overflow-wrap:break-word;cursor:initial}div:where(.swal2-container) div:where(.swal2-actions){display:flex;z-index:1;box-sizing:border-box;flex-wrap:wrap;align-items:center;justify-content:var(--swal2-actions-justify-content);width:var(--swal2-actions-width);margin:var(--swal2-actions-margin);padding:var(--swal2-actions-padding);border-radius:var(--swal2-actions-border-radius);background:var(--swal2-actions-background)}div:where(.swal2-container) div:where(.swal2-loader){display:none;align-items:center;justify-content:center;width:2.2em;height:2.2em;margin:0 1.875em;animation:swal2-rotate-loading 1.5s linear 0s infinite normal;border-width:.25em;border-style:solid;border-radius:100%;border-color:#2778c4 rgba(0,0,0,0) #2778c4 rgba(0,0,0,0)}div:where(.swal2-container) button:where(.swal2-styled){margin:.3125em;padding:.625em 1.1em;transition:var(--swal2-action-button-transition);border:none;box-shadow:0 0 0 3px rgba(0,0,0,0);font-weight:500}div:where(.swal2-container) button:where(.swal2-styled):not([disabled]){cursor:pointer}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm){border-radius:var(--swal2-confirm-button-border-radius);background:initial;background-color:var(--swal2-confirm-button-background-color);box-shadow:var(--swal2-confirm-button-box-shadow);color:var(--swal2-confirm-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):hover{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-confirm):active{background-color:color-mix(in srgb, var(--swal2-confirm-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny){border-radius:var(--swal2-deny-button-border-radius);background:initial;background-color:var(--swal2-deny-button-background-color);box-shadow:var(--swal2-deny-button-box-shadow);color:var(--swal2-deny-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):hover{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-deny):active{background-color:color-mix(in srgb, var(--swal2-deny-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel){border-radius:var(--swal2-cancel-button-border-radius);background:initial;background-color:var(--swal2-cancel-button-background-color);box-shadow:var(--swal2-cancel-button-box-shadow);color:var(--swal2-cancel-button-color);font-size:1em}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):hover{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-hover))}div:where(.swal2-container) button:where(.swal2-styled):where(.swal2-cancel):active{background-color:color-mix(in srgb, var(--swal2-cancel-button-background-color), var(--swal2-action-button-active))}div:where(.swal2-container) button:where(.swal2-styled):focus-visible{outline:none;box-shadow:var(--swal2-action-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-styled)[disabled]:not(.swal2-loading){opacity:.4}div:where(.swal2-container) button:where(.swal2-styled)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-footer){margin:1em 0 0;padding:1em 1em 0;border-top:1px solid var(--swal2-footer-border-color);background:var(--swal2-footer-background);color:var(--swal2-footer-color);font-size:1em;text-align:center;cursor:initial}div:where(.swal2-container) .swal2-timer-progress-bar-container{position:absolute;right:0;bottom:0;left:0;grid-column:auto !important;overflow:hidden;border-bottom-right-radius:var(--swal2-border-radius);border-bottom-left-radius:var(--swal2-border-radius)}div:where(.swal2-container) div:where(.swal2-timer-progress-bar){width:100%;height:.25em;background:var(--swal2-timer-progress-bar-background)}div:where(.swal2-container) img:where(.swal2-image){max-width:100%;margin:2em auto 1em;cursor:initial}div:where(.swal2-container) button:where(.swal2-close){position:var(--swal2-close-button-position);inset:var(--swal2-close-button-inset);z-index:2;align-items:center;justify-content:center;width:1.2em;height:1.2em;margin-top:0;margin-right:0;margin-bottom:-1.2em;padding:0;overflow:hidden;transition:var(--swal2-close-button-transition);border:none;border-radius:var(--swal2-border-radius);outline:var(--swal2-close-button-outline);background:rgba(0,0,0,0);color:var(--swal2-close-button-color);font-family:monospace;font-size:var(--swal2-close-button-font-size);cursor:pointer;justify-self:end}div:where(.swal2-container) button:where(.swal2-close):hover{transform:var(--swal2-close-button-hover-transform);background:rgba(0,0,0,0);color:#f27474}div:where(.swal2-container) button:where(.swal2-close):focus-visible{outline:none;box-shadow:var(--swal2-close-button-focus-box-shadow)}div:where(.swal2-container) button:where(.swal2-close)::-moz-focus-inner{border:0}div:where(.swal2-container) div:where(.swal2-html-container){z-index:1;justify-content:center;margin:0;padding:var(--swal2-html-container-padding);overflow:auto;color:inherit;font-size:1.125em;font-weight:normal;line-height:normal;text-align:center;overflow-wrap:break-word;word-break:break-word;cursor:initial}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea),div:where(.swal2-container) select:where(.swal2-select),div:where(.swal2-container) div:where(.swal2-radio),div:where(.swal2-container) label:where(.swal2-checkbox){margin:1em 2em 3px}div:where(.swal2-container) input:where(.swal2-input),div:where(.swal2-container) input:where(.swal2-file),div:where(.swal2-container) textarea:where(.swal2-textarea){box-sizing:border-box;width:auto;transition:var(--swal2-input-transition);border:var(--swal2-input-border);border-radius:var(--swal2-input-border-radius);background:var(--swal2-input-background);box-shadow:var(--swal2-input-box-shadow);color:inherit;font-size:1.125em}div:where(.swal2-container) input:where(.swal2-input).swal2-inputerror,div:where(.swal2-container) input:where(.swal2-file).swal2-inputerror,div:where(.swal2-container) textarea:where(.swal2-textarea).swal2-inputerror{border-color:#f27474 !important;box-shadow:0 0 2px #f27474 !important}div:where(.swal2-container) input:where(.swal2-input):hover,div:where(.swal2-container) input:where(.swal2-file):hover,div:where(.swal2-container) textarea:where(.swal2-textarea):hover{box-shadow:var(--swal2-input-hover-box-shadow)}div:where(.swal2-container) input:where(.swal2-input):focus,div:where(.swal2-container) input:where(.swal2-file):focus,div:where(.swal2-container) textarea:where(.swal2-textarea):focus{border:var(--swal2-input-focus-border);outline:none;box-shadow:var(--swal2-input-focus-box-shadow)}div:where(.swal2-container) input:where(.swal2-input)::placeholder,div:where(.swal2-container) input:where(.swal2-file)::placeholder,div:where(.swal2-container) textarea:where(.swal2-textarea)::placeholder{color:#ccc}div:where(.swal2-container) .swal2-range{margin:1em 2em 3px;background:var(--swal2-background)}div:where(.swal2-container) .swal2-range input{width:80%}div:where(.swal2-container) .swal2-range output{width:20%;color:inherit;font-weight:600;text-align:center}div:where(.swal2-container) .swal2-range input,div:where(.swal2-container) .swal2-range output{height:2.625em;padding:0;font-size:1.125em;line-height:2.625em}div:where(.swal2-container) .swal2-input{height:2.625em;padding:0 .75em}div:where(.swal2-container) .swal2-file{width:75%;margin-right:auto;margin-left:auto;background:var(--swal2-input-background);font-size:1.125em}div:where(.swal2-container) .swal2-textarea{height:6.75em;padding:.75em}div:where(.swal2-container) .swal2-select{min-width:50%;max-width:100%;padding:.375em .625em;background:var(--swal2-input-background);color:inherit;font-size:1.125em}div:where(.swal2-container) .swal2-radio,div:where(.swal2-container) .swal2-checkbox{align-items:center;justify-content:center;background:var(--swal2-background);color:inherit}div:where(.swal2-container) .swal2-radio label,div:where(.swal2-container) .swal2-checkbox label{margin:0 .6em;font-size:1.125em}div:where(.swal2-container) .swal2-radio input,div:where(.swal2-container) .swal2-checkbox input{flex-shrink:0;margin:0 .4em}div:where(.swal2-container) label:where(.swal2-input-label){display:flex;justify-content:center;margin:1em auto 0}div:where(.swal2-container) div:where(.swal2-validation-message){align-items:center;justify-content:center;margin:1em 0 0;padding:.625em;overflow:hidden;background:var(--swal2-validation-message-background);color:var(--swal2-validation-message-color);font-size:1em;font-weight:300}div:where(.swal2-container) div:where(.swal2-validation-message)::before{content:"!";display:inline-block;width:1.5em;min-width:1.5em;height:1.5em;margin:0 .625em;border-radius:50%;background-color:#f27474;color:#fff;font-weight:600;line-height:1.5em;text-align:center}div:where(.swal2-container) .swal2-progress-steps{flex-wrap:wrap;align-items:center;max-width:100%;margin:1.25em auto;padding:0;background:rgba(0,0,0,0);font-weight:600}div:where(.swal2-container) .swal2-progress-steps li{display:inline-block;position:relative}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step{z-index:20;flex-shrink:0;width:2em;height:2em;border-radius:2em;background:#2778c4;color:#fff;line-height:2em;text-align:center}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step{background:#2778c4}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step{background:var(--swal2-progress-step-background);color:#fff}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step.swal2-active-progress-step~.swal2-progress-step-line{background:var(--swal2-progress-step-background)}div:where(.swal2-container) .swal2-progress-steps .swal2-progress-step-line{z-index:10;flex-shrink:0;width:2.5em;height:.4em;margin:0 -1px;background:#2778c4}div:where(.swal2-icon){position:relative;box-sizing:content-box;justify-content:center;width:5em;height:5em;margin:2.5em auto .6em;zoom:var(--swal2-icon-zoom);border:.25em solid rgba(0,0,0,0);border-radius:50%;border-color:#000;font-family:inherit;line-height:5em;cursor:default;user-select:none}div:where(.swal2-icon) .swal2-icon-content{display:flex;align-items:center;font-size:3.75em}div:where(.swal2-icon).swal2-error{border-color:#f27474;color:#f27474}div:where(.swal2-icon).swal2-error .swal2-x-mark{position:relative;flex-grow:1}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line]{display:block;position:absolute;top:2.3125em;width:2.9375em;height:.3125em;border-radius:.125em;background-color:#f27474}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=left]{left:1.0625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-error [class^=swal2-x-mark-line][class$=right]{right:1em;transform:rotate(-45deg)}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-error.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-error.swal2-icon-show .swal2-x-mark{animation:swal2-animate-error-x-mark .5s}}div:where(.swal2-icon).swal2-warning{border-color:#f8bb86;color:#f8bb86}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-warning.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-warning.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .5s}}div:where(.swal2-icon).swal2-info{border-color:#3fc3ee;color:#3fc3ee}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-info.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-info.swal2-icon-show .swal2-icon-content{animation:swal2-animate-i-mark .8s}}div:where(.swal2-icon).swal2-question{border-color:#87adbd;color:#87adbd}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-question.swal2-icon-show{animation:swal2-animate-error-icon .5s}div:where(.swal2-icon).swal2-question.swal2-icon-show .swal2-icon-content{animation:swal2-animate-question-mark .8s}}div:where(.swal2-icon).swal2-success{border-color:#a5dc86;color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line]{position:absolute;width:3.75em;height:7.5em;border-radius:50%}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.4375em;left:-2.0635em;transform:rotate(-45deg);transform-origin:3.75em 3.75em;border-radius:7.5em 0 0 7.5em}div:where(.swal2-icon).swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.6875em;left:1.875em;transform:rotate(-45deg);transform-origin:0 3.75em;border-radius:0 7.5em 7.5em 0}div:where(.swal2-icon).swal2-success .swal2-success-ring{position:absolute;z-index:2;top:-0.25em;left:-0.25em;box-sizing:content-box;width:100%;height:100%;border:.25em solid rgba(165,220,134,.3);border-radius:50%}div:where(.swal2-icon).swal2-success .swal2-success-fix{position:absolute;z-index:1;top:.5em;left:1.625em;width:.4375em;height:5.625em;transform:rotate(-45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line]{display:block;position:absolute;z-index:2;height:.3125em;border-radius:.125em;background-color:#a5dc86}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=tip]{top:2.875em;left:.8125em;width:1.5625em;transform:rotate(45deg)}div:where(.swal2-icon).swal2-success [class^=swal2-success-line][class$=long]{top:2.375em;right:.5em;width:2.9375em;transform:rotate(-45deg)}@container swal2-popup style(--swal2-icon-animations:true){div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-animate-success-line-tip .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-animate-success-line-long .75s}div:where(.swal2-icon).swal2-success.swal2-icon-show .swal2-success-circular-line-right{animation:swal2-rotate-success-circular-line 4.25s ease-in}}[class^=swal2]{-webkit-tap-highlight-color:rgba(0,0,0,0)}.swal2-show{animation:var(--swal2-show-animation)}.swal2-hide{animation:var(--swal2-hide-animation)}.swal2-noanimation{transition:none}.swal2-scrollbar-measure{position:absolute;top:-9999px;width:50px;height:50px;overflow:scroll}.swal2-rtl .swal2-close{margin-right:initial;margin-left:0}.swal2-rtl .swal2-timer-progress-bar{right:0;left:auto}.swal2-toast{box-sizing:border-box;grid-column:1/4 !important;grid-row:1/4 !important;grid-template-columns:min-content auto min-content;padding:1em;overflow-y:hidden;border:var(--swal2-toast-border);background:var(--swal2-background);box-shadow:var(--swal2-toast-box-shadow);pointer-events:all}.swal2-toast>*{grid-column:2}.swal2-toast h2:where(.swal2-title){margin:.5em 1em;padding:0;font-size:1em;text-align:initial}.swal2-toast .swal2-loading{justify-content:center}.swal2-toast input:where(.swal2-input){height:2em;margin:.5em;font-size:1em}.swal2-toast .swal2-validation-message{font-size:1em}.swal2-toast div:where(.swal2-footer){margin:.5em 0 0;padding:.5em 0 0;font-size:.8em}.swal2-toast button:where(.swal2-close){grid-column:3/3;grid-row:1/99;align-self:center;width:.8em;height:.8em;margin:0;font-size:2em}.swal2-toast div:where(.swal2-html-container){margin:.5em 1em;padding:0;overflow:initial;font-size:1em;text-align:initial}.swal2-toast div:where(.swal2-html-container):empty{padding:0}.swal2-toast .swal2-loader{grid-column:1;grid-row:1/99;align-self:center;width:2em;height:2em;margin:.25em}.swal2-toast .swal2-icon{grid-column:1;grid-row:1/99;align-self:center;width:2em;min-width:2em;height:2em;margin:0 .5em 0 0}.swal2-toast .swal2-icon .swal2-icon-content{display:flex;align-items:center;font-size:1.8em;font-weight:bold}.swal2-toast .swal2-icon.swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line]{top:.875em;width:1.375em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=left]{left:.3125em}.swal2-toast .swal2-icon.swal2-error [class^=swal2-x-mark-line][class$=right]{right:.3125em}.swal2-toast div:where(.swal2-actions){justify-content:flex-start;height:auto;margin:0;margin-top:.5em;padding:0 .5em}.swal2-toast button:where(.swal2-styled){margin:.25em .5em;padding:.4em .6em;font-size:1em}.swal2-toast .swal2-success{border-color:#a5dc86}.swal2-toast .swal2-success [class^=swal2-success-circular-line]{position:absolute;width:1.6em;height:3em;border-radius:50%}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=left]{top:-0.8em;left:-0.5em;transform:rotate(-45deg);transform-origin:2em 2em;border-radius:4em 0 0 4em}.swal2-toast .swal2-success [class^=swal2-success-circular-line][class$=right]{top:-0.25em;left:.9375em;transform-origin:0 1.5em;border-radius:0 4em 4em 0}.swal2-toast .swal2-success .swal2-success-ring{width:2em;height:2em}.swal2-toast .swal2-success .swal2-success-fix{top:0;left:.4375em;width:.4375em;height:2.6875em}.swal2-toast .swal2-success [class^=swal2-success-line]{height:.3125em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=tip]{top:1.125em;left:.1875em;width:.75em}.swal2-toast .swal2-success [class^=swal2-success-line][class$=long]{top:.9375em;right:.1875em;width:1.375em}@container swal2-popup style(--swal2-icon-animations:true){.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-tip{animation:swal2-toast-animate-success-line-tip .75s}.swal2-toast .swal2-success.swal2-icon-show .swal2-success-line-long{animation:swal2-toast-animate-success-line-long .75s}}.swal2-toast.swal2-show{animation:var(--swal2-toast-show-animation)}.swal2-toast.swal2-hide{animation:var(--swal2-toast-hide-animation)}@keyframes swal2-show{0%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}100%{transform:translate3d(0, 0, 0) scale(1);opacity:1}}@keyframes swal2-hide{0%{transform:translate3d(0, 0, 0) scale(1);opacity:1}100%{transform:translate3d(0, -50px, 0) scale(0.9);opacity:0}}@keyframes swal2-animate-success-line-tip{0%{top:1.1875em;left:.0625em;width:0}54%{top:1.0625em;left:.125em;width:0}70%{top:2.1875em;left:-0.375em;width:3.125em}84%{top:3em;left:1.3125em;width:1.0625em}100%{top:2.8125em;left:.8125em;width:1.5625em}}@keyframes swal2-animate-success-line-long{0%{top:3.375em;right:2.875em;width:0}65%{top:3.375em;right:2.875em;width:0}84%{top:2.1875em;right:0;width:3.4375em}100%{top:2.375em;right:.5em;width:2.9375em}}@keyframes swal2-rotate-success-circular-line{0%{transform:rotate(-45deg)}5%{transform:rotate(-45deg)}12%{transform:rotate(-405deg)}100%{transform:rotate(-405deg)}}@keyframes swal2-animate-error-x-mark{0%{margin-top:1.625em;transform:scale(0.4);opacity:0}50%{margin-top:1.625em;transform:scale(0.4);opacity:0}80%{margin-top:-0.375em;transform:scale(1.15)}100%{margin-top:0;transform:scale(1);opacity:1}}@keyframes swal2-animate-error-icon{0%{transform:rotateX(100deg);opacity:0}100%{transform:rotateX(0deg);opacity:1}}@keyframes swal2-rotate-loading{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes swal2-animate-question-mark{0%{transform:rotateY(-360deg)}100%{transform:rotateY(0)}}@keyframes swal2-animate-i-mark{0%{transform:rotateZ(45deg);opacity:0}25%{transform:rotateZ(-25deg);opacity:.4}50%{transform:rotateZ(15deg);opacity:.8}75%{transform:rotateZ(-5deg);opacity:1}100%{transform:rotateX(0);opacity:1}}@keyframes swal2-toast-show{0%{transform:translateY(-0.625em) rotateZ(2deg)}33%{transform:translateY(0) rotateZ(-2deg)}66%{transform:translateY(0.3125em) rotateZ(2deg)}100%{transform:translateY(0) rotateZ(0deg)}}@keyframes swal2-toast-hide{100%{transform:rotateZ(1deg);opacity:0}}@keyframes swal2-toast-animate-success-line-tip{0%{top:.5625em;left:.0625em;width:0}54%{top:.125em;left:.125em;width:0}70%{top:.625em;left:-0.25em;width:1.625em}84%{top:1.0625em;left:.75em;width:.5em}100%{top:1.125em;left:.1875em;width:.75em}}@keyframes swal2-toast-animate-success-line-long{0%{top:1.625em;right:1.375em;width:0}65%{top:1.25em;right:.9375em;width:0}84%{top:.9375em;right:0;width:1.125em}100%{top:.9375em;right:.1875em;width:1.375em}}</style><style type="text/css">.jqstooltip { position: absolute;left: 0px;top: 0px;visibility: hidden;background: rgb(0, 0, 0) transparent;background-color: rgba(0,0,0,0.6);filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000);-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#99000000, endColorstr=#99000000)";color: white;font: 10px arial, san serif;text-align: left;white-space: nowrap;padding: 5px;border: 1px solid white;z-index: 10000;}.jqsfield { color: white;font: 10px arial, san serif;text-align: left;}</style><script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/survey-v2.480689fe14389604b7a3.js.download"></script><style>._hj-Pbej5__styles__resetStyles *{line-height:normal;font-family:Arial, sans-serif, Tahoma !important;text-transform:initial !important;letter-spacing:normal !important}._hj-Pbej5__styles__resetStyles *::before,._hj-Pbej5__styles__resetStyles *::after{box-sizing:initial}._hj-Pbej5__styles__resetStyles div{height:auto}._hj-Pbej5__styles__resetStyles button{display:inline-block;height:auto;font-size:1rem}._hj-Pbej5__styles__resetStyles div,._hj-Pbej5__styles__resetStyles span,._hj-Pbej5__styles__resetStyles p,._hj-Pbej5__styles__resetStyles a,._hj-Pbej5__styles__resetStyles button{font-weight:normal !important}._hj-Pbej5__styles__resetStyles div,._hj-Pbej5__styles__resetStyles span,._hj-Pbej5__styles__resetStyles p,._hj-Pbej5__styles__resetStyles a,._hj-Pbej5__styles__resetStyles img,._hj-Pbej5__styles__resetStyles strong,._hj-Pbej5__styles__resetStyles form,._hj-Pbej5__styles__resetStyles label{border:0;font-size:100%;vertical-align:baseline;background:transparent;margin:0;padding:0;float:none !important}._hj-Pbej5__styles__resetStyles span{color:inherit}._hj-Pbej5__styles__resetStyles ol,._hj-Pbej5__styles__resetStyles ul,._hj-Pbej5__styles__resetStyles li{list-style:none !important;margin:0 !important;padding:0 !important}._hj-Pbej5__styles__resetStyles li:before,._hj-Pbej5__styles__resetStyles li:after{content:none !important}._hj-Pbej5__styles__resetStyles hr{display:block;height:1px;border:0;border-top:1px solid #ccc;margin:1em 0;padding:0}._hj-Pbej5__styles__resetStyles input[type='submit'],._hj-Pbej5__styles__resetStyles input[type='button'],._hj-Pbej5__styles__resetStyles button{margin:0;padding:0;float:none !important}._hj-Pbej5__styles__resetStyles input,._hj-Pbej5__styles__resetStyles select,._hj-Pbej5__styles__resetStyles a img{vertical-align:middle}._hj-s3UIi__styles__globalStyles *,._hj-s3UIi__styles__globalStyles *::before,._hj-s3UIi__styles__globalStyles *::after{box-sizing:border-box}@font-face{font-family:'hotjar';src:url(https://script.hotjar.com/font-hotjar_5.f4b154.eot);src:url(https://script.hotjar.com/font-hotjar_5.f4b154.eot#iefix) format("embedded-opentype"),url(https://script.hotjar.com/font-hotjar_5.65042d.woff2) format("woff2"),url(https://script.hotjar.com/font-hotjar_5.0ddfe2.ttf) format("truetype"),url(https://script.hotjar.com/font-hotjar_5.17b429.woff) format("woff"),url(https://script.hotjar.com/font-hotjar_5.2c7ab2.svg#hotjar) format("svg");font-weight:normal;font-style:normal}@keyframes _hj-eYRYp__styles__spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}@keyframes _hj-5\+Z5O__styles__colors{0%{border-color:#f4364c;border-top-color:transparent}25%{border-color:#00a2f2;border-top-color:transparent}50%{border-color:#efb60c;border-top-color:transparent}75%{border-color:#42ca49;border-top-color:transparent}100%{border-color:#f4364c;border-top-color:transparent}}._hj-s3UIi__styles__globalStyles p{color:inherit !important}._hj-s3UIi__styles__globalStyles a,._hj-s3UIi__styles__globalStyles a:link,._hj-s3UIi__styles__globalStyles a:hover,._hj-s3UIi__styles__globalStyles a:active{color:inherit !important;text-decoration:underline}._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon{speak:none !important;font-style:normal !important;font-weight:normal !important;font-variant:normal !important;text-transform:none !important;overflow-wrap:normal !important;word-break:normal !important;word-wrap:normal !important;white-space:nowrap !important;line-height:normal !important;-webkit-font-smoothing:antialiased !important;-moz-osx-font-smoothing:grayscale !important;vertical-align:middle !important}._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon,._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon:before,._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon:after,._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon *,._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon *:before,._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon *:after{font-family:'hotjar' !important;display:inline-block !important;direction:ltr !important}._hj-s3UIi__styles__globalStyles ._hj-L5SMl__styles__icon:before{color:inherit !important}._hj-s3UIi__styles__globalStyles ._hj-dk3Fb__styles__iconX:before{content:'\e803'}._hj-s3UIi__styles__globalStyles ._hj-9iDZB__styles__iconOk:before{content:'\e804'}._hj-s3UIi__styles__globalStyles ._hj-t13KX__styles__iconError:before{content:'\e90c'}._hj-s3UIi__styles__globalStyles ._hj-D\+oDX__styles__iconLogo:before{content:'\e806'}._hj-s3UIi__styles__globalStyles ._hj-Nbq9C__styles__iconSelectElement:before{content:'\e91a'}._hj-s3UIi__styles__globalStyles ._hj-mtJG6__styles__surveyIcons{background-repeat:no-repeat;width:16px;height:16px;display:inline-block !important;zoom:1;vertical-align:middle}._hj-widget-theme-light ._hj-s3UIi__styles__globalStyles ._hj-mtJG6__styles__surveyIcons{background-image:url(https://script.hotjar.com/widget_icons_light.766225.png)}._hj-widget-theme-dark ._hj-s3UIi__styles__globalStyles ._hj-mtJG6__styles__surveyIcons{background-image:url(https://script.hotjar.com/widget_icons_dark.ad934a.png)}._hj-s3UIi__styles__globalStyles ._hj-EZqbk__styles__inputField{font-family:Arial, sans-serif, Tahoma;font-size:14px;color:#333 !important;padding:6px !important;text-indent:0 !important;height:30px;width:100%;min-width:100%;background:white;border:1px solid !important;outline:none !important;max-width:none !important;float:none;border-radius:3px}._hj-s3UIi__styles__globalStyles ._hj-AwaE7__styles__textarea{resize:none;height:100px}._hj-s3UIi__styles__globalStyles ._hj-EIBGi__styles__basicButton,._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton{cursor:pointer;text-decoration:none;text-transform:capitalize;font-size:14px;font-weight:bold;padding:6px 16px !important;border:0;outline:0;display:inline-block;vertical-align:top;width:auto;zoom:1;transition:all 0.2s ease-in-out;box-shadow:0 2px 3px 0 rgba(0,0,0,0.15);border-radius:4px;color:white}._hj-s3UIi__styles__globalStyles ._hj-EIBGi__styles__basicButton:hover,._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:hover,._hj-s3UIi__styles__globalStyles ._hj-EIBGi__styles__basicButton:focus,._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:focus,._hj-s3UIi__styles__globalStyles ._hj-EIBGi__styles__basicButton:active,._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:active{background:#00a251}._hj-s3UIi__styles__globalStyles ._hj-EIBGi__styles__basicButton[disabled],._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton[disabled]{cursor:default}._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton{font-size:14px !important;font-weight:500 !important;padding:6px 16px !important;border:0 !important;outline:0 !important;min-height:initial !important;width:auto !important;min-width:initial !important;background:var(--hjFeedbackAccentColor) !important;color:var(--hjFeedbackAccentTextColor) !important;box-shadow:none !important}._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:hover,._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:focus,._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:active{background:var(--hjFeedbackAccentActiveColor) !important}._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:focus{background:var(--hjFeedbackAccentColor) !important;box-shadow:0 0 0 1px var(--hjFeedbackPrimaryColor),0 0 0 3px var(--hjFeedbackAccentColor) !important}._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton:hover{background:var(--hjFeedbackAccentHoverColor) !important}._hj-s3UIi__styles__globalStyles ._hj-SU8LU__styles__primaryButton[disabled]{cursor:default;background:var(--hjFeedbackDisabledAccentColor) !important;color:var(--hjFeedbackDisabledAccentTextColor) !important}._hj-s3UIi__styles__globalStyles ._hj-F457\+__styles__clearButton{cursor:pointer;text-decoration:underline;font-size:13px !important;padding:0 10px !important;border:0 !important}._hj-s3UIi__styles__globalStyles ._hj-F457\+__styles__clearButton,._hj-s3UIi__styles__globalStyles ._hj-F457\+__styles__clearButton:hover,._hj-s3UIi__styles__globalStyles ._hj-F457\+__styles__clearButton:focus,._hj-s3UIi__styles__globalStyles ._hj-F457\+__styles__clearButton:active{background:transparent !important}._hj-s3UIi__styles__globalStyles ._hj-hTm4\+__styles__answersContentWrapper{padding:4px 12px 16px 12px}._hj-s3UIi__styles__globalStyles ._hj-ag9y\+__styles__spinner{border:1px solid rgba(0,0,0,0.6);border-top-color:transparent !important;border-radius:50%;transform:rotate(0deg);animation:_hj-eYRYp__styles__spin 0.4s linear infinite, _hj-5\+Z5O__styles__colors 5.6s ease-in-out infinite}._hj-s3UIi__styles__globalStyles ._hj-H1LCt__styles__widget{font-size:13px !important;position:fixed;z-index:2147483640;bottom:-400px;right:100px;width:300px;-webkit-border-radius:5px 5px 0 0;-moz-border-radius:5px 5px 0 0;border-radius:5px 5px 0 0;-webkit-transform:translateZ(0) !important;transform:translateZ(0) !important}._hj-AwaE7__styles__textarea{}._hj-dk3Fb__styles__iconX,._hj-9iDZB__styles__iconOk,._hj-t13KX__styles__iconError,._hj-D\+oDX__styles__iconLogo,._hj-Nbq9C__styles__iconSelectElement{}._hj-eJm8p__styles__rtl,._hj-eJm8p__styles__rtl *{direction:rtl !important}._hj-hc6BA__styles__roundedCorners{border-radius:3px}@media screen and (max-width: 480px){._hj-A4W17__styles__inlineSurvey{max-width:100%;overflow-x:auto}}
+</style><style data-emotion="css-global" data-s=""></style><style data-emotion="css" data-s=""></style></head>
+
+    <body class="no-skin  pace-done"><div class="pace  pace-inactive"><div class="pace-progress" data-progress-text="100%" data-progress="99" style="transform: translate3d(100%, 0px, 0px);">
+  <div class="pace-progress-inner"></div>
+</div>
+<div class="pace-activity"></div></div>
+        <!-- Google Tag Manager (noscript) -->
+        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5SJMF6ML"
+        height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+        <!-- End Google Tag Manager (noscript) -->
+
+                
+        <div class="navbar navbar-default" id="navbar">
+            <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/font-awesome.css">
+
+    <script>
+        window.jQuery || document.write("<script src='https://mundovivaextranet.vivaeventos.com.br/ERP_VIVA/js/jquery.js'>" + "<" + "/script>");
+    </script><script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.js.download"></script>
+    <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.tmpl.min.js.download"></script>
+<div id="navContent">
+    <div id="navbar" class="navbar navbar-default">
+        <div id="divBackgroundNavbar">
+            <div class="divShadownBackgroundNavBar"></div>
+        </div>
+        <div class="navbar-container" id="navbar-container">
+            <div class="" id="img-nav"></div>
+            <div class="pull-left menu-logo col-md-3 col-sm-2" id="menu-logo" style="border-right-color: rgb(42, 59, 69);">
+                <div id="divShadownBackgroundNavBarRight" class="divShadownBackgroundNavBar" style="display: none;"></div>
+                <a href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador/#" class="navbar-brand" style=" ">
+                    <small>
+                        </small></a><small><a href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador" id="logo-extranet">
+                            <img class="img img-responsive imglogoace" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/logo-extranet-menu.png" id="logo-navbar" style="height: auto; width: 140px;">
+                        </a>
+                    </small>
+                
+                <a href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador/#" class="navbar-exp" style="float: right;">
+                    <i class="menu-icon opc fa fa-bars" id="icon-expand" style="color: rgb(255, 255, 255);"></i>
+                </a>
+            </div>
+        </div>
+        <button type="button" class="navbar-toggle menu-toggler pull-left" id="menu-toggler" data-target="#sidebar">
+            <span class="sr-only">Toggle sidebar</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </button>
+        <div class="nav-mensagem">
+                        <div class="col-lg-8 col-md-7 col-xs-9" id="nav-message">
+                <div id="nav-message-container">
+                    <div class="col-lg-10 col-md-8 col-xs-8" id="message-nav">
+                        <span class="messages pull-right" style="">Olá
+                            <a href="javascript:void(0);">Gabriel</a>. Você está logado em
+                            <a href="javascript:void(0);">Viva Eventos Franqueadora</a>
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-1 col-xs-1 pull-right" style="">
+                <div class="navbar-buttons pull-right" role="navigation" style="margin-top: -5px;">
+                    <ul class="nav ace-nav" id="sidebar" style="display: flex;">
+                        <li style="padding-top: 12px;padding-bottom: 4px;margin: 0; border: none;">
+                            <a data-toggle="dropdown" href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador/#" class="dropdown-toggle menu-config" style="background-color: transparent;">
+                                <i class="menu-icon menu-config-icon fa fa-cog" style="color: #fff;font-size: 22px;position: relative;top: -5px;"></i>
+                            </a>
+                            <ul class="user-menu dropdown-menu-right dropdown-menu dropdown-yellow dropdown-caret dropdown-close">
+                                <li>
+                                    <a data-toggle="dropdown" class="dropdown-toggle" id="trocarUnidadeDropdown">
+                                        <i class="ace-icon fa fa-share"></i>
+                                        Trocar Unidade
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_usuario_mudarsenha/?/id/96998">
+                                        <i class="ace-icon fa fa-user"></i>
+                                        Info. Pessoais
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="https://mundovivaextranet.vivaeventos.com.br/logout">
+                                        <i class="ace-icon fa fa-power-off"></i>
+                                        Logout
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <style>
+        a:hover,
+        a:focus {
+            color: black;
+            text-decoration: underline;
+        }
+
+        .menu-text,
+        .submenu > li > a {
+            cursor: pointer;
+        }
+
+        .ace-nav > li > a {
+            background-color: transparent !important;
+            min-width: 0 !important;
+            width: 38px !important;
+        }
+
+        .bars {
+            font-size: 2em;
+            color: white;
+            margin-top: 10px;
+            margin-left: 10px;
+        }
+
+        .button-dropdown {
+            color: #fff !important;
+            cursor: pointer;
+            display: inline-block;
+            padding: 5px 10px;
+        }
+
+        #divBackgroundNavbar {
+            background: linear-gradient(to right, #2d5672, #4a7c9f);
+            box-shadow: 1px 1px 1px #ccc;
+            height: 50px;
+            position: absolute;
+            right: 0;
+            width: 100%;
+            z-index: 0;
+        }
+
+        .divShadownBackgroundNavBar {
+            display: none;
+            position: relative;
+            top: 43px;
+            width: 237px
+        }
+
+        .dropdown-menu.dropdown-close.dropdown-menu-right {
+            left: auto;
+            right: 4px;
+            top: 47px;
+        }
+
+        .dropdown-toggle {
+            border-radius: 3px;
+        }
+
+        .imglogoace {
+            float: left;
+            left: 0;
+            height: 62px;
+            padding: 0 0 0 10px;
+            position: absolute;
+            top: 2px;
+            width: auto;
+            z-index: 1;
+        }
+
+        #icon-expand {
+            color: #fff;
+            position: relative;
+            right: -8px;
+        }
+
+        .linha-vertical {
+            height: 46px;
+            border-left: 1px solid;
+            border-color: #555;
+        }
+
+        .menu_level_0 open:hover {
+            color: #000 !important;
+        }
+
+        .messages {
+            color: #fff !important;
+            display: block;
+            font-family: 'Roboto';
+            font-size: 14px;
+            font-weight: bold;
+            position: fixed;
+            right: 110px;
+            text-align: center;
+            top: 15px;
+        }
+
+        .messages a {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .menu-logo {
+            height: 50px !important;
+            margin-left: -20px !important;
+            width: 19.5%;
+        }
+
+        .menu-logo {
+            border-right-color: #2A3B45;
+        }
+
+        .menu-config-icon {
+            font-size: 3em;
+            margin-top: 10px;
+        }
+
+        @media(max-width: 540px) and (min-width: 480px),
+        (max-width: 360px) {
+            .navbar:not(.navbar-collapse) .navbar-buttons .user-menu {
+                padding-top: 2px !important;
+            }
+        }
+
+        @media only screen and (max-width: 500px) {
+            #message-nav {
+                margin-left: 0 !important;
+                margin-top: 14px !important;
+                width: 100%;
+            }
+
+            .messages {
+                text-align: center !important;
+                font-size: 10px !important;
+                width: 55vw !important;
+                top: 10px !important;
+                left: 20% !important;
+            }
+        }
+
+        @media only screen and (max-width: 300px) {
+            .messages {
+                left: 15% !important;
+            }
+        }
+
+        #menu-toggler {
+            background-color: #FF8537;
+        }
+
+        #message-nav {
+            font-weight: bold;
+            margin-left: 69px;
+            top: -40px;
+        }
+
+        .messages .pull-right {
+            color: #fff !important;
+            font-family: \'Roboto\';
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .messages .pull-right > a {
+            color: #fff !important;
+            font-family: \'Roboto\';
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .navbar {}
+
+        .nav-list > li:before > a {
+            background-color: red;
+        }
+
+        .navbar-exp {
+            float: left;
+            color: black;
+        }
+
+        .nav-list > li > a {
+            font-size: 15px !important;
+            font-family: 'Roboto';
+        }
+
+        #nav-message {
+            margin-left: 0;
+            top: 41px;
+        }
+
+        #nav-message-container {
+            margin-top: 10px;
+        }
+
+        .opc {
+            font-size: 2em;
+            margin-top: 10px;
+        }
+    </style>
+
+
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/arrive.min.js.download"></script>
+<script>
+    (function ($) {
+        var doc = document;
+
+
+                
+        var sidebar;
+        var logo;
+        var navbar;
+        
+        $("#menu-toggler").on('click', function () {
+            menuExpand();
+        });
+        function hideNewMenu() {
+            $('#logo-navbar').attr("src", 'https\x3A\x2F\x2Fmundovivaextranet.vivaeventos.com.br\x2Fimages\x2Flogo\x2Dextranet\x2Dmenu.png');
+            $('#logo-navbar').css('width', '140px');
+            $('#logo-navbar').css('height', 'auto');
+            $('.sidebar + .main-content').css('margin-left', '0px');
+            $('.sidebar').addClass('sidebar-display');
+            $('.sidebar').removeClass('display')
+            $('.sidebar').hide();
+            $('.menu-logo').css('border-right-color', '#2A3B45');
+            $('.menu-logo > .navbar-exp > i').css('color', '#fff');
+            $('.menu-config').css('background-color', '#fff');
+            $('#divShadownBackgroundNavBarRight').show();
+            setTimeout(function(){
+                $("table").addClass('widthImportant');
+            }, 1000);
+        }
+
+        $(document).delegate('.navbar-exp', 'click', function () {
+            menuExpand()
+        });
+        function menuExpand() {
+            $(".sidebar").css({position: 'absolute'});
+            if ($('.sidebar').hasClass('sidebar-display') || !$('.sidebar').hasClass('display')) {
+                $('#logo-navbar').attr("src", 'https\x3A\x2F\x2Fmundovivaextranet.vivaeventos.com.br\x2Fimages\x2Flogo\x2Dextranet\x2Dmenu.png');
+                $('.sidebar').removeClass('sidebar-display');
+                $('.sidebar').addClass('display');
+                $('.sidebar + .main-content').css('margin-left', '240px');
+                $('.sidebar').show();
+                $("#logo-navbar").css('height', 'auto');
+                $("#logo-navbar").css('width', '140px');
+                $('.menu-logo > .navbar-exp > i').css('color', '#fff');
+                $('.menu-logo').css('border-right-color', '#2A3B45');
+                $('.menu-config').css('background-color', 'transparent');
+                $('#divShadownBackgroundNavBarRight').hide();
+
+            } else {
+                $('#logo-navbar').attr("src", 'https\x3A\x2F\x2Fmundovivaextranet.vivaeventos.com.br\x2Fimages\x2Flogo\x2Dextranet\x2Dmenu.png');
+                $('#logo-navbar').css('width', '140px');
+                $('#logo-navbar').css('height', 'auto');
+                $('.sidebar + .main-content').css('margin-left', '0px');
+                $('.sidebar').addClass('sidebar-display');
+                $('.sidebar').removeClass('display')
+                $('.sidebar').hide();
+                $('.menu-logo').css('border-right-color', '#2A3B45');
+                $('.menu-logo > .navbar-exp > i').css('color', '#fff');
+                $('.menu-config').css('background-color', '#2A3B45');
+                $('#divShadownBackgroundNavBarRight').show();
+            }
+        }
+
+        menuExpand();
+
+        $(document).load("\x2Fmenu\x2F", function (data) {
+            
+            var template = '<li class="menu_level_0">' +
+                    '        {{if children != ""}}' +
+                    '    <a  style="text-decoration: none !important;" {{if url != "#"}}href="${url}"{{/if}}  class="dropdown-toggle">' +
+                    '        {{else}}' +
+                    '    <a  {{if target == true}}target="_blank"{{/if}} style="text-decoration: none !important;" {{if url != "#"}}href="${url}"{{/if}}">' +
+                    '       {{/if}}' +
+                    '        <i class="menu-icon fa fa-${icon}"></i>' +
+                    '        <span class="menu-text" id="${tag}"> ${label} </span>' +
+                    '        {{if children != ""}}' +
+                    '        <b class="arrow fa fa-angle-down"></b>' +
+                    '        {{/if}}' +
+                    '    </a>' +
+                    '    {{if children != ""}}' +
+                    '    <ul class="submenu" style="background-color: #234054 !important;">' +
+                    '        {{each(index,val) children}}' +
+                    '        <li>' +
+                    '                {{if val.children != ""}}' +
+                    '                   <a style="text-decoration: none !important;" id="${tag}" {{if val.url != "#"}}href="${val.url}"{{/if}} class="dropdown-toggle">' +
+                    '                       ${val.label}' +
+                    '                       <b class="arrow fa fa-angle-down"></b>' +
+                    '                   </a>' +
+
+                    '                   <ul class="submenu" style="background-color: #152026 !important;">' +
+                    '                     {{each(index1,child)  val.children}}' +
+                    '                     <li>' +
+                    '                         <a href="${child.url}" id="${tag}">' +
+                    '                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;' +
+                    '                             ${child.label}' +
+                    '                          </a>' +
+                    '                      </li>' +
+                    '                     {{/each}}' +
+                    '                   </ul>' +
+                    '                {{else}}' +
+                    '                   <a href="${val.url}">' +
+                    '                       <i class="menu-icon fa"></i>' +
+                    '                       ${val.label}' +
+                    '                   </a>' +
+                    '                {{/if}}' +
+                    '        </li>' +
+                    '        {{/each}}' +
+                    '    </ul>' +
+                    '    {{/if}}' +
+                    '</li>';
+            
+
+            $.tmpl(template, JSON.parse(data)).appendTo(".navSidebar");
+            hideNewMenu();
+        });
+
+                    })(jQuery);
+</script>                    </div>
+        <div class="main-container" id="main-container">
+            <div class="sidebar responsive sidebar-absolute display" id="sidebar" data-sidebar="true" data-sidebar-scroll="true" data-sidebar-hover="true" style="display: block; position: absolute;">
+                <br>
+                <ul class="nav nav-list navSidebar" id=""><li class="menu_level_0">            <a style="text-decoration: none !important;" href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador" "="">               <i class="menu-icon fa fa-home"></i>        <span class="menu-text" id="mnHome"> Home </span>            </a>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-star"></i>        <span class="menu-text" id="mnGestaoFranqueadora"> Gestão Franqueadora </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarUnidade" class="dropdown-toggle">                       Gerenciar Unidades                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_unidade_listar" id="mnCadastrarUnidades">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Cadastrar Unidades                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarUsuarios" class="dropdown-toggle">                       Gerenciar Usuários                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_usuario_listar" id="mnCadastrarUsuarios">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Cadastrar Usuários                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/setor/" id="mnSetores">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Setores                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarClientes" class="dropdown-toggle">                       Gerenciar Clientes                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_tipocliente_listar" id="mnTiposClientes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Tipos de Clientes                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarBoletos" class="dropdown-toggle">                       Gerenciar Boletos                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_boletolancamentos" id="mnGerarBoletos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Gerar boletos                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/controleMensalidade" id="mnControleMensalidades">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Controle de Mensalidades                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarBancos" class="dropdown-toggle">                       Gerenciar Bancos                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_banco_listar" id="mnCadastroBanco">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Cadastro Banco                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_carteiracobranca_listar" id="mnCarteirasCobranca">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Carteiras de Cobrança                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_boleto_arquivosRetorno" id="mnArquivosRetorno">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Arquivos de Retorno                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_arquivoremessa_listar" id="mnArquivosRemessa">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Arquivos de Remessa                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_arquivoprocessado_listar" id="mnRelatorioArqRetorno">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatórios de Arq. Retorno                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_relatorio_contabil" id="mnRelatoriContabil">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório Contábil                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_relatorio_tarifa" id="mnRelatorioTarifas">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório de Tarifas                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarEventos" class="dropdown-toggle">                       Gerenciar Eventos                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_evento_listar" id="mnCadastrarEventos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Cadastrar Eventos                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_relatorio_previsao_eventos" id="mnEventosDataProvisoria">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Eventos com data provisória                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_relatorio_eventos_sem_valor" id="mnEventosSemValor">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Eventos sem Valor                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarPlanoContas" class="dropdown-toggle">                       Gerenciar Plano de Contas                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_plano_contas_receber_listar" id="mnPlanoContasReceber">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Plano de Contas a Receber                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_plano_contas_pagar_listar" id="mnplanoContasPagar">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Plano de Contas a Pagar                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarCartaoCredito" class="dropdown-toggle">                       Gerenciar Cartão de Crédito                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/zoop/taxaParcelamentoCartao/gerenciar_plano_cartao_credito_listar" id="mnPlanosVenda">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Planos de Venda                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarBanner" class="dropdown-toggle">                       Gerenciar Banner                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/ERP_BannerPrincipalMundoViva_ListarBanner" id="mnMundoViva">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Mundo VIVA                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/bannerDashboardColaborador/listar" id="mnExtranet">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Extranet                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/ERP_BannerPrincipalClubeViva_ListarBanner" id="mnClubeViva">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Clube VIVA                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/bannerVivaCard" id="mnCartaoVirtual">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Cartão Virtual                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/cadastroFaqMundoViva">                       <i class="menu-icon fa"></i>                       Gerenciar FAQ                   </a>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnDesenvolvedor" class="dropdown-toggle">                       Desenvolvedor                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/erro/" id="mnBugs">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Bugs                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/tarefaCron/" id="mnCron">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Cron                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/email/" id="mnTestarEmails">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Testar emails                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/DestinosEOrigensEmail/" id="mnConfiDestintRemetentes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Config. Destinat. e Remetentes                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador/monitoramento" id="mnMonitoramento">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Monitoramento                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnPushNotification" class="dropdown-toggle">                       Push Notification                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/pushNotificationService/notificacoes" id="mnNotificacoes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Notificações                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/categoriaFornecedor_listar">                       <i class="menu-icon fa"></i>                       Categoria                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/relatorioRecorrente">                       <i class="menu-icon fa"></i>                       Relatórios Recorrentes                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/gerenciar-ipca/listar">                       <i class="menu-icon fa"></i>                       Gerenciar IPCA                   </a>                        </li>            </ul>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-building"></i>        <span class="menu-text" id="mnGestaoFranquia"> Gestão Franquia </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarUsuariosFranquia" class="dropdown-toggle">                       Gerenciar Usuários                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_relatorio_consultor" id="mnRelatorioConsultores">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório de Consultores                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/opAgenda">                       <i class="menu-icon fa"></i>                       Agenda Oficial                   </a>                        </li>            </ul>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-dashboard"></i>        <span class="menu-text" id="mnDashboards"> Dashboards </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_vendas">                       <i class="menu-icon fa"></i>                       Dashboard de vendas                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_clientes">                       <i class="menu-icon fa"></i>                       Dashboard de clientes                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_pesquisa">                       <i class="menu-icon fa"></i>                       Dashboard de pesquisas (NPS)                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/dashboard_unidade/dash_eventos">                       <i class="menu-icon fa"></i>                       Dashboard de eventos                   </a>                        </li>            </ul>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-user-plus"></i>        <span class="menu-text" id="mnClientes"> Clientes </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciaFundos" class="dropdown-toggle">                       Gerenciar Fundos                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_listar" id="mnFundos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Fundos                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/dashboardFundo" id="mnDashFundos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Dashboard Fundo                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_requisicao_pagamento_listar" id="mnreqPgto">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Req de Pagamento                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_extrato" id="mnextrato">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Extrato                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/despesas-contratuais/listar" id="mnDespesasContratuais">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Despesas Contratuais                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/op" id="mnOp">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             OP                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/reuniao" id="mnReuniao">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Reunião                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarIntegrantes" class="dropdown-toggle">                       Gerenciar Integrantes                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_integrante_listartodos" id="mnIntegrantes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Integrantes                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/preIntegrante/" id="mnCadastroRapido">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Cadastro Rápido                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarMundoViva" class="dropdown-toggle">                       Gerenciar Mundo VIVA                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_bank_aviso" id="mnVivaAvisa">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Viva Avisa e-mail                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_bank_documento_fundo" id="mnDocumentos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Documentos                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/avisosVivaBank" id="mnAvisosComissoes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Avisos Comissões                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/eventosVivaBank" id="mnEventosNaoOficiais">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Eventos não oficiais                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/enquete_franq" id="mnEnquete">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Enquete                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnRelatorio" class="dropdown-toggle">                       Relatórios                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_boleto_listar" id="mnRelatorioBoletos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatórios de Boletos                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_relatorio_parcelamentos_futuros" id="mnRelatorioParcelamentosFuturos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatórios Parcelamentos Futuros                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_integranteFinanceiro_relatorioGeral" id="mnRelatorioLancamento">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatórios de Lançamentos                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_regularizacaoDebito_relatorioGeral" id="mnRelatorioReglDebitos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatórios Regul. de Debitos                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/indexRetorioDeLote_fundoLote" id="mnRelatorioLotes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatórios de Lotes                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_relatorio_participacaoEventos" id="mnrelatorioIntegrantesEvento">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório Integrantes por Evento                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_relatorio_tarifa" id="mnRelatorioTarifasClientes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório de Tarifas                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/zoop/relatorios_pagamento_cartao" id="mnRelatorioPgtoCartao">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório de Pagamentos no Cartão                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/fundo/relatorio_integrantes_inadimplentes" id="mnRelatorioAcompanhamentoInadimplentes">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório de Acompanhamento de Inadimplentes                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/fundo/relatorio_saldo_projetado" id="mnRelatorioSaldoProjetado">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório Saldo Projetado - SPDX                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/op/fechamento/relatorio_controle_fechamentos" id="mnRelatorioControleFechamentos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório de Controle de Fechamentos                          </a>                      </li>                                        </ul>                        </li>            </ul>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-cart-plus"></i>        <span class="menu-text" id="mnFornecedores"> Fornecedores </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_fornecedor_listar">                       <i class="menu-icon fa"></i>                       Gerenciar Fornecedor                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/parceiros/">                       <i class="menu-icon fa"></i>                       Parceiros (Clube Viva)                   </a>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnGerenciarServicos" class="dropdown-toggle">                       Gerenciar Serviços                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/modulo/" id="mnModulo">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Módulo                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/produtoServico" id="mnServicos">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Serviços                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/item/" id="mnItem">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Item                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/negociacao_em_massa/index">                       <i class="menu-icon fa"></i>                       Contratação de Fornecedores                   </a>                        </li>            </ul>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-map-marker"></i>        <span class="menu-text" id="mnComercial"> Comercial </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_instituicao_listar">                       <i class="menu-icon fa"></i>                       Gerenciar Instituições                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_curso_listar">                       <i class="menu-icon fa"></i>                       Gerenciar Cursos                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/empresaCerimonial">                       <i class="menu-icon fa"></i>                       Concorrentes                   </a>                        </li>            </ul>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-users"></i>        <span class="menu-text" id="mnRelacionamento"> Relacionamento </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/controleMensalidade">                       <i class="menu-icon fa"></i>                       Controle Mensalidade                   </a>                        </li>            </ul>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-cog"></i>        <span class="menu-text" id="mnAdminUnidade"> Administrativo Unidade </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_conta_listar">                       <i class="menu-icon fa"></i>                       Conta                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_caixa_listar">                       <i class="menu-icon fa"></i>                       Caixa                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/caixaunificado">                       <i class="menu-icon fa"></i>                       Caixas Unificados                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/contas_pagar_listar">                       <i class="menu-icon fa"></i>                       Contas a Pagar Unidade                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/contas_receber_listar">                       <i class="menu-icon fa"></i>                       Contas a Receber Unidade                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/contas_pagar_listar/?/spdx/1">                       <i class="menu-icon fa"></i>                       Contas a Pagar SPDX                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/#!/contas_receber_listar/?/spdx/1">                       <i class="menu-icon fa"></i>                       Contas a Receber SPDX                   </a>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnPgtpLotes" class="dropdown-toggle">                       Pagamentos em Lotes BB                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/bb-payments-api/pagamento-em-lote/gerar" id="mnGerar">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Gerar                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/bb-payments-api/pagamento-em-lote/relatorio-status-titulo-lote" id="mnRelStatusTituloLote">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Rel. Status Título Lote                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/bb-payments-api/pagamento-em-lote/relatorio-status-titulo-lote-empresa" id="mnRelStatusTituloLoteEmpresa">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Rel. Status Título Lote Empresa                          </a>                      </li>                                        </ul>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/depositoBanco">                       <i class="menu-icon fa"></i>                       Relatório de Banco                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/relatorioRoyalties">                       <i class="menu-icon fa"></i>                       Relatório Royalties                   </a>                        </li>                <li>                                   <a style="text-decoration: none !important;" id="mnRepasseCarteira" class="dropdown-toggle">                       Repasse Carteira                       <b class="arrow fa fa-angle-down"></b>                   </a>                   <ul class="submenu" style="background-color: #152026 !important;">                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/carteira-repasse" id="mnGerarRepasse">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Gerar Repasse                          </a>                      </li>                                          <li>                         <a href="https://mundovivaextranet.vivaeventos.com.br/carteira-repasse/relatorio" id="mnRelRepasse">                            <i class="fa fa-circle-o"></i>&nbsp;&nbsp;                             Relatório Repasse                          </a>                      </li>                                        </ul>                        </li>            </ul>    </li><li class="menu_level_0">            <a target="_blank" style="text-decoration: none !important;" href="https://vivaacademy.vivaeventos.com.br/login/index.php" "="">               <i class="menu-icon fa fa-graduation-cap"></i>        <span class="menu-text" id="mnVivaAcademy"> Viva Academy </span>            </a>    </li><li class="menu_level_0">            <a style="text-decoration: none !important;" class="dropdown-toggle">                <i class="menu-icon fa fa-envelope"></i>        <span class="menu-text" id="mnFaleFranqueadora"> Fale com a Franqueadora </span>                <b class="arrow fa fa-angle-down"></b>            </a>        <ul class="submenu" style="background-color: #234054 !important;">                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/falefranqueadora/comunicacao">                       <i class="menu-icon fa"></i>                       Central de dúvidas                   </a>                        </li>                <li>                                   <a href="https://mundovivaextranet.vivaeventos.com.br/falefranqueadora/ajuda">                       <i class="menu-icon fa"></i>                       Ajuda                   </a>                        </li>            </ul>    </li></ul>
+                <div class="divConfiguracaoSistema">
+                    <span>Última versão:</span><br>
+                    <span>
+                        Sprint 153
+                        -
+                        <a href="https://docs.google.com/spreadsheets/d/17K_DLuoMDxJVgY3xEulkVuOL5LIvHuEe/edit?usp=sharing&amp;ouid=108897535614327019489&amp;rtpof=true&amp;sd=true" target="_blank">
+                            Entregas
+                            <i class="fa fa-external-link-square"></i>
+                        </a>
+                    </span><br>
+                    <span>27/02/2026 12:57:00</span>
+                </div>
+            </div>
+            <div class="main-content" style="margin-left: 240px;">
+                <div class="page-content">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div id="msgResponse"><!--MSG RETORNO--></div>
+                            
+            <style>@media (min-width: 768px) {
+    #anotacoesContent {
+        height: 280px;
+        overflow: auto;
+    }
+}
+
+.itemdiv > .body {
+    margin-left: 0;
+}
+
+.excluirAnotacaoBtn {
+    border: 1px solid #bbb;
+    padding: 2px;
+    background-color: #ccc;
+    border-radius: 2px;
+    color: #fff;
+    position: relative;
+    right: -20px;
+}
+
+.excluirAnotacaoBtn:hover {
+    background-color: #aaa;
+    cursor: pointer;
+}
+
+.zoomItem {
+    transition: all 0.3s ease-in-out;
+}
+
+.zoomItem:hover {
+    zoom: 1;
+    -ms-zoom: 1;
+    -webkit-zoom: 1;
+    -moz-transform: scale(1, 1);
+    -moz-transform-origin: center center;
+    cursor: pointer;
+}
+
+#roundedCounterContainer1,
+#roundedCounterContainer2,
+#roundedCounterContainer3 {
+    cursor: pointer;
+}
+
+#graficoReunioesDoSemestre,
+#graficoAltaInadimplencia,
+#graficoPlanejamentosFaltantes,
+#graficoLotesSemAprovacao,
+#graficoAlertasDeDesligamento,
+#graficoReqSemPrimeiraAprovacao {
+    margin-bottom: 100px;
+}
+
+.comercialEmAberto {
+    padding: 5px;
+    text-align: center;
+    background-color: #ffab51;
+    color: #fff;
+}
+
+.comercialFechado {
+    padding: 5px;
+    text-align: center;
+    background-color: #5cb85c;
+    color: #fff;
+}
+
+.comercialPerdidos {
+    padding: 5px;
+    text-align: center;
+    background-color: #d9534f;
+    color: #fff;
+}
+
+.profile-usertitle {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.profile-usertitle-name {
+    color: #5a7391;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 7px;
+}
+
+.shape {
+    border-style: solid;
+    border-width: 0 70px 40px 0;
+    float: right;
+    height: 0px;
+    width: 0px;
+    -ms-transform: rotate(360deg); /* IE 9 */
+    -o-transform: rotate(360deg); /* Opera 10.5 */
+    -webkit-transform: rotate(360deg); /* Safari and Chrome */
+    transform: rotate(360deg);
+    border-color: rgba(255, 255, 255, 0) #d9534f rgba(255, 255, 255, 0) rgba(255, 255, 255, 0);
+}
+
+.shape-text {
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    position: relative;
+    right: -40px;
+    top: 2px;
+    white-space: nowrap;
+    -ms-transform: rotate(30deg); /* IE 9 */
+    -o-transform: rotate(360deg); /* Opera 10.5 */
+    -webkit-transform: rotate(30deg); /* Safari and Chrome */
+    transform: rotate(30deg);
+}
+
+.offer-content {
+    padding: 20px;
+    height: 95px;
+    margin-bottom: 15px;
+    color: #fff;
+}
+
+.offer-content h4 {
+    font-size: 13px !important;
+    color: #fff;
+}
+
+.offer-content a:hover {
+    text-decoration: none !important;
+}
+
+#img-dashFinanceiro {
+    width: 250px;
+    height: 38px;
+}
+
+#img-dashUnidade {
+    width: 250px;
+    height: 38px;
+}
+
+.aBtn {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 1rem;
+}
+</style>
+        <style>.link-cartao-evento {
+    text-decoration: none !important;
+    color: inherit;
+}
+
+.link-cartao-evento:hover {
+    text-decoration: none;
+}
+
+.icone-confirmacao {
+    margin-right: 5px;
+}
+
+.container-agenda {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 10px;
+    background-color: white;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
+.titulo-agenda {
+    font-size: 18px;
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    margin: 0 0 10px 0;
+    padding-bottom: 5px;
+}
+
+.titulo-proximos-eventos {
+    font-size: 14px;
+    color: #e74c3c;
+    margin-bottom: 10px;
+}
+
+.cartao-evento {
+    padding: 8px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    border-left: 5px solid;
+    border-right: 1px solid #ddd;
+    background-color: white;
+    color: white;
+}
+
+.data-evento,
+.titulo-evento,
+.descricao-evento,
+.hora-evento {
+    margin-bottom: 3px;
+    color: inherit;
+}
+
+.data-evento {
+    font-size: 16px;
+}
+
+.titulo-evento,
+.descricao-evento {
+    font-size: 12px;
+}
+
+.hora-evento {
+    font-size: 11px;
+}
+
+.ver-calendario {
+    text-align: right;
+    margin-top: 10px;
+    font-size: 12px;
+    color: #e74c3c;
+}
+
+.link-calendario {
+    color: #e74c3c;
+}
+
+.verde {
+    background-color: #2e8b57db;
+    border-left-color: #6db98e;
+}
+
+.amarelo {
+    background-color: #e4b20ddb;
+    border-left-color: #dac06e;
+}
+
+.roxo {
+    background-color: #6a0daddb;
+    border-left-color: #8c61ac;
+}
+
+.laranja {
+    background-color: #f4784bdb;
+    border-left-color: #f3bdaa;
+}
+
+.azul {
+    background-color: #1e3a8adb;
+    border-left-color: #3a4f88;
+}
+
+.rosa {
+    background-color: #c71585db;
+    border-left-color: #e573ab;
+}
+
+.vermelho {
+    background-color: #b22222db;
+    border-left-color: #d94c4c;
+}
+
+.popover-body {
+    display: flex;
+    flex-direction: column;
+    max-width: 200px;
+}
+
+.legenda-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.legenda-item .cor {
+    width: 10px;
+    height: 10px;
+    margin-right: 10px;
+    display: inline-block;
+}
+
+.legenda-item .nome {
+    font-size: 14px;
+    color: #333;
+}
+
+.btn-legenda {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 0;
+    padding: 8px 12px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+}
+
+.btn-legenda i {
+    margin-right: 5px;
+}
+
+.mensagem-sem-eventos {
+    font-size: 16px;
+    color: #333;
+    text-align: center;
+    margin-top: 20px;
+}
+</style>
+    
+    <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/duallist.css">
+
+    <div class="row">
+        <div class="col-xs-12"><br></div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12 col-md-8">
+                                        <div class="col-xs-12">
+                    <section id="banners" class="dash-box">
+                        <div class="box-container">
+                            <div class="box-content-container">
+
+                                <div id="bannerCarousel" class="carousel slide" data-ride="carousel">
+
+                                    <!-- Wrapper for slides -->
+                                    <div class="carousel-inner" role="listbox"><div class="item" style="pointer-events: auto;">  <a target="_blank" href="http:/#" class="main-link">    <img src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/603d06d7e854e3.15969183101-03-2021_12-23-24.jpg" alt="" class="img-responsive" style="width: 100%;">    <div class="banner-content">      <p class="banner-chamada"></p>    </div>  </a></div><div class="item active" style="pointer-events: auto;">  <a target="_blank" href="https://forms.gle/8ygY8yvA1Z7Zsof49" class="main-link">    <img src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/64e901bfeb0042.25923898125-08-2023_16-32-26.jpg" alt="" class="img-responsive" style="width: 100%;">    <div class="banner-content">      <p class="banner-chamada"></p>    </div>  </a></div></div>
+
+                                    <!-- Left and right controls -->
+                                    <a class="left carousel-control" href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador/#bannerCarousel" role="button" data-slide="prev">
+                                        <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span>
+                                        <span class="sr-only">Previous</span>
+                                    </a>
+                                    <a class="right carousel-control" href="https://mundovivaextranet.vivaeventos.com.br/relacionamento/dashboardColaborador/#bannerCarousel" role="button" data-slide="next">
+                                        <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span>
+                                        <span class="sr-only">Next</span>
+                                    </a>
+                                </div>
+
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            
+                                        <div class="row">
+                    <div class="col-xs-12">
+                        <header class="box-header">
+                            <h2>// Acesso rápido</h2>
+                        </header>
+
+                        <div class="col-xs-12 text-right">
+                            <button id="btnconfigquickbtns" class="btn btn-info btn-xs">
+                                <i class="ace-icon fa fa-wrench  bigger-110 icon-only"></i>
+                            </button>
+                        </div>
+                        <div class="col-xs-12" id="itensAcessoRapidoDiv"><div class="col-sm-2 card" id="798_quickbtn">    <div class="offer offer-primary text-center">        <div class="offer-content">            <i class=" fa fa-user bigger-170"></i>            <a href="https://mundovivaextranet.vivaeventos.com.br/preIntegrante">               <h4 class="lead"><strong>Consulta integrante </strong>                </h4>            </a>        </div>    </div> </div><div class="col-sm-2 card" id="799_quickbtn">    <div class="offer offer-primary text-center">        <div class="offer-content">            <i class=" fa fa-graduation-cap bigger-170"></i>            <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_listar">               <h4 class="lead"><strong>Consulta do fundo</strong>                </h4>            </a>        </div>    </div> </div><div class="col-sm-2 card" id="800_quickbtn">    <div class="offer offer-primary text-center">        <div class="offer-content">            <i class=" fa fa-file bigger-170"></i>            <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_boleto_listar">               <h4 class="lead"><strong>Relatório de inadimplentes</strong>                </h4>            </a>        </div>    </div> </div><div class="col-sm-2 card" id="801_quickbtn">    <div class="offer offer-primary text-center">        <div class="offer-content">            <i class=" fa fa-file bigger-170"></i>            <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_boleto_listar">               <h4 class="lead"><strong>Relatório de Títulos Pagos</strong>                </h4>            </a>        </div>    </div> </div><div class="col-sm-2 card" id="802_quickbtn">    <div class="offer offer-primary text-center">        <div class="offer-content">            <i class=" fa fa-money bigger-170"></i>            <a href="https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_requisicao_pagamento_listar">               <h4 class="lead"><strong>Requisição de pagamento</strong>                </h4>            </a>        </div>    </div> </div></div>
+                    </div>
+                </div>
+            
+                                </div>
+
+        <div class="col-xs-12 col-md-4">
+                        
+            
+            <div class="modal fade" tabindex="-1" id="modalAlert" role="dialog" aria-labelledby="myModalLabel" style="z-index: 1050;">
+                <div class="modal-dialog" role="document" style="width: max-content;">
+                    <div class="modal-content" style="margin: -15px; top: 10rem;">
+                        <div class="modal-header modal-title align-center" style="background: #485f6f;">
+                            <h2 style="color:#FFFFFF;">
+                                Notificação de Confirmação da Data
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                    <span aria-hidden="true">×</span>
+                                </button>
+                            </h2>
+                        </div>
+                        <div class="modal-body" id="divConteudoModalNotificacaoDataBaile">
+                            <h3>
+                                <strong>Olá
+                                    Gabriel!</strong>
+                            </h3>
+                            <p>A(s) turma(s) abaixo possui(em) baile previsto(s) para os próximos 180 dias</p>
+                            <p>Confirme a data ou solicite a correção por favor.
+                            </p>
+                            <header class="box-header">
+                                <h2 style="color: #3B1D64;">
+                                    // Turmas
+                                </h2>
+                            </header>
+                            <table style="width: 100%; width: 100%;" class="widthImportant">
+                                <tbody id="tabelaEventosProvisorios"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" tabindex="-1" id="mudarStatusModal" role="dialog" aria-labelledby="myModalLabel" style="z-index: 1050;">
+                <div class="modal-dialog" role="document" style="width: max-content;">
+                    <div class="modal-content" style="margin: -15px; top:15rem">
+                        <div class="modal-header modal-title align-center" style="background: #485f6f;">
+
+                            <h2 style="color:#FFFFFF;" id="nomeTurma"></h2>
+
+                        </div>
+                        <div class="modal-body">
+                            <div id="conteudoDataBaile"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xs-12 col-sm-4" style="position: relative;" id="container3">
+                                        <div class="container-agenda">
+                    <h1 class="titulo-agenda">
+                        Agenda Geral de Eventos
+                        <button id="btnLegenda" type="button" class="btn btn-primary" data-bs-toggle="popover" data-bs-placement="left" data-bs-title="Legenda" data-original-title="" title="">
+                            <i class="fa fa-info-circle" aria-hidden="true"></i>
+                            Legenda
+                        </button>
+
+                    </h1>
+                    <h2 class="titulo-proximos-eventos">Próximos eventos</h2>
+                
+                        <a href="https://mundovivaextranet.vivaeventos.com.br/op?idfundo=7463" class="link-cartao-evento">
+                            <div class="cartao-evento amarelo text-white">
+                                <div class="detalhe-cor-evento"></div>
+                                <div>
+                                    <p class="data-evento">
+                                        03/03/2026
+                                        <i class="fa fa-check" aria-hidden="true"></i>
+                                    </p>
+                                    <p class="titulo-evento">
+                                        <strong>
+                                            7463 | PATRICK-MACHADO DIREITO-FADIVA 2025.2 (PAC)
+                                             | Unidade: Lavras
+                                        </strong>
+                                    </p>
+                                    <p class="descricao-evento">
+                                        Colação
+                                    </p>
+                                    <p class="hora-evento">19:00 - 20:00</p>
+                                </div>
+                            </div>
+                        </a>
+                    
+                        <a href="https://mundovivaextranet.vivaeventos.com.br/op?idfundo=8075" class="link-cartao-evento">
+                            <div class="cartao-evento vermelho text-white">
+                                <div class="detalhe-cor-evento"></div>
+                                <div>
+                                    <p class="data-evento">
+                                        05/03/2026
+                                        <i class="fa fa-check" aria-hidden="true"></i>
+                                    </p>
+                                    <p class="titulo-evento">
+                                        <strong>
+                                            8075 | SUPER INTEGRADAS - UNIC - 2025-2 (PAC) (JUNÇÃO)
+                                             | Unidade: Cuiaba
+                                        </strong>
+                                    </p>
+                                    <p class="descricao-evento">
+                                        EVENTO RELIGIOSO
+                                    </p>
+                                    <p class="hora-evento">20:00 - 22:00</p>
+                                </div>
+                            </div>
+                        </a>
+                    
+                        <a href="https://mundovivaextranet.vivaeventos.com.br/op?idfundo=7598" class="link-cartao-evento">
+                            <div class="cartao-evento azul text-white">
+                                <div class="detalhe-cor-evento"></div>
+                                <div>
+                                    <p class="data-evento">
+                                        05/03/2026
+                                        
+                                    </p>
+                                    <p class="titulo-evento">
+                                        <strong>
+                                            7598 | THAYS-MAIA DIREITO-UNIFENAS 2025.2 (PAC)
+                                             | Unidade: Lavras
+                                        </strong>
+                                    </p>
+                                    <p class="descricao-evento">
+                                        Evento Religioso
+                                    </p>
+                                    <p class="hora-evento">Horário indefinido</p>
+                                </div>
+                            </div>
+                        </a>
+                    
+                        <a href="https://mundovivaextranet.vivaeventos.com.br/op?idfundo=7463" class="link-cartao-evento">
+                            <div class="cartao-evento azul text-white">
+                                <div class="detalhe-cor-evento"></div>
+                                <div>
+                                    <p class="data-evento">
+                                        05/03/2026
+                                        
+                                    </p>
+                                    <p class="titulo-evento">
+                                        <strong>
+                                            7463 | PATRICK-MACHADO DIREITO-FADIVA 2025.2 (PAC)
+                                             | Unidade: Lavras
+                                        </strong>
+                                    </p>
+                                    <p class="descricao-evento">
+                                        Evento Religioso
+                                    </p>
+                                    <p class="hora-evento">Horário indefinido</p>
+                                </div>
+                            </div>
+                        </a>
+                    
+                        <a href="https://mundovivaextranet.vivaeventos.com.br/op?idfundo=6918" class="link-cartao-evento">
+                            <div class="cartao-evento azul text-white">
+                                <div class="detalhe-cor-evento"></div>
+                                <div>
+                                    <p class="data-evento">
+                                        05/03/2026
+                                        
+                                    </p>
+                                    <p class="titulo-evento">
+                                        <strong>
+                                            6918 | MULTI SAUDE 25.2 (PAC)
+                                             | Unidade: Volta Redonda - VivaMixx
+                                        </strong>
+                                    </p>
+                                    <p class="descricao-evento">
+                                        CULTO ECUMÊNICO - MEDVET UBM
+                                    </p>
+                                    <p class="hora-evento">Horário indefinido</p>
+                                </div>
+                            </div>
+                        </a>
+                    <div class="ver-calendario"><a href="https://mundovivaextranet.vivaeventos.com.br/opAgenda/" class="link-calendario">Visualizar calendário completo</a></div></div>
+                    </div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                <div class="modal fade modal-template" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" style="z-index: 1050;">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header" style="background-color: #fc9555;">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">×</span>
+                        </button>
+                        <h3 class="modal-title"></h3>
+                    </div>
+                    <div class="modal-body"></div>
+                    <div class="modal-footer"></div>
+                </div>
+            </div>
+        </div>
+        <!--basic scripts-->
+
+                <script def="" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.aceTimeLine.js.download"></script>
+        <link rel="stylesheet" type="text/css" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.aceTimeLine.css">
+                <script def="" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.roundedCounter.js.download"></script>
+        <link rel="stylesheet" type="text/css" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.roundedCounter.css">
+                <script def="" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.widget-box.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ajax.helpers.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/bootstrap.js.download"></script>
+        <!-- COMPONENTES -->
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/elements.treeview.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/elements.wizard.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/elements.aside.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.ajax-content.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.sidebar-scroll-1.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.widget-box.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.settings.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.settings-rtl.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.settings-skin.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.widget-on-reload.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/bootstrap-datepicker.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/elements.colorpicker.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/elements.scroller.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/elements.spinner.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.gritter.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/bootstrap-colorpicker.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.colorbox.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.hotkeys.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/bootstrap-wysiwyg.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/elements.wysiwyg.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery-ui.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/select2.min.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/dropzone.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.submenu-hover.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ace.sidebar.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.validate.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/autosize.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.nestable.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/chosen.jquery.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/progress.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/script.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.mask.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.maskMoney.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/router.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/routing"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.oLoader.min.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/validator.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.mask.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.cpfcnpj.min.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/pace.min.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/excellentexport.min.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/serializeForm.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/moment.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.easypiechart.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery-ui.custom.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.ui.touch-punch.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.sparkline.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.flot.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.flot.pie.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.flot.resize.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/ajax-chosen.js.download"></script>
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.mCustomScrollbar.min.css">
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.mCustomScrollbar.concat.min.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/printThis.js.download"></script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/arrive.min.js.download"></script>
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.growl.css">
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.growl.js.download"></script>
+        <link rel="stylesheet" href="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/dialogo.css">
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/formatar.js.download"></script>
+
+        <div class="modal fade" id="modalTrocarUnidade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #fc9555;">
+                Trocar unidade
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span></button>
+                <h3 class="modal-title"></h3>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered table-responsive widthImportant" id="tableTrocarUnidade">
+                    <thead>
+                    <tr>
+                        <td>Unidade</td>
+                        <td>Selecione</td>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnTrocarUnidade">Trocar unidade</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).delegate('#trocarUnidadeDropdown', 'click', function () {
+        $.post('/fundo/listarUnidadesVinculadasAoUsuario', {}, function (data) {
+            try {
+                $.when(
+                        $.map(data, function (d) {
+                            var icon = (d.principal == true) ? 'star' : 'arrow-right'
+                            if ($("input[name$='radioSelectUnidade'][value='"+d.id+"']").length === 0){
+                                $('#tableTrocarUnidade').find('tbody').append(
+                                        '<tr>' +
+                                        '    <td>' +
+                                        '       <h2><i class="fa fa-' + icon + '"></i> ' + d.nome + '</h3>' +
+                                        '    </td>' +
+                                        '    <td>' +
+                                        '       <input type="radio" name="radioSelectUnidade" class="radioSelectUnidade" value="' + d.id + '" style="height: 16px;">' +
+                                        '    </td>' +
+                                        '</tr>'
+                                );
+                            }
+                        })
+                ).then(function () {
+                            $('#modalTrocarUnidade').modal('show')
+                        })
+            } catch (e) {
+                console.error(e)
+            }
+        })
+    })
+
+    $(document).delegate('#btnTrocarUnidade','click', function () {
+        var unidadeSelecionada = $('#tableTrocarUnidade .radioSelectUnidade:checked').val()
+        return location.href = '/#!/trocar_unidade/?/id/' + unidadeSelecionada
+    })
+</script>
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.tooEasyPieChart.js.download"></script>
+                <!-- imports dataTables -->
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.dataTables.js.download"></script>
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/jquery.dataTables.bootstrap.js.download"></script>
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/dataTables.buttons.js.download"></script>
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/buttons.flash.js.download"></script>
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/buttons.html5.js.download"></script>
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/buttons.print.js.download"></script>
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/buttons.colVis.js.download"></script>
+<script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/dataTables.select.js.download"></script>
+
+<script>
+    function setupTable(json) {
+        var table = $(json.table).dataTable({
+            "bFilter": json.bfilter || false,
+            "pagingType": "simple",
+            'bInfo': json.hasOwnProperty('bInfo') ? json.bInfo : true ,//informação de quantos registros por página
+            "processing": false, // Load ao fazer alguma requisição ajax
+            "serverSide": true, //Habilitar para que qualquer clique na table gere um ajax
+            "destroy": true,
+            "pageLength": json.pageLength || 10,
+            "bLengthChange": json.lengthChange || true,//Quantidade por página
+            "sorting": json.aSorting || [[0, 'desc']],//Ordenação padrão, se não passar nada, ele pega o primeiro registro como padrão
+            "lengthMenu": json.lengthMenu || [10, 50, 100, 500, 1000],
+            "responsive": true,
+            "sScrollX": "100%", //Criar a barra de rolagem horizontal
+            "autoWidth": false,
+            "paging": json.hasOwnProperty('paging') ? json.paging : true ,
+            "language": {
+                        "sProcessing": "Carregando...",
+                "sLengthMenu": "Listar _MENU_ registros",
+                "sZeroRecords": "Não há registros",
+                "sInfo": "Mostrando _START_ até _END_ de _TOTAL_ registros",
+                "sInfoEmpty": "Mostrando 0 até 0 de 0 registros",
+                "sInfoFiltered": "",
+                "sInfoPostFix": "",
+                "sSearch": "",
+                "sUrl": "",
+                "oPaginate": {
+                    "sFirst": "Primeiro",
+                    "sPrevious": json.previous || "Anterior",
+                    "sNext": json.next || "Próximo",
+                    "sLast": "Último"
+            }
+        },
+        "ajax": {
+            url: json.url,
+            type: 'POST',
+            //Paramentros para ordenação, paginação, filtro e etc
+            data: function (d) {
+            d.draw = (json.param) ? JSON.stringify(json.param) : null;
+            d.order = JSON.stringify(d.order[0]);
+            d.start;
+            d.length;
+            },
+            error: function (error) {
+                if(typeof(error.responseText) !== 'object'){ // Se a sessão tiver expirada redirecionamos para o login
+                    window.location.href = "/login";
+                    return;
+               }
+                modalError(error);
+            },
+            dataSrc: (json.dataSrc) ? json.dataSrc :
+                function (jsonRetorno) {
+                    return jsonRetorno.data;
+                }
+        },
+        "ordering": (typeof(json.ordering) === "undefined") ? true : json.ordering,
+            //Colunas default
+            "columnDefs": json.columnDefs,//{'bSortable': false, 'aTargets': [número-da-coluna-default]}
+            //Colunas
+            "columns": json.columns,
+            //Roda após a consulta ajax e antes de preencher a table
+            "initComplete": json.initComplete || null,
+            "drawCallback": json.drawCallback || null
+      });
+      
+      $(window).on('resize',function() {
+        $(json.table).DataTable().columns.adjust();
+      });
+      
+      return table;
+    }
+</script>        <script>("");
+var templateItensComercial;
+("");
+
+("");
+
+window.onload = (function (e) {
+    //Carregar a dualist de uma forma global
+    selectedDuallist();
+
+    carregarAgendaEventos();
+
+    divDeLoading = "<div style='text-align: center;'><i class='fa fa-3x fa-spinner fa-spin'></i></div>";
+
+    function commitAcessoRapido() {
+        var adiconados = $(".list-right").find(".list-group").find(".list-group-item");
+
+        var arrayA = new Array();
+        $.each(adiconados, function (index, value) {
+            arrayA.push($(value).attr("data-id"));
+        });
+        $("#genericModal").modal("hide");
+        genericAjax({
+            url: "\x2Frelacionamento\x2FdashboardColaborador\x2FsalvaItensAcessoRapido",
+            data: {
+                adicionados: arrayA,
+                area: "2",
+            },
+            success: function () {
+                loadItensAcessoRapido();
+            },
+        });
+    }
+
+    $(document).delegate("#commitAcessoRapidoBtn", "click", function () {
+        commitAcessoRapido();
+    });
+
+    function findItensAcessoRapido() {
+        var json = { left: [], right: [] };
+        genericAjax({
+            url: "\x2Frelacionamento\x2FdashboardColaborador\x2FgetItemsDisponiveisAcessoRapido",
+            success: function (response) {
+                try {
+                    if (typeof response.data == "object") {
+                        if (Object.keys(response.data.itensAcessoRapidoDisponiveis).length > 0) {
+                            $.each(response.data.itensAcessoRapidoDisponiveis, function (key, itemD) {
+                                var achou = false;
+                                text = itemD.nome;
+                                var li =
+                                    '<li class="list-group-item item-right" data-id="' +
+                                    itemD.id +
+                                    '" data-toggle="tooltip" title="' +
+                                    text +
+                                    '" >' +
+                                    text +
+                                    "</li>";
+                                $.each(response.data.itensAcessoRapidoUtilizados, function (key2, itemU) {
+                                    if (itemD.id == itemU.id) {
+                                        achou = true;
+                                    }
+                                });
+                                if (achou == true) {
+                                    json.right = json.right + li;
+                                } else {
+                                    json.left = json.left + li;
+                                }
+                            });
+
+                            footercontent =
+                                '<button class="btn btn-sm" data-dismiss="modal"><i class="ace-icon fa fa-times"></i>Cancelar</button>' +
+                                '<button class="btn btn-sm btn-success start" id="commitAcessoRapidoBtn"><i class="ace-icon fa fa-check"></i>Salvar</button>';
+
+                            openModal(
+                                "Adicionar/Remover ícones",
+                                htmlDuallList({
+                                    listLeft: json.left,
+                                    listRight: json.right,
+                                }),
+                                footercontent,
+                                "modal-lg",
+                                "#fc9555;"
+                            );
+
+                            /* Starto os elementos do duallist depois que o modal estiver aberto, assim garanto que eles sejas carregados da forma correta*/
+                            //$('body').css('overflow-y', 'hidden');
+                            //$('.modal').css('overflow-y', 'auto');
+                            searchDuallist();
+                            buttonDuallist();
+                        }
+                    }
+                } catch (err) {
+                    console.log("Método: findItensAcessoRapido");
+                    console.error("Line: " + err.lineNumber + " Error: " + err);
+                    htmlmodal = "Erro ao recuperar itens disponíveis";
+                }
+            },
+        });
+    }
+
+    $("#btnconfigquickbtns").on("click", function () {
+        footer =
+            '<div class="col-xs-12 text-right">' +
+            '  <button id="fechar" title="Fechar" class="btn btn-sm btn-success col-lg-2 col-md-2 col-sm-2 col-xs-3">' +
+            '      <i class="fa fa-check"></i>&nbsp;Ok' +
+            "  </button>" +
+            "</div>";
+
+        /////////////
+        /**
+         *  Botões
+         */
+        findItensAcessoRapido();
+    });
+
+    function loadItensAcessoRapido() {
+        $("#itensAcessoRapidoDiv").html(divDeLoading);
+        ajaxPuro.post(
+            "\x2Frelacionamento\x2FdashboardColaborador\x2FgetItemsAcessoRapidoAction",
+            null,
+            function (response) {
+                var response = $.parseJSON(response);
+                try {
+                    $("#itensAcessoRapidoDiv").html("");
+                    if (typeof response.data == "object") {
+                        try {
+                            if (Object.keys(response.data.itensAcessoRapido).length > 0) {
+                                $(response.data.itensAcessoRapido).each(function (k, v) {
+                                    script = "";
+                                    if (v.script !== null) {
+                                        script = v.script;
+                                    }
+
+                                    $("#itensAcessoRapidoDiv").append(
+                                        '<div class="col-sm-2 card" id="' +
+                                            v.id +
+                                            '_quickbtn">' +
+                                            '    <div class="offer offer-primary text-center">' +
+                                            '        <div class="offer-content">' +
+                                            '            <i class=" fa fa-' +
+                                            v.icone +
+                                            ' bigger-170"></i>' +
+                                            '            <a href="' +
+                                            v.link +
+                                            '">' +
+                                            '               <h4 class="lead"><strong>' +
+                                            v.nome +
+                                            "</strong>" +
+                                            "                </h4>" +
+                                            "            </a>" +
+                                            "        </div>" +
+                                            "    </div>" +
+                                            " </div>"
+                                    );
+                                });
+                            } else {
+                                $("#itensAcessoRapidoDiv").append(
+                                    `<div class='col-xs-12 text-center'><img style='display: contents;' class='img-responsive' src='https\x3A\x2F\x2Fmundovivaextranet.vivaeventos.com.br\x2FERP_VIVA\x2Fimg\x2Fnenhum\x2Datalho\x2Dacesso\x2Drapido.png' /></div>`
+                                );
+                            }
+                        } catch (err) {
+                            console.log("Método: loadItensAcessoRapido");
+                            console.log(err);
+                            $("#itensAcessoRapidoDiv").append(
+                                "<div class='col-xs-12 text-center'>Impossível recuperar itens do acesso rápido. ERRO 1</div>"
+                            );
+                        }
+                    } else {
+                        $("#itensAcessoRapidoDiv").append(
+                            `<div class='col-xs-12 text-center'><img style='display: contents;' class='img-responsive' src='https\x3A\x2F\x2Fmundovivaextranet.vivaeventos.com.br\x2FERP_VIVA\x2Fimg\x2Fnenhum\x2Datalho\x2Dacesso\x2Drapido.png' /></div>`
+                        );
+                    }
+                } catch (err) {
+                    console.log("Método: loadItensAcessoRapido");
+                    console.log(err);
+                    $("#itensAcessoRapidoDiv").append(
+                        "<div class='col-xs-12 text-center'>Impossível recuperar itens do acesso rápido. ERRO 2</div>"
+                    );
+                }
+            },
+            true
+        );
+    }
+
+    loadItensAcessoRapido();
+
+    ("");
+    function openModal(title, content, footercontent, size = "modal-lg", bgcolor = "#fc9555;", callback = null) {
+        tmpl =
+            '<div class="modal fade" id="genericModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">' +
+            '<div class="modal-dialog" role="document">' +
+            '<div class="modal-content">' +
+            '<div class="modal-header" style="background-color: ' +
+            bgcolor +
+            ';">' +
+            '<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>' +
+            '<span id="genericModal-header"></span>' +
+            "</div>" +
+            '<div id="genericModal-body" class="modal-body">' +
+            "</div>" +
+            '<div id="genericModal-footer" class="modal-footer">' +
+            "</div>" +
+            "</div>" +
+            "</div>" +
+            "</div>";
+
+        $("#genericModal").remove();
+        $("body").append(tmpl);
+
+        $(".modal-dialog").addClass(size);
+        $("#genericModal-header").html('<h4 class="modal-title" style="background-color: #fc9555;">' + title + "</h4>");
+        $("#genericModal-body").html(content);
+
+        $("#genericModal-footer").html(footercontent);
+
+        $("#genericModal").modal("show");
+
+        if (callback && typeof callback === "function") {
+            callback();
+        }
+    }
+
+    ("");
+    ("");
+
+    $("#graficoReunioesDoSemestre").on("click", function () {
+        var win = window.open(
+            '\x2Frelacionamento\x2FdashboardColaborador\x2FexportarReunioesSemestre',
+            "_blank"
+        );
+        win.focus();
+    });
+    $("#graficoAltaInadimplencia").on("click", function () {});
+    $("#graficoPlanejamentosFaltantes").on("click", function () {});
+    $("#graficoLotesSemAprovacao").on("click", function () {
+        var win = window.open(
+            '\x2Frelacionamento\x2FdashboardColaborador\x2FexportarLotesSemAprovacao',
+            "_blank"
+        );
+        win.focus();
+    });
+    $("#graficoLotesSemAprovacao").on("click", function () {});
+    $("#graficoAlertasDeDesligamento").on("click", function () {});
+    $("#graficoReqSemPrimeiraAprovacao").on("click", function () {
+        url =
+            "https\x3A\x2F\x2Fmundovivaextranet.vivaeventos.com.br\x2F\x23\x21\x2Faprimorar_requisicao_pagamento_listar\x2F\x3F\x2FstatusRequisicao\x2FSemAprovacao\x2FunidadeRequisicao\x2F1";
+        window.location.href = url;
+    });
+
+    $("#insereAvisoInput").keypress(function (e) {
+        // Ao pressionar enter
+        if (e.which == 13) {
+            insereNota();
+        }
+    });
+
+    $("#btnaddnote").on("click", function () {
+        insereNota();
+    });
+
+    function insereNota() {
+        $("#anotacoesContent").html(divDeLoading);
+        ajaxPuro.post(
+            "\x2Frelacionamento\x2FdashboardColaborador\x2FinserirAnotacaoColaborador",
+            {
+                anotacao: $("#insereAvisoInput").val(),
+            },
+            function (response) {
+                try {
+                    loadAnotacoes();
+                    $("#insereAvisoInput").val("");
+                } catch (err) {
+                    console.log("Método: insereNota");
+                    console.error("Line: " + err.lineNumber + " Error: " + err);
+                    $("#anotacoesContent").append(
+                        "<div class='col-xs-12 text-center'>Impossível recuperar anotações. ERRO 4</div>"
+                    );
+                }
+            },
+            true
+        );
+    }
+
+    $(document).delegate(".excluirAnotacaoBtn", "click", function () {
+        id = $(this).attr("data-id");
+        $("#anotacoesContent").html(divDeLoading);
+        ajaxPuro.post(
+            "\x2Frelacionamento\x2FdashboardColaborador\x2FremoverAnotacaoColaborador",
+            {
+                id: id,
+            },
+            function (response) {
+                try {
+                    loadAnotacoes();
+                } catch (err) {
+                    console.error("Line: " + err.lineNumber + " Error: " + err);
+                    $("#anotacoesContent").append(
+                        "<div class='col-xs-12 text-center'>Impossível recuperar anotações. ERRO 4</div>"
+                    );
+                }
+            },
+            true
+        );
+    });
+
+    loadModalNotificacaoDataBaile();
+})("");
+var templateBanner =
+    '<div class="item {{if first}}active{{/if}}">' +
+    '  <a target="_blank" href="${link_banner}" class="main-link">' +
+    "{{if $('body').width() >= 992}}" +
+    '    <img src="${imagemDesktop}" alt="${chamada}" class="img-responsive" style="width: 100%;">' +
+    "{{else}}" +
+    '    <img src="${imagemMobile}" alt="${chamada}" class="img-responsive" style="width: 100%;">' +
+    "{{/if}}" +
+    '    <div class="banner-content">' +
+    '      <p class="banner-chamada">${chamada}</p>' +
+    "    </div>" +
+    "  </a>" +
+    "</div>";
+("");
+
+function getBanner() {
+    let parametroVer = "";
+    ("");
+    $.post("/relacionamento/dashboardColaborador/recuperaBannerDashboardColaborador" + parametroVer)
+        .then(function (data) {
+            $.tmpl(templateBanner, data.banner).appendTo("#bannerCarousel .carousel-inner");
+            data.banner.forEach(function (item) {
+                if (item.link_banner == "") {
+                    $("#bannerCarousel>div>div").css("pointerEvents", "none");
+                } else {
+                    $("#bannerCarousel>div>div").css("pointerEvents", "auto");
+                }
+            });
+        })
+        .fail(function () {
+            console.log("error");
+        });
+}
+getBanner();
+
+const tiposEventos = [
+    {
+        id: [1],
+        nome: "Aula da Saudade",
+        classes: "roxo text-white",
+    },
+    {
+        id: [2],
+        nome: "Evento Religioso",
+        classes: "azul text-white",
+    },
+    {
+        id: [4],
+        nome: "Jantar",
+        classes: "laranja text-white",
+    },
+    {
+        id: [5],
+        nome: "Baile",
+        classes: "verde text-white",
+    },
+    {
+        id: [6],
+        nome: "Colação",
+        classes: "amarelo text-white",
+    },
+
+    {
+        id: [10, 12, 14, 15, 16, 17, 19],
+        nome: "Pré Evento I ao VII",
+        classes: "rosa text-white",
+    },
+];
+
+function criarLegenda() {
+    let legendaHTML = '<div class="popover-body">';
+
+    // Adiciona o ícone de evento confirmado
+    legendaHTML += `
+        <div class="legenda-item">
+            <span class="icone-confirmacao"><i class="fa fa-check" aria-hidden="true"></i></span>
+            <span class="nome">Evento confirmado</span>
+        </div>
+    `;
+
+    // Adiciona os tipos de eventos
+    tiposEventos.forEach((tipo) => {
+        legendaHTML += `
+            <div class="legenda-item">
+                <span class="cor ${tipo.classes}"></span>
+                <span class="nome">${tipo.nome}</span>
+            </div>
+        `;
+    });
+
+    legendaHTML += `
+        <div class="legenda-item">
+            <span class="cor vermelho"></span>
+            <span class="nome">Outros</span>
+        </div>
+    `;
+
+    legendaHTML += "</div>";
+    return legendaHTML;
+}
+
+// Inicializar o popover
+$("#btnLegenda").popover({
+    html: true,
+    content: criarLegenda,
+    container: "body",
+    placement: "left",
+    trigger: "focus",
+});
+
+// Fecha o popover quando clicar fora
+$(document).on("click", function (e) {
+    if (!$(e.target).closest("#btnLegenda").length) {
+        $('[data-bs-toggle="popover"]').popover("hide");
+    }
+});
+
+function obterClassePorIdTipoEvento(idTipoEvento) {
+    for (const tipoEvento of tiposEventos) {
+        if (tipoEvento.id.includes(idTipoEvento)) {
+            return tipoEvento.classes;
+        }
+    }
+    return "vermelho text-white";
+}
+
+function linkCalendario() {
+    const divCalendario = $("<div>", { class: "ver-calendario" });
+    const linkCalendario = $("<a>", {
+        href: "/opAgenda/",
+        class: "link-calendario",
+        text: "Visualizar calendário completo",
+    });
+
+    divCalendario.append(linkCalendario);
+    $(".container-agenda").append(divCalendario);
+}
+
+// Função para carregar os eventos
+function carregarAgendaEventos() {
+    $.ajax({
+        url: "\x2FopAgenda\x2Fcarregar_agenda_eventos",
+        type: "POST",
+        success: function (response) {
+            $(".container-agenda").find(".cartao-evento").remove();
+
+            if (response.agendaEventos.length > 0) {
+                let idUnidadeUsuarioLogado = response.idUnidadeUsuarioLogado;
+
+                $.each(response.agendaEventos, function (index, evento) {
+                    let iconeConfirmacao =
+                        evento.is_evento_confirmado === "SIM" ? '<i class="fa fa-check" aria-hidden="true"></i>' : "";
+
+                    let visualizarUnidadeOuNao =
+                        idUnidadeUsuarioLogado == "1" ? ` | Unidade: ${evento.nome_unidade}` : "";
+
+                    // Criação do cartão do evento
+                    let cartaoEventoHTML = `
+                        <a href="/op?idfundo=${evento.id_fundo}" class="link-cartao-evento">
+                            <div class="cartao-evento ${obterClassePorIdTipoEvento(evento.id_tipo_evento)}">
+                                <div class="detalhe-cor-evento"></div>
+                                <div>
+                                    <p class="data-evento">
+                                        ${evento.dt_evento}
+                                        ${iconeConfirmacao}
+                                    </p>
+                                    <p class="titulo-evento">
+                                        <strong>
+                                            ${evento.id_fundo} | ${evento.nome_fundo}
+                                            ${visualizarUnidadeOuNao}
+                                        </strong>
+                                    </p>
+                                    <p class="descricao-evento">
+                                        ${evento.nome_evento_mv || evento.nome_evento_fantasia}
+                                    </p>
+                                    <p class="hora-evento">${evento.horario || "Horário indefinido"}</p>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+
+                    // Adiciona o cartão à agenda
+                    $(".container-agenda").append(cartaoEventoHTML);
+                });
+            } else {
+                $(".container-agenda").append('<p class="mensagem-sem-eventos">Nenhum evento marcado na agenda.</p>');
+            }
+
+            linkCalendario();
+        },
+        error: function (error) {
+            console.error("Erro ao carregar a agenda de eventos:", error);
+        },
+    });
+}
+
+function loadModalNotificacaoDataBaile() {
+    let tabela = $("#tabelaEventosProvisorios").html("");
+
+    $.post("/relacionamento/dashboardColaborador/notificacaoConfirmacaoDataBaile").then(function (data) {
+        if (data.length != 0) {
+            $.each(data, function (index, item) {
+                tabela.append(
+                    '<tr style="margin: 15px 0;">' +
+                        "<td>" +
+                        item.nome_fundo +
+                        "</td>" +
+                        '<td class="align-center" style="padding: 0 10px;">' +
+                        item.data_evento +
+                        "</td>" +
+                        '<td style="padding: 5px 0;">' +
+                        '<button class="btn btn-primary" style="border: 0 !important; width: 100%;" onclick="dadosStatusDataBaile(' +
+                        item.id_evento +
+                        ')">Editar</button>' +
+                        "</td>" +
+                        "</tr>"
+                );
+            });
+
+            $("#modalAlert").modal("show");
+        }
+    });
+}
+
+function dadosStatusDataBaile(idEvento) {
+    $.post("/relacionamento/dashboardColaborador/dadosStatusDataBaile", {
+        idEvento: idEvento,
+    }).then(function (data) {
+        if (data == "") {
+            $.growl.warning({ title: "Atenção!", message: "Sem dados nesse evento!" });
+        } else {
+            $("#nomeTurma").html(
+                data.nome_fundo +
+                    '<button type="button" class="close" data-dismiss="modal" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span>' +
+                    "</button> "
+            );
+
+            $("#conteudoDataBaile").html(
+                '<input type="hidden" id="idFundo" value="' +
+                    data.id_fundo +
+                    '"/>' +
+                    '<h5 style="margin: 10px;"> Evento: ' +
+                    data.nome_evento +
+                    "</h5>" +
+                    '<p style="padding: 10px;"> Data atual do evento <b style="color: #3B1D64;">' +
+                    data.data_evento +
+                    "</b></p>" +
+                    `<p style="padding: 10px; display: flex;">Escolha uma nova data <input type="date" placeholder="${data.data_evento}" style="display: block; height: 25px;margin: 0 10px;"></p>` +
+                    '<div style="margin: 0 5px; padding: 10px;"> ' +
+                    `<input type="radio" id="previsao" value="false" name="status" ${
+                        data.is_definitivo == false ? "checked" : ""
+                    }/><label style="margin: 0 5px;" for="previsao">Provisório</label>` +
+                    `<input type="radio" id="definido" value="true" name="status"/><label style="margin: 0 5px;" for="definido">Definitivo</label>` +
+                    "</div>" +
+                    '<div class="modal-footer" style="padding: 0;">' +
+                    '<p class="align-left" style="color:red; margin-top: 10px;">O evento principal deverá ter a data definida para não receber mais notificações do fundo</p>' +
+                    '<button id="btnSaveStatusProvisorio" class="btn btn-success" type="button" onclick="mudarStatusDataBaile(' +
+                    data.id_fundo +
+                    ');">Salvar' +
+                    "</button>" +
+                    "</div>"
+            );
+            $("#mudarStatusModal").modal("show");
+        }
+    });
+}
+
+function mudarStatusDataBaile(idFundo) {
+    let checked = $('input[name="status"]:checked').val() === "true" ? true : false;
+    let dataSelecionada = $('input[name="status"]:checked').parent().parent().find('input[type="date"]').val();
+    let dataSelecionadaFormatada = new Date(dataSelecionada + "T00:00");
+    let data = new Intl.DateTimeFormat("pt-BR").format(dataSelecionadaFormatada);
+    let fundo = idFundo;
+
+    if (dataSelecionada !== "") {
+        $.post("/relacionamento/dashboardColaborador/mudarStatusDataBaile", {
+            idFundo: fundo,
+            isDefinido: checked,
+            novaData: data,
+        })
+            .then(function (data) {
+                $.growl.notice({ title: "Sucesso!", message: data.msg });
+                $("#mudarStatusModal").modal("hide");
+                $("#modalAlert").modal("hide");
+            })
+            .then(function () {
+                location.reload();
+            });
+    } else {
+        $.growl.warning({ title: "Atenção!", message: "Selecione uma data!" });
+    }
+}
+</script>
+            <!--end basic scripts-->
+        <script src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/sweetalert2@11"></script>
+
+    
+
+</div><iframe id="_hjSafeContext_28516393" title="_hjSafeContext" tabindex="-1" aria-hidden="true" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/saved_resource.html" style="display: none !important; width: 1px !important; height: 1px !important; opacity: 0 !important; pointer-events: none !important;"></iframe><div id="cboxOverlay" style="display: none;"></div><div id="colorbox" class="" role="dialog" tabindex="-1" style="display: none;"><div id="cboxWrapper"><div><div id="cboxTopLeft" style="float: left;"></div><div id="cboxTopCenter" style="float: left;"></div><div id="cboxTopRight" style="float: left;"></div></div><div style="clear: left;"><div id="cboxMiddleLeft" style="float: left;"></div><div id="cboxContent" style="float: left;"><div id="cboxTitle" style="float: left;"></div><div id="cboxCurrent" style="float: left;"></div><button type="button" id="cboxPrevious"></button><button type="button" id="cboxNext"></button><button id="cboxSlideshow"></button><div id="cboxLoadingOverlay" style="float: left;"></div><div id="cboxLoadingGraphic" style="float: left;"></div></div><div id="cboxMiddleRight" style="float: left;"></div></div><div style="clear: left;"><div id="cboxBottomLeft" style="float: left;"></div><div id="cboxBottomCenter" style="float: left;"></div><div id="cboxBottomRight" style="float: left;"></div></div></div><div style="position: absolute; width: 9999px; visibility: hidden; display: none; max-width: none;"></div></div><iframe id="_hjSafeContext_32261895" title="_hjSafeContext" tabindex="-1" aria-hidden="true" src="./Mundo Viva Extranet - _relacionamento_dashboardColaborador__files/saved_resource(1).html" style="display: none !important; width: 1px !important; height: 1px !important; opacity: 0 !important; pointer-events: none !important;"></iframe><div class="_hj-widget-container _hj-widget-theme-light" id="survey_1536184"><div class="_hj-s3UIi__styles__globalStyles _hj-Pbej5__styles__resetStyles "><div lang="en" id="hotjar-survey-c088eee7-eec1-409a-aa0a-8815f8560ba0" dir="ltr" style="--hjFeedbackAccentColor: #d23201; --hjFeedbackAccentHoverColor: #9f2601; --hjFeedbackAccentActiveColor: #862001; --hjFeedbackAccentTextColor: #FFF; --hjFeedbackDisabledAccentColor: #F1F2F6; --hjFeedbackDisabledAccentTextColor: rgba(0, 0, 0, 0.43); --hjFeedbackBorderColor: #E4E6EB; --hjFeedbackOptionButtonBackgroundColor: #e6e6e6; --hjFeedbackInputPlaceholderColor: #7c6057; font-size: clamp(16px, 1rem, 32px) !important; --hjFeedbackPageTextColor: rgba(255, 255, 255, 0.94);"><div data-testid="survey-root"><div class="css-sfbnep"><div aria-hidden="true" class="css-u2agci"></div><div class="css-112xj8j"><button aria-label="Feedback - Mostrar pesquisa" id="hj-survey-toggle-1" class="css-ybxc8g"><div class="css-1xi4v5y"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="22" fill="none" viewBox="0 0 24 22" data-testid="icon-buddy"><path fill="#fffdfc" fill-rule="evenodd" d="M22.362.827C21.72.5 20.88.5 19.2.5H3.3C1.755.5.983.5.575.819A1.5 1.5 0 000 1.969c-.01.517.453 1.135 1.38 2.371l1.14 1.52c.178.237.267.356.33.487a1.5 1.5 0 01.122.365C3 6.855 3 7.003 3 7.3v9.4c0 1.68 0 2.52.327 3.162a3 3 0 001.311 1.311c.642.327 1.482.327 3.162.327h11.4c1.68 0 2.52 0 3.162-.327a3 3 0 001.311-1.311C24 19.22 24 18.38 24 16.7V5.3c0-1.68 0-2.52-.327-3.162a3 3 0 00-1.31-1.311zM9.277 11.937a1.125 1.125 0 00-1.948 1.126 7.123 7.123 0 006.171 3.562 7.123 7.123 0 006.171-3.562 1.125 1.125 0 10-1.947-1.126 4.872 4.872 0 01-4.224 2.438 4.873 4.873 0 01-4.223-2.438zM10.5 8a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM18 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" clip-rule="evenodd"></path></svg></div><span class="css-asaxje">Feedback</span></button><div role="dialog" aria-labelledby="hj-survey-lbl-1" aria-hidden="true"><div id="innerLayer"><div class="css-1buekvz"><div class="css-desq4a"><button class="css-zzqb0h"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" data-testid="icon-collapse"><path d="M17.8059 9.87186L13.2207 16.2912C12.6225 17.1287 11.3778 17.1287 10.7795 16.2912L6.19431 9.87186C5.48516 8.87905 6.19485 7.5 7.41491 7.5L16.5853 7.5C17.8054 7.5 18.5151 8.87906 17.8059 9.87186Z" fill="#7c6057"></path></svg></button></div><form inert="" class="css-dptyls"><div aria-labelledby="hj-survey-lbl-1"><div class="css-jr2rfv"><h2 id="hj-survey-lbl-1" tabindex="-1" class="css-1rr4dd1">Fale-nos da sua experiência nesta página</h2><div class="css-5yh89e"><div class="css-cy0o6d"><input name="3ab8d6a8-84ed-4d95-8540-9d76f48ba012" type="range" min="0" max="10" step="1" aria-label="Fale-nos da sua experiência nesta página" aria-valuetext="0 where 0 is Péssima and 10 is Maravilhosa!" class="css-fj2vj4"></div><ul aria-hidden="true" class="css-1iaa8na"><li role="presentation">0</li><li role="presentation" value="1">1</li><li role="presentation" value="2">2</li><li role="presentation" value="3">3</li><li role="presentation" value="4">4</li><li role="presentation" value="5">5</li><li role="presentation" value="6">6</li><li role="presentation" value="7">7</li><li role="presentation" value="8">8</li><li role="presentation" value="9">9</li><li role="presentation" value="10">10</li></ul><div aria-hidden="true" class="css-1fhf5qi"><span id="hj-surveys-scale-option-label-0-9331e433-96e1-4214-abea-e29947aad9f7" title="Péssima" aria-label="Péssima" class="css-ksupk8">Péssima</span><span id="hj-surveys-scale-option-label-1-8ccb5796-a507-4c11-b555-b095bfd3fca3" title="Maravilhosa!" aria-label="Maravilhosa!" class="css-ouk37a">Maravilhosa!</span></div></div></div><div class="css-rakzvv"><div class="css-36amt5"><button type="button" kind="primary" disabled="" size="s" class="css-15fuwsl">Seguinte</button></div></div></div></form></div></div></div></div></div></div></div></div></div></body></html>

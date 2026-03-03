@@ -96,6 +96,11 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas do Mundo Viva são independentes (MÓDULO TEMPORÁRIO)
+  if (router.pathname.startsWith('/mundo-viva')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 

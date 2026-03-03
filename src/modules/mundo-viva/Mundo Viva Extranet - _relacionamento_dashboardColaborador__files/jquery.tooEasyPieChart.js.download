@@ -1,0 +1,15 @@
+$.fn.tooEasyPieChart = function (type, fillCircleValue, displayvalue, descText, barColor, trackColor) {
+    $(this).append('<div class="easy-pie-chart percentage" data-percent="'+fillCircleValue+'">'+
+                    '<span style="font-size: 27px;">'+displayvalue+'</span>'+
+                    '<div style="font-weight: initial; position: relative; top: 10px; line-height: 20px; width: 166px; left: -26px; font-size: 13px;">'+descText+'</div>'+
+                   '</div>');
+
+    $($(this).find('.easy-pie-chart')).easyPieChart({
+        barColor: barColor,
+        trackColor: trackColor,
+        scaleColor: false,
+        lineCap: 'butt',
+        lineWidth: 10,
+        animate: 1000
+    });
+};

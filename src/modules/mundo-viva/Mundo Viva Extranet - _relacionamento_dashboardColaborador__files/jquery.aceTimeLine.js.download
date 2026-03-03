@@ -1,0 +1,70 @@
+if (typeof(jQuery) !== "undefined"){
+    (function(jQuery) {
+        /**
+        * Plugin que constrói uma timeLine com base nos plugins do Ace Template
+        * 
+        * @author Marcello Costa <marcello.gviva@gmail.com>
+        *
+        * @items       Items que serão inseridos na timeLine
+        */
+        jQuery.fn.aceTimeLine = function(items) {
+            container = $(this).selector;
+            var filteredId = container.replace('.',"").replace('#',"");
+            tmpl='<div class="timeline-container timeline-style2">'+
+                    '<div class="timeline-items">';
+            
+                    i=0;
+                    for (var key in items){
+                        i++;
+                        if (i%2 === 0){
+                            tmpl+='<div class="timeline-item clearfix">'+
+                                '<div class="timeline-info" style="width: 50%;">'+
+                                    '<span class="timeline-date" style="text-align: left;">'+
+                                        items[key].title+'<br/>'+
+                                        '<div style="font-size: 1.1em; font-weight: bold;">'+
+                                        items[key].subtitle+'    '+
+                                        '</div>'+
+                                        '<br/>'+
+                                        '<div style="width: 80%; float: left; font-size: 12px; padding: 2px; border: 1px solid #eee; background: #f7f7f7; text-align: center; line-height: 2em;">'+
+                                        '    <b>'+items[key].date+'</b>'+
+                                        '</div>'+
+                                        '<i style="font-size: 24px; position: relative; top: 2px; left: 10px;" class="fa fa-calendar"></i>'+
+                                    '</span>'+
+                                    '<i class="timeline-indicator btn btn-info no-hover"></i>'+
+                                '</div>'+
+                            '</div>';
+                        }
+                        else{
+                            tmpl+='<div class="timeline-item clearfix">'+
+                                '<div class="timeline-info" style="width: 50%;">'+
+                                '    <i class="timeline-indicator btn btn-info no-hover"></i>'+
+                                '</div>'+
+                                '<div class="widget-box transparent">'+
+                                '    <div class="widget-body">'+
+                                '        <span class="timeline-date" style="text-align: left;">'+
+                                            items[key].title+'<br/>'+
+                                '            <div style="font-size: 1.1em; font-weight: bold;">'+
+                                                items[key].subtitle+
+                                '            </div>'+
+                                '            <br/>'+
+                                '            <div style="width: 80%; float: left; font-size: 12px; padding: 2px; border: 1px solid #eee; background: #f7f7f7; text-align: center; line-height: 2em;">'+
+                                '                <b>'+items[key].date+'</b>'+
+                                '            </div>'+
+                                '            <i style="font-size: 24px; position: relative; top: 2px; left: 10px;" class="fa fa-calendar"></i>'+
+                                '        </span>'+
+                                '    </div>'+
+                                '</div>'+
+                            '</div>';
+                        }
+                    }
+                        
+            tmpl+=  '</div>'+
+                '</div>';
+        
+            jQuery(container).append(tmpl);
+        }
+    })(jQuery);
+}
+else{
+    console.error("Jquery não carregado para o plugin jquery.aceTimeLine")
+}

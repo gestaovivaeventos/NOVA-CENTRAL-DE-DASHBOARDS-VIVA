@@ -1,0 +1,31 @@
+.ui-dialog .ui-dialog-titlebar,
+.ui-jqdialog .ui-dialog-titlebar,
+.ui-dialog .ui-jqdialog-titlebar,
+.ui-jqdialog .ui-jqdialog-titlebar {
+    font-size: 16px !important;
+    color: #888 !important;
+    padding: 3px 0px 3px 8px;
+}
+
+.ui-widget-header {
+    background: #fff !important;
+    border: 0px;
+}
+
+.sidebar.display {
+    -moz-transform: none !important;
+    -webkit-transform: none !important;
+    -o-transform: none !important;
+    -ms-transform: none !important;
+    transform: none !important;
+    overflow: visible;
+    max-height: 2000px;
+    -webkit-transition-delay: 0s;
+    -moz-transition-delay: 0s;
+    -o-transition-delay: 0s;
+    transition-delay: 0s;
+}
+
+.dropdown-toggle {
+    font-size: 14px;
+}

@@ -1,0 +1,34 @@
+.roundedCounter{
+    display: inline-block;
+    text-align: center;
+    /* width: 10%; */
+    border: 0.3em solid;
+    position: relative;
+    z-index: 1;
+    background-color: #fff;
+    width: 3.4em;
+    height: 3.4em;
+    line-height: 3.0em;
+    border-radius: 50%;
+    /* max-width: 1.2em; */
+    /* max-height: 1.2em; */
+    /* box-sizing: border-box; */    
+    /* margin: 0 auto; */
+}
+.roundedDescriptor{
+    border: 0.3em solid;
+    width: 75%;
+    position: relative;
+    left: 12.5%;
+    text-align:center;
+    top: -6.5px;
+    box-shadow: 0 4px 2px -2px gray;
+    padding: 0 1px 0 1px;
+    word-wrap: break-word;
+    font-weight: bold;
+}
+.roundedCounterContainer{
+    max-width: 140px; 
+    height: 80px; 
+    text-align: center;
+}

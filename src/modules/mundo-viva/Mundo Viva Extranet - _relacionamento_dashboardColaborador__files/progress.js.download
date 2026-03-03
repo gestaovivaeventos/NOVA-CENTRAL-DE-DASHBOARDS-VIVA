@@ -1,0 +1,66 @@
+/**
+ * Module for displaying "Waiting for..." dialog using Bootstrap
+ *
+ * @author Eugene Maslovich <ehpc@em42.ru>
+ */
+
+var waitingDialog = waitingDialog || (function ($) {
+        'use strict';
+
+        // Creating modal dialog's DOM
+        var $dialog = $(
+            '<div id="loadModal" class="modal fade" data-keyboard="false" data-backdrop="static" aria-hidden="false" style="display: block; padding-right: 17px;background-color:rgba(0, 0, 0, 0.0);!important;">' +
+            '<div class="modal-dialog modal-m" style="position:relative; margin-top: 20%;!important;">' +
+            '<div class="modal-content col-xs-9 col-sm-9 col-md-10 col-lg-10">' +
+            '<div class="modal-header"><h3 style="margin:0;!important;"></h3></div>' +
+            '<div class="modal-body" style="background-color:#fff; !important;">' +
+            '<div class="progress progress-striped active" style="margin-bottom:0;"><div class="progress-bar" style="width: 100%"></div></div>' +
+            '</div>' +
+            '</div></div></div>');
+
+        return {
+            /**
+             * Opens our dialog
+             * @param message Custom message
+             * @param options Custom options:
+             *                  options.dialogSize - bootstrap postfix for dialog size, e.g. "sm", "m";
+             *                  options.progressType - bootstrap postfix for progress bar type, e.g. "success", "warning".
+             */
+            show: function (message, options) {
+                // Assigning defaults
+                if (typeof options === 'undefined') {
+                    options = {};
+                }
+                if (typeof message === 'undefined') {
+                    message = 'Aguarde...';
+                }
+                var settings = $.extend({
+                    dialogSize: 'm',
+                    progressType: '',
+                    onHide: null // This callback runs after the dialog was hidden
+                }, options);
+
+                // Configuring dialog
+                $dialog.find('.modal-dialog').attr('class', 'modal-dialog').addClass('modal-' + settings.dialogSize);
+                $dialog.find('.progress-bar').attr('class', 'progress-bar');
+                if (settings.progressType) {
+                    $dialog.find('.progress-bar').addClass('progress-bar-' + settings.progressType);
+                }
+                $dialog.find('h3').text(message);
+                // Adding callbacks
+                if (typeof settings.onHide === 'function') {
+                    $dialog.off('hidden.bs.modal').on('hidden.bs.modal', function (e) {
+                        settings.onHide.call($dialog);
+                    });
+                }
+                // Opening dialog
+                $dialog.modal();
+            },
+            /**
+             * Closes dialog
+             */
+            hide: function () {
+                $dialog.modal('hide');
+            }
+        };
+    })(jQuery);

@@ -1,0 +1,42 @@
+@media screen and (min-width: 0px) and (max-width: 340px) {
+    .timeline-indicator{
+        left: 96.5% !important;
+    }
+}
+
+@media screen and (min-width: 340px) and (max-width: 400px) {
+    .timeline-indicator{
+        left: 96.7% !important;
+    }
+}
+
+@media screen and (min-width: 400px) and (max-width: 800px) {
+    .timeline-indicator{
+        left: 98.0% !important;
+    }
+}
+
+@media screen and (min-width: 800px)  and (max-width: 1200px){
+    .timeline-indicator{
+        left: 97% !important;
+    }
+}
+@media screen and (min-width: 1200px){
+    .timeline-indicator{
+        left: 97.5% !important;
+    }
+}
+
+.timeline-indicator{
+    display: inline !important;
+}
+.timeline-style2 .timeline-item::before{
+    left: 50%;
+}
+.timeline-style2 .timeline-date{
+    width: 120px;
+}
+
+.timeline-style2 .timeline-item .widget-box{
+    margin-left: 60%;
+}

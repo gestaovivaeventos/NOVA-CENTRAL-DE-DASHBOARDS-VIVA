@@ -1,0 +1,149 @@
+/*
+ * Função para executar o download de arquivos sem abrir uma nova aba
+ *
+ * @author Marcello Costa <marcello.gviva@gmail.com>
+ *
+ * @url    Url do arquivo
+ * @data   Dados que serão enviados juntamente com o pedido de download
+ * @input  Nome que terá o input hidden do download
+ *
+ */
+function ajax_download(url, data, input_name) {
+    // Removendo forms anteriores
+    $("#download_iframe").remove();
+
+    var $iframe, iframe_doc, iframe_html;
+
+    if (($iframe = $("#download_iframe")).length === 0) {
+        $iframe = $("<iframe id='download_iframe'" + " style='display: none' src='about:blank'></iframe>").appendTo(
+            "body"
+        );
+    }
+
+    iframe_doc = $iframe[0].contentWindow || $iframe[0].contentDocument;
+    if (iframe_doc.document) {
+        iframe_doc = iframe_doc.document;
+    }
+
+    iframe_html =
+        "<html><head></head><body><form class='formAjaxDownload' method='POST' action='" +
+        url +
+        "'>" +
+        "<input type=hidden name='" +
+        input_name +
+        "' value='" +
+        JSON.stringify(data) +
+        "'/></form>" +
+        "</body></html>";
+
+    iframe_doc.open();
+    iframe_doc.write(iframe_html);
+    $(iframe_doc).find("form").submit();
+}
+
+/**
+ *
+ * @param url url do controler responsável por retornar os dados
+ * @param objFiltros filtros do relatório
+ */
+function downloadArquivoRelatorio(url, objFiltros = false) {
+    let data = {
+        exportar: true,
+    };
+
+    if (objFiltros) {
+        data.filtros = JSON.stringify(objFiltros);
+    }
+
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: data,
+        success: function (data) {
+            window.open(data.link, "_blank");
+        },
+        error: function (error) {
+            modalError(error);
+        },
+    });
+}
+
+/**
+ * Funções para executar ajax sem a interferência do código já implementado.
+ * Criando isto pois algum método está interceptando as chamadas
+ * ajax do jQuery e printando na tela :(
+ *
+ * Exemplos de uso:
+ *
+ *         retorno=ajaxPuro.post("{{ path('aprimorar_viva_fornecedor_arquivoremessa_getdados') }}", {id: id}, function(data){
+ *             console.log(data);
+ *         }, true);
+ *
+ *         OU
+ *
+ *         retorno=ajaxPuro.get("{{ path('aprimorar_viva_fornecedor_arquivoremessa_getdados') }}", {id: id}, function(data){
+ *             console.log(data);
+ *         }, true);
+ *
+ * @author Marcello Costa <marcello.gviva@gmail.com>
+ *
+ * @url       Url do js
+ * @callback  Função de callback
+ *
+ */
+var ajaxPuro = {};
+ajaxPuro.x = function () {
+    if (typeof XMLHttpRequest !== "undefined") {
+        return new XMLHttpRequest();
+    }
+    var versions = [
+        "MSXML2.XmlHttp.6.0",
+        "MSXML2.XmlHttp.5.0",
+        "MSXML2.XmlHttp.4.0",
+        "MSXML2.XmlHttp.3.0",
+        "MSXML2.XmlHttp.2.0",
+        "Microsoft.XmlHttp",
+    ];
+
+    var xhr;
+    for (var i = 0; i < versions.length; i++) {
+        try {
+            xhr = new ActiveXObject(versions[i]);
+            break;
+        } catch (e) {}
+    }
+    return xhr;
+};
+
+ajaxPuro.send = function (url, callback, method, data, async) {
+    if (async === undefined) {
+        async = true;
+    }
+    var x = ajaxPuro.x();
+    x.open(method, url, async);
+    x.onreadystatechange = function () {
+        if (x.readyState == 4) {
+            callback(x.responseText);
+        }
+    };
+    if (method == "POST") {
+        x.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    }
+    x.send(data);
+};
+
+ajaxPuro.get = function (url, data, callback, async) {
+    var query = [];
+    for (var key in data) {
+        query.push(encodeURIComponent(key) + "=" + encodeURIComponent(data[key]));
+    }
+    ajax.send(url + (query.length ? "?" + query.join("&") : ""), callback, "GET", null, async);
+};
+
+ajaxPuro.post = function (url, data, callback, async) {
+    var query = [];
+    for (var key in data) {
+        query.push(encodeURIComponent(key) + "=" + encodeURIComponent(data[key]));
+    }
+    ajaxPuro.send(url, callback, "POST", query.join("&"), async);
+};

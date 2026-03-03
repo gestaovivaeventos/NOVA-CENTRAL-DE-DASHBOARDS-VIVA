@@ -1,0 +1,146 @@
+/* Função formatDataPT duplicada do scripts.js para este Bundle */
+/**
+ * @param data
+ * @param isDateTime
+ * @param responseDateTime
+ * @returns {string}
+ */
+function formatDataPT(data, isDateTime, responseDateTime) {
+    var dataHora;
+    var dataArr;
+    if (typeof data !== "undefined") {
+        if (data !== null && data.trim() !== "") {
+            if (isDateTime == true) {
+                dataHora = data.split(" ");
+                dataArr = dataHora[0].split("-").reverse().join("/");
+            } else {
+                dataArr = data.split("-").reverse().join("/");
+            }
+            return responseDateTime == true ? dataArr + " " + dataHora[1] : dataArr;
+        }
+    }
+    return null;
+}
+/* Outra função de data. Por enquanto vou deixá-las separadas... */
+function convertDateToBr(data) {
+    var data = new Date(data);
+    var dia = data.getDate();
+    var mes = data.getMonth();
+    var ano = data.getFullYear();
+    data =
+        (dia >= 10 ? String(dia) : "0" + String(dia)) +
+        "/" +
+        (++mes >= 10 ? String(mes) : "0" + String(mes)) +
+        "/" +
+        String(ano);
+    return data;
+}
+function replaceAll(str, needle, replacement) {
+    str = str + "";
+    if (str.indexOf(needle) !== false) {
+        return str.split(needle).join(replacement);
+    } else {
+        return str;
+    }
+}
+function truncateNumberCustom(value, decimal = ".") {
+    value = value + "";
+
+    if (value.indexOf(decimal) !== false) {
+        values = value.split(decimal);
+
+        if (typeof values[1] !== "undefined") {
+            // Se é uma dízima
+
+            if (typeof values[1][2] !== "undefined") {
+                // até 5 é arrendado para 0
+
+                if (parseInt(values[1][2]) <= 5) {
+                    values[1] = values[1][0] + "" + values[1][1];
+                }
+
+                // mais que 5 é arrendodado para cima
+                else {
+                    values[1] = values[1][0] + "" + (parseInt(values[1][1]) + 1);
+                }
+
+                return parseFloat(values[0] + decimal + values[1]).toFixed(2);
+            }
+
+            // Se não é uma dízima
+            else {
+                return parseFloat(value).toFixed(2);
+            }
+        } else {
+            return parseFloat(value).toFixed(2);
+        }
+    } else {
+        return parseFloat(value).toFixed(2);
+    }
+}
+
+// Converte valor para BR e para US. As funções existentes em scripts.js
+
+// não estavam funcionando conforme o previsto
+
+function convertMoneyToBr(valor) {
+    valor += "";
+
+    if (typeof valor !== "undefined" && valor !== "undefined" && valor !== "NaN" && valor !== "null") {
+        if (valor.length > 0) {
+            valor = replaceAll(valor, ".", ",");
+
+            valor = valor.split(",");
+
+            // Se existem casas decimais
+
+            if (valor.length > 1) {
+                // Tratando casas decimais
+
+                if (valor[1].length < 2) {
+                    valor[1] += "0";
+                }
+            } else {
+                valor[1] = "00";
+            }
+
+            if (valor[0] == "null") {
+                valor[0] = "0";
+            }
+
+            return valor[0] + "," + valor[1];
+        }
+    } else {
+        return 0;
+    }
+}
+
+function convertMoneyToUs(valor) {
+    valor += "";
+
+    if (typeof valor !== "undefined" && valor !== "undefined") {
+        if (valor.length > 0) {
+            if (valor.indexOf(".") !== false || valor.indexOf(",") !== false) {
+                valor = replaceAll(replaceAll(valor, ".", ""), ",", ".");
+            } else {
+                valor = valor + ".00";
+            }
+
+            valor = valor.split(".");
+
+            // Se existem casas decimais
+
+            if (valor.length > 1) {
+                // Tratando casas decimais
+
+                if (valor[1].length < 2) {
+                    valor[1] += "0";
+                }
+            } else {
+                valor[1] = "00";
+            }
+
+            return valor[0] + "." + valor[1];
+        }
+    }
+}

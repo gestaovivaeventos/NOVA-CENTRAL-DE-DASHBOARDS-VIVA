@@ -1,0 +1,21 @@
+.dual-list .list-group {
+    margin-top: 8px;
+}
+
+.list-left li, .list-right li {
+    cursor: pointer;
+}
+
+.list-arrows {
+    padding-top: 100px;
+}
+
+.list-arrows button {
+    margin-bottom: 20px;
+}
+
+.list-group {
+    overflow-x: hidden;
+    overflow-y: auto;
+    height: 210px;
+}
