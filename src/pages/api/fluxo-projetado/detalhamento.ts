@@ -127,17 +127,29 @@ export default async function handler(
         const rowYear = extractYear(row[0]);
         return rowFranquia === franquiaUpper && rowYear === anoNumber;
       })
-      .map((row: string[]) => ({
-        mes: row[0] || '',
-        franquia: row[1] || '',
-        ano: extractYear(row[0]) || anoNumber,
-        antecipacaoCarteira: parseNumber(row[3]),       // D
-        fechamentoCarteira: parseNumber(row[4]),        // E
-        demaisReceitasCarteira: parseNumber(row[5]),    // F
-        antecipacaoNovasVendas: parseNumber(row[6]),    // G
-        fechamentoNovasVendas: parseNumber(row[7]),     // H
-        demaisReceitasNovasVendas: parseNumber(row[8]), // I
-      }))
+      .map((row: string[]) => {
+        // Regra: desconsiderar colunas G-I (Novas Vendas)
+        // para meses que sejam o mês atual ou anteriores à data de hoje
+        const hoje = new Date();
+        const mesAtual = hoje.getMonth() + 1; // 1-indexed
+        const anoAtualReal = hoje.getFullYear();
+        const mesRow = extractMonthIndex(row[0]);
+        const anoRow = extractYear(row[0]) || anoNumber;
+        const isMesPassadoOuAtual = (anoRow < anoAtualReal) || (anoRow === anoAtualReal && mesRow <= mesAtual);
+
+        return {
+          mes: row[0] || '',
+          franquia: row[1] || '',
+          ano: anoRow,
+          antecipacaoCarteira: parseNumber(row[3]),       // D
+          fechamentoCarteira: parseNumber(row[4]),        // E
+          demaisReceitasCarteira: parseNumber(row[5]),    // F
+          // Colunas G-I: zerar se mês atual ou anterior
+          antecipacaoNovasVendas: isMesPassadoOuAtual ? 0 : parseNumber(row[6]),    // G
+          fechamentoNovasVendas: isMesPassadoOuAtual ? 0 : parseNumber(row[7]),     // H
+          demaisReceitasNovasVendas: isMesPassadoOuAtual ? 0 : parseNumber(row[8]), // I
+        };
+      })
       // Ordenar por mês
       .sort((a: DadoMensal, b: DadoMensal) => extractMonthIndex(a.mes) - extractMonthIndex(b.mes));
 
