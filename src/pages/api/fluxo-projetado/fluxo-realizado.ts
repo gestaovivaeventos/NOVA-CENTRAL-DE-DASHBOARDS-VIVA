@@ -103,7 +103,43 @@ function parseNumber(value: any): number {
   return parseFloat(cleaned) || 0;
 }
 
-async function getFundosRealizado(franquia: string, skipCache: boolean = false): Promise<FundoRealizado[]> {
+// Busca o % ANTECIPAÇÃO da aba PARAMETROS PAINEL para a franquia
+async function getPercentualAntecipacao(sheets: any, franquia: string): Promise<number> {
+  try {
+    const range = `'PARAMETROS PAINEL'!A:C`;
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range,
+    });
+    const rows = response.data.values || [];
+    const franquiaUpper = franquia.toUpperCase();
+    
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (row[0] && row[0].toString().toUpperCase() === franquiaUpper) {
+        // Coluna C (índice 2) = % ANTECIPAÇÃO (vem como decimal, ex: 0.60 = 60%)
+        let valor = row[2];
+        if (valor === undefined || valor === null || valor === '') return 0;
+        let cleaned = String(valor).replace('%', '').replace(',', '.').trim();
+        let num = parseFloat(cleaned) || 0;
+        // Se o valor é maior que 1, já está em percentual (ex: 60); senão é decimal (0.60)
+        if (num > 0 && num <= 1) num = num * 100;
+        return num;
+      }
+    }
+    return 0;
+  } catch (err) {
+    console.error('[Fluxo Realizado API] Erro ao buscar % antecipação:', err);
+    return 0;
+  }
+}
+
+interface FluxoRealizadoResult {
+  fundos: FundoRealizado[];
+  percentualAntecipacao: number;
+}
+
+async function getFundosRealizado(franquia: string, skipCache: boolean = false): Promise<FluxoRealizadoResult> {
   const cacheKey = `${CACHE_KEY}:${franquia.toUpperCase()}`;
   
   // Verifica cache primeiro
@@ -111,19 +147,23 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     const cached = cache.get(cacheKey);
     if (cached) {
       console.log(`[Fluxo Realizado API] Cache hit para ${franquia}`);
-      return cached as FundoRealizado[];
+      return cached as FluxoRealizadoResult;
     }
   }
 
   const auth = getAuthenticatedClient();
   const sheets = google.sheets({ version: 'v4', auth });
   
-  // Busca dados da aba
-  const range = `'${SHEET_NAME}'!A:Z`;
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: SPREADSHEET_ID,
-    range,
-  });
+  // Busca dados da aba de fundos e % antecipação em paralelo
+  const [fundosResponse, percentualAntecipacao] = await Promise.all([
+    sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `'${SHEET_NAME}'!A:Z`,
+    }),
+    getPercentualAntecipacao(sheets, franquia),
+  ]);
+
+  const response = fundosResponse;
 
   const rows = response.data.values || [];
   
@@ -183,12 +223,14 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     fundos.push(fundo);
   }
 
-  console.log(`[Fluxo Realizado API] ${fundos.length} fundos encontrados para ${franquia}`);
+  console.log(`[Fluxo Realizado API] ${fundos.length} fundos encontrados para ${franquia} | % Antecipação: ${percentualAntecipacao}%`);
+  
+  const result: FluxoRealizadoResult = { fundos, percentualAntecipacao };
   
   // Salva no cache
-  cache.set(cacheKey, fundos, CACHE_TTL);
+  cache.set(cacheKey, result, CACHE_TTL);
   
-  return fundos;
+  return result;
 }
 
 export default async function handler(
@@ -209,10 +251,12 @@ export default async function handler(
       });
     }
 
-    const fundos = await getFundosRealizado(
+    const result = await getFundosRealizado(
       franquia as string, 
       skipCache === 'true'
     );
+
+    const { fundos, percentualAntecipacao } = result;
 
     // Calcula totais para o resumo
     const totais = {
@@ -230,6 +274,7 @@ export default async function handler(
       data: {
         fundos,
         totais,
+        percentualAntecipacao,
       },
     });
   } catch (error: any) {
