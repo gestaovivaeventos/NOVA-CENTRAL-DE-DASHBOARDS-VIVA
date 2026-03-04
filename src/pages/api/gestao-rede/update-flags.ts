@@ -1,6 +1,7 @@
 /**
  * API para atualizar as flags de uma franquia
- * Permite adicionar/remover múltiplas flags na coluna J da planilha
+ * Permite adicionar/remover múltiplas flags na coluna O (flag_sistema) da planilha
+ * A leitura das flags continua pela coluna J (flags)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -20,8 +21,9 @@ const SPREADSHEET_ID = process.env.GESTAO_REDE_SPREADSHEET_ID || '';
 const SHEET_NAME = process.env.GESTAO_REDE_SHEET_NAME || 'BASE GESTAO REDE';
 const CACHE_KEY = 'gestao-rede:data';
 
-// Coluna de flags é a coluna J (índice 9, ou seja, coluna 10)
-const FLAGS_COLUMN_LETTER = 'J';
+// Coluna de flags do sistema é a coluna O (flag_sistema) - escrita pelo painel
+// A coluna J (flags) continua sendo usada apenas para leitura
+const FLAGS_COLUMN_LETTER = 'O';
 
 interface UpdateFlagsRequest {
   chaveData: string;  // Identificador único da linha (coluna A)
