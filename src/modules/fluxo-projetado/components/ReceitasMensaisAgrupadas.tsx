@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronDown, ChevronUp, Calendar } from 'lucide-react';
 
 // Interface para receita mensal com detalhamento
 export interface ReceitaMensalAgrupada {
@@ -30,24 +30,16 @@ const formatarMoeda = (valor: number): string => {
 
 export default function ReceitasMensaisAgrupadas({ receitas, loading = false }: ReceitasMensaisAgrupadasProps) {
   const [expandido, setExpandido] = useState(true);
-  const [mesExpandido, setMesExpandido] = useState<string | null>(null);
-  const [anoSelecionado, setAnoSelecionado] = useState<number>(new Date().getFullYear());
+  const anoAtual = new Date().getFullYear();
 
-  // Anos disponíveis (2025 em diante)
-  const anosDisponiveis = [2025, 2026];
-
-  // Filtra receitas por ano selecionado
-  const receitasFiltradas = receitas.filter(r => r.ano === anoSelecionado);
+  // Usa todas as receitas disponíveis (sem filtro de ano)
+  const receitasFiltradas = receitas;
 
   // Calcula totais do ano
   const totalAno = receitasFiltradas.reduce((acc, r) => acc + r.valorTotal, 0);
   const totalAntecipacao = receitasFiltradas.reduce((acc, r) => acc + r.antecipacaoFee, 0);
   const totalUltimaParcela = receitasFiltradas.reduce((acc, r) => acc + r.ultimaParcelaFee, 0);
   const totalDemaisReceitas = receitasFiltradas.reduce((acc, r) => acc + r.demaisReceitas, 0);
-
-  const toggleMes = (mesKey: string) => {
-    setMesExpandido(mesExpandido === mesKey ? null : mesKey);
-  };
 
   return (
     <div className="rounded-xl overflow-hidden border border-gray-700/50" style={{ background: 'linear-gradient(180deg, #1e2028 0%, #181a20 100%)' }}>
@@ -66,35 +58,13 @@ export default function ReceitasMensaisAgrupadas({ receitas, loading = false }: 
                 Receitas Recebidas Mensais
               </h3>
               <p className="text-xs text-gray-400">
-                Histórico mês a mês da franquia • Desde 2025
+                Histórico mês a mês da franquia
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            {/* Seletor de Ano */}
-            <div 
-              className="flex items-center gap-1 bg-gray-800/50 rounded-lg p-1"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {anosDisponiveis.map(ano => (
-                <button
-                  key={ano}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAnoSelecionado(ano);
-                  }}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                    anoSelecionado === ano 
-                      ? 'bg-blue-500 text-white' 
-                      : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                  }`}
-                >
-                  {ano}
-                </button>
-              ))}
-            </div>
             <div className="text-right">
-              <p className="text-xs text-gray-400">Total {anoSelecionado}</p>
+              <p className="text-xs text-gray-400">Total Recebido</p>
               <p className="text-lg font-bold text-blue-400">{formatarMoeda(totalAno)}</p>
             </div>
             {expandido ? (
@@ -117,7 +87,7 @@ export default function ReceitasMensaisAgrupadas({ receitas, loading = false }: 
           ) : receitasFiltradas.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-gray-400">
               <Calendar className="w-12 h-12 mb-3 opacity-50" />
-              <p>Sem receitas registradas em {anoSelecionado}</p>
+              <p>Sem receitas registradas</p>
             </div>
           ) : (
             <div className="space-y-4">

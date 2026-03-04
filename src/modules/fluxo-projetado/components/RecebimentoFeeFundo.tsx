@@ -45,7 +45,7 @@ const formatarPercentual = (valor: number): string => {
   return `${valor.toFixed(0)}%`;
 };
 
-type OrdenacaoCampo = 'nome' | 'feeTotal' | 'percentualRecebido' | 'faltaReceber' | 'saldoFundo' | 'status';
+type OrdenacaoCampo = 'nome' | 'feeTotal' | 'percentualRecebido' | 'faltaReceber' | 'saldoFundo' | 'status' | 'dataCadastro' | 'dataBaile' | 'vlrAntecipacao' | 'antecRecebida' | 'faltaRecAntec' | 'saqueDisponivel';
 type OrdenacaoDirecao = 'asc' | 'desc';
 
 // Função para calcular o status do fundo (baseado em Saque Disponível e Falta Rec. Antec.)
@@ -166,6 +166,40 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
         case 'saldoFundo':
           comparacao = a.saldoFundo - b.saldoFundo;
           break;
+        case 'dataCadastro':
+          comparacao = (a.dataContrato || '').localeCompare(b.dataContrato || '');
+          break;
+        case 'dataBaile':
+          comparacao = (a.dataBaile || '').localeCompare(b.dataBaile || '');
+          break;
+        case 'vlrAntecipacao': {
+          const vlrA = percentualAntecipacao > 0 ? a.feeTotal * (percentualAntecipacao / 100) : 0;
+          const vlrB = percentualAntecipacao > 0 ? b.feeTotal * (percentualAntecipacao / 100) : 0;
+          comparacao = vlrA - vlrB;
+          break;
+        }
+        case 'antecRecebida': {
+          const vlrAA = percentualAntecipacao > 0 ? a.feeTotal * (percentualAntecipacao / 100) : 0;
+          const vlrBA = percentualAntecipacao > 0 ? b.feeTotal * (percentualAntecipacao / 100) : 0;
+          comparacao = Math.min(a.feeAntecipacaoRecebido, vlrAA) - Math.min(b.feeAntecipacaoRecebido, vlrBA);
+          break;
+        }
+        case 'faltaRecAntec': {
+          const vA = percentualAntecipacao > 0 ? a.feeTotal * (percentualAntecipacao / 100) : 0;
+          const vB = percentualAntecipacao > 0 ? b.feeTotal * (percentualAntecipacao / 100) : 0;
+          const fA = Math.max(0, vA - Math.min(a.feeAntecipacaoRecebido, vA));
+          const fB = Math.max(0, vB - Math.min(b.feeAntecipacaoRecebido, vB));
+          comparacao = fA - fB;
+          break;
+        }
+        case 'saqueDisponivel': {
+          const vA2 = percentualAntecipacao > 0 ? a.feeTotal * (percentualAntecipacao / 100) : 0;
+          const vB2 = percentualAntecipacao > 0 ? b.feeTotal * (percentualAntecipacao / 100) : 0;
+          const fA2 = Math.max(0, vA2 - Math.min(a.feeAntecipacaoRecebido, vA2));
+          const fB2 = Math.max(0, vB2 - Math.min(b.feeAntecipacaoRecebido, vB2));
+          comparacao = Math.min(fA2, a.saldoFundo) - Math.min(fB2, b.saldoFundo);
+          break;
+        }
         case 'status':
           const ordemStatus = { 'saque-disponivel': 1, 'saldo-parcial': 2, 'saldo-insuficiente': 3, 'finalizado': 4 };
           comparacao = ordemStatus[calcularStatus(a, percentualAntecipacao)] - ordemStatus[calcularStatus(b, percentualAntecipacao)];
@@ -184,6 +218,26 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
   const totalAntecipacaoRecebido = fundos.reduce((acc, f) => acc + f.feeAntecipacaoRecebido, 0);
   const totalFaltaReceber = fundos.reduce((acc, f) => acc + calcularFaltaReceber(f), 0);
   const totalFundos = fundos.length;
+
+  // Totais calculados para antecipação
+  const totalVlrAntecipacao = fundos.reduce((acc, f) => {
+    return acc + (percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0);
+  }, 0);
+  const totalAntecRecebida = fundos.reduce((acc, f) => {
+    const vlr = percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0;
+    return acc + Math.min(f.feeAntecipacaoRecebido, vlr);
+  }, 0);
+  const totalFaltaRecAntec = fundos.reduce((acc, f) => {
+    const vlr = percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0;
+    const recLim = Math.min(f.feeAntecipacaoRecebido, vlr);
+    return acc + Math.max(0, vlr - recLim);
+  }, 0);
+  const totalSaqueDisponivel = fundos.reduce((acc, f) => {
+    const vlr = percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0;
+    const recLim = Math.min(f.feeAntecipacaoRecebido, vlr);
+    const faltaAntec = Math.max(0, vlr - recLim);
+    return acc + Math.min(faltaAntec, f.saldoFundo);
+  }, 0);
 
   // Contagem por status
   const contagemStatus = useMemo(() => ({
@@ -285,7 +339,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-xs text-orange-400">Falta Receber Antecipação</p>
-              <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
+              <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaRecAntec)}</p>
             </div>
             {expandido ? (
               <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -318,28 +372,20 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                   <p className="text-2xl font-bold text-white">{totalFundos}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Valor FEE</p>
-                  <p className="text-lg font-bold text-white">{formatarMoeda(totalFeeContrato)}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Valor de FEE Antecipação</p>
+                  <p className="text-lg font-bold text-cyan-400">{formatarMoeda(totalVlrAntecipacao)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Antecip. Recebido</p>
-                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalAntecipacaoRecebido)}</p>
+                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalAntecRecebida)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Receber</p>
-                  <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Receber Antecipação</p>
+                  <p className="text-lg font-bold text-red-400">{formatarMoeda(totalFaltaRecAntec)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Por Status</p>
-                  <div className="flex items-center justify-center gap-2 mt-1">
-                    <span className="text-xs text-emerald-400" title="Saque Disponível">{contagemStatus['saque-disponivel']}</span>
-                    <span className="text-gray-600">|</span>
-                    <span className="text-xs text-orange-400" title="Saldo Parcial">{contagemStatus['saldo-parcial']}</span>
-                    <span className="text-gray-600">|</span>
-                    <span className="text-xs text-red-400" title="Saldo Insuficiente">{contagemStatus['saldo-insuficiente']}</span>
-                    <span className="text-gray-600">|</span>
-                    <span className="text-xs text-blue-400" title="Finalizado">{contagemStatus['finalizado']}</span>
-                  </div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Saque Disponível</p>
+                  <p className="text-lg font-bold text-emerald-300">{formatarMoeda(totalSaqueDisponivel)}</p>
                 </div>
               </div>
 
@@ -552,7 +598,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                 </button>
               </div>
 
-              {/* Lista de Fundos */}
+              {/* Tabela de Fundos */}
               {fundosFiltrados.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-8 text-gray-400">
                   <Search className="w-10 h-10 mb-3 opacity-50" />
@@ -565,115 +611,202 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                   </button>
                 </div>
               ) : (
-                <div className="space-y-1 max-h-[500px] overflow-y-auto pr-2">
-                  {fundosFiltrados.map((fundo) => {
-                    const status = calcularStatus(fundo, percentualAntecipacao);
-                    const percentualRecebido = calcularPercentualAntecipacaoRecebido(fundo);
-                    const faltaReceber = calcularFaltaReceber(fundo);
-                    
-                    return (
-                      <div 
-                        key={fundo.id}
-                        className="bg-gray-900/30 rounded-lg border border-gray-700/30 overflow-hidden hover:border-gray-600/50 transition-colors px-3 py-2.5"
-                      >
-                        {/* Layout em linha única com flex */}
-                        <div className="flex items-center gap-3">
-                          {/* Nome e unidade */}
-                          <div className="flex items-center gap-2 min-w-0 w-[200px] flex-shrink-0" title={fundo.nome}>
-                            {getStatusBadge(status, true)}
-                            <div className="min-w-0 flex-1 cursor-help">
-                              <span className="text-sm font-medium text-white truncate block" title={fundo.nome}>{fundo.nome}</span>
-                              <span className="text-xs text-gray-500 truncate block">Cód: {fundo.id}</span>
-                            </div>
-                          </div>
-                          
-                          {/* Colunas de valores */}
-                          <div className="flex-1 flex items-center gap-0">
-                            {/* Datas (empilhadas) */}
-                            <div className="w-[100px] flex-shrink-0 text-left">
-                              <p className="text-[10px] text-gray-500 uppercase">Dt.Cadastro</p>
-                              <p className="text-xs font-medium text-gray-300">{fundo.dataContrato || '-'}</p>
-                              <p className="text-[10px] text-gray-500 uppercase mt-0.5">Dt. Baile</p>
-                              <p className="text-xs font-medium text-gray-300">{fundo.dataBaile || '-'}</p>
-                            </div>
-                            
-                            {/* Separador discreto */}
-                            <div className="w-px self-stretch bg-gray-700/40 mx-3" />
-                            
-                            {/* Bloco TOTAL */}
-                            <div className="grid grid-cols-4 gap-2 flex-1">
-                              <div className="text-left">
-                                <p className="text-[10px] text-gray-500 uppercase">Valor FEE</p>
-                                <p className="text-sm font-medium text-white">{formatarMoeda(fundo.feeTotal)}</p>
+                <div style={{ maxHeight: '550px', overflowY: 'auto', overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.8125rem' }}>
+                    <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+                      {/* Linha de grupo: TOTAL e ANTECIPAÇÃO */}
+                      <tr style={{ backgroundColor: '#1e2028' }}>
+                        <th colSpan={2} style={{ padding: '6px 8px', borderBottom: 'none' }} />
+                        <th colSpan={4} style={{
+                          padding: '6px 8px',
+                          textAlign: 'center',
+                          color: '#22d3ee',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em',
+                          backgroundColor: 'rgba(34,211,238,0.06)',
+                          borderBottom: '2px solid rgba(34,211,238,0.3)',
+                        }}>
+                          TOTAL
+                        </th>
+                        <th colSpan={5} style={{
+                          padding: '6px 8px',
+                          textAlign: 'center',
+                          color: '#fb923c',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em',
+                          backgroundColor: 'rgba(251,146,60,0.06)',
+                          borderBottom: '2px solid rgba(251,146,60,0.3)',
+                        }}>
+                          ANTECIPAÇÃO
+                        </th>
+                        <th style={{ padding: '6px 8px', borderBottom: 'none' }} />
+                      </tr>
+                      {/* Linha de colunas */}
+                      <tr style={{ backgroundColor: '#2a2f36' }}>
+                        {[
+                          { key: 'nome' as OrdenacaoCampo, label: 'FUNDO', align: 'left' },
+                          { key: 'dataBaile' as OrdenacaoCampo, label: 'DATAS', align: 'center' },
+                          { key: 'feeTotal' as OrdenacaoCampo, label: 'VALOR FEE', align: 'right' },
+                          { key: 'percentualRecebido' as OrdenacaoCampo, label: 'FEE RECEBIDO', align: 'right' },
+                          { key: 'percentualRecebido' as OrdenacaoCampo, label: '% RECEB.', align: 'center' },
+                          { key: 'faltaReceber' as OrdenacaoCampo, label: 'FALTA RECEBER', align: 'right' },
+                          { key: 'vlrAntecipacao' as OrdenacaoCampo, label: 'VLR. ANTECIPAÇÃO', align: 'right' },
+                          { key: 'antecRecebida' as OrdenacaoCampo, label: 'ANTEC. RECEBIDA', align: 'right' },
+                          { key: 'faltaRecAntec' as OrdenacaoCampo, label: 'FALTA REC. ANTEC.', align: 'right' },
+                          { key: 'saldoFundo' as OrdenacaoCampo, label: 'SALDO FUNDO', align: 'right' },
+                          { key: 'saqueDisponivel' as OrdenacaoCampo, label: 'SAQUE DISPONÍVEL', align: 'right' },
+                          { key: 'status' as OrdenacaoCampo, label: 'STATUS', align: 'center' },
+                        ].map((col, i) => (
+                          <th
+                            key={`${col.key}-${i}`}
+                            onClick={() => alternarOrdenacao(col.key)}
+                            style={{
+                              color: '#adb5bd',
+                              fontSize: '0.75rem',
+                              fontWeight: 600,
+                              textTransform: 'uppercase',
+                              padding: '10px 8px',
+                              textAlign: col.align as any,
+                              cursor: 'pointer',
+                              userSelect: 'none',
+                              borderBottom: '2px solid #10b981',
+                              whiteSpace: 'nowrap',
+                              transition: 'background-color 0.2s',
+                              backgroundColor: '#2a2f36',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#343a40'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2a2f36'}
+                          >
+                            {col.label}
+                            {ordenacao.campo === col.key ? (
+                              <span style={{ color: '#10b981', marginLeft: '4px' }}>
+                                {ordenacao.direcao === 'asc' ? '↑' : '↓'}
+                              </span>
+                            ) : (
+                              <span style={{ color: '#6c757d', marginLeft: '4px' }}>⇅</span>
+                            )}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fundosFiltrados.map((fundo, rowIndex) => {
+                        const status = calcularStatus(fundo, percentualAntecipacao);
+                        const percentualRecebido = calcularPercentualAntecipacaoRecebido(fundo);
+                        const faltaReceber = calcularFaltaReceber(fundo);
+                        const vlrAntecipacao = percentualAntecipacao > 0 ? fundo.feeTotal * (percentualAntecipacao / 100) : 0;
+                        const feeRecebidoLimitado = Math.min(fundo.feeAntecipacaoRecebido, vlrAntecipacao);
+                        const faltaRecAntec = Math.max(0, vlrAntecipacao - feeRecebidoLimitado);
+                        const saqueDisponivel = Math.min(faltaRecAntec, fundo.saldoFundo);
+                        const bgColor = rowIndex % 2 === 0 ? '#343A40' : '#2c3136';
+                        
+                        return (
+                          <tr
+                            key={fundo.id}
+                            style={{ backgroundColor: bgColor, transition: 'background-color 0.2s' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#3d4349'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = bgColor}
+                          >
+                            {/* FUNDO */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'left', minWidth: '180px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                {getStatusBadge(status, true)}
+                                <div>
+                                  <span className="text-sm font-medium text-white block truncate" style={{ maxWidth: '200px' }} title={fundo.nome}>{fundo.nome}</span>
+                                  <span className="text-xs text-gray-500 block">Cód: {fundo.id}</span>
+                                </div>
                               </div>
-                              <div className="text-left">
-                                <p className="text-[10px] text-gray-500 uppercase">FEE Recebido</p>
-                                <p className="text-sm font-medium text-emerald-400">{formatarMoeda(fundo.feeAntecipacaoRecebido)}</p>
+                            </td>
+                            {/* DATAS */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                              <div>
+                                <span className="text-[10px] text-gray-500 uppercase block">Cadastro</span>
+                                <span className="text-xs text-gray-300 block">{fundo.dataContrato || '-'}</span>
+                                <span className="text-[10px] text-gray-500 uppercase block mt-0.5">Baile</span>
+                                <span className="text-xs text-gray-300 block">{fundo.dataBaile || '-'}</span>
                               </div>
-                              <div className="text-left">
-                                <p className="text-[10px] text-gray-500 uppercase">% Receb.</p>
-                                <p className={`text-sm font-bold ${percentualRecebido >= 100 ? 'text-blue-400' : percentualRecebido >= 50 ? 'text-emerald-400' : 'text-yellow-400'}`}>
-                                  {formatarPercentual(percentualRecebido)}
-                                </p>
-                              </div>
-                              <div className="text-left">
-                                <p className="text-[10px] text-gray-500 uppercase">Falta Receber</p>
-                                <p className="text-sm font-medium text-orange-400">{formatarMoeda(faltaReceber)}</p>
-                              </div>
-                            </div>
-                            
-                            {/* Separador discreto entre blocos TOTAL e ANTECIPAÇÃO */}
-                            <div className="w-px self-stretch bg-gray-700/40 mx-3" />
-                            
-                            {/* Bloco ANTECIPAÇÃO */}
-                            {(() => {
-                              const vlrAntecipacao = percentualAntecipacao > 0 ? fundo.feeTotal * (percentualAntecipacao / 100) : 0;
-                              const feeRecebidoLimitado = Math.min(fundo.feeAntecipacaoRecebido, vlrAntecipacao);
-                              const faltaRecAntec = Math.max(0, vlrAntecipacao - feeRecebidoLimitado);
-                              const saqueDisponivel = Math.min(faltaRecAntec, fundo.saldoFundo);
-                              return (
-                                <div className="grid grid-cols-5 gap-2 w-[600px] flex-shrink-0">
-                                  <div className="text-left">
-                                    <p className="text-[10px] text-gray-500 uppercase">Vlr. Antecipação</p>
-                                    <p className="text-sm font-medium text-cyan-400">
-                                      {percentualAntecipacao > 0 ? formatarMoeda(vlrAntecipacao) : '-'}
-                                    </p>
-                                  </div>
-                                  <div className="text-left">
-                                    <p className="text-[10px] text-gray-500 uppercase">Antec. Recebida</p>
-                                    <p className="text-sm font-medium text-emerald-400">
-                                      {percentualAntecipacao > 0 ? formatarMoeda(feeRecebidoLimitado) : '-'}
-                                    </p>
-                                  </div>
-                                  <div className="text-left">
-                                    <p className="text-[10px] text-gray-500 uppercase">Falta Rec. Antec.</p>
-                                    <p className="text-sm font-medium text-red-400">
-                                      {percentualAntecipacao > 0 ? formatarMoeda(faltaRecAntec) : '-'}
-                                    </p>
-                                  </div>
-                                  <div className="text-left">
-                                    <p className="text-[10px] text-gray-500 uppercase">Saldo Fundo</p>
-                                    <p className="text-sm font-medium text-blue-400">{formatarMoeda(fundo.saldoFundo)}</p>
-                                  </div>
-                                  <div className="text-left">
-                                    <p className="text-[10px] text-gray-500 uppercase">Saque Disponível</p>
-                                    <p className={`text-sm font-bold ${saqueDisponivel > 0 ? 'text-emerald-300' : 'text-gray-500'}`}>
-                                      {percentualAntecipacao > 0 ? formatarMoeda(saqueDisponivel) : '-'}
-                                    </p>
+                            </td>
+                            {/* VALOR FEE */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#F8F9FA', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              {formatarMoeda(fundo.feeTotal)}
+                            </td>
+                            {/* FEE RECEBIDO */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#34d399', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              {formatarMoeda(fundo.feeAntecipacaoRecebido)}
+                            </td>
+                            {/* % RECEB. */}
+                            <td style={{ 
+                              padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap',
+                              color: percentualRecebido >= 100 ? '#60a5fa' : percentualRecebido >= 50 ? '#34d399' : '#facc15'
+                            }}>
+                              {formatarPercentual(percentualRecebido)}
+                            </td>
+                            {/* FALTA RECEBER */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#fb923c', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              {formatarMoeda(faltaReceber)}
+                            </td>
+                            {/* VLR. ANTECIPAÇÃO */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#22d3ee', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              {percentualAntecipacao > 0 ? formatarMoeda(vlrAntecipacao) : '-'}
+                            </td>
+                            {/* ANTEC. RECEBIDA */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', whiteSpace: 'nowrap', minWidth: '120px' }}>
+                              {percentualAntecipacao > 0 ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                  <div 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100px', cursor: 'default' }}
+                                    title={`${formatarMoeda(feeRecebidoLimitado)} de ${formatarMoeda(vlrAntecipacao)}`}
+                                  >
+                                    <div style={{ 
+                                      flex: 1,
+                                      height: '5px', 
+                                      backgroundColor: '#374151', 
+                                      borderRadius: '2px', 
+                                      overflow: 'hidden',
+                                    }}>
+                                      <div style={{ 
+                                        height: '100%', 
+                                        width: `${vlrAntecipacao > 0 ? Math.min(100, (feeRecebidoLimitado / vlrAntecipacao) * 100) : 0}%`,
+                                        backgroundColor: feeRecebidoLimitado >= vlrAntecipacao ? '#3b82f6' : feeRecebidoLimitado > 0 ? '#34d399' : '#374151',
+                                        borderRadius: '2px',
+                                        transition: 'width 0.3s ease'
+                                      }} />
+                                    </div>
+                                    <span style={{ color: '#9ca3af', fontSize: '0.6rem', minWidth: '28px' }}>
+                                      {vlrAntecipacao > 0 ? `${((feeRecebidoLimitado / vlrAntecipacao) * 100).toFixed(0)}%` : '0%'}
+                                    </span>
                                   </div>
                                 </div>
-                              );
-                            })()}
-                          </div>
-                          
-                          {/* Status Badge */}
-                          <div className="w-[150px] flex-shrink-0 flex justify-center">
-                            {getStatusBadge(status)}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                              ) : '-'}
+                            </td>
+                            {/* FALTA REC. ANTEC. */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#f87171', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              {percentualAntecipacao > 0 ? formatarMoeda(faltaRecAntec) : '-'}
+                            </td>
+                            {/* SALDO FUNDO */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#60a5fa', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                              {formatarMoeda(fundo.saldoFundo)}
+                            </td>
+                            {/* SAQUE DISPONÍVEL */}
+                            <td style={{ 
+                              padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap',
+                              color: saqueDisponivel > 0 ? '#6ee7b7' : '#6b7280'
+                            }}>
+                              {percentualAntecipacao > 0 ? formatarMoeda(saqueDisponivel) : '-'}
+                            </td>
+                            {/* STATUS */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center' }}>
+                              {getStatusBadge(status)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
 
