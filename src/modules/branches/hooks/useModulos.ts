@@ -19,7 +19,12 @@ export function useModulos() {
         if (!res.ok) throw new Error('Erro ao buscar módulos');
         const data = await res.json();
         if (!cancelled && Array.isArray(data.modules)) {
-          setModulos(data.modules);
+          // Mescla a lista da API com a lista estática para garantir
+          // que módulos conhecidos nunca desapareçam (ex: fluxo-projetado)
+          const merged = Array.from(
+            new Set([...MODULOS_CENTRAL, ...data.modules])
+          ).sort();
+          setModulos(merged);
         }
       } catch (err) {
         console.warn('Falha ao buscar módulos dinâmicos, usando lista estática:', err);

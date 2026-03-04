@@ -97,6 +97,7 @@ export interface BranchSheetRow {
 
 // ============ Módulos disponíveis ============
 export const MODULOS_CENTRAL = [
+  'branches',
   'carteira',
   'central',
   'fluxo-projetado',
@@ -105,8 +106,8 @@ export const MODULOS_CENTRAL = [
   'okr',
   'painel-gerencial',
   'pex',
+  'projetos',
   'vendas',
-  'branches',
 ] as const;
 
 export type ModuloCentral = typeof MODULOS_CENTRAL[number];
