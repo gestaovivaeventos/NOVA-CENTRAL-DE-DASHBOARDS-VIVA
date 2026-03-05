@@ -169,18 +169,6 @@ export default function Sidebar({
               {/* Navegação entre páginas */}
               <div className="space-y-2">
                 <button 
-                  onClick={() => router.push(franquiaSelecionada ? `/fluxo-projetado?franquia=${encodeURIComponent(franquiaSelecionada)}` : '/fluxo-projetado')}
-                  className={`flex items-center gap-2 w-full px-3 py-2.5 border rounded-lg transition-all text-sm ${
-                    paginaAtiva === 'projetado' 
-                      ? 'bg-orange-500/20 border-orange-500 text-orange-400' 
-                      : 'bg-[#252830] border-gray-700 hover:border-orange-500/50 hover:bg-[#2a2e38] text-gray-300 hover:text-white'
-                  }`}
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  <span>Fluxo Projetado</span>
-                </button>
-                
-                <button 
                   onClick={() => router.push(franquiaSelecionada ? `/fluxo-projetado/realizado?franquia=${encodeURIComponent(franquiaSelecionada)}` : '/fluxo-projetado/realizado')}
                   className={`flex items-center gap-2 w-full px-3 py-2.5 border rounded-lg transition-all text-sm ${
                     paginaAtiva === 'realizado' 
@@ -190,6 +178,18 @@ export default function Sidebar({
                 >
                   <ClipboardCheck className="w-4 h-4" />
                   <span>Fluxo Realizado</span>
+                </button>
+                
+                <button 
+                  onClick={() => router.push(franquiaSelecionada ? `/fluxo-projetado?franquia=${encodeURIComponent(franquiaSelecionada)}` : '/fluxo-projetado')}
+                  className={`flex items-center gap-2 w-full px-3 py-2.5 border rounded-lg transition-all text-sm ${
+                    paginaAtiva === 'projetado' 
+                      ? 'bg-orange-500/20 border-orange-500 text-orange-400' 
+                      : 'bg-[#252830] border-gray-700 hover:border-orange-500/50 hover:bg-[#2a2e38] text-gray-300 hover:text-white'
+                  }`}
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  <span>Fluxo Projetado</span>
                 </button>
               </div>
 
@@ -214,19 +214,6 @@ export default function Sidebar({
           {/* Ícones quando recolhido */}
           {isCollapsed && (
             <div className="flex flex-col items-center gap-3">
-              {/* Botão Fluxo Projetado (ícone) */}
-              <button
-                onClick={() => router.push(`/fluxo-projetado${franquiaSelecionada ? `?franquia=${encodeURIComponent(franquiaSelecionada)}` : ''}`)}
-                className={`p-2.5 rounded-lg transition-all ${
-                  paginaAtiva === 'projetado'
-                    ? 'bg-orange-500/30 text-orange-400'
-                    : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400'
-                }`}
-                title="Fluxo Projetado"
-              >
-                <TrendingUp size={20} />
-              </button>
-              
               {/* Botão Fluxo Realizado (ícone) */}
               <button
                 onClick={() => router.push(`/fluxo-projetado/realizado${franquiaSelecionada ? `?franquia=${encodeURIComponent(franquiaSelecionada)}` : ''}`)}
@@ -238,6 +225,19 @@ export default function Sidebar({
                 title="Fluxo Realizado"
               >
                 <ClipboardCheck size={20} />
+              </button>
+              
+              {/* Botão Fluxo Projetado (ícone) */}
+              <button
+                onClick={() => router.push(`/fluxo-projetado${franquiaSelecionada ? `?franquia=${encodeURIComponent(franquiaSelecionada)}` : ''}`)}
+                className={`p-2.5 rounded-lg transition-all ${
+                  paginaAtiva === 'projetado'
+                    ? 'bg-orange-500/30 text-orange-400'
+                    : 'bg-orange-500/10 hover:bg-orange-500/20 text-orange-400'
+                }`}
+                title="Fluxo Projetado"
+              >
+                <TrendingUp size={20} />
               </button>
               
               {/* Botão Parâmetros (ícone) - apenas para franqueadoras (accessLevel >= 1) */}
