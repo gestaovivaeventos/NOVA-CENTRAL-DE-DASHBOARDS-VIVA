@@ -205,9 +205,11 @@ export default function TabelaResultadosOficiais({
     });
   }, [dadosFiltrados, metas]);
 
-  // Ordenar
+  // Ordenar (default: por nome da franquia A-Z)
   const dadosOrdenados = useMemo(() => {
-    if (!colunaOrdenada || !direcaoOrdenacao) return dadosTabela;
+    if (!colunaOrdenada || !direcaoOrdenacao) {
+      return [...dadosTabela].sort((a, b) => a.franquia.localeCompare(b.franquia));
+    }
     return [...dadosTabela].sort((a, b) => {
       if (colunaOrdenada === 'franquia') {
         return direcaoOrdenacao === 'asc' ? a.franquia.localeCompare(b.franquia) : b.franquia.localeCompare(a.franquia);
@@ -397,6 +399,11 @@ export default function TabelaResultadosOficiais({
                       }}
                     >
                       {item.franquia}
+                      {(item.cluster === 'INCUBAÇÃO 0' || item.cluster === 'INCUBACAO 0') && (
+                        <div style={{ fontSize: '0.6rem', color: '#FF6600', fontWeight: 600, marginTop: '2px' }}>
+                          Não participa do programa
+                        </div>
+                      )}
                     </td>
                     {/* Cluster */}
                     <td

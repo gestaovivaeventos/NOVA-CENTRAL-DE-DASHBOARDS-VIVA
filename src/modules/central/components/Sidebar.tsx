@@ -38,7 +38,7 @@ const getDashboardGroups = (accessLevel: number, username?: string): DashboardGr
         id: 'gestao-resultados',
         name: 'Gestão por Resultados',
         dashboards: [
-          { id: 'pex', label: 'Dashboard PEX', path: '/pex', icon: 'dashboard' },
+          { id: 'pex', label: 'PEX', path: '/pex', icon: 'dashboard' },
         ],
       },
     ];
@@ -54,7 +54,7 @@ const getDashboardGroups = (accessLevel: number, username?: string): DashboardGr
         { id: 'okr', label: 'Dashboard OKRs', path: '/okr', icon: 'target' },
         { id: 'gerencial', label: 'Painel Gerencial', path: '/gerencial', icon: 'trophy' },
         { id: 'gestao-rede', label: 'Gestão Rede', path: '/gestao-rede', icon: 'network' },
-        { id: 'pex', label: 'Dashboard PEX', path: '/pex', icon: 'dashboard' },
+        { id: 'pex', label: 'PEX', path: '/pex', icon: 'dashboard' },
       ],
     },
     {

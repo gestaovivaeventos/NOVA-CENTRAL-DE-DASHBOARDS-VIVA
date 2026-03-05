@@ -198,6 +198,12 @@ export default function TabelaResumo({
         );
       });
     }
+
+    // Remover unidades INCUBAÇÃO 0 da tabela resumo
+    resultado = resultado.filter(item => {
+      const clusterStr = (item.cluster || '').toString().toUpperCase().trim();
+      return clusterStr !== 'INCUBAÇÃO 0' && clusterStr !== 'INCUBACAO 0';
+    });
     
     return resultado;
   }, [dados, quarterSelecionado, clusterSelecionado, clustersSelecionados, consultorSelecionado, consultoresSelecionados, nomeColunaConsultor, unidadesSelecionadas, filtrosMaturidades, filtrosMercados, filtrosPerformanceComercial]);
