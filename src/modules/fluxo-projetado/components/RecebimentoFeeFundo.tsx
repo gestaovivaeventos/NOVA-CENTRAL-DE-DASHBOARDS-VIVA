@@ -29,12 +29,13 @@ export interface FundoFee {
 }
 
 // Status calculado dinamicamente
-export type StatusFundo = 'saque-disponivel' | 'saldo-parcial' | 'saldo-insuficiente' | 'finalizado';
+export type StatusFundo = 'saque-disponivel' | 'saldo-parcial' | 'saldo-insuficiente' | 'finalizado' | 'antecipacao-concluida';
 
 interface RecebimentoFeeFundoProps {
   fundos: FundoFee[];
   loading?: boolean;
   percentualAntecipacao?: number;
+  diasBaileAntecipar?: number;
 }
 
 const formatarMoeda = (valor: number): string => {
@@ -42,35 +43,102 @@ const formatarMoeda = (valor: number): string => {
 };
 
 const formatarPercentual = (valor: number): string => {
-  return `${valor.toFixed(0)}%`;
+  return `${valor.toFixed(2)}%`;
 };
 
 type OrdenacaoCampo = 'nome' | 'feeTotal' | 'percentualRecebido' | 'faltaReceber' | 'saldoFundo' | 'status' | 'dataCadastro' | 'dataBaile' | 'vlrAntecipacao' | 'antecRecebida' | 'faltaRecAntec' | 'saqueDisponivel';
 type OrdenacaoDirecao = 'asc' | 'desc';
 
-// Função para calcular o status do fundo (baseado em Saque Disponível e Falta Rec. Antec.)
-const calcularStatus = (fundo: FundoFee, percentualAntecipacao: number = 0): StatusFundo => {
+// Helper para parsear data dd/mm/yyyy
+const parseDataBR = (dataStr: string): Date | null => {
+  if (!dataStr) return null;
+  const partes = dataStr.split('/');
+  if (partes.length !== 3) return null;
+  const [dia, mes, ano] = partes.map(Number);
+  if (!dia || !mes || !ano) return null;
+  return new Date(ano, mes - 1, dia);
+};
+
+// Verifica se estamos dentro de X dias antes do baile
+const isProximoBaile = (fundo: FundoFee, diasBaileAntecipar: number): boolean => {
+  if (diasBaileAntecipar <= 0 || !fundo.dataBaile) return false;
+  const dataBaile = parseDataBR(fundo.dataBaile);
+  if (!dataBaile) return false;
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  dataBaile.setHours(0, 0, 0, 0);
+  const diffMs = dataBaile.getTime() - hoje.getTime();
+  const diffDias = diffMs / (1000 * 60 * 60 * 24);
+  // Próximo do baile: faltam X dias ou menos (inclusive bailes já passados)
+  return diffDias <= diasBaileAntecipar;
+};
+
+// Calcula o saque disponível considerando proximidade do baile
+const calcularSaqueDisponivel = (fundo: FundoFee, percentualAntecipacao: number, diasBaileAntecipar: number): number => {
+  const proximoBaile = isProximoBaile(fundo, diasBaileAntecipar);
+  
+  if (proximoBaile) {
+    // Próximo ao baile: libera o restante total do FEE para saque
+    const faltaRecTotal = calcularFaltaReceber(fundo);
+    return Math.min(faltaRecTotal, fundo.saldoFundo);
+  }
+  
+  // Regra normal: apenas a parcela de antecipação
+  const vlrAntecipacao = percentualAntecipacao > 0 ? fundo.feeTotal * (percentualAntecipacao / 100) : 0;
+  const feeRecebidoLimitado = Math.min(fundo.feeAntecipacaoRecebido, vlrAntecipacao);
+  const faltaRecAntec = Math.max(0, vlrAntecipacao - feeRecebidoLimitado);
+  return Math.min(faltaRecAntec, fundo.saldoFundo);
+};
+
+// Função para calcular o status do fundo
+const calcularStatus = (fundo: FundoFee, percentualAntecipacao: number = 0, diasBaileAntecipar: number = 0): StatusFundo => {
+  // Calcular % recebido total
+  const percentRecebido = fundo.feeAntecipacaoTotal === 0 ? 0 : (fundo.feeAntecipacaoRecebido / fundo.feeAntecipacaoTotal) * 100;
+  
+  // FINALIZADO: quando % RECEB. = 100%
+  if (percentRecebido >= 100) {
+    return 'finalizado';
+  }
+  
+  const proximoBaile = isProximoBaile(fundo, diasBaileAntecipar);
+  
+  if (proximoBaile) {
+    // Próximo ao baile: usa o total faltando (não só antecipação)
+    const faltaRecTotal = calcularFaltaReceber(fundo);
+    if (faltaRecTotal <= 0) return 'finalizado';
+    const saqueDisp = Math.min(faltaRecTotal, fundo.saldoFundo);
+    if (saqueDisp >= faltaRecTotal) return 'saque-disponivel';
+    if (saqueDisp > 0) return 'saldo-parcial';
+    return 'saldo-insuficiente';
+  }
+  
+  // Regra normal (sem proximidade do baile)
   const vlrAntecipacao = percentualAntecipacao > 0 ? fundo.feeTotal * (percentualAntecipacao / 100) : 0;
   const feeRecebidoLimitado = Math.min(fundo.feeAntecipacaoRecebido, vlrAntecipacao);
   const faltaRecAntec = Math.max(0, vlrAntecipacao - feeRecebidoLimitado);
   const saqueDisponivel = Math.min(faltaRecAntec, fundo.saldoFundo);
   
-  // FINALIZADO: quando Falta Rec. Antec. = 0
+  // ANTECIPAÇÃO CONCLUÍDA: quando % RECEB. >= % ANTECIPAÇÃO parâmetro, mas < 100%
+  if (percentualAntecipacao > 0 && percentRecebido >= percentualAntecipacao) {
+    return 'antecipacao-concluida';
+  }
+  
+  // FINALIZADO (antecipação): quando Falta Rec. Antec. = 0
   if (faltaRecAntec <= 0) {
     return 'finalizado';
   }
   
-  // SAQUE DISPONÍVEL: quando Saque Disponível = Falta Rec. Antec.
+  // SAQUE DISPONÍVEL
   if (saqueDisponivel >= faltaRecAntec) {
     return 'saque-disponivel';
   }
   
-  // SAQUE PARCIAL: quando Saque Disponível > 0, mas < Falta Rec. Antec.
+  // SAQUE PARCIAL
   if (saqueDisponivel > 0 && saqueDisponivel < faltaRecAntec) {
     return 'saldo-parcial';
   }
   
-  // SAQUE INDISPONÍVEL: quando Saque Disponível = 0 e Falta Receber > 0
+  // SAQUE INDISPONÍVEL
   return 'saldo-insuficiente';
 };
 
@@ -89,7 +157,7 @@ const calcularFaltaReceber = (fundo: FundoFee): number => {
   return Math.max(0, fundo.feeAntecipacaoTotal - fundo.feeAntecipacaoRecebido);
 };
 
-export default function RecebimentoFeeFundo({ fundos, loading = false, percentualAntecipacao = 0 }: RecebimentoFeeFundoProps) {
+export default function RecebimentoFeeFundo({ fundos, loading = false, percentualAntecipacao = 0, diasBaileAntecipar = 0 }: RecebimentoFeeFundoProps) {
   const [expandido, setExpandido] = useState(true);
   
   // Estados para busca e filtro
@@ -120,17 +188,8 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
     
     // Aplica filtro de status
     if (filtroStatus !== 'todos') {
-      resultado = resultado.filter(f => calcularStatus(f, percentualAntecipacao) === filtroStatus);
+      resultado = resultado.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === filtroStatus);
     }
-    
-    // Helper para parsear data dd/mm/yyyy para Date
-    const parseDataBR = (dataStr: string): Date | null => {
-      if (!dataStr) return null;
-      const partes = dataStr.split('/');
-      if (partes.length !== 3) return null;
-      const [dia, mes, ano] = partes.map(Number);
-      return new Date(ano, mes - 1, dia);
-    };
     
     // Aplica filtro de Dt. Baile
     if (filtroBaileDe || filtroBalieAte) {
@@ -193,16 +252,12 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
           break;
         }
         case 'saqueDisponivel': {
-          const vA2 = percentualAntecipacao > 0 ? a.feeTotal * (percentualAntecipacao / 100) : 0;
-          const vB2 = percentualAntecipacao > 0 ? b.feeTotal * (percentualAntecipacao / 100) : 0;
-          const fA2 = Math.max(0, vA2 - Math.min(a.feeAntecipacaoRecebido, vA2));
-          const fB2 = Math.max(0, vB2 - Math.min(b.feeAntecipacaoRecebido, vB2));
-          comparacao = Math.min(fA2, a.saldoFundo) - Math.min(fB2, b.saldoFundo);
+          comparacao = calcularSaqueDisponivel(a, percentualAntecipacao, diasBaileAntecipar) - calcularSaqueDisponivel(b, percentualAntecipacao, diasBaileAntecipar);
           break;
         }
         case 'status':
-          const ordemStatus = { 'saque-disponivel': 1, 'saldo-parcial': 2, 'saldo-insuficiente': 3, 'finalizado': 4 };
-          comparacao = ordemStatus[calcularStatus(a, percentualAntecipacao)] - ordemStatus[calcularStatus(b, percentualAntecipacao)];
+          const ordemStatus = { 'saque-disponivel': 1, 'saldo-parcial': 2, 'saldo-insuficiente': 3, 'antecipacao-concluida': 4, 'finalizado': 5 };
+          comparacao = ordemStatus[calcularStatus(a, percentualAntecipacao, diasBaileAntecipar)] - ordemStatus[calcularStatus(b, percentualAntecipacao, diasBaileAntecipar)];
           break;
       }
       
@@ -210,7 +265,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
     });
     
     return resultado;
-  }, [fundos, busca, filtroStatus, ordenacao, filtroBaileDe, filtroBalieAte]);
+  }, [fundos, busca, filtroStatus, ordenacao, filtroBaileDe, filtroBalieAte, diasBaileAntecipar]);
 
   // Calcula totais
   const totalFeeContrato = fundos.reduce((acc, f) => acc + f.feeTotal, 0);
@@ -233,19 +288,17 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
     return acc + Math.max(0, vlr - recLim);
   }, 0);
   const totalSaqueDisponivel = fundos.reduce((acc, f) => {
-    const vlr = percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0;
-    const recLim = Math.min(f.feeAntecipacaoRecebido, vlr);
-    const faltaAntec = Math.max(0, vlr - recLim);
-    return acc + Math.min(faltaAntec, f.saldoFundo);
+    return acc + calcularSaqueDisponivel(f, percentualAntecipacao, diasBaileAntecipar);
   }, 0);
 
   // Contagem por status
   const contagemStatus = useMemo(() => ({
-    'saque-disponivel': fundos.filter(f => calcularStatus(f, percentualAntecipacao) === 'saque-disponivel').length,
-    'saldo-parcial': fundos.filter(f => calcularStatus(f, percentualAntecipacao) === 'saldo-parcial').length,
-    'saldo-insuficiente': fundos.filter(f => calcularStatus(f, percentualAntecipacao) === 'saldo-insuficiente').length,
-    'finalizado': fundos.filter(f => calcularStatus(f, percentualAntecipacao) === 'finalizado').length,
-  }), [fundos, percentualAntecipacao]);
+    'saque-disponivel': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saque-disponivel').length,
+    'saldo-parcial': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saldo-parcial').length,
+    'saldo-insuficiente': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saldo-insuficiente').length,
+    'antecipacao-concluida': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'antecipacao-concluida').length,
+    'finalizado': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'finalizado').length,
+  }), [fundos, percentualAntecipacao, diasBaileAntecipar]);
 
   const getStatusBadge = (status: StatusFundo, compact = false) => {
     const config = {
@@ -272,6 +325,14 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
         border: 'border-red-500/30',
         icon: Ban,
         label: 'Saque Indisponível'
+      },
+      'antecipacao-concluida': { 
+        bg: 'bg-purple-500/20', 
+        bgSolid: 'bg-purple-900',
+        text: 'text-purple-400', 
+        border: 'border-purple-500/30',
+        icon: CheckCircle,
+        label: 'Antecipação Concluída'
       },
       'finalizado': { 
         bg: 'bg-blue-500/20', 
@@ -338,8 +399,8 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <p className="text-xs text-orange-400">Falta Receber Antecipação</p>
-              <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaRecAntec)}</p>
+              <p className="text-xs text-orange-400">Falta Receber</p>
+              <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
             </div>
             {expandido ? (
               <ChevronUp className="w-5 h-5 text-gray-400" />
@@ -372,16 +433,16 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                   <p className="text-2xl font-bold text-white">{totalFundos}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Valor de FEE Antecipação</p>
-                  <p className="text-lg font-bold text-cyan-400">{formatarMoeda(totalVlrAntecipacao)}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Total FEE</p>
+                  <p className="text-lg font-bold text-cyan-400">{formatarMoeda(totalFeeContrato)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Antecip. Recebido</p>
-                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalAntecRecebida)}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Total FEE Recebido</p>
+                  <p className="text-lg font-bold text-emerald-400">{formatarMoeda(totalAntecipacaoRecebido)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Receber Antecipação</p>
-                  <p className="text-lg font-bold text-red-400">{formatarMoeda(totalFaltaRecAntec)}</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Receber</p>
+                  <p className="text-lg font-bold text-red-400">{formatarMoeda(totalFaltaReceber)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Saque Disponível</p>
@@ -472,6 +533,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                       { value: 'saque-disponivel', label: 'Saque Disponível' },
                       { value: 'saldo-parcial', label: 'Saque Parcial' },
                       { value: 'saldo-insuficiente', label: 'Saque Indisponível' },
+                      { value: 'antecipacao-concluida', label: 'Antecip. Concluída' },
                       { value: 'finalizado', label: 'Finalizado' },
                     ].map(({ value, label }) => (
                       <button
@@ -482,6 +544,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                             ? value === 'saque-disponivel' ? 'bg-emerald-500 text-white'
                             : value === 'saldo-parcial' ? 'bg-orange-500 text-white'
                             : value === 'saldo-insuficiente' ? 'bg-red-500 text-white'
+                            : value === 'antecipacao-concluida' ? 'bg-purple-500 text-white'
                             : value === 'finalizado' ? 'bg-blue-500 text-white'
                             : 'bg-gray-600 text-white'
                             : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
@@ -492,34 +555,6 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                           <span className="ml-1 opacity-70">
                             ({contagemStatus[value as StatusFundo]})
                           </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                  
-                  <div className="h-6 w-px bg-gray-700 mx-2" />
-                  
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Ordenar por:</span>
-                  <div className="flex items-center gap-2">
-                    {[
-                      { campo: 'feeTotal' as OrdenacaoCampo, label: 'Valor FEE' },
-                      { campo: 'percentualRecebido' as OrdenacaoCampo, label: '% Recebido' },
-                      { campo: 'faltaReceber' as OrdenacaoCampo, label: 'Falta Receber' },
-                      { campo: 'saldoFundo' as OrdenacaoCampo, label: 'Saldo Fundo' },
-                      { campo: 'nome' as OrdenacaoCampo, label: 'Nome' },
-                    ].map(({ campo, label }) => (
-                      <button
-                        key={campo}
-                        onClick={() => alternarOrdenacao(campo)}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                          ordenacao.campo === campo
-                            ? 'bg-gray-600 text-white'
-                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                        }`}
-                      >
-                        {label}
-                        {ordenacao.campo === campo && (
-                          <ArrowUpDown size={12} className={ordenacao.direcao === 'asc' ? 'rotate-180' : ''} />
                         )}
                       </button>
                     ))}
@@ -547,14 +582,15 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                       const vlrAntecipacao = percentualAntecipacao > 0 ? fundo.feeTotal * (percentualAntecipacao / 100) : 0;
                       const feeRecebidoLimitado = Math.min(fundo.feeAntecipacaoRecebido, vlrAntecipacao);
                       const faltaRecAntec = Math.max(0, vlrAntecipacao - feeRecebidoLimitado);
-                      const saqueDisp = Math.min(faltaRecAntec, fundo.saldoFundo);
+                      const saqueDisp = calcularSaqueDisponivel(fundo, percentualAntecipacao, diasBaileAntecipar);
                       const percentReceb = fundo.feeAntecipacaoTotal === 0 ? 0 : (fundo.feeAntecipacaoRecebido / fundo.feeAntecipacaoTotal) * 100;
                       const faltaRecTotal = fundo.faltaReceber ?? Math.max(0, fundo.feeAntecipacaoTotal - fundo.feeAntecipacaoRecebido);
-                      const status = calcularStatus(fundo, percentualAntecipacao);
+                      const status = calcularStatus(fundo, percentualAntecipacao, diasBaileAntecipar);
                       const statusLabel = {
                         'saque-disponivel': 'Saque Disponível',
                         'saldo-parcial': 'Saque Parcial',
                         'saldo-insuficiente': 'Saque Indisponível',
+                        'antecipacao-concluida': 'Antecipação Concluída',
                         'finalizado': 'Finalizado'
                       }[status];
                       return [
@@ -630,7 +666,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                         }}>
                           TOTAL
                         </th>
-                        <th colSpan={5} style={{
+                        <th colSpan={2} style={{
                           padding: '6px 8px',
                           textAlign: 'center',
                           color: '#fb923c',
@@ -654,9 +690,6 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                           { key: 'percentualRecebido' as OrdenacaoCampo, label: 'FEE RECEBIDO', align: 'right' },
                           { key: 'percentualRecebido' as OrdenacaoCampo, label: '% RECEB.', align: 'center' },
                           { key: 'faltaReceber' as OrdenacaoCampo, label: 'FALTA RECEBER', align: 'right' },
-                          { key: 'vlrAntecipacao' as OrdenacaoCampo, label: 'VLR. ANTECIPAÇÃO', align: 'right' },
-                          { key: 'antecRecebida' as OrdenacaoCampo, label: 'ANTEC. RECEBIDA', align: 'right' },
-                          { key: 'faltaRecAntec' as OrdenacaoCampo, label: 'FALTA REC. ANTEC.', align: 'right' },
                           { key: 'saldoFundo' as OrdenacaoCampo, label: 'SALDO FUNDO', align: 'right' },
                           { key: 'saqueDisponivel' as OrdenacaoCampo, label: 'SAQUE DISPONÍVEL', align: 'right' },
                           { key: 'status' as OrdenacaoCampo, label: 'STATUS', align: 'center' },
@@ -695,13 +728,10 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                     </thead>
                     <tbody>
                       {fundosFiltrados.map((fundo, rowIndex) => {
-                        const status = calcularStatus(fundo, percentualAntecipacao);
+                        const status = calcularStatus(fundo, percentualAntecipacao, diasBaileAntecipar);
                         const percentualRecebido = calcularPercentualAntecipacaoRecebido(fundo);
                         const faltaReceber = calcularFaltaReceber(fundo);
-                        const vlrAntecipacao = percentualAntecipacao > 0 ? fundo.feeTotal * (percentualAntecipacao / 100) : 0;
-                        const feeRecebidoLimitado = Math.min(fundo.feeAntecipacaoRecebido, vlrAntecipacao);
-                        const faltaRecAntec = Math.max(0, vlrAntecipacao - feeRecebidoLimitado);
-                        const saqueDisponivel = Math.min(faltaRecAntec, fundo.saldoFundo);
+                        const saqueDisponivel = calcularSaqueDisponivel(fundo, percentualAntecipacao, diasBaileAntecipar);
                         const bgColor = rowIndex % 2 === 0 ? '#343A40' : '#2c3136';
                         
                         return (
@@ -749,44 +779,6 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#fb923c', fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {formatarMoeda(faltaReceber)}
                             </td>
-                            {/* VLR. ANTECIPAÇÃO */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#22d3ee', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                              {percentualAntecipacao > 0 ? formatarMoeda(vlrAntecipacao) : '-'}
-                            </td>
-                            {/* ANTEC. RECEBIDA */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', whiteSpace: 'nowrap', minWidth: '120px' }}>
-                              {percentualAntecipacao > 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
-                                  <div 
-                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', width: '100px', cursor: 'default' }}
-                                    title={`${formatarMoeda(feeRecebidoLimitado)} de ${formatarMoeda(vlrAntecipacao)}`}
-                                  >
-                                    <div style={{ 
-                                      flex: 1,
-                                      height: '5px', 
-                                      backgroundColor: '#374151', 
-                                      borderRadius: '2px', 
-                                      overflow: 'hidden',
-                                    }}>
-                                      <div style={{ 
-                                        height: '100%', 
-                                        width: `${vlrAntecipacao > 0 ? Math.min(100, (feeRecebidoLimitado / vlrAntecipacao) * 100) : 0}%`,
-                                        backgroundColor: feeRecebidoLimitado >= vlrAntecipacao ? '#3b82f6' : feeRecebidoLimitado > 0 ? '#34d399' : '#374151',
-                                        borderRadius: '2px',
-                                        transition: 'width 0.3s ease'
-                                      }} />
-                                    </div>
-                                    <span style={{ color: '#9ca3af', fontSize: '0.6rem', minWidth: '28px' }}>
-                                      {vlrAntecipacao > 0 ? `${((feeRecebidoLimitado / vlrAntecipacao) * 100).toFixed(0)}%` : '0%'}
-                                    </span>
-                                  </div>
-                                </div>
-                              ) : '-'}
-                            </td>
-                            {/* FALTA REC. ANTEC. */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#f87171', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                              {percentualAntecipacao > 0 ? formatarMoeda(faltaRecAntec) : '-'}
-                            </td>
                             {/* SALDO FUNDO */}
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#60a5fa', fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {formatarMoeda(fundo.saldoFundo)}
@@ -796,7 +788,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                               padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap',
                               color: saqueDisponivel > 0 ? '#6ee7b7' : '#6b7280'
                             }}>
-                              {percentualAntecipacao > 0 ? formatarMoeda(saqueDisponivel) : '-'}
+                              {(percentualAntecipacao > 0 || diasBaileAntecipar > 0) ? formatarMoeda(saqueDisponivel) : '-'}
                             </td>
                             {/* STATUS */}
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center' }}>
