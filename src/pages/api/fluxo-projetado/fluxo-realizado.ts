@@ -103,10 +103,17 @@ function parseNumber(value: any): number {
   return parseFloat(cleaned) || 0;
 }
 
-// Busca o % ANTECIPAÇÃO da aba PARAMETROS PAINEL para a franquia
-async function getPercentualAntecipacao(sheets: any, franquia: string): Promise<number> {
+// Interface para parâmetros da aba PARAMETROS PAINEL
+interface ParametrosPainel {
+  percentualAntecipacao: number;
+  diasBaileAntecipar: number;
+}
+
+// Busca parâmetros da aba PARAMETROS PAINEL para a franquia
+// Coluna C = % ANTECIPAÇÃO | Coluna G = DIAS DO BAILE P/ ANTECIPAR ULTIMA PARCELA DO FEE
+async function getParametrosPainel(sheets: any, franquia: string): Promise<ParametrosPainel> {
   try {
-    const range = `'PARAMETROS PAINEL'!A:C`;
+    const range = `'PARAMETROS PAINEL'!A:G`;
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range,
@@ -118,25 +125,37 @@ async function getPercentualAntecipacao(sheets: any, franquia: string): Promise<
       const row = rows[i];
       if (row[0] && row[0].toString().toUpperCase() === franquiaUpper) {
         // Coluna C (índice 2) = % ANTECIPAÇÃO (vem como decimal, ex: 0.60 = 60%)
-        let valor = row[2];
-        if (valor === undefined || valor === null || valor === '') return 0;
-        let cleaned = String(valor).replace('%', '').replace(',', '.').trim();
-        let num = parseFloat(cleaned) || 0;
-        // Se o valor é maior que 1, já está em percentual (ex: 60); senão é decimal (0.60)
-        if (num > 0 && num <= 1) num = num * 100;
-        return num;
+        let percentualAntecipacao = 0;
+        const valorC = row[2];
+        if (valorC !== undefined && valorC !== null && valorC !== '') {
+          let cleaned = String(valorC).replace('%', '').replace(',', '.').trim();
+          let num = parseFloat(cleaned) || 0;
+          // Se o valor é maior que 1, já está em percentual (ex: 60); senão é decimal (0.60)
+          if (num > 0 && num <= 1) num = num * 100;
+          percentualAntecipacao = num;
+        }
+        
+        // Coluna G (índice 6) = DIAS DO BAILE P/ ANTECIPAR ULTIMA PARCELA DO FEE
+        let diasBaileAntecipar = 0;
+        const valorG = row[6];
+        if (valorG !== undefined && valorG !== null && valorG !== '') {
+          diasBaileAntecipar = parseInt(String(valorG).trim(), 10) || 0;
+        }
+        
+        return { percentualAntecipacao, diasBaileAntecipar };
       }
     }
-    return 0;
+    return { percentualAntecipacao: 0, diasBaileAntecipar: 0 };
   } catch (err) {
-    console.error('[Fluxo Realizado API] Erro ao buscar % antecipação:', err);
-    return 0;
+    console.error('[Fluxo Realizado API] Erro ao buscar parâmetros:', err);
+    return { percentualAntecipacao: 0, diasBaileAntecipar: 0 };
   }
 }
 
 interface FluxoRealizadoResult {
   fundos: FundoRealizado[];
   percentualAntecipacao: number;
+  diasBaileAntecipar: number;
 }
 
 async function getFundosRealizado(franquia: string, skipCache: boolean = false): Promise<FluxoRealizadoResult> {
@@ -154,14 +173,15 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
   const auth = getAuthenticatedClient();
   const sheets = google.sheets({ version: 'v4', auth });
   
-  // Busca dados da aba de fundos e % antecipação em paralelo
-  const [fundosResponse, percentualAntecipacao] = await Promise.all([
+  // Busca dados da aba de fundos e parâmetros em paralelo
+  const [fundosResponse, parametros] = await Promise.all([
     sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range: `'${SHEET_NAME}'!A:Z`,
     }),
-    getPercentualAntecipacao(sheets, franquia),
+    getParametrosPainel(sheets, franquia),
   ]);
+  const { percentualAntecipacao, diasBaileAntecipar } = parametros;
 
   const response = fundosResponse;
 
@@ -223,9 +243,9 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     fundos.push(fundo);
   }
 
-  console.log(`[Fluxo Realizado API] ${fundos.length} fundos encontrados para ${franquia} | % Antecipação: ${percentualAntecipacao}%`);
+  console.log(`[Fluxo Realizado API] ${fundos.length} fundos encontrados para ${franquia} | % Antecipação: ${percentualAntecipacao}% | Dias Baile Antecipar: ${diasBaileAntecipar}`);
   
-  const result: FluxoRealizadoResult = { fundos, percentualAntecipacao };
+  const result: FluxoRealizadoResult = { fundos, percentualAntecipacao, diasBaileAntecipar };
   
   // Salva no cache
   cache.set(cacheKey, result, CACHE_TTL);
@@ -256,7 +276,7 @@ export default async function handler(
       skipCache === 'true'
     );
 
-    const { fundos, percentualAntecipacao } = result;
+    const { fundos, percentualAntecipacao, diasBaileAntecipar } = result;
 
     // Calcula totais para o resumo
     const totais = {
@@ -275,6 +295,7 @@ export default async function handler(
         fundos,
         totais,
         percentualAntecipacao,
+        diasBaileAntecipar,
       },
     });
   } catch (error: any) {

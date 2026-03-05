@@ -25,7 +25,7 @@ function FluxoRealizadoDashboard() {
   const [franquiaSelecionada, setFranquiaSelecionada] = useState<string>('');
 
   // Hook para buscar dados reais de FEE por fundo
-  const { fundos: fundosFee, loading: loadingFee, percentualAntecipacao } = useFluxoRealizado(franquiaSelecionada);
+  const { fundos: fundosFee, loading: loadingFee, percentualAntecipacao, diasBaileAntecipar } = useFluxoRealizado(franquiaSelecionada);
 
   // Hook para buscar dados reais de receitas mensais (aba RPS FEE E MARGEM)
   const { receitas: receitasMensais, loading: loadingReceitas } = useReceitasMensais(franquiaSelecionada);
@@ -90,6 +90,7 @@ function FluxoRealizadoDashboard() {
                   fundos={fundosFee}
                   loading={loadingFee}
                   percentualAntecipacao={percentualAntecipacao}
+                  diasBaileAntecipar={diasBaileAntecipar}
                 />
 
                 {/* BLOCO 2: Receitas Mensais Agrupadas (consolidado da franquia) */}
