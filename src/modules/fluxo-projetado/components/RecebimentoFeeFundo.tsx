@@ -23,6 +23,8 @@ export interface FundoFee {
   faltaReceber?: number;      // FALTA RECEBER (Coluna O - opcional, calculado se não existir)
   dataContrato?: string;      // DATA DO CONTRATO (Coluna G)
   dataBaile?: string;         // DATA DO BAILE (Coluna I)
+  percentualAtingMac?: number; // % ATINGIMENTO MAC (Coluna T)
+  situacao?: string;          // SITUAÇÃO (Coluna U)
   // Legado - manter para compatibilidade
   feeRecebido?: number;        
   feeDisponivelAntecipacao?: number;
@@ -173,6 +175,9 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
   const [filtroBaileDe, setFiltroBaileDe] = useState('');
   const [filtroBalieAte, setFiltroBalieAte] = useState('');
 
+  // Filtro de situação
+  const [filtroSituacao, setFiltroSituacao] = useState<string>('todos');
+
   // Filtra e ordena os fundos
   const fundosFiltrados = useMemo(() => {
     let resultado = [...fundos];
@@ -191,6 +196,17 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
       resultado = resultado.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === filtroStatus);
     }
     
+    // Aplica filtro de situação
+    if (filtroSituacao !== 'todos') {
+      resultado = resultado.filter(f => {
+        const val = (f.situacao || '').trim().toLowerCase();
+        if (filtroSituacao === 'outros') {
+          return !['comum', 'formado', 'rescindindo', 'junção', 'juncao'].includes(val);
+        }
+        return val === filtroSituacao.toLowerCase();
+      });
+    }
+
     // Aplica filtro de Dt. Baile
     if (filtroBaileDe || filtroBalieAte) {
       const de = filtroBaileDe ? new Date(filtroBaileDe + 'T00:00:00') : null;
@@ -265,7 +281,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
     });
     
     return resultado;
-  }, [fundos, busca, filtroStatus, ordenacao, filtroBaileDe, filtroBalieAte, diasBaileAntecipar]);
+  }, [fundos, busca, filtroStatus, filtroSituacao, ordenacao, filtroBaileDe, filtroBalieAte, diasBaileAntecipar]);
 
   // Calcula totais
   const totalFeeContrato = fundos.reduce((acc, f) => acc + f.feeTotal, 0);
@@ -299,6 +315,54 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
     'antecipacao-concluida': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'antecipacao-concluida').length,
     'finalizado': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'finalizado').length,
   }), [fundos, percentualAntecipacao, diasBaileAntecipar]);
+
+  const getSituacaoDot = (situacao?: string) => {
+    const val = (situacao || '').trim().toLowerCase();
+    if (val === 'comum') {
+      return (
+        <span
+          className="flex-shrink-0 rounded-full border-2 border-white bg-white"
+          style={{ width: 14, height: 14, display: 'inline-block' }}
+          title="Situação: Comum"
+        />
+      );
+    }
+    if (val === 'formado') {
+      return (
+        <span
+          className="flex-shrink-0 rounded-full border-2 border-gray-500 bg-black"
+          style={{ width: 14, height: 14, display: 'inline-block' }}
+          title="Situação: Formado"
+        />
+      );
+    }
+    if (val === 'rescindindo') {
+      return (
+        <span
+          className="flex-shrink-0 rounded-full border-2 border-yellow-400 bg-yellow-400"
+          style={{ width: 14, height: 14, display: 'inline-block' }}
+          title="Situação: Rescindindo"
+        />
+      );
+    }
+    if (val === 'junção' || val === 'juncao') {
+      return (
+        <span
+          className="flex-shrink-0 rounded-full border-2 border-gray-400 bg-gray-500"
+          style={{ width: 14, height: 14, display: 'inline-block' }}
+          title="Situação: Junção"
+        />
+      );
+    }
+    // Qualquer outro valor: transparente
+    return (
+      <span
+        className="flex-shrink-0 rounded-full"
+        style={{ width: 14, height: 14, display: 'inline-block', background: 'transparent' }}
+        title={situacao ? `Situação: ${situacao}` : 'Situação não informada'}
+      />
+    );
+  };
 
   const getStatusBadge = (status: StatusFundo, compact = false) => {
     const config = {
@@ -434,7 +498,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total FEE</p>
-                  <p className="text-lg font-bold text-cyan-400">{formatarMoeda(totalFeeContrato)}</p>
+                  <p className="text-lg font-bold text-white">{formatarMoeda(totalFeeContrato)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total FEE Recebido</p>
@@ -442,7 +506,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Receber</p>
-                  <p className="text-lg font-bold text-red-400">{formatarMoeda(totalFaltaReceber)}</p>
+                  <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Saque Disponível</p>
@@ -484,7 +548,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                   <Filter size={16} />
                   Filtros
                   {(() => {
-                    const count = (filtroStatus !== 'todos' ? 1 : 0) + (filtroBaileDe || filtroBalieAte ? 1 : 0);
+                    const count = (filtroStatus !== 'todos' ? 1 : 0) + (filtroBaileDe || filtroBalieAte ? 1 : 0) + (filtroSituacao !== 'todos' ? 1 : 0);
                     return count > 0 ? <span className="px-1.5 py-0.5 bg-emerald-500 text-white text-[10px] rounded-full">{count}</span> : null;
                   })()}
                 </button>
@@ -524,6 +588,47 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                     </div>
                   </div>
                   
+                  {/* Filtro de Situação */}
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide whitespace-nowrap">Situação:</span>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {[
+                        { value: 'todos', label: 'Todos', dot: null },
+                        { value: 'comum', label: 'Comum', dot: 'bg-white border-white' },
+                        { value: 'formado', label: 'Formado', dot: 'bg-black border-gray-500' },
+                        { value: 'rescindindo', label: 'Rescindindo', dot: 'bg-yellow-400 border-yellow-400' },
+                        { value: 'junção', label: 'Junção', dot: 'bg-gray-500 border-gray-400' },
+                      ].map(({ value, label, dot }) => (
+                        <button
+                          key={value}
+                          onClick={() => setFiltroSituacao(value)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                            filtroSituacao === value
+                              ? 'bg-gray-500 text-white border border-gray-400'
+                              : 'bg-gray-800 text-gray-400 hover:bg-gray-700 border border-transparent'
+                          }`}
+                        >
+                          {dot && (
+                            <span
+                              className={`rounded-full border-2 flex-shrink-0 ${dot}`}
+                              style={{ width: 10, height: 10, display: 'inline-block' }}
+                            />
+                          )}
+                          {label}
+                        </button>
+                      ))}
+                      {filtroSituacao !== 'todos' && (
+                        <button
+                          onClick={() => setFiltroSituacao('todos')}
+                          className="text-gray-500 hover:text-gray-300 transition-colors"
+                          title="Limpar filtro Situação"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Status e Ordenação */}
                   <div className="flex items-center gap-4 flex-wrap">
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Status:</span>
@@ -564,7 +669,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
               )}
 
               {/* Info de resultados */}
-              {(busca || filtroStatus !== 'todos' || filtroBaileDe || filtroBalieAte) && (
+              {(busca || filtroStatus !== 'todos' || filtroBaileDe || filtroBalieAte || filtroSituacao !== 'todos') && (
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-500">
                     Mostrando {fundosFiltrados.length} de {totalFundos} fundos
@@ -601,6 +706,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                         fundo.feeTotal,
                         fundo.feeAntecipacaoRecebido,
                         `${percentReceb.toFixed(0)}%`,
+                        fundo.percentualAtingMac != null ? `${fundo.percentualAtingMac.toFixed(2)}%` : '-',
                         faltaRecTotal,
                         vlrAntecipacao,
                         feeRecebidoLimitado,
@@ -610,7 +716,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                         statusLabel
                       ];
                     });
-                    const cabecalho = ['Cód. Fundo','Nome','Dt. Cadastro','Dt. Baile','Valor FEE','FEE Recebido','% Receb.','Falta Receber','Vlr. Antecipação','Antec. Recebida','Falta Rec. Antec.','Saldo Fundo','Saque Disponível','Status'];
+                    const cabecalho = ['Cód. Fundo','Nome','Dt. Cadastro','Dt. Baile','Valor FEE','FEE Recebido','% Receb.','% Ating. MAC','Falta Receber','Vlr. Antecipação','Antec. Recebida','Falta Rec. Antec.','Saldo Fundo','Saque Disponível','Status'];
                     let csv = '\uFEFF';
                     csv += cabecalho.join(';') + '\n';
                     linhas.forEach(linha => {
@@ -640,7 +746,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                   <Search className="w-10 h-10 mb-3 opacity-50" />
                   <p>Nenhum fundo encontrado com os filtros aplicados</p>
                   <button 
-                    onClick={() => { setBusca(''); setFiltroStatus('todos'); setFiltroBaileDe(''); setFiltroBalieAte(''); }}
+                    onClick={() => { setBusca(''); setFiltroStatus('todos'); setFiltroBaileDe(''); setFiltroBalieAte(''); setFiltroSituacao('todos'); }}
                     className="mt-2 text-sm text-emerald-400 hover:underline"
                   >
                     Limpar filtros
@@ -653,6 +759,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                       {/* Linha de grupo: TOTAL e ANTECIPAÇÃO */}
                       <tr style={{ backgroundColor: '#1e2028' }}>
                         <th colSpan={2} style={{ padding: '6px 8px', borderBottom: 'none' }} />
+                        <th style={{ padding: '6px 8px', borderBottom: 'none' }} />
                         <th colSpan={4} style={{
                           padding: '6px 8px',
                           textAlign: 'center',
@@ -686,12 +793,13 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                         {[
                           { key: 'nome' as OrdenacaoCampo, label: 'FUNDO', align: 'left' },
                           { key: 'dataBaile' as OrdenacaoCampo, label: 'DATAS', align: 'center' },
-                          { key: 'feeTotal' as OrdenacaoCampo, label: 'VALOR FEE', align: 'right' },
-                          { key: 'percentualRecebido' as OrdenacaoCampo, label: 'FEE RECEBIDO', align: 'right' },
+                          { key: 'faltaReceber' as OrdenacaoCampo, label: '% ATING. MAC', align: 'center' },
+                          { key: 'feeTotal' as OrdenacaoCampo, label: 'VALOR FEE', align: 'center' },
+                          { key: 'percentualRecebido' as OrdenacaoCampo, label: 'FEE RECEBIDO', align: 'center' },
                           { key: 'percentualRecebido' as OrdenacaoCampo, label: '% RECEB.', align: 'center' },
-                          { key: 'faltaReceber' as OrdenacaoCampo, label: 'FALTA RECEBER', align: 'right' },
-                          { key: 'saldoFundo' as OrdenacaoCampo, label: 'SALDO FUNDO', align: 'right' },
-                          { key: 'saqueDisponivel' as OrdenacaoCampo, label: 'SAQUE DISPONÍVEL', align: 'right' },
+                          { key: 'faltaReceber' as OrdenacaoCampo, label: 'FALTA RECEBER', align: 'center' },
+                          { key: 'saldoFundo' as OrdenacaoCampo, label: 'SALDO FUNDO', align: 'center' },
+                          { key: 'saqueDisponivel' as OrdenacaoCampo, label: 'SAQUE DISPONÍVEL', align: 'center' },
                           { key: 'status' as OrdenacaoCampo, label: 'STATUS', align: 'center' },
                         ].map((col, i) => (
                           <th
@@ -744,7 +852,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                             {/* FUNDO */}
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'left', minWidth: '180px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                {getStatusBadge(status, true)}
+                                {getSituacaoDot(fundo.situacao)}
                                 <div>
                                   <span className="text-sm font-medium text-white block truncate" style={{ maxWidth: '200px' }} title={fundo.nome}>{fundo.nome}</span>
                                   <span className="text-xs text-gray-500 block">Cód: {fundo.id}</span>
@@ -760,32 +868,46 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                                 <span className="text-xs text-gray-300 block">{fundo.dataBaile || '-'}</span>
                               </div>
                             </td>
+                            {/* % ATING. MAC */}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#F8F9FA', fontWeight: 400, whiteSpace: 'nowrap' }}>
+                              {fundo.percentualAtingMac != null && fundo.percentualAtingMac > 0
+                                ? formatarPercentual(fundo.percentualAtingMac)
+                                : '-'}
+                            </td>
                             {/* VALOR FEE */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#F8F9FA', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#F8F9FA', fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {formatarMoeda(fundo.feeTotal)}
                             </td>
                             {/* FEE RECEBIDO */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#34d399', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#34d399', fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {formatarMoeda(fundo.feeAntecipacaoRecebido)}
                             </td>
                             {/* % RECEB. */}
-                            <td style={{ 
-                              padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap',
-                              color: percentualRecebido >= 100 ? '#60a5fa' : percentualRecebido >= 50 ? '#34d399' : '#facc15'
-                            }}>
-                              {formatarPercentual(percentualRecebido)}
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', whiteSpace: 'nowrap', minWidth: '90px' }}>
+                              <span style={{ fontWeight: 700, color: percentualRecebido > 80 ? '#f87171' : percentualRecebido > 60 ? '#facc15' : '#34d399' }}>
+                                {formatarPercentual(percentualRecebido)}
+                              </span>
+                              <div style={{ marginTop: '4px', height: '4px', borderRadius: '9999px', background: '#374151', overflow: 'hidden' }}>
+                                <div style={{
+                                  height: '100%',
+                                  borderRadius: '9999px',
+                                  width: `${Math.min(percentualRecebido, 100)}%`,
+                                  background: percentualRecebido > 80 ? '#f87171' : percentualRecebido > 60 ? '#facc15' : '#34d399',
+                                  transition: 'width 0.3s ease',
+                                }} />
+                              </div>
                             </td>
                             {/* FALTA RECEBER */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#fb923c', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#fb923c', fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {formatarMoeda(faltaReceber)}
                             </td>
                             {/* SALDO FUNDO */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', color: '#60a5fa', fontWeight: 500, whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#60a5fa', fontWeight: 500, whiteSpace: 'nowrap' }}>
                               {formatarMoeda(fundo.saldoFundo)}
                             </td>
                             {/* SAQUE DISPONÍVEL */}
                             <td style={{ 
-                              padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'right', fontWeight: 700, whiteSpace: 'nowrap',
+                              padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', fontWeight: 700, whiteSpace: 'nowrap',
                               color: saqueDisponivel > 0 ? '#6ee7b7' : '#6b7280'
                             }}>
                               {(percentualAntecipacao > 0 || diasBaileAntecipar > 0) ? formatarMoeda(saqueDisponivel) : '-'}
