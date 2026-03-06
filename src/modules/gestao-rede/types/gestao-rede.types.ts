@@ -166,3 +166,34 @@ export interface GestaoRedeApiResponse {
   message?: string;
 }
 
+/**
+ * Meta de indicador por unidade (aba BASE da planilha de metas)
+ */
+export interface MetaIndicadorUnidade {
+  data: string;
+  nm_unidade: string;
+  vvr: string;
+  vvr_carteira: string;
+  endividamento: string;
+  nps: string;
+  mc_entrega: string;
+  enps: string;
+  conformidade: string;
+  reclame_aqui: string;
+  colab_1_ano: string;
+  estrutura_organizacional: string;
+  churn: string;
+  ativo_pex: string;
+}
+
+/**
+ * Indicador PEX configurado para a tabela de resultados
+ */
+export interface IndicadorConfig {
+  id: string;
+  label: string;
+  colunaResultado: string;
+  campoMeta: keyof MetaIndicadorUnidade;
+  formato: 'moeda' | 'percentual' | 'numero';
+  inverso: boolean;
+}

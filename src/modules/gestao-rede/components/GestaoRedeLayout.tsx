@@ -13,6 +13,8 @@ import {
   LogOut, 
   Menu, 
   X,
+  LayoutDashboard,
+  Target,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { FiltrosGestaoRede } from '../types';
@@ -20,7 +22,7 @@ import { FilterPanel } from './filters';
 
 interface GestaoRedeLayoutProps {
   children: React.ReactNode;
-  currentPage: 'dashboard';
+  currentPage: 'dashboard' | 'metas';
   filtros?: FiltrosGestaoRede;
   onFiltrosChange?: (filtros: FiltrosGestaoRede) => void;
 }
@@ -207,7 +209,45 @@ export default function GestaoRedeLayout({
           className={`${(isCollapsed && !isMobile) ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
           style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
         >
-          {/* Filtros - só mostra quando expandido */}
+          {/* Navegação */}
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <a
+              href="/gestao-rede"
+              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4 py-2.5'}`}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.9rem',
+                fontWeight: currentPage === 'dashboard' ? 600 : 400,
+                color: currentPage === 'dashboard' ? '#FF6600' : '#adb5bd',
+                backgroundColor: currentPage === 'dashboard' ? 'rgba(255,102,0,0.1)' : 'transparent',
+                border: currentPage === 'dashboard' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
+                textDecoration: 'none',
+              }}
+              title="Dashboard"
+            >
+              <LayoutDashboard size={20} strokeWidth={2} />
+              {(!isCollapsed || isMobile) && <span>Dashboard</span>}
+            </a>
+            <a
+              href="/gestao-rede/metas"
+              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4 py-2.5'}`}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.9rem',
+                fontWeight: currentPage === 'metas' ? 600 : 400,
+                color: currentPage === 'metas' ? '#FF6600' : '#adb5bd',
+                backgroundColor: currentPage === 'metas' ? 'rgba(255,102,0,0.1)' : 'transparent',
+                border: currentPage === 'metas' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
+                textDecoration: 'none',
+              }}
+              title="Metas"
+            >
+              <Target size={20} strokeWidth={2} />
+              {(!isCollapsed || isMobile) && <span>Metas</span>}
+            </a>
+          </nav>
+
+          {/* Filtros - só mostra quando expandido e no dashboard */}
           {(!isCollapsed || isMobile) && onFiltrosChange && filtros && (
             <>
               <hr className="border-dark-tertiary my-4" />

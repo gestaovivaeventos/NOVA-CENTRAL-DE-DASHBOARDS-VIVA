@@ -35,10 +35,12 @@ import {
   TabelaClassificacaoPEX,
   TabelaSegmentoMercado,
   TabelaFlags,
+  TabelaIndicadoresPEX,
   Footer,
   FiltrosGestaoRede,
 } from '@/modules/gestao-rede';
 import { useGestaoRede } from '@/modules/gestao-rede/hooks';
+import { useIndicadoresRede } from '@/modules/gestao-rede/hooks';
 import { 
   calcularResumoRede, 
   CORES 
@@ -50,6 +52,9 @@ export default function GestaoRedeDashboard() {
   
   // Hook para buscar dados reais da API
   const { franquias, isLoading, error, refetch } = useGestaoRede();
+  
+  // Hook para buscar indicadores PEX (resultados + metas + vendas VVR)
+  const { resultados: indicadoresResultados, metas: indicadoresMetas, vendasVVR: indicadoresVendasVVR, isLoading: indicadoresLoading } = useIndicadoresRede();
   
   // Verificar autenticação e nível de acesso
   useEffect(() => {
@@ -534,6 +539,27 @@ export default function GestaoRedeDashboard() {
             filtros={filtros}
             titulo="Todas as Franquias"
           />
+
+          {/* Tabela de Indicadores PEX - Meta x Resultado */}
+          <div style={{ marginTop: '24px' }}>
+            {indicadoresLoading ? (
+              <div style={{
+                backgroundColor: '#343A40',
+                borderRadius: '12px',
+                padding: '40px',
+                textAlign: 'center',
+              }}>
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto" style={{ borderColor: '#FF6600' }} />
+                <p className="mt-4" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>Carregando indicadores...</p>
+              </div>
+            ) : (
+              <TabelaIndicadoresPEX
+                resultados={indicadoresResultados}
+                metas={indicadoresMetas}
+                vendasVVR={indicadoresVendasVVR}
+              />
+            )}
+          </div>
 
           {/* Footer */}
           <Footer />
