@@ -30,8 +30,8 @@ const SAUDE_CORES: Record<SaudeFranquia, string> = {
   'EM_CONSOLIDACAO': '#e67e22',
   'ATENCAO': '#f1c40f',
   'UTI': '#c0392b',
-  'UTI_RECUPERACAO': '#943126',
-  'UTI_REPASSE': '#6c2134',
+  'UTI_RECUPERACAO': '#cb4335',
+  'UTI_REPASSE': '#a93253',
   'SEM_AVALIACAO': '#6c757d',
 };
 

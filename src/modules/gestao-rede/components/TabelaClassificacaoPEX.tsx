@@ -41,8 +41,8 @@ const CLASSIFICACOES: {
   { key: 'PERFORMANDO', label: 'Performando', cor: '#FFFFFF', bg: '#1e5631', borderColor: '#27ae60', icon: <TrendingUp size={16} />, faixa: '≥ 85%' },
   { key: 'EM_CONSOLIDACAO', label: 'Em Consolidação', cor: '#FFFFFF', bg: '#7a4a0a', borderColor: '#e67e22', icon: <TrendingUp size={16} />, faixa: '≥ 75%' },
   { key: 'ATENCAO', label: 'Atenção', cor: '#1a1a1a', bg: '#9a8a1a', borderColor: '#f1c40f', icon: <AlertCircle size={16} />, faixa: '≥ 60%' },
-  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#FFFFFF', bg: '#5a2a2a', borderColor: '#943126', icon: <HeartPulse size={16} />, faixa: '< 60%' },
-  { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#FFFFFF', bg: '#4a1a2a', borderColor: '#6c2134', icon: <HeartPulse size={16} /> },
+  { key: 'UTI_RECUPERACAO', label: 'UTI Recuperação', cor: '#FFFFFF', bg: '#5a2a2a', borderColor: '#cb4335', icon: <HeartPulse size={16} />, faixa: '< 60%' },
+  { key: 'UTI_REPASSE', label: 'UTI Repasse', cor: '#FFFFFF', bg: '#4a1a2a', borderColor: '#a93253', icon: <HeartPulse size={16} /> },
 ];
 
 export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaClassificacaoPEXProps) {
