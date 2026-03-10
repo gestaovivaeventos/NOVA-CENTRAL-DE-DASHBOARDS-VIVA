@@ -210,39 +210,47 @@ export default function GestaoRedeLayout({
           style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
         >
           {/* Navegação */}
-          <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px' }}>
             <a
               href="/gestao-rede"
-              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4 py-2.5'}`}
+              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4'}
+                ${currentPage === 'dashboard'
+                  ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
+                  : 'text-gray-400 border border-gray-600/50 hover:bg-white/5'
+                }`}
               style={{
                 fontFamily: 'Poppins, sans-serif',
-                fontSize: '0.9rem',
-                fontWeight: currentPage === 'dashboard' ? 600 : 400,
-                color: currentPage === 'dashboard' ? '#FF6600' : '#adb5bd',
-                backgroundColor: currentPage === 'dashboard' ? 'rgba(255,102,0,0.1)' : 'transparent',
-                border: currentPage === 'dashboard' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
+                fontSize: '0.85rem',
+                fontWeight: currentPage === 'dashboard' ? 600 : 500,
+                boxShadow: currentPage !== 'dashboard' ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
+                height: '42px',
+                whiteSpace: 'nowrap',
                 textDecoration: 'none',
               }}
               title="Dashboard"
             >
-              <LayoutDashboard size={20} strokeWidth={2} />
+              <LayoutDashboard size={20} strokeWidth={currentPage === 'dashboard' ? 2.5 : 2} />
               {(!isCollapsed || isMobile) && <span>Dashboard</span>}
             </a>
             <a
               href="/gestao-rede/metas"
-              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4 py-2.5'}`}
+              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4'}
+                ${currentPage === 'metas'
+                  ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
+                  : 'text-gray-400 border border-gray-600/50 hover:bg-white/5'
+                }`}
               style={{
                 fontFamily: 'Poppins, sans-serif',
-                fontSize: '0.9rem',
-                fontWeight: currentPage === 'metas' ? 600 : 400,
-                color: currentPage === 'metas' ? '#FF6600' : '#adb5bd',
-                backgroundColor: currentPage === 'metas' ? 'rgba(255,102,0,0.1)' : 'transparent',
-                border: currentPage === 'metas' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
+                fontSize: '0.85rem',
+                fontWeight: currentPage === 'metas' ? 600 : 500,
+                boxShadow: currentPage !== 'metas' ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
+                height: '42px',
+                whiteSpace: 'nowrap',
                 textDecoration: 'none',
               }}
               title="Metas"
             >
-              <Target size={20} strokeWidth={2} />
+              <Target size={20} strokeWidth={currentPage === 'metas' ? 2.5 : 2} />
               {(!isCollapsed || isMobile) && <span>Metas</span>}
             </a>
           </nav>
