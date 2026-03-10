@@ -32,10 +32,10 @@ const CLASSIFICACOES: { key: SaudeFranquia; label: string; cor: string }[] = [
 export default function TabelaSegmentoMercado({ franquias, titulo = 'Análise por Segmento de Mercado' }: TabelaSegmentoMercadoProps) {
   const [expandedSegmentos, setExpandedSegmentos] = useState<Set<string>>(new Set());
 
-  // Filtrar apenas franquias em operação (não implantação, não inativas)
+  // Filtrar apenas franquias em operação (não implantação, não inativas, não em encerramento)
   const franquiasEmOperacao = useMemo(() => {
     return franquias.filter(
-      f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'
+      f => f.status === 'ATIVA' && f.statusInativacao !== 'EM_ENCERRAMENTO' && f.maturidade !== 'IMPLANTACAO'
     );
   }, [franquias]);
 
@@ -99,15 +99,17 @@ export default function TabelaSegmentoMercado({ franquias, titulo = 'Análise po
         paddingBottom: '12px',
         borderBottom: '2px solid #FF6600',
       }}>
-        <h2 style={{
-          fontSize: '1.3rem',
-          fontWeight: 700,
-          color: '#F8F9FA',
+        <h3 style={{
+          color: '#adb5bd',
+          fontSize: '1rem',
+          fontWeight: 600,
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          fontFamily: 'Poppins, sans-serif',
           margin: 0,
-          fontFamily: "'Poppins', sans-serif",
         }}>
           {titulo}
-        </h2>
+        </h3>
         <p style={{
           color: '#6c757d',
           fontSize: '0.85rem',
@@ -234,9 +236,21 @@ export default function TabelaSegmentoMercado({ franquias, titulo = 'Análise po
                       borderBottom: '1px solid #3a3f46',
                     }}>
                       <td style={{ padding: '8px 16px 8px 48px' }}>
-                        <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>
-                          {f.nome}
-                        </span>
+                        <div>
+                          <span style={{ color: '#adb5bd', fontSize: '0.85rem' }}>
+                            {f.nome}
+                          </span>
+                          {f.cluster?.toUpperCase()?.includes('INCUBA') && f.cluster?.includes('0') && (
+                            <div style={{
+                              color: '#e67e22',
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                              fontFamily: 'Poppins, sans-serif',
+                            }}>
+                              Não participa do PEX
+                            </div>
+                          )}
+                        </div>
                       </td>
                       {CLASSIFICACOES.map(classif => {
                         const isMatch = classif.key === 'UTI'

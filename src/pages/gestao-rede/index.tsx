@@ -91,10 +91,11 @@ export default function GestaoRedeDashboard() {
     return franquias.filter(f => f.status === filtroStatus);
   }, [franquias, filtroStatus]);
 
-  // Franquias inativas detalhadas
-  const franquiasInativas = useMemo(() => franquias.filter(f => f.status === 'INATIVA'), [franquias]);
+  // Franquias inativas detalhadas (inclui EM_ENCERRAMENTO)
+  const franquiasInativas = useMemo(() => franquias.filter(f => f.status === 'INATIVA' || f.statusInativacao === 'EM_ENCERRAMENTO'), [franquias]);
   const encerradasOperacao = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'ENCERRADA_OPERACAO'), [franquiasInativas]);
   const encerradasImplantacao = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'ENCERRADA_IMPLANTACAO'), [franquiasInativas]);
+  const emEncerramento = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'EM_ENCERRAMENTO'), [franquiasInativas]);
 
   if (authLoading || isLoading) {
     return (
@@ -450,7 +451,7 @@ export default function GestaoRedeDashboard() {
               <div style={{ padding: '16px 20px' }}>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: '12px',
                   marginBottom: '16px',
                 }}>
@@ -480,6 +481,19 @@ export default function GestaoRedeDashboard() {
                       {resumo.encerradasImplantacao}
                     </span>
                   </div>
+                  <div style={{
+                    backgroundColor: '#212529',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    borderLeft: '4px solid #e67e22',
+                  }}>
+                    <div style={{ color: '#6c757d', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px', fontFamily: 'Poppins, sans-serif' }}>
+                      Em Encerramento
+                    </div>
+                    <span style={{ color: '#e67e22', fontSize: '1.8rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif" }}>
+                      {resumo.emEncerramento}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Lista de franquias inativas */}
@@ -497,19 +511,30 @@ export default function GestaoRedeDashboard() {
                         marginBottom: '2px',
                       }}
                     >
-                      <span style={{ color: '#F8F9FA', fontSize: '0.85rem', fontFamily: 'Poppins, sans-serif' }}>
-                        {f.nome}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ color: '#F8F9FA', fontSize: '0.85rem', fontFamily: 'Poppins, sans-serif' }}>
+                          {f.nome}
+                        </span>
+                        {f.dataEncerramento && (
+                          <span style={{ color: '#6c757d', fontSize: '0.7rem', fontFamily: 'Poppins, sans-serif' }}>
+                            Encerramento: {f.dataEncerramento}
+                          </span>
+                        )}
+                      </div>
                       <span style={{
                         color: '#FFFFFF',
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         padding: '3px 10px',
                         borderRadius: '4px',
-                        backgroundColor: f.statusInativacao === 'ENCERRADA_OPERACAO' ? '#943126' : '#6c2134',
+                        backgroundColor: f.statusInativacao === 'ENCERRADA_OPERACAO' ? '#943126' 
+                          : f.statusInativacao === 'EM_ENCERRAMENTO' ? '#e67e22' 
+                          : '#6c2134',
                         fontFamily: 'Poppins, sans-serif',
                       }}>
-                        {f.statusInativacao === 'ENCERRADA_OPERACAO' ? 'Enc. Operação' : 'Enc. Implantação'}
+                        {f.statusInativacao === 'ENCERRADA_OPERACAO' ? 'Enc. Operação' 
+                          : f.statusInativacao === 'EM_ENCERRAMENTO' ? 'Em Encerramento'
+                          : 'Enc. Implantação'}
                       </span>
                     </div>
                   ))}
@@ -557,6 +582,7 @@ export default function GestaoRedeDashboard() {
                 resultados={indicadoresResultados}
                 metas={indicadoresMetas}
                 vendasVVR={indicadoresVendasVVR}
+                franquias={franquias}
               />
             )}
           </div>

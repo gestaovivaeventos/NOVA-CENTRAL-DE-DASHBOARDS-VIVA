@@ -80,8 +80,14 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
   }, [franquias, alteracoesPendentes]);
 
   // Filtrar apenas franquias em operação (que têm classificação válida)
+  // Excluir franquias com cluster "INCUBAÇÃO 0" pois não participam do PEX
+  const isIncubacao0 = (f: Franquia) => {
+    const cluster = f.cluster?.toUpperCase()?.trim() || '';
+    return cluster.includes('INCUBA') && cluster.includes('0');
+  };
+  
   const franquiasEmOperacao = franquiasComAlteracoes.filter(
-    f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'
+    f => f.status === 'ATIVA' && f.statusInativacao !== 'EM_ENCERRAMENTO' && f.maturidade !== 'IMPLANTACAO' && !isIncubacao0(f)
   );
 
   // Agrupar por saúde (classificação PEX)

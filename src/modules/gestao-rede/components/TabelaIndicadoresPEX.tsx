@@ -6,12 +6,13 @@
  */
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { MetaIndicadorUnidade, IndicadorConfig } from '../types';
+import { MetaIndicadorUnidade, IndicadorConfig, Franquia } from '../types';
 
 interface TabelaIndicadoresPEXProps {
   resultados: any[];
   metas: MetaIndicadorUnidade[];
   vendasVVR?: Record<string, number>;
+  franquias?: Franquia[];
 }
 
 const INDICADORES: IndicadorConfig[] = [
@@ -99,11 +100,25 @@ function labelMesAno(mes: number, ano: number): string {
   return `${nome.charAt(0).toUpperCase() + nome.slice(1)}/${ano}`;
 }
 
-export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {} }: TabelaIndicadoresPEXProps) {
+export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}, franquias = [] }: TabelaIndicadoresPEXProps) {
   const [filtroMes, setFiltroMes] = useState<string>('');
   const [busca, setBusca] = useState('');
   const [colunaHover, setColunaHover] = useState<string | null>(null);
   const tabelaRef = useRef<HTMLDivElement>(null);
+
+  // Map de cluster por unidade (normalizado) para verificar incubação 0
+  const clusterPorUnidade = useMemo(() => {
+    const map = new Map<string, string>();
+    franquias.forEach(f => {
+      map.set(normalizarNome(f.nome), f.cluster || '');
+    });
+    return map;
+  }, [franquias]);
+
+  const isIncubacao0 = (unidade: string): boolean => {
+    const cluster = clusterPorUnidade.get(normalizarNome(unidade)) || '';
+    return cluster.toUpperCase().includes('INCUBA') && cluster.includes('0');
+  };
 
   // Unidades ativas no PEX (da planilha de metas)
   // Considera ativa toda unidade que NÃO esteja explicitamente marcada como "NÃO"
@@ -285,11 +300,11 @@ export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}
         gap: '12px',
       }}>
         <h3 style={{
-          color: '#F8F9FA',
+          color: '#adb5bd',
           fontSize: '1rem',
-          fontWeight: 700,
-          fontFamily: "'Orbitron', 'Poppins', sans-serif",
-          letterSpacing: '0.05em',
+          fontWeight: 600,
+          fontFamily: 'Poppins, sans-serif',
+          letterSpacing: '0.06em',
           textTransform: 'uppercase',
           margin: 0,
         }}>
@@ -447,7 +462,19 @@ export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}
                         verticalAlign: 'middle',
                       }}
                     >
-                      {item.unidade}
+                      <div>
+                        {item.unidade}
+                        {isIncubacao0(item.unidade) && (
+                          <div style={{
+                            color: '#e67e22',
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            fontFamily: 'Poppins, sans-serif',
+                          }}>
+                            Não participa do PEX
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td style={{
                       padding: '4px 8px',

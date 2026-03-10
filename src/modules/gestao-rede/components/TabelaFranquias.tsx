@@ -91,9 +91,10 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
   const franquiasFiltradas = useMemo(() => {
     return franquias
       .filter(f => {
-        // Filtro de status (ativa/inativa)
-        if (mostrarAtivas && f.status !== 'ATIVA') return false;
-        if (!mostrarAtivas && f.status !== 'INATIVA') return false;
+        // Filtro de status (ativa/inativa) - EM_ENCERRAMENTO é considerada inativa
+        const isEfetivamenteInativa = f.status === 'INATIVA' || f.statusInativacao === 'EM_ENCERRAMENTO';
+        if (mostrarAtivas && isEfetivamenteInativa) return false;
+        if (!mostrarAtivas && !isEfetivamenteInativa) return false;
 
         // Filtro de busca
         const matchBusca = f.nome.toLowerCase().includes(busca.toLowerCase());
@@ -384,8 +385,8 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                 { campo: 'maturidade' as CampoOrdenacao, label: 'Maturidade', width: '100px' },
                 { campo: 'pontuacaoPex' as CampoOrdenacao, label: 'PEX', width: '80px' },
                 { campo: 'saude' as CampoOrdenacao, label: 'Classificação Atual', width: '120px' },
-                { campo: 'saude' as CampoOrdenacao, label: 'Classificação Anterior', width: '130px' },
-                { campo: 'mesesNaSaudeAtual' as CampoOrdenacao, label: 'Tempo na Classificação', width: '120px' },
+                { campo: 'saude' as CampoOrdenacao, label: 'Classificação\nAnterior', width: '130px' },
+                { campo: 'mesesNaSaudeAtual' as CampoOrdenacao, label: 'Tempo na Classificação Atual', width: '120px' },
               ].map((col, colIdx) => (
                 <th 
                   key={`col-${colIdx}`}
@@ -408,7 +409,7 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                     zIndex: 10,
                   }}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', whiteSpace: 'pre-line' }}>
                     {col.label}
                     <IconeOrdenacao campo={col.campo} />
                   </span>
@@ -437,7 +438,7 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
             {franquiasFiltradas.map((franquia, index) => {
               const saudeConfig = SAUDE_CONFIG[franquia.saude] || SAUDE_CONFIG['SEM_AVALIACAO'];
               const isImplantacao = franquia.maturidade === 'IMPLANTACAO';
-              const isInativa = franquia.status === 'INATIVA';
+              const isInativa = franquia.status === 'INATIVA' || franquia.statusInativacao === 'EM_ENCERRAMENTO';
               const isEven = index % 2 === 0;
               
               return (
@@ -461,7 +462,19 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                     borderBottom: '1px solid #444',
                     fontWeight: 500,
                   }}>
-                    {franquia.nome}
+                    <div>
+                      {franquia.nome}
+                      {franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0') && (
+                        <div style={{
+                          color: '#e67e22',
+                          fontSize: '0.7rem',
+                          fontWeight: 600,
+                          fontFamily: 'Poppins, sans-serif',
+                        }}>
+                          Não participa do PEX
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td style={{ 
                     padding: '10px 8px',

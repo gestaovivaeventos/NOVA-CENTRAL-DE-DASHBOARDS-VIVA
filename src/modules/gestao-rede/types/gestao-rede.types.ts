@@ -11,8 +11,9 @@ export type StatusFranquia = 'ATIVA' | 'INATIVA';
 
 /**
  * Status de inativação (para franquias inativas)
+ * EM_ENCERRAMENTO: franquia ainda ativa no sistema mas em processo de encerramento
  */
-export type StatusInativacao = 'ENCERRADA_OPERACAO' | 'ENCERRADA_IMPLANTACAO' | null;
+export type StatusInativacao = 'ENCERRADA_OPERACAO' | 'ENCERRADA_IMPLANTACAO' | 'EM_ENCERRAMENTO' | null;
 
 /**
  * Maturidade da franquia
@@ -73,6 +74,8 @@ export interface FranquiaRaw {
   estado: string;
   latitude: string;
   longitude: string;
+  cluster: string;
+  dt_encerramento: string;
 }
 
 /**
@@ -97,6 +100,9 @@ export interface Franquia {
   estado: string;
   latitude: number | null;
   longitude: number | null;
+  // Campos adicionais
+  cluster: string;              // Cluster da franquia (ex: "INCUBAÇÃO 0")
+  dataEncerramento: string;     // Data de encerramento da franquia
   // Campos de evolução de saúde (calculados a partir do histórico)
   saudeAnterior?: SaudeFranquia;       // Saúde do mês anterior
   mesesNaSaudeAtual?: number;          // Quantos meses consecutivos na saúde atual
@@ -111,6 +117,7 @@ export interface ResumoRede {
   inativas: number;
   encerradasOperacao: number;
   encerradasImplantacao: number;
+  emEncerramento: number;
   emImplantacao: number;
   emOperacao: number;
   emIncubacao: number;

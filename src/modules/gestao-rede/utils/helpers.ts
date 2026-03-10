@@ -7,12 +7,16 @@ import { Franquia, ResumoRede, TreeNode } from '../types';
 
 /**
  * Calcula o resumo estatístico da rede
+ * Franquias com statusInativacao === 'EM_ENCERRAMENTO' são consideradas inativas
  */
 export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
-  const ativas = franquias.filter(f => f.status === 'ATIVA');
-  const inativas = franquias.filter(f => f.status === 'INATIVA');
+  // Franquias efetivamente ativas: status ATIVA e não em encerramento
+  const ativas = franquias.filter(f => f.status === 'ATIVA' && f.statusInativacao !== 'EM_ENCERRAMENTO');
+  // Franquias inativas: status INATIVA ou em encerramento
+  const inativas = franquias.filter(f => f.status === 'INATIVA' || f.statusInativacao === 'EM_ENCERRAMENTO');
   const encerradasOperacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_OPERACAO');
   const encerradasImplantacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_IMPLANTACAO');
+  const emEncerramento = inativas.filter(f => f.statusInativacao === 'EM_ENCERRAMENTO');
   
   // Baseado na maturidade
   const emImplantacao = ativas.filter(f => f.maturidade === 'IMPLANTACAO');
@@ -33,6 +37,7 @@ export function calcularResumoRede(franquias: Franquia[]): ResumoRede {
     inativas: inativas.length,
     encerradasOperacao: encerradasOperacao.length,
     encerradasImplantacao: encerradasImplantacao.length,
+    emEncerramento: emEncerramento.length,
     emImplantacao: emImplantacao.length,
     emOperacao: emOperacao.length,
     emIncubacao: emIncubacao.length,
@@ -51,9 +56,9 @@ export function montarArvoreHierarquica(franquias: Franquia[]): TreeNode {
   const resumo = calcularResumoRede(franquias);
   const total = resumo.ativas; // Apenas ativas no total principal
 
-  // Separar franquias por categoria
-  const ativas = franquias.filter(f => f.status === 'ATIVA');
-  const inativas = franquias.filter(f => f.status === 'INATIVA');
+  // Separar franquias por categoria (consistente com calcularResumoRede)
+  const ativas = franquias.filter(f => f.status === 'ATIVA' && f.statusInativacao !== 'EM_ENCERRAMENTO');
+  const inativas = franquias.filter(f => f.status === 'INATIVA' || f.statusInativacao === 'EM_ENCERRAMENTO');
   const encerradasOperacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_OPERACAO');
   const encerradasImplantacao = inativas.filter(f => f.statusInativacao === 'ENCERRADA_IMPLANTACAO');
   

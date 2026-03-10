@@ -116,7 +116,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
 
   // Filtrar apenas franquias ativas em operação
   const franquiasAtivas = useMemo(() => 
-    franquiasComAlteracoes.filter(f => f.status === 'ATIVA' && f.maturidade !== 'IMPLANTACAO'),
+    franquiasComAlteracoes.filter(f => f.status === 'ATIVA' && f.statusInativacao !== 'EM_ENCERRAMENTO' && f.maturidade !== 'IMPLANTACAO'),
     [franquiasComAlteracoes]
   );
 
@@ -424,14 +424,25 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                       alignItems: 'flex-start',
                       marginBottom: '6px',
                     }}>
-                      <span style={{
-                        color: '#F8F9FA',
-                        fontSize: '0.8rem',
-                        fontWeight: 500,
-                        flex: 1,
-                      }}>
-                        {franquia.nome}
-                      </span>
+                      <div style={{ flex: 1 }}>
+                        <span style={{
+                          color: '#F8F9FA',
+                          fontSize: '0.8rem',
+                          fontWeight: 500,
+                        }}>
+                          {franquia.nome}
+                        </span>
+                        {franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0') && (
+                          <div style={{
+                            color: '#e67e22',
+                            fontSize: '0.65rem',
+                            fontWeight: 600,
+                            fontFamily: 'Poppins, sans-serif',
+                          }}>
+                            Não participa do PEX
+                          </div>
+                        )}
+                      </div>
                       <span style={{
                         color: SAUDE_CORES[franquia.saude],
                         fontSize: '0.85rem',
