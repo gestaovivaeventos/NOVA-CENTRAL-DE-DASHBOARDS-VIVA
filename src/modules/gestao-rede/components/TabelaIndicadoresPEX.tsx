@@ -5,8 +5,9 @@
  * VVR vem da planilha de Vendas (ADESOES), demais indicadores do PEX
  */
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { MetaIndicadorUnidade, IndicadorConfig, Franquia } from '../types';
+import { exportToExcel } from '../../vendas/utils/exportExcel';
 
 interface TabelaIndicadoresPEXProps {
   resultados: any[];
@@ -89,6 +90,11 @@ function getCor(resultado: number, meta: number, inverso: boolean): string {
   return '#c0392b';
 }
 
+function getAtingimento(resultado: number, meta: number, inverso: boolean): number {
+  if (meta === 0 || isNaN(resultado)) return 0;
+  return inverso ? (meta / resultado) * 100 : (resultado / meta) * 100;
+}
+
 /** Formata mes/ano como "jan/2026" */
 function formatMesAno(mes: number, ano: number): string {
   return `${ABREV_MESES[mes - 1]}/${ano}`;
@@ -160,19 +166,33 @@ export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}
     });
 
     const arr = Array.from(mesesSet.values());
-    // Ordenar cronologicamente (mais recente primeiro)
+    // Ordenar cronologicamente (mais antigo primeiro: jan → dez)
     arr.sort((a, b) => {
-      if (a.ano !== b.ano) return b.ano - a.ano;
-      return b.mes - a.mes;
+      if (a.ano !== b.ano) return a.ano - b.ano;
+      return a.mes - b.mes;
     });
     return arr;
   }, [resultados, metas]);
 
-  // Auto-selecionar mês mais recente
+  // Auto-selecionar o mês anterior ao mês vigente
   useEffect(() => {
     if (mesesDisponiveis.length > 0 && !filtroMes) {
-      const p = mesesDisponiveis[0];
-      setFiltroMes(`${p.mes}/${p.ano}`);
+      const hoje = new Date();
+      let mesAnterior = hoje.getMonth(); // getMonth() é 0-based, então março=2 → mesAnterior=2 = fevereiro
+      let anoAnterior = hoje.getFullYear();
+      if (mesAnterior === 0) {
+        mesAnterior = 12;
+        anoAnterior--;
+      }
+      // Tentar encontrar o mês anterior ao vigente
+      const encontrado = mesesDisponiveis.find(p => p.mes === mesAnterior && p.ano === anoAnterior);
+      if (encontrado) {
+        setFiltroMes(`${encontrado.mes}/${encontrado.ano}`);
+      } else {
+        // Fallback: último mês disponível
+        const p = mesesDisponiveis[mesesDisponiveis.length - 1];
+        setFiltroMes(`${p.mes}/${p.ano}`);
+      }
     }
   }, [mesesDisponiveis, filtroMes]);
 
@@ -330,6 +350,65 @@ export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}
               width: '180px',
             }}
           />
+          {/* Exportar Excel */}
+          <button
+            onClick={() => {
+              if (!dadosPorUnidade.length) return;
+              const [mesStr, anoStr] = filtroMes.split('/');
+              const mesLabel = labelMesAno(parseInt(mesStr), parseInt(anoStr));
+              const headers = ['Unidade', ...INDICADORES.flatMap(ind => [`${ind.label} (Meta)`, `${ind.label} (Real)`, `${ind.label} (% Ating.)`])];
+              const rows = dadosPorUnidade.map(item => [
+                item.unidade,
+                ...item.indicadores.flatMap(ind => {
+                  const ating = ind.temResultado && ind.temMeta && ind.meta > 0
+                    ? getAtingimento(ind.resultado, ind.meta, ind.inverso)
+                    : 0;
+                  return [
+                    ind.temMeta ? formatarValor(ind.meta, ind.formato) : '-',
+                    ind.temResultado ? formatarValor(ind.resultado, ind.formato) : '-',
+                    ind.temResultado && ind.temMeta && ind.meta > 0 ? `${ating.toFixed(1)}%` : '-',
+                  ];
+                }),
+              ]);
+              exportToExcel({
+                filename: `indicadores_pex_${mesLabel.replace('/', '_')}`,
+                sheetName: `PEX ${mesLabel.replace('/', '-')}`,
+                headers,
+                data: rows,
+              });
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 14px',
+              backgroundColor: 'transparent',
+              border: '1px solid #555',
+              borderRadius: '6px',
+              color: '#adb5bd',
+              fontSize: '0.78rem',
+              fontFamily: 'Poppins, sans-serif',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#FF6600';
+              e.currentTarget.style.color = '#FF6600';
+              e.currentTarget.style.backgroundColor = 'rgba(255,102,0,0.08)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#555';
+              e.currentTarget.style.color = '#adb5bd';
+              e.currentTarget.style.backgroundColor = 'transparent';
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="7 10 12 15 17 10" />
+              <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Exportar
+          </button>
           {/* Filtro de mês */}
           <select
             value={filtroMes}
@@ -525,11 +604,16 @@ export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}
                       const cor = ind.temResultado && ind.temMeta
                         ? getCor(ind.resultado, ind.meta, ind.inverso)
                         : '#6c757d';
+                      const atingimento = ind.temResultado && ind.temMeta
+                        ? getAtingimento(ind.resultado, ind.meta, ind.inverso)
+                        : 0;
+                      const showTooltip = ind.temResultado && ind.temMeta && ind.meta > 0;
                       return (
                         <td
                           key={`result-${ind.id}`}
                           onMouseEnter={() => setColunaHover(ind.id)}
                           onMouseLeave={() => setColunaHover(null)}
+                          title={showTooltip ? `Atingimento: ${atingimento.toFixed(1)}%` : undefined}
                           style={{
                             padding: '4px 8px',
                             textAlign: 'center',
