@@ -402,12 +402,12 @@ export default function AnaliseMercadoLayout({
               <div
                 className="flex items-center gap-2 px-3 py-1.5 rounded-md"
                 style={{
-                  backgroundColor: 'rgba(245, 158, 11, 0.15)',
-                  border: '1px solid rgba(245, 158, 11, 0.4)',
+                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
                 }}
               >
-                <span style={{ color: '#F59E0B', fontSize: '0.75rem', fontWeight: 600 }}>
-                  ⚠️ DADOS MOCKADOS
+                <span style={{ color: '#10B981', fontSize: '0.75rem', fontWeight: 600 }}>
+                  📊 DADOS INEP
                 </span>
               </div>
             </div>

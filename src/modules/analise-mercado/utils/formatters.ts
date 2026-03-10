@@ -2,31 +2,34 @@
 // Formatadores — Análise de Mercado
 // ============================================
 
-/** Formata número grande (1.2M, 35.4K, 950) */
-export function fmtNum(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+/** Formata número completo (10.200.000) — retorna "-" se sem dados */
+export function fmtNum(n: number | null | undefined): string {
+  if (n == null || n === 0) return '-';
   return n.toLocaleString('pt-BR');
 }
 
 /** Formata número com separador de milhares completo */
-export function fmtInteiro(n: number): string {
+export function fmtInteiro(n: number | null | undefined): string {
+  if (n == null) return '-';
   return n.toLocaleString('pt-BR');
 }
 
 /** Formata percentual */
-export function fmtPct(n: number, decimals = 1): string {
+export function fmtPct(n: number | null | undefined, decimals = 1): string {
+  if (n == null) return '-';
   return `${n.toFixed(decimals)}%`;
 }
 
 /** Formata variação com sinal + */
-export function fmtVariacao(n: number): string {
+export function fmtVariacao(n: number | null | undefined): string {
+  if (n == null) return '-';
   const sinal = n >= 0 ? '+' : '';
   return `${sinal}${n.toFixed(1)}%`;
 }
 
 /** Cor da variação */
-export function corVariacao(n: number): string {
+export function corVariacao(n: number | null | undefined): string {
+  if (n == null || n === 0) return '#6B7280';
   if (n > 0) return '#10B981';
   if (n < 0) return '#EF4444';
   return '#6B7280';

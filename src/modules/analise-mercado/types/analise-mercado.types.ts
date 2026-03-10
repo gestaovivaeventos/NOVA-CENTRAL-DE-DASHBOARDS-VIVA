@@ -123,7 +123,6 @@ export interface GrupoEducacional {
 
 // ─── Demografia ─────────────────────────────
 export interface DadosDemografia {
-  faixaEtaria: { faixa: string; total: number; percentual: number }[];
   genero: { tipo: string; total: number; percentual: number }[];
 }
 

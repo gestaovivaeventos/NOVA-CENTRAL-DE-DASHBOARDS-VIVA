@@ -3,7 +3,7 @@
  * 
  * Fluxo narrativo:
  * 1. Evolução Histórica — como o mercado evoluiu
- * 2. Distribuição — 4 cards expansíveis (Modalidade, Instituição, Gênero, Faixa Etária)
+ * 2. Distribuição — 3 cards expansíveis (Modalidade, Instituição, Gênero)
  * 3. Tabela Comparativa — detalhamento ano a ano (expansível)
  * 4. Análise por Curso — tabela detalhada estilo fluxo realizado
  * 5. Cursos por Instituição — ranking das IES
@@ -210,7 +210,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
       <SectionLabel num="2" label="Distribuição do Mercado" cor={CORES.verde} />
       <div style={{ marginBottom: 24 }}>
         <CardInsight
-          titulo="Modalidade · Instituição · Gênero · Faixa Etária"
+          titulo="Modalidade · Instituição · Gênero"
           cor={CORES.verde}
           icone={<BarChart3 size={16} />}
           resumo={[
@@ -220,9 +220,9 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
             { label: 'Privada', valor: fmtNum(ultimoAno?.privada || 0), cor: CORES.laranja },
           ]}
         >
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14,
-          }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
+          {/* Linha 1: Modalidade + Instituição */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {/* ── Modalidade (Presencial vs EAD) ── */}
           <div style={{ backgroundColor: '#343A40', borderRadius: 12, padding: 18, border: '1px solid #495057' }}>
             <h4 style={{
@@ -231,18 +231,16 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
             }}>
               Por Modalidade
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <PropBar
-                a={ultimoAno?.presencial || 0} b={ultimoAno?.ead || 0}
-                corA={CORES.verde} corB={CORES.roxo}
-                labelA="Presencial" labelB="EAD"
-              />
-              <div style={{ height: 160 }}>
-                <Doughnut data={{
-                  labels: ['Presencial', 'EAD'],
-                  datasets: [{ data: [ultimoAno?.presencial || 0, ultimoAno?.ead || 0], backgroundColor: [CORES.verde, CORES.roxo], borderColor: '#343A40', borderWidth: 3 }],
-                }} options={donutOptions} />
-              </div>
+            <PropBar
+              a={ultimoAno?.presencial || 0} b={ultimoAno?.ead || 0}
+              corA={CORES.verde} corB={CORES.roxo}
+              labelA="Presencial" labelB="EAD"
+            />
+            <div style={{ height: 160, marginTop: 12 }}>
+              <Doughnut data={{
+                labels: ['Presencial', 'EAD'],
+                datasets: [{ data: [ultimoAno?.presencial || 0, ultimoAno?.ead || 0], backgroundColor: [CORES.verde, CORES.roxo], borderColor: '#343A40', borderWidth: 3 }],
+              }} options={donutOptions} />
             </div>
           </div>
 
@@ -254,22 +252,21 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
             }}>
               Por Tipo de Instituição
             </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <PropBar
-                a={ultimoAno?.publica || 0} b={ultimoAno?.privada || 0}
-                corA={CORES.azul} corB={CORES.laranja}
-                labelA="Pública" labelB="Privada"
-              />
-              <div style={{ height: 160 }}>
-                <Doughnut data={{
-                  labels: ['Pública', 'Privada'],
-                  datasets: [{ data: [ultimoAno?.publica || 0, ultimoAno?.privada || 0], backgroundColor: [CORES.azul, CORES.laranja], borderColor: '#343A40', borderWidth: 3 }],
-                }} options={donutOptions} />
-              </div>
+            <PropBar
+              a={ultimoAno?.publica || 0} b={ultimoAno?.privada || 0}
+              corA={CORES.azul} corB={CORES.laranja}
+              labelA="Pública" labelB="Privada"
+            />
+            <div style={{ height: 160, marginTop: 12 }}>
+              <Doughnut data={{
+                labels: ['Pública', 'Privada'],
+                datasets: [{ data: [ultimoAno?.publica || 0, ultimoAno?.privada || 0], backgroundColor: [CORES.azul, CORES.laranja], borderColor: '#343A40', borderWidth: 3 }],
+              }} options={donutOptions} />
             </div>
           </div>
+          </div>
 
-          {/* ── Gênero ── */}
+          {/* Linha 2: Gênero (largura total) */}
           <div style={{ backgroundColor: '#343A40', borderRadius: 12, padding: 18, border: '1px solid #495057' }}>
             <h4 style={{
               color: CORES.rosa, fontSize: '0.75rem', fontWeight: 600, margin: '0 0 10px',
@@ -282,7 +279,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
               corA={CORES.rosa} corB={CORES.azul}
               labelA="Feminino" labelB="Masculino"
             />
-            <div style={{ height: 180, marginTop: 16 }}>
+            <div style={{ height: 180, marginTop: 12 }}>
               <Line data={generoLineData} options={miniChartOpts} />
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 6, justifyContent: 'center' }}>
@@ -298,37 +295,6 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
             </div>
           </div>
 
-          {/* ── Faixa Etária ── */}
-          <div style={{ backgroundColor: '#343A40', borderRadius: 12, padding: 18, border: '1px solid #495057' }}>
-            <h4 style={{
-              color: CORES.amarelo, fontSize: '0.75rem', fontWeight: 600, margin: '0 0 10px',
-              fontFamily: "'Poppins', sans-serif", textTransform: 'uppercase', letterSpacing: '0.04em',
-            }}>
-              Faixa Etária
-            </h4>
-            <div style={{ height: 180 }}>
-              <Bar
-                data={{
-                  labels: demografia.faixaEtaria.map(f => f.faixa),
-                  datasets: [{
-                    label: 'Alunos', data: demografia.faixaEtaria.map(f => f.total),
-                    backgroundColor: CORES.amarelo, borderRadius: 3,
-                  }],
-                }}
-                options={{
-                  ...miniChartOpts,
-                  plugins: {
-                    ...miniChartOpts.plugins,
-                    datalabels: {
-                      color: '#F8F9FA', font: { size: 8, weight: 'bold' as const },
-                      anchor: 'end' as const, align: 'top' as const,
-                      formatter: (v: number) => fmtNum(v),
-                    },
-                  },
-                }}
-              />
-            </div>
-          </div>
           </div>
         </CardInsight>
       </div>

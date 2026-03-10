@@ -46,6 +46,7 @@ export default function AnaliseMercadoPage() {
     anosDisponiveis,
     areasDisponiveis,
     cursosDisponiveis,
+    forceRefresh,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
 
@@ -104,16 +105,32 @@ export default function AnaliseMercadoPage() {
         areasDisponiveis={areasDisponiveis}
         cursosDisponiveis={cursosDisponiveis}
       >
-        {/* Aviso mockado */}
+        {/* Fonte de dados */}
         <div style={{
-          backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+          backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
           borderRadius: 6, padding: '8px 16px', marginBottom: 16,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <span>⚠️</span>
-          <p style={{ color: '#F59E0B', fontSize: '0.75rem', margin: 0 }}>
-            <strong>Validação de Layout</strong> — Dados fictícios baseados em tendências do Censo INEP
+          <span>📊</span>
+          <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, flex: 1 }}>
+            <strong>Dados INEP</strong> — Censo da Educação Superior via Supabase
+            {dados.ultimaAtualizacao && (
+              <span style={{ color: '#6B7280', marginLeft: 8 }}>
+                (cache: {new Date(dados.ultimaAtualizacao).toLocaleString('pt-BR')})
+              </span>
+            )}
           </p>
+          <button
+            onClick={forceRefresh}
+            title="Atualizar dados (limpar cache)"
+            style={{
+              background: 'none', border: '1px solid rgba(16,185,129,0.4)',
+              borderRadius: 4, padding: '4px 10px', cursor: 'pointer',
+              color: '#10B981', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4,
+            }}
+          >
+            🔄 Atualizar
+          </button>
         </div>
 
         {/* Painel de Franquia (se selecionada) */}
