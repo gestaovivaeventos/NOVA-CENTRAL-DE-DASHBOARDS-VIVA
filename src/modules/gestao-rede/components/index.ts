@@ -13,6 +13,7 @@ export { default as TabelaFranquias } from './TabelaFranquias';
 export { default as TabelaClassificacaoPEX } from './TabelaClassificacaoPEX';
 export { default as TabelaSegmentoMercado } from './TabelaSegmentoMercado';
 export { default as TabelaFlags } from './TabelaFlags';
+export { default as TabelaIndicadoresPEX } from './TabelaIndicadoresPEX';
 export { default as GestaoRedeLayout } from './GestaoRedeLayout';
 export { default as ModalAlterarSaude } from './ModalAlterarSaude';
 export { default as ModalEditarFlags } from './ModalEditarFlags';

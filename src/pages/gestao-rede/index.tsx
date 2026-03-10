@@ -35,10 +35,12 @@ import {
   TabelaClassificacaoPEX,
   TabelaSegmentoMercado,
   TabelaFlags,
+  TabelaIndicadoresPEX,
   Footer,
   FiltrosGestaoRede,
 } from '@/modules/gestao-rede';
 import { useGestaoRede } from '@/modules/gestao-rede/hooks';
+import { useIndicadoresRede } from '@/modules/gestao-rede/hooks';
 import { 
   calcularResumoRede, 
   CORES 
@@ -50,6 +52,9 @@ export default function GestaoRedeDashboard() {
   
   // Hook para buscar dados reais da API
   const { franquias, isLoading, error, refetch } = useGestaoRede();
+  
+  // Hook para buscar indicadores PEX (resultados + metas + vendas VVR)
+  const { resultados: indicadoresResultados, metas: indicadoresMetas, vendasVVR: indicadoresVendasVVR, isLoading: indicadoresLoading } = useIndicadoresRede();
   
   // Verificar autenticação e nível de acesso
   useEffect(() => {
@@ -86,10 +91,11 @@ export default function GestaoRedeDashboard() {
     return franquias.filter(f => f.status === filtroStatus);
   }, [franquias, filtroStatus]);
 
-  // Franquias inativas detalhadas
-  const franquiasInativas = useMemo(() => franquias.filter(f => f.status === 'INATIVA'), [franquias]);
+  // Franquias inativas detalhadas (inclui EM_ENCERRAMENTO)
+  const franquiasInativas = useMemo(() => franquias.filter(f => f.status === 'INATIVA' || f.statusInativacao === 'EM_ENCERRAMENTO'), [franquias]);
   const encerradasOperacao = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'ENCERRADA_OPERACAO'), [franquiasInativas]);
   const encerradasImplantacao = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'ENCERRADA_IMPLANTACAO'), [franquiasInativas]);
+  const emEncerramento = useMemo(() => franquiasInativas.filter(f => f.statusInativacao === 'EM_ENCERRAMENTO'), [franquiasInativas]);
 
   if (authLoading || isLoading) {
     return (
@@ -445,7 +451,7 @@ export default function GestaoRedeDashboard() {
               <div style={{ padding: '16px 20px' }}>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: '12px',
                   marginBottom: '16px',
                 }}>
@@ -475,6 +481,19 @@ export default function GestaoRedeDashboard() {
                       {resumo.encerradasImplantacao}
                     </span>
                   </div>
+                  <div style={{
+                    backgroundColor: '#212529',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    borderLeft: '4px solid #e67e22',
+                  }}>
+                    <div style={{ color: '#6c757d', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '4px', fontFamily: 'Poppins, sans-serif' }}>
+                      Em Encerramento
+                    </div>
+                    <span style={{ color: '#e67e22', fontSize: '1.8rem', fontWeight: 700, fontFamily: "'Orbitron', sans-serif" }}>
+                      {resumo.emEncerramento}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Lista de franquias inativas */}
@@ -492,19 +511,30 @@ export default function GestaoRedeDashboard() {
                         marginBottom: '2px',
                       }}
                     >
-                      <span style={{ color: '#F8F9FA', fontSize: '0.85rem', fontFamily: 'Poppins, sans-serif' }}>
-                        {f.nome}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ color: '#F8F9FA', fontSize: '0.85rem', fontFamily: 'Poppins, sans-serif' }}>
+                          {f.nome}
+                        </span>
+                        {f.dataEncerramento && (
+                          <span style={{ color: '#6c757d', fontSize: '0.7rem', fontFamily: 'Poppins, sans-serif' }}>
+                            Encerramento: {f.dataEncerramento}
+                          </span>
+                        )}
+                      </div>
                       <span style={{
                         color: '#FFFFFF',
                         fontSize: '0.7rem',
                         fontWeight: 600,
                         padding: '3px 10px',
                         borderRadius: '4px',
-                        backgroundColor: f.statusInativacao === 'ENCERRADA_OPERACAO' ? '#943126' : '#6c2134',
+                        backgroundColor: f.statusInativacao === 'ENCERRADA_OPERACAO' ? '#943126' 
+                          : f.statusInativacao === 'EM_ENCERRAMENTO' ? '#e67e22' 
+                          : '#6c2134',
                         fontFamily: 'Poppins, sans-serif',
                       }}>
-                        {f.statusInativacao === 'ENCERRADA_OPERACAO' ? 'Enc. Operação' : 'Enc. Implantação'}
+                        {f.statusInativacao === 'ENCERRADA_OPERACAO' ? 'Enc. Operação' 
+                          : f.statusInativacao === 'EM_ENCERRAMENTO' ? 'Em Encerramento'
+                          : 'Enc. Implantação'}
                       </span>
                     </div>
                   ))}
@@ -534,6 +564,28 @@ export default function GestaoRedeDashboard() {
             filtros={filtros}
             titulo="Todas as Franquias"
           />
+
+          {/* Tabela de Indicadores PEX - Meta x Resultado */}
+          <div style={{ marginTop: '24px' }}>
+            {indicadoresLoading ? (
+              <div style={{
+                backgroundColor: '#343A40',
+                borderRadius: '12px',
+                padding: '40px',
+                textAlign: 'center',
+              }}>
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 mx-auto" style={{ borderColor: '#FF6600' }} />
+                <p className="mt-4" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>Carregando indicadores...</p>
+              </div>
+            ) : (
+              <TabelaIndicadoresPEX
+                resultados={indicadoresResultados}
+                metas={indicadoresMetas}
+                vendasVVR={indicadoresVendasVVR}
+                franquias={franquias}
+              />
+            )}
+          </div>
 
           {/* Footer */}
           <Footer />

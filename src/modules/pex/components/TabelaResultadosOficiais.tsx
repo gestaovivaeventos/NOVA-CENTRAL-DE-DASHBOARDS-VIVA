@@ -5,7 +5,7 @@
  * Filtro de mês interno
  */
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { Download } from 'lucide-react';
 
@@ -119,6 +119,24 @@ export default function TabelaResultadosOficiais({
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoDir>(null);
   const [colunaHover, setColunaHover] = useState<string | null>(null);
   const [filtroMes, setFiltroMes] = useState<string>('');
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const tabelaContainerRef = useRef<HTMLDivElement>(null);
+
+  // Impedir que o scroll da tabela propague para a página
+  useEffect(() => {
+    const el = tabelaContainerRef.current;
+    if (!el) return;
+    const handleWheel = (e: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = el;
+      const atTop = scrollTop <= 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+      if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
+        e.preventDefault();
+      }
+    };
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, []);
 
   // Lista de meses disponíveis no quarter selecionado
   const listaMeses = useMemo(() => {
@@ -313,12 +331,15 @@ export default function TabelaResultadosOficiais({
           <p style={{ color: '#adb5bd' }}>Nenhum dado disponível para o mês selecionado.</p>
         </div>
       ) : (
-        <div style={{
-          maxHeight: '600px',
-          overflowY: 'auto',
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch'
-        }}>
+        <div
+          ref={tabelaContainerRef}
+          style={{
+            maxHeight: '600px',
+            overflowY: 'auto',
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch'
+          }}
+        >
           <table style={{ width: '100%', minWidth: '1100px', borderCollapse: 'separate', borderSpacing: 0 }}>
             <thead style={{ position: 'sticky', top: 0, zIndex: 10 }}>
               <tr style={{ backgroundColor: '#1a1d21' }}>
@@ -378,24 +399,17 @@ export default function TabelaResultadosOficiais({
                   <tr
                     key={index}
                     style={{ transition: 'background-color 0.15s ease' }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.querySelectorAll<HTMLElement>('td').forEach(td => {
-                        td.style.backgroundColor = '#3d4349';
-                      });
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.querySelectorAll<HTMLElement>('td').forEach(td => {
-                        td.style.backgroundColor = '';
-                      });
-                    }}
+                    onMouseEnter={() => setHoveredRow(index)}
+                    onMouseLeave={() => setHoveredRow(null)}
                   >
                     {/* Franquia */}
                     <td
                       style={{
                         padding: '5px 6px', fontSize: '0.75rem', color: '#F8F9FA',
                         borderBottom: '1px solid #444', fontWeight: 500, textAlign: 'left',
-                        position: 'sticky', left: 0, zIndex: 1,
-                        backgroundColor: bgBase
+                        position: 'sticky', left: 0, zIndex: 2,
+                        backgroundColor: hoveredRow === index ? '#3d4349' : bgBase,
+                        transition: 'background-color 0.15s ease'
                       }}
                     >
                       {item.franquia}
@@ -410,7 +424,8 @@ export default function TabelaResultadosOficiais({
                       style={{
                         padding: '5px 4px', fontSize: '0.7rem', color: '#adb5bd',
                         borderBottom: '1px solid #444', textAlign: 'center',
-                        backgroundColor: bgBase
+                        backgroundColor: hoveredRow === index ? '#3d4349' : bgBase,
+                        transition: 'background-color 0.15s ease'
                       }}
                     >
                       {item.cluster}
@@ -419,7 +434,8 @@ export default function TabelaResultadosOficiais({
                     {INDICADORES.map(ind => {
                       const dados = item.indicadores[ind.id];
                       const hovered = isHovered(ind.id);
-                      const cellBg = hovered ? COL_HOVER_BG : bgBase;
+                      const rowHovered = hoveredRow === index;
+                      const cellBg = rowHovered ? '#3d4349' : (hovered ? COL_HOVER_BG : bgBase);
 
                       if (!dados) {
                         return (
