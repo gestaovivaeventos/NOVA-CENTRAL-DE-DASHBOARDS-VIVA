@@ -54,6 +54,8 @@ const COLUNAS = {
   VALOR_RESTANTE_FEE: 14,      // O - Valor restante de FEE
   PERCENTUAL_PAGO_FEE: 15,     // P - % Pago FEE
   VALOR_PAGO_MARGEM: 16,       // Q - Valor pago de margem
+  PERCENTUAL_ATING_MAC: 19,    // T - % Atingimento MAC
+  SITUACAO: 20,                // U - Situação do fundo
 };
 
 // Linha onde começa o cabeçalho (0-indexed)
@@ -70,6 +72,8 @@ interface FundoRealizado {
   faltaReceber: number;  // Coluna O - Valor Restante de FEE
   dataContrato?: string;  // Coluna G - Data do contrato
   dataBaile?: string;     // Coluna I - Data do baile
+  percentualAtingMac?: number; // Coluna T - % Atingimento MAC
+  situacao?: string;      // Coluna U - Situação do fundo
 }
 
 // Função para obter cliente autenticado
@@ -217,6 +221,16 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     const valorRestanteFee = parseNumber(row[COLUNAS.VALOR_RESTANTE_FEE]); // Coluna O
     const dataContrato = row[COLUNAS.DT_CONTRATO] || ''; // Coluna G
     const dataBaile = row[COLUNAS.DT_BAILE] || ''; // Coluna I
+    const situacao = (row[COLUNAS.SITUACAO] || '').toString().trim(); // Coluna U
+    // Coluna T: % Atingimento MAC (pode vir como decimal 0.75 ou percentual 75)
+    const rawAtingMac = row[COLUNAS.PERCENTUAL_ATING_MAC];
+    let percentualAtingMac = 0;
+    if (rawAtingMac !== undefined && rawAtingMac !== null && rawAtingMac !== '') {
+      let cleaned = String(rawAtingMac).replace('%', '').replace(',', '.').trim();
+      let num = parseFloat(cleaned) || 0;
+      if (num > 0 && num <= 1) num = num * 100;
+      percentualAtingMac = num;
+    }
     
     // Antecipação recebida = M + N (FEE Pago + Valor Pago RP FEE)
     const antecipacaoRecebida = feePago + valorPagoRpFee;
@@ -238,6 +252,8 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
       faltaReceber: faltaReceber, // Coluna O - VALOR RESTANTE DE FEE
       dataContrato: dataContrato, // Coluna G
       dataBaile: dataBaile, // Coluna I
+      percentualAtingMac: percentualAtingMac, // Coluna T
+      situacao: situacao, // Coluna U
     };
     
     fundos.push(fundo);
