@@ -56,6 +56,8 @@ const COLUNAS = {
   VALOR_PAGO_MARGEM: 16,       // Q - Valor pago de margem
   PERCENTUAL_ATING_MAC: 19,    // T - % Atingimento MAC
   SITUACAO: 20,                // U - Situação do fundo
+  FEE_INICIAL_V: 21,           // V - FEE INICIAL
+  FEE_REPLANEJADO: 22,         // W - FEE REPLANEJADO
 };
 
 // Linha onde começa o cabeçalho (0-indexed)
@@ -74,6 +76,8 @@ interface FundoRealizado {
   dataBaile?: string;     // Coluna I - Data do baile
   percentualAtingMac?: number; // Coluna T - % Atingimento MAC
   situacao?: string;      // Coluna U - Situação do fundo
+  feeInicialV?: number;   // Coluna V - FEE INICIAL
+  feeReplanejado?: number; // Coluna W - FEE REPLANEJADO
 }
 
 // Função para obter cliente autenticado
@@ -222,6 +226,8 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     const dataContrato = row[COLUNAS.DT_CONTRATO] || ''; // Coluna G
     const dataBaile = row[COLUNAS.DT_BAILE] || ''; // Coluna I
     const situacao = (row[COLUNAS.SITUACAO] || '').toString().trim(); // Coluna U
+    const feeInicialV = parseNumber(row[COLUNAS.FEE_INICIAL_V]); // Coluna V
+    const feeReplanejado = parseNumber(row[COLUNAS.FEE_REPLANEJADO]); // Coluna W
     // Coluna T: % Atingimento MAC (pode vir como decimal 0.75 ou percentual 75)
     const rawAtingMac = row[COLUNAS.PERCENTUAL_ATING_MAC];
     let percentualAtingMac = 0;
@@ -254,6 +260,8 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
       dataBaile: dataBaile, // Coluna I
       percentualAtingMac: percentualAtingMac, // Coluna T
       situacao: situacao, // Coluna U
+      feeInicialV: feeInicialV, // Coluna V
+      feeReplanejado: feeReplanejado, // Coluna W
     };
     
     fundos.push(fundo);
