@@ -13,6 +13,8 @@ import {
   LogOut, 
   Menu, 
   X,
+  LayoutDashboard,
+  Target,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { FiltrosGestaoRede } from '../types';
@@ -20,7 +22,7 @@ import { FilterPanel } from './filters';
 
 interface GestaoRedeLayoutProps {
   children: React.ReactNode;
-  currentPage: 'dashboard';
+  currentPage: 'dashboard' | 'metas';
   filtros?: FiltrosGestaoRede;
   onFiltrosChange?: (filtros: FiltrosGestaoRede) => void;
 }
@@ -207,7 +209,53 @@ export default function GestaoRedeLayout({
           className={`${(isCollapsed && !isMobile) ? 'px-2 pt-4' : 'p-5 pt-4'} flex flex-col`}
           style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
         >
-          {/* Filtros - só mostra quando expandido */}
+          {/* Navegação */}
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '24px' }}>
+            <a
+              href="/gestao-rede"
+              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4'}
+                ${currentPage === 'dashboard'
+                  ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
+                  : 'text-gray-400 border border-gray-600/50 hover:bg-white/5'
+                }`}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.85rem',
+                fontWeight: currentPage === 'dashboard' ? 600 : 500,
+                boxShadow: currentPage !== 'dashboard' ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
+                height: '42px',
+                whiteSpace: 'nowrap',
+                textDecoration: 'none',
+              }}
+              title="Dashboard"
+            >
+              <LayoutDashboard size={20} strokeWidth={currentPage === 'dashboard' ? 2.5 : 2} />
+              {(!isCollapsed || isMobile) && <span>Dashboard</span>}
+            </a>
+            <a
+              href="/gestao-rede/metas"
+              className={`flex items-center rounded-lg transition-all duration-200 ${(isCollapsed && !isMobile) ? 'justify-center p-2.5' : 'gap-3 px-4'}
+                ${currentPage === 'metas'
+                  ? 'bg-orange-500/10 border border-orange-500 text-orange-500'
+                  : 'text-gray-400 border border-gray-600/50 hover:bg-white/5'
+                }`}
+              style={{
+                fontFamily: 'Poppins, sans-serif',
+                fontSize: '0.85rem',
+                fontWeight: currentPage === 'metas' ? 600 : 500,
+                boxShadow: currentPage !== 'metas' ? '0 2px 8px rgba(0,0,0,0.3)' : 'none',
+                height: '42px',
+                whiteSpace: 'nowrap',
+                textDecoration: 'none',
+              }}
+              title="Metas"
+            >
+              <Target size={20} strokeWidth={currentPage === 'metas' ? 2.5 : 2} />
+              {(!isCollapsed || isMobile) && <span>Metas</span>}
+            </a>
+          </nav>
+
+          {/* Filtros - só mostra quando expandido e no dashboard */}
           {(!isCollapsed || isMobile) && onFiltrosChange && filtros && (
             <>
               <hr className="border-dark-tertiary my-4" />

@@ -68,12 +68,14 @@ function mapStatus(valor: string): StatusFranquia {
 
 /**
  * Mapeia o valor de status de inativação
+ * "Em encerramento" = franquia em processo de encerramento (considerada inativa)
  */
 function mapStatusInativacao(valor: string): StatusInativacao {
   const status = valor?.toUpperCase()?.trim() || '';
   
   if (status.includes('OPERA')) return 'ENCERRADA_OPERACAO';
   if (status.includes('IMPLANTA')) return 'ENCERRADA_IMPLANTACAO';
+  if (status.includes('ENCERRAMENTO') || status.includes('EM ENCERRAMENTO')) return 'EM_ENCERRAMENTO';
   
   return null;
 }
@@ -218,6 +220,9 @@ function processarDados(rows: string[][]): Franquia[] {
       estado: getValue('estado')?.trim() || '',
       latitude: !isNaN(latitude!) ? latitude : null,
       longitude: !isNaN(longitude!) ? longitude : null,
+      // Campos adicionais
+      cluster: getValue('cluster')?.trim() || '',
+      dataEncerramento: getValue('dt_encerramento')?.trim() || '',
       // Campos de evolução de saúde
       saudeAnterior,
       mesesNaSaudeAtual,
@@ -248,10 +253,10 @@ export default async function handler(
     console.log('[API gestao-rede/data] Aba:', SHEET_NAME);
     
     // Buscar dados da planilha externa com cache
-    // Colunas: A-K (originais) + L (cidade) + M (mercado) + N (estado) + O (latitude) + P (longitude)
+    // Colunas: A-P (originais) + Q (cluster) + R (dt_encerramento)
     const rows = await getExternalSheetData(
       SPREADSHEET_ID,
-      `'${SHEET_NAME}'!A:P`, // Colunas A até P (incluindo mercado e localização)
+      `'${SHEET_NAME}'!A:R`, // Colunas A até R (incluindo cluster e dt_encerramento)
       CACHE_KEY,
       CACHE_TTL.PONTUACAO_OFICIAL
     );
