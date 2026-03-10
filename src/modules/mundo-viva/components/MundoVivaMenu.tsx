@@ -18,6 +18,131 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
+const TOOL_CATEGORIES = new Set([
+  'FERRAMENTAS (GESTÃO PROCESSO)',
+  'FERRAMENTAS (SISTEMA)',
+  'FERRAMENTAS (OPERACIONAL)',
+  'FERRAMENTAS (ABRIR CHAMADO)',
+  'FERRAMENTAS (ATENDIMENTO ALUNO)',
+]);
+
+const TOOL_CATEGORY_LABELS: Record<string, string> = {
+  'FERRAMENTAS (GESTÃO PROCESSO)': 'Processos',
+  'FERRAMENTAS (SISTEMA)': 'Sistemas e Portais',
+  'FERRAMENTAS (OPERACIONAL)': 'Operação',
+  'FERRAMENTAS (ABRIR CHAMADO)': 'Chamados e Suporte',
+  'FERRAMENTAS (ATENDIMENTO ALUNO)': 'Atendimento ao Aluno',
+};
+
+const TOOL_CATEGORY_ORDER = [
+  'FERRAMENTAS (SISTEMA)',
+  'FERRAMENTAS (GESTÃO PROCESSO)',
+  'FERRAMENTAS (ABRIR CHAMADO)',
+  'FERRAMENTAS (ATENDIMENTO ALUNO)',
+  'FERRAMENTAS (OPERACIONAL)',
+];
+
+const MENU_TOOL_SECTIONS: Record<string, { time: string; label: string }[]> = {
+  comercial: [
+    { time: 'VENDAS', label: 'Ferramentas de Vendas' },
+    { time: 'PERFORMANCE', label: 'Ferramentas de Performance' },
+  ],
+  relacionamento: [
+    { time: 'RELACIONAMENTO', label: 'Ferramentas de Relacionamento' },
+    { time: 'ATENDIMENTO', label: 'Ferramentas de Atendimento' },
+  ],
+  'admin-unidade': [
+    { time: 'ADMINISTRATIVO', label: 'Ferramentas Administrativas' },
+  ],
+};
+
+const NEW_TOOL_MENUS = [
+  { id: 'producao-tools', time: 'PRODUÇÃO', label: 'Produção', icon: 'fa-calendar-check-o', insertBeforeId: 'admin-unidade' },
+  { id: 'gp-tools', time: 'GP', label: 'Gestão de Pessoas', icon: 'fa-group', insertBeforeId: 'viva-academy' },
+];
+
+const AREA_CARDS = [
+  { id: 'comercial', label: 'Comercial', icon: 'fa-map-marker', color: '#e74c3c', times: ['VENDAS', 'PERFORMANCE'] },
+  { id: 'relacionamento', label: 'Relacionamento', icon: 'fa-users', color: '#3498db', times: ['RELACIONAMENTO', 'ATENDIMENTO'] },
+  { id: 'producao', label: 'Produção', icon: 'fa-calendar-check-o', color: '#2ecc71', times: ['PRODUÇÃO'] },
+  { id: 'administrativo', label: 'Administrativo', icon: 'fa-cog', color: '#34495e', times: ['ADMINISTRATIVO'] },
+  { id: 'gp', label: 'Gestão de Pessoas', icon: 'fa-group', color: '#1abc9c', times: ['GP'] },
+];
+
+const QUICK_ACCESS_PRIORITY = [
+  'SULTS',
+  'Central Mestre da Jornada e PCS',
+  'Central Mestre da Jornada',
+  'Página Reclame Aqui VIVA',
+  'NPS SEMESTRAL',
+  'Viva me ajuda',
+  'Guia de Tendência',
+  'Huggy',
+];
+
+const QUICK_ACCESS_ICONS: Record<string, string> = {
+  'SULTS': 'fa-life-ring',
+  'Central Mestre da Jornada e PCS': 'fa-compass',
+  'Central Mestre da Jornada': 'fa-compass',
+  'Página Reclame Aqui VIVA': 'fa-bullhorn',
+  'NPS SEMESTRAL': 'fa-smile-o',
+  'Viva me ajuda': 'fa-comments',
+  'Guia de Tendência': 'fa-lightbulb-o',
+  'Huggy': 'fa-commenting',
+};
+
+function isToolItem(item: Ferramenta) {
+  return TOOL_CATEGORIES.has(item.categoria) && item.link && item.link.startsWith('http');
+}
+
+function getToolItemsByTime(time: string): Ferramenta[] {
+  return ferramentasData
+    .filter(item => item.time === time && isToolItem(item))
+    .sort((left, right) => left.nome.localeCompare(right.nome, 'pt-BR'));
+}
+
+function buildToolGroups(time: string): MenuItem[] {
+  const items = getToolItemsByTime(time);
+  const catMap: Record<string, Ferramenta[]> = {};
+
+  items.forEach(item => {
+    if (!catMap[item.categoria]) {
+      catMap[item.categoria] = [];
+    }
+    catMap[item.categoria].push(item);
+  });
+
+  return TOOL_CATEGORY_ORDER
+    .filter(category => catMap[category]?.length)
+    .map(category => ({
+      id: `tool-group-${time}-${category}`,
+      label: TOOL_CATEGORY_LABELS[category] || category,
+      icon: '',
+      children: catMap[category].map((item, index) => ({
+        id: `tool-item-${time}-${category}-${index}`,
+        label: item.nome,
+        icon: 'fa-circle-o',
+        href: item.link,
+        target: '_blank' as string,
+      })),
+    }));
+}
+
+function buildToolSection(time: string, label: string): MenuItem | null {
+  const children = buildToolGroups(time);
+
+  if (!children.length) {
+    return null;
+  }
+
+  return {
+    id: `tool-section-${time}`,
+    label,
+    icon: '',
+    children,
+  };
+}
+
 const ORIGINAL_MENU: MenuItem[] = [
   {
     id: 'home', label: 'Home', icon: 'fa-home',
@@ -196,103 +321,37 @@ const ORIGINAL_MENU: MenuItem[] = [
   },
 ];
 
-// ====== INTEGRAÇÃO: Ferramentas da planilha nos menus existentes ======
-
-// Mapeamento: TIME da planilha → id do menu existente
-const TIME_TO_MENU_ID: Record<string, string> = {
-  'VENDAS': 'comercial',
-  'RELACIONAMENTO': 'relacionamento',
-  'ADMINISTRATIVO': 'admin-unidade',
-};
-
-// Times que viram menus novos (não existem no MV original)
-const NEW_MENU_TIMES: { time: string; label: string; icon: string }[] = [
-  { time: 'ATENDIMENTO', label: 'Atendimento', icon: 'fa-headphones' },
-  { time: 'PRODUÇÃO', label: 'Produção', icon: 'fa-calendar-check-o' },
-  { time: 'PERFORMANCE', label: 'Performance', icon: 'fa-line-chart' },
-  { time: 'GP', label: 'Gestão de Pessoas', icon: 'fa-group' },
-];
-
-const CAT_LABELS: Record<string, string> = {
-  'FERRAMENTAS (GESTÃO PROCESSO)': 'Gestão de Processo',
-  'FERRAMENTAS (SISTEMA)': 'Sistemas / Web Apps',
-  'FERRAMENTAS (OPERACIONAL)': 'Operacional',
-  'FERRAMENTAS (ABRIR CHAMADO)': 'Abrir Chamado',
-  'FERRAMENTAS (ATENDIMENTO ALUNO)': 'Atendimento Aluno',
-  'DOCUMENTOS PADRÕES': 'Documentos Padrões',
-  'INSTRUÇÕES DE TRABALHO (TREINAMENTO)': 'Treinamento',
-  'INSTRUÇÕES DE TRABALHO (MATERIAIS DE APOIO)': 'Materiais de Apoio',
-};
-
-/** Gera submenus de ferramentas agrupados por categoria para um time */
-function getFerramentasForTime(time: string): MenuItem[] {
-  const items = ferramentasData.filter(f =>
-    f.time === time &&
-    f.categoria !== 'DASHBOARDS' && // dashboards vão pra Central
-    f.link && f.link.startsWith('http')
-  );
-
-  const catMap: Record<string, Ferramenta[]> = {};
-  items.forEach(f => {
-    const cat = f.categoria || 'OUTROS';
-    if (!catMap[cat]) catMap[cat] = [];
-    catMap[cat].push(f);
-  });
-
-  return Object.entries(catMap)
-    .map(([cat, ferramentas]) => {
-      const label = CAT_LABELS[cat] || cat;
-      const children = ferramentas.map((f, idx) => ({
-        id: `ferr-${time}-${cat}-${idx}`,
-        label: f.nome,
-        icon: 'fa-circle-o',
-        href: f.link,
-        target: '_blank' as string,
-      }));
-      return {
-        id: `ferr-cat-${time}-${cat}`,
-        label: `🔧 ${label}`,
-        icon: '',
-        children,
-      };
-    })
-    .filter(c => c.children.length > 0);
-}
-
 /** Constroi menu integrado: original + ferramentas injetadas */
 function buildIntegratedMenu(): MenuItem[] {
-  // Enriquecer menus existentes com ferramentas do time correspondente
   const menu = ORIGINAL_MENU.map(item => {
-    const time = Object.entries(TIME_TO_MENU_ID).find(([, menuId]) => menuId === item.id)?.[0];
-    if (!time) return item;
+    const sections = (MENU_TOOL_SECTIONS[item.id] || [])
+      .map(section => buildToolSection(section.time, section.label))
+      .filter(Boolean) as MenuItem[];
 
-    const ferrChildren = getFerramentasForTime(time);
-    if (ferrChildren.length === 0) return item;
+    if (!sections.length) {
+      return item;
+    }
 
     return {
       ...item,
-      children: [...(item.children || []), ...ferrChildren],
+      children: [...(item.children || []), ...sections],
     };
   });
 
-  // Inserir menus novos antes de Administrativo Unidade
-  const adminIdx = menu.findIndex(m => m.id === 'admin-unidade');
-  const insertIdx = adminIdx >= 0 ? adminIdx : menu.length;
+  NEW_TOOL_MENUS.forEach(config => {
+    const children = buildToolGroups(config.time);
+    if (!children.length) {
+      return;
+    }
 
-  const newMenus: MenuItem[] = NEW_MENU_TIMES
-    .map(({ time, label, icon }) => {
-      const ferrChildren = getFerramentasForTime(time);
-      if (ferrChildren.length === 0) return null;
-      return {
-        id: `${time.toLowerCase().replace(/ç/g, 'c').replace(/ã/g, 'a')}-menu`,
-        label,
-        icon,
-        children: ferrChildren,
-      };
-    })
-    .filter(Boolean) as MenuItem[];
-
-  menu.splice(insertIdx, 0, ...newMenus);
+    const insertIdx = menu.findIndex(item => item.id === config.insertBeforeId);
+    menu.splice(insertIdx >= 0 ? insertIdx : menu.length, 0, {
+      id: config.id,
+      label: config.label,
+      icon: config.icon,
+      children,
+    });
+  });
 
   return menu;
 }
@@ -469,32 +528,49 @@ export function MundoVivaMenu() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sidebarSearch, setSidebarSearch] = useState('');
 
+  const toolItems = useMemo(
+    () => ferramentasData.filter(item => isToolItem(item)),
+    []
+  );
   const integratedMenu = useMemo(() => buildIntegratedMenu(), []);
+  const quickAccessTools = useMemo(() => {
+    const uniqueByName = new Map<string, Ferramenta>();
+
+    toolItems.forEach(item => {
+      const key = item.nome.toLowerCase();
+      if (!uniqueByName.has(key)) {
+        uniqueByName.set(key, item);
+      }
+    });
+
+    return QUICK_ACCESS_PRIORITY
+      .map(name => uniqueByName.get(name.toLowerCase()))
+      .filter(Boolean) as Ferramenta[];
+  }, [toolItems]);
 
   // Busca na sidebar (filtra ferramentas como resultados diretos)
   const sidebarResults = useMemo(() => {
     if (!sidebarSearch.trim()) return [];
     const term = sidebarSearch.toLowerCase();
-    return ferramentasData.filter(f =>
-      f.link && f.link.startsWith('http') &&
-      (f.nome.toLowerCase().includes(term) ||
-       f.finalidade.toLowerCase().includes(term) ||
-       f.time.toLowerCase().includes(term) ||
-       f.categoria.toLowerCase().includes(term))
+    return toolItems.filter(item =>
+      item.nome.toLowerCase().includes(term) ||
+      item.finalidade.toLowerCase().includes(term) ||
+      item.time.toLowerCase().includes(term) ||
+      item.categoria.toLowerCase().includes(term)
     );
-  }, [sidebarSearch]);
+  }, [sidebarSearch, toolItems]);
 
   // Busca no conteúdo principal
   const searchResults = useMemo(() => {
     if (!searchTerm.trim()) return [];
     const term = searchTerm.toLowerCase();
-    return ferramentasData.filter(f =>
-      f.nome.toLowerCase().includes(term) ||
-      f.finalidade.toLowerCase().includes(term) ||
-      f.time.toLowerCase().includes(term) ||
-      f.categoria.toLowerCase().includes(term)
+    return toolItems.filter(item =>
+      item.nome.toLowerCase().includes(term) ||
+      item.finalidade.toLowerCase().includes(term) ||
+      item.time.toLowerCase().includes(term) ||
+      item.categoria.toLowerCase().includes(term)
     );
-  }, [searchTerm]);
+  }, [searchTerm, toolItems]);
 
   const toggleSidebar = useCallback(() => setSidebarVisible(v => !v), []);
 
@@ -647,7 +723,7 @@ export function MundoVivaMenu() {
                         >
                           <div style={{ fontWeight: 600, fontSize: '13px' }}>{item.nome}</div>
                           <div style={{ fontSize: '10px', color: '#6a8a9d', marginTop: '2px' }}>
-                            {item.time} · {CAT_LABELS[item.categoria] || item.categoria}
+                            {item.time} · {TOOL_CATEGORY_LABELS[item.categoria] || item.categoria}
                             <i className="fa fa-external-link" style={{ marginLeft: '6px', fontSize: '9px', opacity: 0.5 }} />
                           </div>
                         </a>
@@ -720,12 +796,15 @@ export function MundoVivaMenu() {
               <h3 style={{ fontSize: '16px', fontWeight: 400, color: '#555', marginBottom: '16px' }}>
                 <span style={{ color: '#4a7c9f', fontWeight: 700 }}>// </span>ACESSO RÁPIDO
               </h3>
+              <p style={{ fontSize: '13px', color: '#777', margin: '0 0 14px' }}>
+                Proposta enxuta: 48 ferramentas redistribuídas em 5 áreas do menu, sem documentos, dashboards e materiais de apoio.
+              </p>
 
               {/* Busca */}
               <div style={{ marginBottom: '20px', position: 'relative' }}>
                 <input
                   type="text"
-                  placeholder="🔍 Buscar ferramenta, time, categoria..."
+                  placeholder="🔍 Buscar ferramenta, área ou tipo de acesso..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   style={{
@@ -752,7 +831,7 @@ export function MundoVivaMenu() {
                     {searchResults.length} resultado(s) para &quot;<strong>{searchTerm}</strong>&quot;
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '10px' }}>
-                    {searchResults.filter(f => f.link && f.link.startsWith('http')).map((item, idx) => (
+                    {searchResults.map((item, idx) => (
                       <a
                         key={idx}
                         href={item.link}
@@ -776,7 +855,7 @@ export function MundoVivaMenu() {
                         <i className="fa fa-external-link" style={{ color: '#4a7c9f', fontSize: '14px', flexShrink: 0 }} />
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontWeight: 600, fontSize: '13px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nome}</div>
-                          <div style={{ fontSize: '11px', color: '#999' }}>{item.time} · {item.categoria}</div>
+                          <div style={{ fontSize: '11px', color: '#999' }}>{item.time} · {TOOL_CATEGORY_LABELS[item.categoria] || item.categoria}</div>
                         </div>
                       </a>
                     ))}
@@ -792,19 +871,13 @@ export function MundoVivaMenu() {
                   gap: '12px',
                   justifyContent: 'flex-start',
                 }}>
-                  {[
-                    { label: 'Consulta integrante', icon: 'fa-user', href: 'https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_integrante_listartodos' },
-                    { label: 'Consulta do fundo', icon: 'fa-briefcase', href: 'https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_fundo_listar' },
-                    { label: 'Relatório de inadimplentes', icon: 'fa-file-text', href: 'https://mundovivaextranet.vivaeventos.com.br/fundo/relatorio_integrantes_inadimplentes' },
-                    { label: 'Relatório de Títulos Pagos', icon: 'fa-file', href: 'https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_viva_boleto_listar' },
-                    { label: 'Requisição de pagamento', icon: 'fa-money', href: 'https://mundovivaextranet.vivaeventos.com.br/#!/aprimorar_requisicao_pagamento_listar' },
-                    { label: 'Central de Dashboards', icon: 'fa-dashboard', href: '/' },
-                  ].map((btn, idx) => (
+                  {quickAccessTools.map((tool, idx) => (
                     <a
                       key={idx}
-                      href={btn.href}
-                      target={btn.href.startsWith('http') ? '_blank' : '_self'}
-                      rel={btn.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      href={tool.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={tool.finalidade}
                       style={{
                         width: '120px',
                         padding: '20px 10px',
@@ -824,39 +897,31 @@ export function MundoVivaMenu() {
                       onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#3d7a8c'; }}
                       onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#4a90a4'; }}
                     >
-                      <i className={`fa ${btn.icon}`} style={{ fontSize: '28px' }} />
-                      <span>{btn.label}</span>
+                      <i className={`fa ${QUICK_ACCESS_ICONS[tool.nome] || 'fa-external-link'}`} style={{ fontSize: '28px' }} />
+                      <span>{tool.nome}</span>
                     </a>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* ===== FERRAMENTAS POR TIME (cards resumidos) ===== */}
+            {/* ===== FERRAMENTAS POR ÁREA (cards resumidos) ===== */}
             {!searchTerm.trim() && (
               <div style={{ margin: '0 20px 20px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: 400, color: '#555', marginBottom: '16px' }}>
-                  <span style={{ color: '#FF8537', fontWeight: 700 }}>// </span>FERRAMENTAS POR TIME
+                  <span style={{ color: '#FF8537', fontWeight: 700 }}>// </span>FERRAMENTAS POR ÁREA
                 </h3>
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
                   gap: '14px',
                 }}>
-                  {[
-                    { time: 'VENDAS', label: 'Vendas', icon: 'fa-rocket', color: '#e74c3c' },
-                    { time: 'RELACIONAMENTO', label: 'Relacionamento', icon: 'fa-handshake-o', color: '#3498db' },
-                    { time: 'ATENDIMENTO', label: 'Atendimento', icon: 'fa-phone', color: '#2ecc71' },
-                    { time: 'PRODUÇÃO', label: 'Produção', icon: 'fa-calendar', color: '#9b59b6' },
-                    { time: 'PERFORMANCE', label: 'Performance', icon: 'fa-line-chart', color: '#f39c12' },
-                    { time: 'GP', label: 'Gestão de Pessoas', icon: 'fa-group', color: '#1abc9c' },
-                    { time: 'ADMINISTRATIVO', label: 'Administrativo', icon: 'fa-briefcase', color: '#34495e' },
-                  ].map(t => {
-                    const count = ferramentasData.filter(f => f.time === t.time).length;
-                    const dashCount = ferramentasData.filter(f => f.time === t.time && f.categoria === 'DASHBOARDS').length;
+                  {AREA_CARDS.map(area => {
+                    const count = toolItems.filter(item => area.times.includes(item.time)).length;
+                    const systemCount = toolItems.filter(item => area.times.includes(item.time) && item.categoria === 'FERRAMENTAS (SISTEMA)').length;
                     return (
                       <div
-                        key={t.time}
+                        key={area.id}
                         style={{
                           backgroundColor: '#fff',
                           borderRadius: '4px',
@@ -866,18 +931,18 @@ export function MundoVivaMenu() {
                           transition: 'all 0.2s',
                         }}
                         onClick={() => { /* scroll to ferramentas section */ }}
-                        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; e.currentTarget.style.borderColor = t.color; }}
+                        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; e.currentTarget.style.borderColor = area.color; }}
                         onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e0e0e0'; }}
                       >
-                        <div style={{ height: '4px', backgroundColor: t.color }} />
+                        <div style={{ height: '4px', backgroundColor: area.color }} />
                         <div style={{ padding: '16px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                            <i className={`fa ${t.icon}`} style={{ fontSize: '20px', color: t.color }} />
-                            <span style={{ fontWeight: 700, fontSize: '15px', color: '#333' }}>{t.label}</span>
+                            <i className={`fa ${area.icon}`} style={{ fontSize: '20px', color: area.color }} />
+                            <span style={{ fontWeight: 700, fontSize: '15px', color: '#333' }}>{area.label}</span>
                           </div>
                           <div style={{ display: 'flex', gap: '12px', fontSize: '12px', color: '#888' }}>
                             <span><strong style={{ color: '#333' }}>{count}</strong> ferramentas</span>
-                            {dashCount > 0 && <span><strong style={{ color: t.color }}>{dashCount}</strong> dashboards</span>}
+                            {systemCount > 0 && <span><strong style={{ color: area.color }}>{systemCount}</strong> sistemas</span>}
                           </div>
                         </div>
                       </div>
