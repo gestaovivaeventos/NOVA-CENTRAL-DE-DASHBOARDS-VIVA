@@ -25,6 +25,8 @@ export interface FundoFee {
   dataBaile?: string;         // DATA DO BAILE (Coluna I)
   percentualAtingMac?: number; // % ATINGIMENTO MAC (Coluna T)
   situacao?: string;          // SITUAÇÃO (Coluna U)
+  feeInicialV?: number;       // FEE INICIAL (Coluna V)
+  feeReplanejado?: number;    // FEE REPLANEJADO (Coluna W)
   // Legado - manter para compatibilidade
   feeRecebido?: number;        
   feeDisponivelAntecipacao?: number;
@@ -47,6 +49,56 @@ const formatarMoeda = (valor: number): string => {
 const formatarPercentual = (valor: number): string => {
   return `${valor.toFixed(2)}%`;
 };
+
+function FeeTooltip({ feeInicialV, feeReplanejado, children }: { feeInicialV?: number; feeReplanejado?: number; children: React.ReactNode }) {
+  const [show, setShow] = React.useState(false);
+  return (
+    <div
+      style={{ position: 'relative', display: 'inline-block', cursor: 'help' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div style={{
+          position: 'absolute',
+          bottom: 'calc(100% + 8px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#1a1d24',
+          border: '1px solid #374151',
+          borderRadius: '8px',
+          padding: '10px 14px',
+          zIndex: 100,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+          pointerEvents: 'none',
+        }}>
+          <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Composição do FEE</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+              <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>FEE Inicial</span>
+              <span style={{ color: feeInicialV ? '#f1f5f9' : '#4b5563', fontSize: '0.75rem', fontWeight: 600 }}>{feeInicialV ? formatarMoeda(feeInicialV) : '—'}</span>
+            </div>
+            <div style={{ borderTop: '1px solid #2d3748', paddingTop: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+              <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>FEE Replanejado</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: (feeReplanejado && feeReplanejado > 0) ? '#fb923c' : '#4b5563' }}>
+                {(feeReplanejado && feeReplanejado > 0) ? formatarMoeda(feeReplanejado) : '—'}
+              </span>
+            </div>
+          </div>
+          <div style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            width: 0, height: 0,
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderTop: '6px solid #374151',
+          }} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 type OrdenacaoCampo = 'nome' | 'feeTotal' | 'percentualRecebido' | 'faltaReceber' | 'saldoFundo' | 'status' | 'dataCadastro' | 'dataBaile' | 'vlrAntecipacao' | 'antecRecebida' | 'faltaRecAntec' | 'saqueDisponivel';
 type OrdenacaoDirecao = 'asc' | 'desc';
@@ -876,7 +928,9 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                             </td>
                             {/* VALOR FEE */}
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#F8F9FA', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                              {formatarMoeda(fundo.feeTotal)}
+                              <FeeTooltip feeInicialV={fundo.feeInicialV} feeReplanejado={fundo.feeReplanejado}>
+                                {formatarMoeda(fundo.feeTotal)}
+                              </FeeTooltip>
                             </td>
                             {/* FEE RECEBIDO */}
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#34d399', fontWeight: 500, whiteSpace: 'nowrap' }}>
