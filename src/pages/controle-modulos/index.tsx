@@ -10,8 +10,7 @@ import Head from 'next/head';
 import { RefreshCw, AlertTriangle, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal } from '@/modules/controle-modulos/components';
-import { useControleModulos } from '@/modules/controle-modulos/hooks';
-import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
+import { useControleModulos, useControleModulosAccess } from '@/modules/controle-modulos/hooks';
 import type { ModuloConfig } from '@/modules/controle-modulos/types';
 
 const SIDEBAR_WIDTH_EXPANDED = 260;
@@ -21,23 +20,19 @@ export default function ControleModulosPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { modulos, loading, error, refetch, updateModulo } = useControleModulos();
+  const { hasAccess: isAuthorized, loading: accessLoading } = useControleModulosAccess(user?.username, user?.accessLevel);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingModulo, setEditingModulo] = useState<ModuloConfig | null>(null);
-
-  const isAuthorized = useMemo(() => {
-    if (!user) return false;
-    return AUTHORIZED_USERNAMES.includes(user.username);
-  }, [user]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    if (!authLoading && isAuthenticated && !isAuthorized) {
+    if (!authLoading && !accessLoading && isAuthenticated && !isAuthorized) {
       router.push('/');
     }
-  }, [authLoading, isAuthenticated, isAuthorized, router]);
+  }, [authLoading, accessLoading, isAuthenticated, isAuthorized, router]);
 
   // Agrupar módulos por grupo
   const gruposMap = useMemo(() => {
@@ -59,7 +54,7 @@ export default function ControleModulosPage() {
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
   // Loading
-  if (authLoading) {
+  if (authLoading || accessLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212529' }}>
         <div className="text-center">

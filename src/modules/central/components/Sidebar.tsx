@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Search, X } from 'lucide-react';
 import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
 import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
+import { useControleModulosAccess } from '@/modules/controle-modulos/hooks';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,7 +30,7 @@ interface DashboardGroup {
 }
 
 // Grupos de dashboards - filtrado por nível de acesso
-const getDashboardGroups = (accessLevel: number, username?: string): DashboardGroup[] => {
+const getDashboardGroups = (accessLevel: number, username?: string, hasControleModulosAccess = false): DashboardGroup[] => {
   // Franqueado (accessLevel = 0) tem acesso ao PEX e Gestão de Caixa
   if (accessLevel === 0) {
     // Nota: fluxo-projetado será liberado futuramente (regras internas já preparadas)
@@ -70,15 +71,19 @@ const getDashboardGroups = (accessLevel: number, username?: string): DashboardGr
     },
   ];
 
-  // Branches: visível apenas para 4 usuários específicos
+  // Desenvolvimento: branches (hardcoded) + controle-modulos (dinâmico da planilha)
+  const devDashboards: Dashboard[] = [];
   if (username && AUTHORIZED_USERNAMES.includes(username)) {
+    devDashboards.push({ id: 'branches', label: 'Gerenciar Branches', path: '/branches', icon: 'branch' });
+  }
+  if (hasControleModulosAccess) {
+    devDashboards.push({ id: 'controle-modulos', label: 'Controle de Módulos', path: '/controle-modulos', icon: 'config' });
+  }
+  if (devDashboards.length > 0) {
     groups.push({
       id: 'desenvolvimento',
       name: 'Desenvolvimento',
-      dashboards: [
-        { id: 'branches', label: 'Gerenciar Branches', path: '/branches', icon: 'branch' },
-        { id: 'controle-modulos', label: 'Controle de Módulos', path: '/controle-modulos', icon: 'config' },
-      ],
+      dashboards: devDashboards,
     });
   }
 
@@ -369,8 +374,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
+  const { hasAccess: hasControleModulosAccess } = useControleModulosAccess(user?.username, user?.accessLevel);
 
-  const dashboardGroups = getDashboardGroups(user?.accessLevel || 0, user?.username);
+  const dashboardGroups = getDashboardGroups(user?.accessLevel || 0, user?.username, hasControleModulosAccess);
 
   // Carregar favoritos do localStorage
   useEffect(() => {

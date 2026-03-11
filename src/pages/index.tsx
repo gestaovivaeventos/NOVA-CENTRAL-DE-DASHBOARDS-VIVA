@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
 import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
+import { useControleModulosAccess } from '@/modules/controle-modulos/hooks';
 
 // Função para pré-carregar dados de vendas em background
 const prefetchVendasData = () => {
@@ -46,7 +47,7 @@ const allDashboards: Dashboard[] = [
 ];
 
 // Dashboards permitidos por nível de acesso e usuário
-const getDashboardsPermitidos = (accessLevel: number, username?: string): string[] => {
+const getDashboardsPermitidos = (accessLevel: number, username?: string, hasControleModulosAccess = false): string[] => {
   // Franqueado (accessLevel = 0) tem acesso apenas ao PEX
   // Nota: fluxo-projetado será liberado futuramente (regras internas já preparadas)
   if (accessLevel === 0) {
@@ -63,9 +64,9 @@ const getDashboardsPermitidos = (accessLevel: number, username?: string): string
       if (d.id === 'projetos') {
         return username && PROJETOS_AUTHORIZED_USERNAMES.includes(username);
       }
-      // Controle de Módulos: mesmos usuários autorizados no branches
+      // Controle de Módulos: dinâmico, vem da planilha
       if (d.id === 'controle-modulos') {
-        return username && AUTHORIZED_USERNAMES.includes(username);
+        return hasControleModulosAccess;
       }
       return true;
     })
@@ -216,6 +217,7 @@ export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [favorites, setFavorites] = useState<string[]>([]);
+  const { hasAccess: hasControleModulosAccess } = useControleModulosAccess(user?.username, user?.accessLevel);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
@@ -272,11 +274,11 @@ export default function HomePage() {
 
   // Dashboards favoritos (filtrados pelo nível de acesso e username do usuário)
   const favoriteDashboards = useMemo(() => {
-    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0, user?.username);
+    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0, user?.username, hasControleModulosAccess);
     return allDashboards.filter(d => 
       favorites.includes(d.id) && dashboardsPermitidos.includes(d.id)
     );
-  }, [favorites, user?.accessLevel, user?.username]);
+  }, [favorites, user?.accessLevel, user?.username, hasControleModulosAccess]);
 
   // Mostrar loading enquanto verifica auth
   if (isLoading || !isAuthenticated) {
