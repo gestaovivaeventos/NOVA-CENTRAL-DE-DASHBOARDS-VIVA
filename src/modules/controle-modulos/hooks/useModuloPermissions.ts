@@ -17,6 +17,7 @@ interface ModuloPermission {
   ativo: boolean;
   grupo: string;
   ordem: number;
+  icone: string;
 }
 
 interface UseModuloPermissionsResult {
@@ -83,6 +84,7 @@ export function useModuloPermissions(
             ativo: m.ativo,
             grupo: m.grupo,
             ordem: m.ordem,
+            icone: m.icone || 'dashboard',
           })
         );
         setModulos(mods);

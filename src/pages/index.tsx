@@ -30,20 +30,6 @@ interface Dashboard {
   icon: string;
 }
 
-const allDashboards: Dashboard[] = [
-  { id: 'kpi', name: 'Dashboard KPIs', description: 'Indicadores de Performance', path: '/kpi', icon: 'chart' },
-  { id: 'okr', name: 'Dashboard OKRs', description: 'Objetivos e Resultados-Chave', path: '/okr', icon: 'target' },
-  { id: 'gerencial', name: 'Painel Gerencial', description: 'Visão consolidada de KPIs e OKRs', path: '/gerencial', icon: 'trophy' },
-  { id: 'gestao-rede', name: 'Gestão Rede', description: 'Gestão da rede de franquias', path: '/gestao-rede', icon: 'dashboard' },
-  { id: 'vendas', name: 'Dashboard Vendas', description: 'Visão geral de vendas', path: '/vendas', icon: 'money' },
-  { id: 'pex', name: 'PEX', description: 'Visão geral do PEX', path: '/pex', icon: 'dashboard' },
-  { id: 'carteira', name: 'Dashboard Carteira', description: 'Análise de fundos e franquias', path: '/carteira', icon: 'wallet' },
-  { id: 'fluxo-projetado', name: 'Gestão de Caixa', description: 'Projeção de fluxo de caixa', path: '/fluxo-projetado/realizado', icon: 'fluxo' },
-  { id: 'branches', name: 'Gerenciar Branches', description: 'Gerenciamento de branches', path: '/branches', icon: 'branch' },
-  { id: 'projetos', name: 'Painel de Projetos', description: 'Gerenciamento de projetos', path: '/projetos', icon: 'projetos' },
-  { id: 'controle-modulos', name: 'Controle de Módulos', description: 'Gerenciar permissões de módulos', path: '/controle-modulos', icon: 'config' },
-];
-
 // Ícones SVG inline (mesmos da Sidebar)
 const dashboardIcons: Record<string, JSX.Element> = {
   chart: (
@@ -187,7 +173,20 @@ export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [favorites, setFavorites] = useState<string[]>([]);
-  const { allowedIds } = useModuloPermissions(user?.username, user?.accessLevel);
+  const { allowedIds, modulos } = useModuloPermissions(user?.username, user?.accessLevel);
+
+  // Construir lista de dashboards dinamicamente a partir da planilha
+  const allDashboards: Dashboard[] = useMemo(() => {
+    return modulos
+      .sort((a, b) => a.ordem - b.ordem)
+      .map(m => ({
+        id: m.moduloId,
+        name: m.moduloNome,
+        description: m.moduloNome,
+        path: m.moduloPath,
+        icon: m.icone || 'dashboard',
+      }));
+  }, [modulos]);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
