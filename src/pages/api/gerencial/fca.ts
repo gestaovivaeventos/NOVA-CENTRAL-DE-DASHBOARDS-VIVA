@@ -15,7 +15,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 
 // ID da planilha do Painel Gerencial
-const GERENCIAL_SPREADSHEET_ID = '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs';
+const GERENCIAL_SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO!;
 
 // Colunas fixas para FCA (conforme estrutura da planilha)
 const FCA_COLUMNS = {

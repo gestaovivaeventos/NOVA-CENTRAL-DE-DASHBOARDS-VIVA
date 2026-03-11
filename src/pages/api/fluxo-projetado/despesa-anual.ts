@@ -8,7 +8,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 
 // ID da planilha de Fluxo Projetado
-const SPREADSHEET_ID = '1ymgmW6ISadb8xKBpcNDXTnGr0buoOFVszSZmxaOxKBQ';
+const SPREADSHEET_ID = process.env.PLANILHA_FLUXO_PROJETADO_ID!;
 const SHEET_NAME = 'PARAMETROS PAINEL';
 
 // Coluna AK = índice 36 (A=0, B=1, ..., AK=36)

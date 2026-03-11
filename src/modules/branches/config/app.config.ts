@@ -3,7 +3,7 @@
  */
 
 // ========== PLANILHA ==========
-export const BRANCHES_SPREADSHEET_ID = process.env.BRANCHES_SPREADSHEET_ID || '1zjb2Z9pvNeJ2I29LPYCT5OVhKNonzze098QrmDH1YLs';
+export const BRANCHES_SPREADSHEET_ID = process.env.BRANCHES_SPREADSHEET_ID || '';
 export const BRANCHES_SHEET_NAME = 'BASE';
 
 // ========== COLUNAS DA PLANILHA ==========

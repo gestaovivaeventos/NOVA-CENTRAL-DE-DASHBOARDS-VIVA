@@ -4,7 +4,7 @@
  * 
  * Uso: node scripts/setup-controle-modulos.js
  * 
- * Requer: GOOGLE_SERVICE_ACCOUNT_BASE64 no .env
+ * Requer: GOOGLE_SERVICE_ACCOUNT_BASE64 e CONTROLE_MODULOS_SPREADSHEET_ID no .env.local
  */
 
 const { google } = require('googleapis');
@@ -25,13 +25,18 @@ envContent.split('\n').forEach(line => {
   }
 });
 
-const SPREADSHEET_ID = '1QSiCHm-kgDTLnwhtJVdsPLD70CbYTexH3WUE5LuDxtE';
-const SHEET_NAME = 'BASE MODULOS';
+const SPREADSHEET_ID = envVars.CONTROLE_MODULOS_SPREADSHEET_ID;
+const SHEET_NAME = envVars.CONTROLE_MODULOS_SHEET_NAME || 'BASE MODULOS';
 
 async function setup() {
   const base64 = envVars.GOOGLE_SERVICE_ACCOUNT_BASE64;
   if (!base64) {
     console.error('❌ GOOGLE_SERVICE_ACCOUNT_BASE64 não encontrado no .env');
+    process.exit(1);
+  }
+
+  if (!SPREADSHEET_ID) {
+    console.error('❌ CONTROLE_MODULOS_SPREADSHEET_ID não encontrado no .env.local');
     process.exit(1);
   }
 

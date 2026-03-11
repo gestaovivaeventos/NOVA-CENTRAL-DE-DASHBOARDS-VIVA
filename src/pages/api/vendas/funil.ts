@@ -25,7 +25,7 @@ export default async function handler(
     const rows = await cache.getOrFetch(
       CACHE_KEY,
       async () => {
-        const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_FUNIL || '1t67xdPLHB34pZw8WzBUphGRqFye0ZyrTLvDhC7jbVEc';
+        const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_FUNIL;
         const SHEET_NAME = process.env.NEXT_PUBLIC_SHEET_FUNIL || 'base';
         const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 

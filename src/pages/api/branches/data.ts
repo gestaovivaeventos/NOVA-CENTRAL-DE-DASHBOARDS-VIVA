@@ -7,8 +7,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getExternalSheetData } from '@/lib/sheets-client';
 import cache from '@/lib/cache';
 
-const SPREADSHEET_ID = '1zjb2Z9pvNeJ2I29LPYCT5OVhKNonzze098QrmDH1YLs';
-const SHEET_NAME = 'BASE';
+const SPREADSHEET_ID = process.env.BRANCHES_SPREADSHEET_ID!;
+const SHEET_NAME = process.env.BRANCHES_SHEET_NAME || 'BASE';
 const CACHE_KEY = 'branches:data';
 const CACHE_TTL = 30 * 1000;
 

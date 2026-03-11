@@ -9,7 +9,7 @@ import { google } from 'googleapis';
 import cache from '@/lib/cache';
 
 // ID da planilha de Fluxo Projetado
-const SPREADSHEET_ID = '1ymgmW6ISadb8xKBpcNDXTnGr0buoOFVszSZmxaOxKBQ';
+const SPREADSHEET_ID = process.env.PLANILHA_FLUXO_PROJETADO_ID!;
 const SHEET_PADRAO = 'PARAMETROS PAINEL';
 const SHEET_CALCULADORA = 'PARAMETROS - CALCULADORA FRANQUEADO';
 const CACHE_KEY_CALCULADORA = 'fluxo-projetado:parametros-calculadora';

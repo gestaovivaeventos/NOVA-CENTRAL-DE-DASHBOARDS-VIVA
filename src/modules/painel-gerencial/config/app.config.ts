@@ -3,9 +3,9 @@
  */
 
 export const API_CONFIG = {
-  SPREADSHEET_ID: '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs',
-  PROJECTS_SPREADSHEET_ID: '182mM7NKo8IxLe1QKP7kSvAP-pNTZQbWPEaLje7oE7s4',
-  API_KEY: 'AIzaSyBuGRH91CnRuDtN5RGsb5DvHEfhTxJnWSs',
+  SPREADSHEET_ID: process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO || '',
+  PROJECTS_SPREADSHEET_ID: process.env.PROJETOS_SPREADSHEET_ID || '',
+  API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
   SHEETS: {
     KPIS: 'KPIS!A:AD', // Inclui colunas FCA até REALIZADO
     OKRS: 'OKRS VC',
@@ -16,7 +16,7 @@ export const API_CONFIG = {
 
 export const gerencialConfig = {
   // ID da planilha
-  spreadsheetId: '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs',
+  spreadsheetId: process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO || '',
   
   // Abas da planilha
   sheets: {
