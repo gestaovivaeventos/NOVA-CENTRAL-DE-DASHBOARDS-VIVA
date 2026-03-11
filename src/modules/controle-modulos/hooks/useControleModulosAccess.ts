@@ -24,6 +24,10 @@ export function useControleModulosAccess(
       return;
     }
 
+    // IMPORTANTE: resetar loading a cada execução para evitar estado stale
+    setHasAccess(false);
+    setLoading(true);
+
     let cancelled = false;
 
     fetch('/api/controle-modulos/data')

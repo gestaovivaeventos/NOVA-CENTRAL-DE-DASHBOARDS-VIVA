@@ -10,7 +10,7 @@ import Head from 'next/head';
 import { RefreshCw, AlertTriangle, Settings } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal } from '@/modules/controle-modulos/components';
-import { useControleModulos, useControleModulosAccess } from '@/modules/controle-modulos/hooks';
+import { useControleModulos } from '@/modules/controle-modulos/hooks';
 import type { ModuloConfig } from '@/modules/controle-modulos/types';
 
 const SIDEBAR_WIDTH_EXPANDED = 260;
@@ -20,19 +20,29 @@ export default function ControleModulosPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { modulos, loading, error, refetch, updateModulo } = useControleModulos();
-  const { hasAccess: isAuthorized, loading: accessLoading } = useControleModulosAccess(user?.username, user?.accessLevel);
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingModulo, setEditingModulo] = useState<ModuloConfig | null>(null);
 
+  // Derivar autorização diretamente dos dados já carregados (single source of truth)
+  const isAuthorized = useMemo(() => {
+    if (!user || modulos.length === 0) return null; // ainda carregando
+    const cm = modulos.find(m => m.moduloId === 'controle-modulos');
+    if (!cm || !cm.ativo) return false;
+    if ((user.accessLevel ?? 0) < cm.nvlAcesso) return false;
+    if (cm.usuariosPermitidos.length > 0 && !cm.usuariosPermitidos.includes(user.username)) return false;
+    return true;
+  }, [user, modulos]);
+
+  // Redirecionar se não autenticado ou sem permissão
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    if (!authLoading && !accessLoading && isAuthenticated && !isAuthorized) {
+    if (!authLoading && !loading && isAuthenticated && isAuthorized === false) {
       router.push('/');
     }
-  }, [authLoading, accessLoading, isAuthenticated, isAuthorized, router]);
+  }, [authLoading, loading, isAuthenticated, isAuthorized, router]);
 
   // Agrupar módulos por grupo
   const gruposMap = useMemo(() => {
@@ -53,8 +63,8 @@ export default function ControleModulosPage() {
 
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
-  // Loading
-  if (authLoading || accessLoading) {
+  // Loading (auth OU dados dos módulos OU autorização ainda não determinada)
+  if (authLoading || loading || isAuthorized === null) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212529' }}>
         <div className="text-center">
