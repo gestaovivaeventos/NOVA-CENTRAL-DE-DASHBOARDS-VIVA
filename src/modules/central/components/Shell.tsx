@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
@@ -10,15 +11,39 @@ interface ShellProps {
   children: React.ReactNode;
 }
 
+/** Extrai o moduleId a partir do pathname (ex: /vendas/metas → vendas) */
+function getModuleId(pathname: string): string | null {
+  const moduleRoutes = [
+    'pex', 'vendas', 'kpi', 'okr', 'gerencial', 'carteira',
+    'gestao-rede', 'fluxo-projetado', 'projetos', 'branches', 'controle-modulos',
+  ];
+  for (const mod of moduleRoutes) {
+    if (pathname === `/${mod}` || pathname.startsWith(`/${mod}/`)) {
+      return mod;
+    }
+  }
+  return null;
+}
+
 export function Shell({ children }: ShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
 
   // Fechar sidebar ao mudar de rota (mobile)
   useEffect(() => {
     setSidebarOpen(false);
   }, [router.pathname]);
+
+  // Identificar módulo da rota atual
+  const moduleId = useMemo(() => getModuleId(router.pathname), [router.pathname]);
+
+  // Verificar se o módulo é permitido
+  const moduleAllowed = useMemo(() => {
+    if (!moduleId) return true; // Não é rota de módulo (home, login, etc.)
+    return allowedIds.has(moduleId);
+  }, [moduleId, allowedIds]);
 
   // Loading state
   if (isLoading) {
@@ -44,6 +69,35 @@ export function Shell({ children }: ShellProps) {
   // Página de login e reset-password não usam Shell
   if (router.pathname === '/login' || router.pathname === '/reset-password') {
     return <>{children}</>;
+  }
+
+  // Guard de permissão por módulo: bloqueia renderização até verificar planilha
+  if (moduleId) {
+    // Ainda carregando permissões — mostra spinner
+    if (permissionsLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212529' }}>
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto" style={{ borderColor: '#FF6600', borderTopColor: 'transparent' }} />
+            <p className="mt-4" style={{ color: '#adb5bd' }}>Verificando permissões...</p>
+          </div>
+        </div>
+      );
+    }
+    // Sem acesso — redireciona para home
+    if (!moduleAllowed) {
+      if (typeof window !== 'undefined') {
+        router.replace('/');
+      }
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212529' }}>
+          <div className="text-center">
+            <p className="text-lg" style={{ color: '#FF6600' }}>Acesso não permitido</p>
+            <p className="mt-2" style={{ color: '#adb5bd' }}>Redirecionando...</p>
+          </div>
+        </div>
+      );
+    }
   }
 
   // Páginas do PEX são independentes (layout próprio)
