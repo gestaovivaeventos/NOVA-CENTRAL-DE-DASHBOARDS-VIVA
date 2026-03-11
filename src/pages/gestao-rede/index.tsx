@@ -28,6 +28,7 @@ import {
   Sprout,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import {
   GestaoRedeLayout,
   KPICard,
@@ -49,6 +50,7 @@ import {
 export default function GestaoRedeDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
   
   // Hook para buscar dados reais da API
   const { franquias, isLoading, error, refetch } = useGestaoRede();
@@ -56,15 +58,15 @@ export default function GestaoRedeDashboard() {
   // Hook para buscar indicadores PEX (resultados + metas + vendas VVR)
   const { resultados: indicadoresResultados, metas: indicadoresMetas, vendasVVR: indicadoresVendasVVR, isLoading: indicadoresLoading } = useIndicadoresRede();
   
-  // Verificar autenticação e nível de acesso
+  // Verificar autenticação e permissão do módulo pela planilha
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    if (!authLoading && user && user.accessLevel === 0) {
-      router.push('/pex');
+    if (!authLoading && user && !permissionsLoading && !allowedIds.has('gestao-rede')) {
+      router.push('/');
     }
-  }, [isAuthenticated, authLoading, router, user]);
+  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
 
   // Calcular resumo baseado nos dados
   const resumo = useMemo(() => calcularResumoRede(franquias), [franquias]);

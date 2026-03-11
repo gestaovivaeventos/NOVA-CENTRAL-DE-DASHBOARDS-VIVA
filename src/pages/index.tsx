@@ -5,8 +5,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
-import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
 // Função para pré-carregar dados de vendas em background
 const prefetchVendasData = () => {
@@ -30,43 +29,6 @@ interface Dashboard {
   path: string;
   icon: string;
 }
-
-const allDashboards: Dashboard[] = [
-  { id: 'kpi', name: 'Dashboard KPIs', description: 'Indicadores de Performance', path: '/kpi', icon: 'chart' },
-  { id: 'okr', name: 'Dashboard OKRs', description: 'Objetivos e Resultados-Chave', path: '/okr', icon: 'target' },
-  { id: 'gerencial', name: 'Painel Gerencial', description: 'Visão consolidada de KPIs e OKRs', path: '/gerencial', icon: 'trophy' },
-  { id: 'gestao-rede', name: 'Gestão Rede', description: 'Gestão da rede de franquias', path: '/gestao-rede', icon: 'dashboard' },
-  { id: 'vendas', name: 'Dashboard Vendas', description: 'Visão geral de vendas', path: '/vendas', icon: 'money' },
-  { id: 'pex', name: 'PEX', description: 'Visão geral do PEX', path: '/pex', icon: 'dashboard' },
-  { id: 'carteira', name: 'Dashboard Carteira', description: 'Análise de fundos e franquias', path: '/carteira', icon: 'wallet' },
-  { id: 'fluxo-projetado', name: 'Gestão de Caixa', description: 'Projeção de fluxo de caixa', path: '/fluxo-projetado/realizado', icon: 'fluxo' },
-  { id: 'branches', name: 'Gerenciar Branches', description: 'Gerenciamento de branches', path: '/branches', icon: 'branch' },
-  { id: 'projetos', name: 'Painel de Projetos', description: 'Gerenciamento de projetos', path: '/projetos', icon: 'projetos' },
-];
-
-// Dashboards permitidos por nível de acesso e usuário
-const getDashboardsPermitidos = (accessLevel: number, username?: string): string[] => {
-  // Franqueado (accessLevel = 0) tem acesso apenas ao PEX
-  // Nota: fluxo-projetado será liberado futuramente (regras internas já preparadas)
-  if (accessLevel === 0) {
-    return ['pex'];
-  }
-  // Franqueadora (accessLevel >= 1) tem acesso a todos, exceto branches e projetos (apenas autorizados)
-  const dashboards = allDashboards
-    .filter(d => {
-      // Branches: apenas usuários autorizados
-      if (d.id === 'branches') {
-        return username && AUTHORIZED_USERNAMES.includes(username);
-      }
-      // Projetos: apenas usuários autorizados durante validação
-      if (d.id === 'projetos') {
-        return username && PROJETOS_AUTHORIZED_USERNAMES.includes(username);
-      }
-      return true;
-    })
-    .map(d => d.id);
-  return dashboards;
-};
 
 // Ícones SVG inline (mesmos da Sidebar)
 const dashboardIcons: Record<string, JSX.Element> = {
@@ -116,6 +78,11 @@ const dashboardIcons: Record<string, JSX.Element> = {
   projetos: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    </svg>
+  ),
+  config: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
     </svg>
   ),
 };
@@ -206,6 +173,20 @@ export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [favorites, setFavorites] = useState<string[]>([]);
+  const { allowedIds, modulos } = useModuloPermissions(user?.username, user?.accessLevel);
+
+  // Construir lista de dashboards dinamicamente a partir da planilha
+  const allDashboards: Dashboard[] = useMemo(() => {
+    return modulos
+      .sort((a, b) => a.ordem - b.ordem)
+      .map(m => ({
+        id: m.moduloId,
+        name: m.moduloNome,
+        description: m.moduloNome,
+        path: m.moduloPath,
+        icon: m.icone || 'dashboard',
+      }));
+  }, [modulos]);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
@@ -260,13 +241,12 @@ export default function HomePage() {
     }
   }, [isAuthenticated, isLoading]);
 
-  // Dashboards favoritos (filtrados pelo nível de acesso e username do usuário)
+  // Dashboards favoritos (filtrados pela planilha BASE MODULOS)
   const favoriteDashboards = useMemo(() => {
-    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0, user?.username);
     return allDashboards.filter(d => 
-      favorites.includes(d.id) && dashboardsPermitidos.includes(d.id)
+      favorites.includes(d.id) && allowedIds.has(d.id)
     );
-  }, [favorites, user?.accessLevel, user?.username]);
+  }, [favorites, allowedIds]);
 
   // Mostrar loading enquanto verifica auth
   if (isLoading || !isAuthenticated) {
