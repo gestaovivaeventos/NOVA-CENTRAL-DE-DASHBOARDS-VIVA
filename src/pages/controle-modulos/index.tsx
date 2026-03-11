@@ -7,7 +7,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { RefreshCw, AlertTriangle, Settings } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Settings, ChevronDown, ChevronRight, Edit2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
@@ -23,6 +23,7 @@ export default function ControleModulosPage() {
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingModulo, setEditingModulo] = useState<ModuloConfig | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Derivar autorização diretamente dos dados já carregados (single source of truth)
   const isAuthorized = useMemo(() => {
@@ -55,6 +56,22 @@ export default function ControleModulosPage() {
     });
     return map;
   }, [modulos]);
+
+  // Expandir todos os grupos quando carregar pela primeira vez
+  useEffect(() => {
+    if (gruposMap.size > 0 && expandedGroups.size === 0) {
+      setExpandedGroups(new Set(gruposMap.keys()));
+    }
+  }, [gruposMap]);
+
+  const toggleGroup = useCallback((grupo: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      if (next.has(grupo)) next.delete(grupo);
+      else next.add(grupo);
+      return next;
+    });
+  }, []);
 
   const handleSaveField = useCallback(async (moduloId: string, field: string, value: string) => {
     const ok = await updateModulo(moduloId, field, value);
@@ -169,62 +186,222 @@ export default function ControleModulosPage() {
               </div>
             </div>
           ) : (
-            Array.from(gruposMap.entries()).map(([grupo, mods]) => (
-              <div key={grupo} style={{ marginBottom: 32 }}>
-                {/* Grupo header */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    marginBottom: 16,
-                    paddingBottom: 8,
-                    borderBottom: '1px solid #333',
-                  }}
-                >
-                  <Settings size={16} color="#FF6600" />
-                  <h3
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #333' }}>
+              {/* Table header */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '2fr 2fr 120px 90px 140px 70px 50px',
+                  gap: 0,
+                  backgroundColor: '#1a1d21',
+                  padding: '10px 16px',
+                  borderBottom: '1px solid #333',
+                }}
+              >
+                {['Módulo', 'Path', 'Nível', 'Status', 'Usuários', 'Ordem', ''].map((col) => (
+                  <span
+                    key={col}
                     style={{
-                      color: '#F8F9FA',
-                      fontFamily: "'Poppins', sans-serif",
-                      fontWeight: 700,
-                      fontSize: '1rem',
-                      margin: 0,
+                      color: '#6c757d',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontSize: '0.7rem',
+                      fontWeight: 600,
                       textTransform: 'uppercase',
                       letterSpacing: '0.05em',
                     }}
                   >
-                    {grupo}
-                  </h3>
-                  <span
-                    style={{
-                      color: '#6c757d',
-                      fontSize: '0.75rem',
-                      fontFamily: 'Poppins, sans-serif',
-                    }}
-                  >
-                    ({mods.length})
+                    {col}
                   </span>
-                </div>
-
-                {/* Cards grid */}
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                    gap: 16,
-                  }}
-                >
-                  {mods.map(mod => (
-                    <ModuloCard
-                      key={mod.moduloId}
-                      modulo={mod}
-                      onClick={() => setEditingModulo(mod)}
-                    />
-                  ))}
-                </div>
+                ))}
               </div>
-            ))
+
+              {/* Groups */}
+              {Array.from(gruposMap.entries()).map(([grupo, mods]) => {
+                const isExpanded = expandedGroups.has(grupo);
+                return (
+                  <div key={grupo}>
+                    {/* Group header row */}
+                    <div
+                      onClick={() => toggleGroup(grupo)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '10px 16px',
+                        backgroundColor: '#262a30',
+                        borderBottom: '1px solid #333',
+                        cursor: 'pointer',
+                        userSelect: 'none',
+                        transition: 'background-color 0.15s',
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d3239'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#262a30'; }}
+                    >
+                      {isExpanded ? (
+                        <ChevronDown size={16} color="#FF6600" />
+                      ) : (
+                        <ChevronRight size={16} color="#FF6600" />
+                      )}
+                      <Settings size={14} color="#FF6600" />
+                      <span
+                        style={{
+                          color: '#F8F9FA',
+                          fontFamily: "'Poppins', sans-serif",
+                          fontWeight: 700,
+                          fontSize: '0.85rem',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        {grupo}
+                      </span>
+                      <span
+                        style={{
+                          color: '#6c757d',
+                          fontSize: '0.72rem',
+                          fontFamily: 'Poppins, sans-serif',
+                        }}
+                      >
+                        ({mods.length})
+                      </span>
+                    </div>
+
+                    {/* Module rows */}
+                    {isExpanded && mods.map((mod) => {
+                      const nivelColor = mod.nvlAcesso === 0 ? '#10b981' : '#f59e0b';
+                      const nivelLabel = mod.nvlAcesso === 0 ? 'Rede' : 'Franqueadora';
+                      const hasUsers = mod.usuariosPermitidos.length > 0;
+
+                      return (
+                        <div
+                          key={mod.moduloId}
+                          onClick={() => setEditingModulo(mod)}
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 2fr 120px 90px 140px 70px 50px',
+                            gap: 0,
+                            padding: '10px 16px',
+                            backgroundColor: '#212529',
+                            borderBottom: '1px solid #2a2e33',
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s',
+                            opacity: mod.ativo ? 1 : 0.5,
+                            alignItems: 'center',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d3239'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#212529'; }}
+                        >
+                          {/* Nome */}
+                          <span
+                            style={{
+                              color: '#F8F9FA',
+                              fontFamily: "'Poppins', sans-serif",
+                              fontWeight: 600,
+                              fontSize: '0.85rem',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {mod.moduloNome}
+                          </span>
+
+                          {/* Path */}
+                          <span
+                            style={{
+                              color: '#6c757d',
+                              fontSize: '0.75rem',
+                              fontFamily: "'Fira Code', monospace",
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {mod.moduloPath}
+                          </span>
+
+                          {/* Nível */}
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              fontSize: '0.68rem',
+                              fontWeight: 600,
+                              fontFamily: 'Poppins, sans-serif',
+                              color: nivelColor,
+                              backgroundColor: `${nivelColor}15`,
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              border: `1px solid ${nivelColor}30`,
+                              width: 'fit-content',
+                            }}
+                          >
+                            {mod.nvlAcesso} — {nivelLabel}
+                          </span>
+
+                          {/* Status */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div
+                              style={{
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                backgroundColor: mod.ativo ? '#10b981' : '#ef4444',
+                              }}
+                            />
+                            <span
+                              style={{
+                                color: mod.ativo ? '#10b981' : '#ef4444',
+                                fontSize: '0.72rem',
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 500,
+                              }}
+                            >
+                              {mod.ativo ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </div>
+
+                          {/* Usuários */}
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              fontSize: '0.7rem',
+                              fontWeight: 500,
+                              fontFamily: 'Poppins, sans-serif',
+                              color: hasUsers ? '#3b82f6' : '#6c757d',
+                              backgroundColor: hasUsers ? 'rgba(59,130,246,0.1)' : 'rgba(107,114,128,0.1)',
+                              padding: '2px 8px',
+                              borderRadius: 6,
+                              width: 'fit-content',
+                            }}
+                          >
+                            {hasUsers ? `${mod.usuariosPermitidos.length} usuários` : 'Todos'}
+                          </span>
+
+                          {/* Ordem */}
+                          <span
+                            style={{
+                              color: '#6c757d',
+                              fontSize: '0.72rem',
+                              fontFamily: 'Poppins, sans-serif',
+                            }}
+                          >
+                            #{mod.ordem}
+                          </span>
+
+                          {/* Edit icon */}
+                          <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <Edit2 size={14} color="#6c757d" />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           )}
         </main>
       </div>
@@ -237,133 +414,5 @@ export default function ControleModulosPage() {
         onSave={handleSaveField}
       />
     </>
-  );
-}
-
-// ======= ModuloCard inline component =======
-function ModuloCard({ modulo, onClick }: { modulo: ModuloConfig; onClick: () => void }) {
-  const nivelColor = modulo.nvlAcesso === 0 ? '#10b981' : '#f59e0b';
-  const nivelLabel = modulo.nvlAcesso === 0 ? 'Rede' : 'Franqueadora';
-  const statusColor = modulo.ativo ? '#10b981' : '#ef4444';
-  const hasUsers = modulo.usuariosPermitidos.length > 0;
-
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        backgroundColor: '#2d3239',
-        border: `1px solid ${modulo.ativo ? '#333' : '#ef444450'}`,
-        borderRadius: 12,
-        padding: '16px 20px',
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        opacity: modulo.ativo ? 1 : 0.6,
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = '#FF6600';
-        e.currentTarget.style.boxShadow = '0 4px 16px rgba(255,102,0,0.15)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = modulo.ativo ? '#333' : '#ef444450';
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      {/* Top row: nome + status */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-        <h4
-          style={{
-            color: '#F8F9FA',
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 600,
-            fontSize: '0.95rem',
-            margin: 0,
-            flex: 1,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {modulo.moduloNome}
-        </h4>
-        <div
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: '50%',
-            backgroundColor: statusColor,
-            flexShrink: 0,
-            marginLeft: 8,
-          }}
-          title={modulo.ativo ? 'Ativo' : 'Inativo'}
-        />
-      </div>
-
-      {/* Path */}
-      <p
-        style={{
-          color: '#6c757d',
-          fontSize: '0.75rem',
-          fontFamily: "'Fira Code', monospace",
-          margin: '0 0 10px 0',
-        }}
-      >
-        {modulo.moduloPath}
-      </p>
-
-      {/* Badges */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {/* Nível de acesso */}
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            fontSize: '0.68rem',
-            fontWeight: 600,
-            fontFamily: 'Poppins, sans-serif',
-            color: nivelColor,
-            backgroundColor: `${nivelColor}15`,
-            padding: '2px 8px',
-            borderRadius: 6,
-            border: `1px solid ${nivelColor}30`,
-          }}
-        >
-          Nível {modulo.nvlAcesso} — {nivelLabel}
-        </span>
-
-        {/* Usuários */}
-        <span
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 4,
-            fontSize: '0.68rem',
-            fontWeight: 500,
-            fontFamily: 'Poppins, sans-serif',
-            color: hasUsers ? '#3b82f6' : '#6c757d',
-            backgroundColor: hasUsers ? 'rgba(59,130,246,0.1)' : 'rgba(107,114,128,0.1)',
-            padding: '2px 8px',
-            borderRadius: 6,
-          }}
-        >
-          {hasUsers ? `${modulo.usuariosPermitidos.length} usuários` : 'Todos'}
-        </span>
-
-        {/* Ordem */}
-        <span
-          style={{
-            fontSize: '0.68rem',
-            fontWeight: 500,
-            fontFamily: 'Poppins, sans-serif',
-            color: '#6c757d',
-            backgroundColor: 'rgba(107,114,128,0.1)',
-            padding: '2px 8px',
-            borderRadius: 6,
-          }}
-        >
-          #{modulo.ordem}
-        </span>
-      </div>
-    </div>
   );
 }
