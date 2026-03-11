@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import { useCarteiraData } from '@/modules/carteira/hooks';
 import { useFiltrosCarteira } from '@/modules/carteira/context/FiltrosCarteiraContext';
 import { 
@@ -21,6 +22,7 @@ import { PaginaCarteiraAtiva, FiltrosCarteira } from '@/modules/carteira/types';
 export default function HistoricoPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
   
   // Usar filtros do Context (compartilhado entre páginas)
   const { filtros, updateFiltros } = useFiltrosCarteira();
@@ -47,16 +49,15 @@ export default function HistoricoPage() {
     updateFiltros(novosFiltros);
   };
 
-  // Verificar autenticação e nível de acesso
+  // Verificar autenticação e permissão do módulo pela planilha
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    // Franqueados (accessLevel = 0) só podem acessar o PEX
-    if (!authLoading && user && user.accessLevel === 0) {
-      router.push('/pex');
+    if (!authLoading && user && !permissionsLoading && !allowedIds.has('carteira')) {
+      router.push('/');
     }
-  }, [isAuthenticated, authLoading, router, user]);
+  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
 
   // Marcar cliente e carregar estado da sidebar
   useEffect(() => {

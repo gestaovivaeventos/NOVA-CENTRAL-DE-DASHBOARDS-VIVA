@@ -23,10 +23,10 @@ import type { Release, Branch } from '@/modules/branches/types';
 import { useBranchesData } from '@/modules/branches/hooks/useBranchesData';
 import { useBranchActions } from '@/modules/branches/hooks/useBranchActions';
 import {
-  AUTHORIZED_USERNAMES,
   KANBAN_COLUMNS_RELEASE,
   KANBAN_COLUMNS_BRANCH,
 } from '@/modules/branches/types';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import type { KanbanStatus } from '@/modules/branches/types';
 import { getProximaVersao, gerarNomeRelease, getDataAtual } from '@/modules/branches/utils';
 
@@ -57,6 +57,7 @@ const SIDEBAR_WIDTH_COLLAPSED = 60;
 export default function BranchesPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
   const { releases, branches, loading, error, refetch, setReleases, setBranches } = useBranchesData();
   const {
     creating,
@@ -87,11 +88,10 @@ export default function BranchesPage() {
   const [editingRelease, setEditingRelease] = useState<Release | null>(null);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
 
-  // Verificar autorização
+  // Verificar autorização pela planilha
   const isAuthorized = useMemo(() => {
-    if (!user) return false;
-    return AUTHORIZED_USERNAMES.includes(user.username);
-  }, [user]);
+    return allowedIds.has('branches');
+  }, [allowedIds]);
 
   // Inicializar headers na primeira vez
   useEffect(() => {
@@ -105,10 +105,10 @@ export default function BranchesPage() {
     if (!authLoading && !isAuthenticated) {
       router.push('/login');
     }
-    if (!authLoading && isAuthenticated && !isAuthorized) {
+    if (!authLoading && isAuthenticated && !permissionsLoading && !isAuthorized) {
       router.push('/');
     }
-  }, [authLoading, isAuthenticated, isAuthorized, router]);
+  }, [authLoading, isAuthenticated, isAuthorized, permissionsLoading, router]);
 
   // Filtrar releases e branches por usuário
   const filteredReleases = useMemo(() => {

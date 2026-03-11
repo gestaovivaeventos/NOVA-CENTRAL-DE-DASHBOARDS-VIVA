@@ -9,10 +9,23 @@ import { useRouter } from 'next/router';
 import { Header, FluxoAnualCard, DetalhamentoMensal, Sidebar, CalculadoraProjecao } from '@/modules/fluxo-projetado';
 import { DadosFluxoAnual, ParametrosFranquiaCard } from '@/modules/fluxo-projetado/components/FluxoAnualCard';
 import { Loader2 } from 'lucide-react';
-import { withAuthFluxoProjetado } from '@/utils/auth';
+import { useAuth } from '@/context/AuthContext';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
-function FluxoProjetadoDashboard() {
+export default function FluxoProjetadoDashboard() {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
+
+  // Verificar autenticação e permissão do módulo pela planilha
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+    if (!authLoading && user && !permissionsLoading && !allowedIds.has('fluxo-projetado')) {
+      router.push('/');
+    }
+  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
   
   // Estado para controle da sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -456,6 +469,3 @@ function FluxoProjetadoDashboard() {
     </>
   );
 }
-
-// Exporta com proteção de rota - apenas franqueadoras (accessLevel = 1) podem acessar
-export default withAuthFluxoProjetado(FluxoProjetadoDashboard);

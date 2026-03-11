@@ -13,10 +13,23 @@ import { useRouter } from 'next/router';
 import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas } from '@/modules/fluxo-projetado';
 import { useFluxoRealizado, useReceitasMensais } from '@/modules/fluxo-projetado/hooks';
 import { Loader2, BarChart3 } from 'lucide-react';
-import { withAuthFluxoProjetado } from '@/utils/auth';
+import { useAuth } from '@/context/AuthContext';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
-function FluxoRealizadoDashboard() {
+export default function FluxoRealizadoDashboard() {
   const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
+
+  // Verificar autenticação e permissão do módulo pela planilha
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login');
+    }
+    if (!authLoading && user && !permissionsLoading && !allowedIds.has('fluxo-projetado')) {
+      router.push('/');
+    }
+  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
   
   // Estado para controle da sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -106,6 +119,3 @@ function FluxoRealizadoDashboard() {
     </>
   );
 }
-
-// Exporta com proteção de rota - apenas franqueadoras (accessLevel = 1) podem acessar
-export default withAuthFluxoProjetado(FluxoRealizadoDashboard);
