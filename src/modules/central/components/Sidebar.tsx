@@ -5,9 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { Search, X } from 'lucide-react';
-import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
-import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
-import { useControleModulosAccess } from '@/modules/controle-modulos/hooks';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,24 +27,10 @@ interface DashboardGroup {
   dashboards: Dashboard[];
 }
 
-// Grupos de dashboards - filtrado por nível de acesso
-const getDashboardGroups = (accessLevel: number, username?: string, hasControleModulosAccess = false): DashboardGroup[] => {
-  // Franqueado (accessLevel = 0) tem acesso ao PEX e Gestão de Caixa
-  if (accessLevel === 0) {
-    // Nota: fluxo-projetado será liberado futuramente (regras internas já preparadas)
-    return [
-      {
-        id: 'gestao-resultados',
-        name: 'Gestão por Resultados',
-        dashboards: [
-          { id: 'pex', label: 'PEX', path: '/pex', icon: 'dashboard' },
-        ],
-      },
-    ];
-  }
-
-  // Franqueadora (accessLevel >= 1) tem acesso a todos os dashboards
-  const groups: DashboardGroup[] = [
+// Grupos de dashboards - filtrado dinamicamente pela planilha BASE MODULOS
+const getDashboardGroups = (allowedIds: Set<string>): DashboardGroup[] => {
+  // Catálogo completo de dashboards (metadados estáticos)
+  const allGroups: DashboardGroup[] = [
     {
       id: 'gestao-resultados',
       name: 'Gestão por Resultados',
@@ -65,29 +49,26 @@ const getDashboardGroups = (accessLevel: number, username?: string, hasControleM
         { id: 'vendas', label: 'Dashboard Vendas', path: '/vendas', icon: 'money' },
         { id: 'carteira', label: 'Dashboard Carteira', path: '/carteira', icon: 'wallet' },
         { id: 'fluxo-projetado', label: 'Gestão de Caixa', path: '/fluxo-projetado', icon: 'fluxo' },
-        // Projetos: visível apenas para usuários autorizados durante validação
-        ...(username && PROJETOS_AUTHORIZED_USERNAMES.includes(username) ? [{ id: 'projetos', label: 'Painel de Projetos', path: '/projetos', icon: 'projetos' }] : []),
+        { id: 'projetos', label: 'Painel de Projetos', path: '/projetos', icon: 'projetos' },
+      ],
+    },
+    {
+      id: 'desenvolvimento',
+      name: 'Desenvolvimento',
+      dashboards: [
+        { id: 'branches', label: 'Gerenciar Branches', path: '/branches', icon: 'branch' },
+        { id: 'controle-modulos', label: 'Controle de Módulos', path: '/controle-modulos', icon: 'config' },
       ],
     },
   ];
 
-  // Desenvolvimento: branches (hardcoded) + controle-modulos (dinâmico da planilha)
-  const devDashboards: Dashboard[] = [];
-  if (username && AUTHORIZED_USERNAMES.includes(username)) {
-    devDashboards.push({ id: 'branches', label: 'Gerenciar Branches', path: '/branches', icon: 'branch' });
-  }
-  if (hasControleModulosAccess) {
-    devDashboards.push({ id: 'controle-modulos', label: 'Controle de Módulos', path: '/controle-modulos', icon: 'config' });
-  }
-  if (devDashboards.length > 0) {
-    groups.push({
-      id: 'desenvolvimento',
-      name: 'Desenvolvimento',
-      dashboards: devDashboards,
-    });
-  }
-
-  return groups;
+  // Filtrar cada grupo pela planilha
+  return allGroups
+    .map(group => ({
+      ...group,
+      dashboards: group.dashboards.filter(d => allowedIds.has(d.id)),
+    }))
+    .filter(group => group.dashboards.length > 0);
 };
 
 // Ícones SVG inline
@@ -374,9 +355,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
-  const { hasAccess: hasControleModulosAccess } = useControleModulosAccess(user?.username, user?.accessLevel);
+  const { allowedIds } = useModuloPermissions(user?.username, user?.accessLevel);
 
-  const dashboardGroups = getDashboardGroups(user?.accessLevel || 0, user?.username, hasControleModulosAccess);
+  const dashboardGroups = useMemo(() => getDashboardGroups(allowedIds), [allowedIds]);
 
   // Carregar favoritos do localStorage
   useEffect(() => {

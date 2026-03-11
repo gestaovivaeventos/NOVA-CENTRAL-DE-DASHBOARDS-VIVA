@@ -5,9 +5,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { AUTHORIZED_USERNAMES } from '@/modules/branches/types';
-import { PROJETOS_AUTHORIZED_USERNAMES } from '@/modules/projetos/types';
-import { useControleModulosAccess } from '@/modules/controle-modulos/hooks';
+import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
 // Função para pré-carregar dados de vendas em background
 const prefetchVendasData = () => {
@@ -45,34 +43,6 @@ const allDashboards: Dashboard[] = [
   { id: 'projetos', name: 'Painel de Projetos', description: 'Gerenciamento de projetos', path: '/projetos', icon: 'projetos' },
   { id: 'controle-modulos', name: 'Controle de Módulos', description: 'Gerenciar permissões de módulos', path: '/controle-modulos', icon: 'config' },
 ];
-
-// Dashboards permitidos por nível de acesso e usuário
-const getDashboardsPermitidos = (accessLevel: number, username?: string, hasControleModulosAccess = false): string[] => {
-  // Franqueado (accessLevel = 0) tem acesso apenas ao PEX
-  // Nota: fluxo-projetado será liberado futuramente (regras internas já preparadas)
-  if (accessLevel === 0) {
-    return ['pex'];
-  }
-  // Franqueadora (accessLevel >= 1) tem acesso a todos, exceto branches e projetos (apenas autorizados)
-  const dashboards = allDashboards
-    .filter(d => {
-      // Branches: apenas usuários autorizados
-      if (d.id === 'branches') {
-        return username && AUTHORIZED_USERNAMES.includes(username);
-      }
-      // Projetos: apenas usuários autorizados durante validação
-      if (d.id === 'projetos') {
-        return username && PROJETOS_AUTHORIZED_USERNAMES.includes(username);
-      }
-      // Controle de Módulos: dinâmico, vem da planilha
-      if (d.id === 'controle-modulos') {
-        return hasControleModulosAccess;
-      }
-      return true;
-    })
-    .map(d => d.id);
-  return dashboards;
-};
 
 // Ícones SVG inline (mesmos da Sidebar)
 const dashboardIcons: Record<string, JSX.Element> = {
@@ -217,7 +187,7 @@ export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [favorites, setFavorites] = useState<string[]>([]);
-  const { hasAccess: hasControleModulosAccess } = useControleModulosAccess(user?.username, user?.accessLevel);
+  const { allowedIds } = useModuloPermissions(user?.username, user?.accessLevel);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
@@ -272,13 +242,12 @@ export default function HomePage() {
     }
   }, [isAuthenticated, isLoading]);
 
-  // Dashboards favoritos (filtrados pelo nível de acesso e username do usuário)
+  // Dashboards favoritos (filtrados pela planilha BASE MODULOS)
   const favoriteDashboards = useMemo(() => {
-    const dashboardsPermitidos = getDashboardsPermitidos(user?.accessLevel ?? 0, user?.username, hasControleModulosAccess);
     return allDashboards.filter(d => 
-      favorites.includes(d.id) && dashboardsPermitidos.includes(d.id)
+      favorites.includes(d.id) && allowedIds.has(d.id)
     );
-  }, [favorites, user?.accessLevel, user?.username, hasControleModulosAccess]);
+  }, [favorites, allowedIds]);
 
   // Mostrar loading enquanto verifica auth
   if (isLoading || !isAuthenticated) {
