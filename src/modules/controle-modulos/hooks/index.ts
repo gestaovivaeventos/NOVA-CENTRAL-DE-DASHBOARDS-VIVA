@@ -1,0 +1,1 @@
+export { useControleModulos } from './useControleModulos';

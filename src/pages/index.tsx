@@ -42,6 +42,7 @@ const allDashboards: Dashboard[] = [
   { id: 'fluxo-projetado', name: 'Gestão de Caixa', description: 'Projeção de fluxo de caixa', path: '/fluxo-projetado/realizado', icon: 'fluxo' },
   { id: 'branches', name: 'Gerenciar Branches', description: 'Gerenciamento de branches', path: '/branches', icon: 'branch' },
   { id: 'projetos', name: 'Painel de Projetos', description: 'Gerenciamento de projetos', path: '/projetos', icon: 'projetos' },
+  { id: 'controle-modulos', name: 'Controle de Módulos', description: 'Gerenciar permissões de módulos', path: '/controle-modulos', icon: 'config' },
 ];
 
 // Dashboards permitidos por nível de acesso e usuário
@@ -61,6 +62,10 @@ const getDashboardsPermitidos = (accessLevel: number, username?: string): string
       // Projetos: apenas usuários autorizados durante validação
       if (d.id === 'projetos') {
         return username && PROJETOS_AUTHORIZED_USERNAMES.includes(username);
+      }
+      // Controle de Módulos: mesmos usuários autorizados no branches
+      if (d.id === 'controle-modulos') {
+        return username && AUTHORIZED_USERNAMES.includes(username);
       }
       return true;
     })
@@ -116,6 +121,11 @@ const dashboardIcons: Record<string, JSX.Element> = {
   projetos: (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+    </svg>
+  ),
+  config: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
     </svg>
   ),
 };

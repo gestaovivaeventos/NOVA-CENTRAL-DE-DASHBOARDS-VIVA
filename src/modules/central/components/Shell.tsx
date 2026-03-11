@@ -96,6 +96,11 @@ export function Shell({ children }: ShellProps) {
     return <>{children}</>;
   }
 
+  // Páginas de Controle de Módulos são independentes (layout próprio)
+  if (router.pathname.startsWith('/controle-modulos')) {
+    return <>{children}</>;
+  }
+
   // Página inicial com fundo especial
   const isHomePage = router.pathname === '/';
 

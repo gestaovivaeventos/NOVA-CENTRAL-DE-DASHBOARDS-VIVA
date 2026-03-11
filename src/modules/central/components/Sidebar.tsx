@@ -77,6 +77,7 @@ const getDashboardGroups = (accessLevel: number, username?: string): DashboardGr
       name: 'Desenvolvimento',
       dashboards: [
         { id: 'branches', label: 'Gerenciar Branches', path: '/branches', icon: 'branch' },
+        { id: 'controle-modulos', label: 'Controle de Módulos', path: '/controle-modulos', icon: 'config' },
       ],
     });
   }
