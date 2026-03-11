@@ -21,10 +21,13 @@ interface EditModuloModalProps {
 }
 
 const GRUPOS = [
-  'Principal',
-  'Estratégico & Financeiro',
-  'Operacional & Gestão',
-  'Comercial',
+  'Direcionamento Estratégico',
+  'Saúde Financeira & Tesouraria',
+  'Performance & Vendas',
+  'Operações & Sucesso do Aluno',
+  'Gente, Cultura & Time',
+  'Ferramentas & Apoio',
+  'Relatórios Recorrentes',
   'Desenvolvimento',
 ];
 
@@ -40,6 +43,8 @@ export default function EditModuloModal({
   const [grupo, setGrupo] = useState('');
   const [ordem, setOrdem] = useState('1');
   const [icone, setIcone] = useState('');
+  const [tipo, setTipo] = useState('interno');
+  const [urlExterna, setUrlExterna] = useState('');
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
 
   // Users data
@@ -58,6 +63,8 @@ export default function EditModuloModal({
       setGrupo(modulo.grupo);
       setOrdem(String(modulo.ordem));
       setIcone(modulo.icone);
+      setTipo((modulo as any).tipo || 'interno');
+      setUrlExterna((modulo as any).urlExterna || '');
       setUsuariosSelecionados(modulo.usuariosPermitidos || []);
       setUserSearch('');
       setUserDropdownOpen(false);
@@ -102,6 +109,8 @@ export default function EditModuloModal({
     if (grupo !== modulo.grupo) return true;
     if (ordem !== String(modulo.ordem)) return true;
     if (icone !== modulo.icone) return true;
+    if (tipo !== ((modulo as any).tipo || 'interno')) return true;
+    if (urlExterna !== ((modulo as any).urlExterna || '')) return true;
     const originalUsers = (modulo.usuariosPermitidos || []).join(',');
     const currentUsers = usuariosSelecionados.join(',');
     if (currentUsers !== originalUsers) return true;
@@ -144,6 +153,14 @@ export default function EditModuloModal({
     }
     if (icone !== modulo.icone) {
       const ok = await onSave(modulo.moduloId, 'icone', icone);
+      if (!ok) allOk = false;
+    }
+    if (tipo !== ((modulo as any).tipo || 'interno')) {
+      const ok = await onSave(modulo.moduloId, 'tipo', tipo);
+      if (!ok) allOk = false;
+    }
+    if (urlExterna !== ((modulo as any).urlExterna || '')) {
+      const ok = await onSave(modulo.moduloId, 'url_externa', urlExterna);
       if (!ok) allOk = false;
     }
 
@@ -339,6 +356,45 @@ export default function EditModuloModal({
               style={inputStyle}
             />
           </div>
+
+          {/* Tipo */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Tipo</label>
+            <select
+              value={tipo}
+              onChange={(e) => setTipo(e.target.value)}
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+                borderColor: tipo === 'externo' ? '#8b5cf6' : '#6c757d',
+                color: tipo === 'externo' ? '#8b5cf6' : '#F8F9FA',
+              }}
+            >
+              <option value="interno" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                Interno (rota Next.js)
+              </option>
+              <option value="externo" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                Externo (Looker Studio, Sheets, etc.)
+              </option>
+            </select>
+          </div>
+
+          {/* URL Externa (só aparece se tipo = externo) */}
+          {tipo === 'externo' && (
+            <div style={{ marginBottom: '20px' }}>
+              <label style={labelStyle}>URL Externa</label>
+              <input
+                type="url"
+                value={urlExterna}
+                onChange={(e) => setUrlExterna(e.target.value)}
+                placeholder="https://lookerstudio.google.com/..."
+                style={{
+                  ...inputStyle,
+                  borderColor: urlExterna ? '#8b5cf6' : '#444',
+                }}
+              />
+            </div>
+          )}
 
           {/* Usuários Permitidos — Searchable multi-select */}
           <div style={{ marginBottom: '20px' }} ref={userDropdownRef}>

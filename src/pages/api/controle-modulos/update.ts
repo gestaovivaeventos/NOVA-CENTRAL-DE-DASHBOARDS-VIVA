@@ -23,6 +23,8 @@ const FIELD_TO_COL: Record<string, number> = {
   grupo: 6,            // G
   ordem: 7,            // H
   icone: 8,            // I
+  tipo: 9,             // J
+  url_externa: 10,     // K
 };
 
 export default async function handler(
@@ -55,7 +57,7 @@ export default async function handler(
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:I`,
+      range: `${SHEET_NAME}!A:K`,
     });
 
     const rows = response.data.values || [];

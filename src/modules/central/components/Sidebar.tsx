@@ -18,6 +18,8 @@ interface Dashboard {
   label: string;
   path: string;
   icon: string;
+  tipo: 'interno' | 'externo';
+  urlExterna: string;
 }
 
 // Definição de grupo
@@ -29,7 +31,7 @@ interface DashboardGroup {
 
 // Grupos de dashboards - 100% dinâmico a partir da planilha BASE MODULOS
 const buildDashboardGroups = (
-  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string }[],
+  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string; tipo?: string; urlExterna?: string }[],
   allowedIds: Set<string>
 ): DashboardGroup[] => {
   // Filtra módulos permitidos, agrupa por grupo, ordena por ordem
@@ -46,6 +48,8 @@ const buildDashboardGroups = (
       label: m.moduloNome,
       path: m.moduloPath,
       icon: m.icone || 'dashboard',
+      tipo: (m.tipo as 'interno' | 'externo') || 'interno',
+      urlExterna: m.urlExterna || '',
     });
   }
 
@@ -162,6 +166,36 @@ const icons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
     </svg>
   ),
+  externalLink: (
+    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ opacity: 0.6 }}>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+  ),
+  marketing: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+    </svg>
+  ),
+  creditcard: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  people: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  report: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
+  tool: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
 };
 
 // Componente de Grupo colapsável
@@ -180,7 +214,7 @@ const CollapsibleGroup = ({
   onClose: () => void;
   router: ReturnType<typeof useRouter>;
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Filtrar dashboards baseado na pesquisa
   const filteredDashboards = useMemo(() => {
@@ -216,26 +250,28 @@ const CollapsibleGroup = ({
           justifyContent: 'space-between',
           width: '100%',
           padding: '10px 12px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          border: 'none',
+          backgroundColor: 'rgba(255, 102, 0, 0.06)',
+          border: '1px solid rgba(255, 102, 0, 0.35)',
           borderRadius: '6px',
           cursor: 'pointer',
-          transition: 'background 0.2s',
+          transition: 'all 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+          e.currentTarget.style.background = 'rgba(255, 102, 0, 0.12)';
+          e.currentTarget.style.borderColor = 'rgba(255, 102, 0, 0.55)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+          e.currentTarget.style.background = 'rgba(255, 102, 0, 0.06)';
+          e.currentTarget.style.borderColor = 'rgba(255, 102, 0, 0.35)';
         }}
       >
         <span style={{ 
-          color: '#9ca3af', 
+          color: '#e5e7eb', 
           fontWeight: 600, 
-          fontSize: '0.8rem',
+          fontSize: '0.75rem',
           fontFamily: "'Poppins', sans-serif",
           textTransform: 'uppercase',
-          letterSpacing: '0.5px',
+          letterSpacing: '0.8px',
         }}>
           {group.name}
         </span>
@@ -259,7 +295,22 @@ const CollapsibleGroup = ({
           {filteredDashboards.map((dashboard) => {
             const active = isActive(dashboard.path);
             const isFavorite = favorites.includes(dashboard.id);
+            const isExternal = dashboard.tipo === 'externo' && dashboard.urlExterna;
             
+            const linkContent = (
+              <>
+                <span style={{ opacity: active ? 1 : 0.7 }}>
+                  {icons[dashboard.icon] || icons.dashboard}
+                </span>
+                <span style={{ flex: 1 }}>{dashboard.label}</span>
+                {isExternal && (
+                  <span style={{ opacity: 0.5, flexShrink: 0 }}>
+                    {icons.externalLink}
+                  </span>
+                )}
+              </>
+            );
+
             return (
               <div
                 key={dashboard.id}
@@ -284,27 +335,46 @@ const CollapsibleGroup = ({
                   }
                 }}
               >
-                <Link
-                  href={dashboard.path}
-                  onClick={() => onClose()}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    color: active ? '#FF6600' : '#9ca3af',
-                    textDecoration: 'none',
-                    fontFamily: "'Poppins', sans-serif",
-                    fontSize: '0.85rem',
-                    fontWeight: active ? 600 : 500,
-                  }}
-                >
-                  <span style={{ opacity: active ? 1 : 0.7 }}>
-                    {icons[dashboard.icon] || icons.dashboard}
-                  </span>
-                  <span>{dashboard.label}</span>
-                </Link>
+                {isExternal ? (
+                  <a
+                    href={dashboard.urlExterna}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      color: active ? '#FF6600' : '#9ca3af',
+                      textDecoration: 'none',
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: '0.85rem',
+                      fontWeight: active ? 600 : 500,
+                    }}
+                  >
+                    {linkContent}
+                  </a>
+                ) : (
+                  <Link
+                    href={dashboard.path}
+                    onClick={() => onClose()}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      color: active ? '#FF6600' : '#9ca3af',
+                      textDecoration: 'none',
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: '0.85rem',
+                      fontWeight: active ? 600 : 500,
+                    }}
+                  >
+                    {linkContent}
+                  </Link>
+                )}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -414,7 +484,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           style={{
             height: 'calc(100vh - 64px - 60px)', // Mobile: header + footer
             scrollbarWidth: 'thin',
-            scrollbarColor: '#FF6600 #1a1d21',
+            scrollbarColor: '#555 #1a1d21',
           }}
         >
           <style jsx>{`
@@ -426,11 +496,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               border-radius: 3px;
             }
             nav::-webkit-scrollbar-thumb {
-              background: #FF6600;
+              background: #555;
               border-radius: 3px;
             }
             nav::-webkit-scrollbar-thumb:hover {
-              background: #e55a00;
+              background: #777;
             }
             @media (min-width: 1024px) {
               nav {

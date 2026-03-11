@@ -191,14 +191,14 @@ export default function ControleModulosPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 2fr 120px 90px 140px 70px 50px',
+                  gridTemplateColumns: '2fr 2fr 80px 120px 90px 140px 70px 50px',
                   gap: 0,
                   backgroundColor: '#1a1d21',
                   padding: '10px 16px',
                   borderBottom: '1px solid #333',
                 }}
               >
-                {['Módulo', 'Path', 'Nível', 'Status', 'Usuários', 'Ordem', ''].map((col) => (
+                {['Módulo', 'Path', 'Tipo', 'Nível', 'Status', 'Usuários', 'Ordem', ''].map((col) => (
                   <span
                     key={col}
                     style={{
@@ -278,7 +278,7 @@ export default function ControleModulosPage() {
                           onClick={() => setEditingModulo(mod)}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 2fr 120px 90px 140px 70px 50px',
+                            gridTemplateColumns: '2fr 2fr 80px 120px 90px 140px 70px 50px',
                             gap: 0,
                             padding: '10px 16px',
                             backgroundColor: '#212529',
@@ -318,6 +318,24 @@ export default function ControleModulosPage() {
                             }}
                           >
                             {mod.moduloPath}
+                          </span>
+
+                          {/* Tipo */}
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              fontSize: '0.65rem',
+                              fontWeight: 600,
+                              fontFamily: 'Poppins, sans-serif',
+                              color: (mod as any).tipo === 'externo' ? '#8b5cf6' : '#6c757d',
+                              backgroundColor: (mod as any).tipo === 'externo' ? 'rgba(139,92,246,0.1)' : 'rgba(107,114,128,0.1)',
+                              padding: '2px 6px',
+                              borderRadius: 6,
+                              width: 'fit-content',
+                            }}
+                          >
+                            {(mod as any).tipo === 'externo' ? '↗ Externo' : 'Interno'}
                           </span>
 
                           {/* Nível */}

@@ -28,7 +28,7 @@ export default async function handler(
 
     const rows = await getExternalSheetData(
       SPREADSHEET_ID,
-      `${SHEET_NAME}!A:I`,
+      `${SHEET_NAME}!A:K`,
       CACHE_KEY,
       CACHE_TTL
     );
@@ -50,6 +50,8 @@ export default async function handler(
         grupo: (row[6] || '').trim(),
         ordem: parseInt(row[7] || '0', 10),
         icone: (row[8] || '').trim(),
+        tipo: ((row[9] || '').trim().toLowerCase() || 'interno') as 'interno' | 'externo',
+        urlExterna: (row[10] || '').trim(),
       }));
 
     res.setHeader('Cache-Control', 'no-cache');

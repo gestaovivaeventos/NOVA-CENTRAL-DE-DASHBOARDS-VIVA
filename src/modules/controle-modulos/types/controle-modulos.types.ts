@@ -7,6 +7,9 @@
 // 1 = Franqueadora (somente franqueadora, accessLevel >= 1)
 export type NivelAcessoModulo = 0 | 1;
 
+// Tipo do módulo
+export type TipoModulo = 'interno' | 'externo';
+
 // Registro de módulo na planilha
 export interface ModuloConfig {
   moduloId: string;
@@ -18,6 +21,8 @@ export interface ModuloConfig {
   grupo: string;
   ordem: number;
   icone: string;
+  tipo: TipoModulo; // 'interno' = rota Next.js, 'externo' = link externo (Looker, Sheets, etc)
+  urlExterna: string; // URL completa quando tipo = 'externo'
 }
 
 // Dados brutos da planilha (linha como array)
@@ -34,6 +39,8 @@ export interface ModuloPayload {
   grupo: string;
   ordem: number;
   icone: string;
+  tipo: TipoModulo;
+  urlExterna: string;
 }
 
 // Grupos de módulos para exibição

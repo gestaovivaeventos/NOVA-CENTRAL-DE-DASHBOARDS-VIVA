@@ -28,6 +28,8 @@ interface Dashboard {
   description: string;
   path: string;
   icon: string;
+  tipo: 'interno' | 'externo';
+  urlExterna: string;
 }
 
 // Ícones SVG inline (mesmos da Sidebar)
@@ -85,6 +87,36 @@ const dashboardIcons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
     </svg>
   ),
+  network: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  ),
+  marketing: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+    </svg>
+  ),
+  creditcard: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  users: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  ),
+  people: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  report: (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
 };
 
 // Ícone de estrela (favorito)
@@ -108,28 +140,10 @@ const FavoriteCard = ({
   onRemove: () => void;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const isExternal = dashboard.tipo === 'externo' && dashboard.urlExterna;
 
-  return (
-    <Link
-      href={dashboard.path}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        padding: '16px 12px',
-        borderRadius: '8px',
-        backgroundColor: isHovered ? 'rgba(255, 102, 0, 0.1)' : 'transparent',
-        border: '1px solid rgba(255, 102, 0, 0.3)',
-        textDecoration: 'none',
-        transition: 'all 0.2s ease',
-        position: 'relative',
-        minHeight: '90px',
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+  const cardContent = (
+    <>
       <span style={{ color: isHovered ? '#FF6600' : '#9ca3af', opacity: 0.9 }}>
         {dashboardIcons[dashboard.icon] || dashboardIcons.chart}
       </span>
@@ -140,8 +154,17 @@ const FavoriteCard = ({
         fontFamily: "'Poppins', sans-serif",
         textAlign: 'center',
         lineHeight: 1.2,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        justifyContent: 'center',
       }}>
         {dashboard.name}
+        {isExternal && (
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ opacity: 0.5, flexShrink: 0 }}>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          </svg>
+        )}
       </div>
       <button
         onClick={(e) => {
@@ -165,6 +188,48 @@ const FavoriteCard = ({
       >
         <StarIcon filled={true} />
       </button>
+    </>
+  );
+
+  const cardStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '8px',
+    padding: '16px 12px',
+    borderRadius: '8px',
+    backgroundColor: isHovered ? 'rgba(255, 102, 0, 0.1)' : 'transparent',
+    border: '1px solid rgba(255, 102, 0, 0.3)',
+    textDecoration: 'none',
+    transition: 'all 0.2s ease',
+    position: 'relative',
+    minHeight: '90px',
+  };
+
+  if (isExternal) {
+    return (
+      <a
+        href={dashboard.urlExterna}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={cardStyle}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      href={dashboard.path}
+      style={cardStyle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {cardContent}
     </Link>
   );
 };
@@ -185,6 +250,8 @@ export default function HomePage() {
         description: m.moduloNome,
         path: m.moduloPath,
         icon: m.icone || 'dashboard',
+        tipo: (m.tipo as 'interno' | 'externo') || 'interno',
+        urlExterna: m.urlExterna || '',
       }));
   }, [modulos]);
 
