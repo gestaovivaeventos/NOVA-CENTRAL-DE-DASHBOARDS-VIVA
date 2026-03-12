@@ -391,16 +391,18 @@ const CollapsibleGroup = ({
           marginTop: '4px',
         }}>
           {filteredDashboards.map((dashboard) => {
-            const active = isActive(dashboard.path);
-            const isFavorite = favorites.includes(dashboard.id);
             const isExternal = dashboard.tipo === 'externo' && dashboard.urlExterna;
+            const active = isExternal ? false : isActive(dashboard.path);
+            const isFavorite = favorites.includes(dashboard.id);
+            const labelLen = dashboard.label.length;
+            const fontSize = labelLen > 30 ? '0.72rem' : labelLen > 20 ? '0.78rem' : '0.85rem';
             
             const linkContent = (
               <>
-                <span style={{ opacity: active ? 1 : 0.7 }}>
+                <span style={{ opacity: active ? 1 : 0.7, flexShrink: 0 }}>
                   {icons[dashboard.icon] || icons.dashboard}
                 </span>
-                <span style={{ flex: 1 }}>{dashboard.label}</span>
+                <span style={{ flex: 1, minWidth: 0, lineHeight: '1.25', wordBreak: 'break-word' }}>{dashboard.label}</span>
                 {isExternal && (
                   <span style={{ opacity: 0.5, flexShrink: 0 }}>
                     {icons.externalLink}
@@ -420,7 +422,7 @@ const CollapsibleGroup = ({
                   border: active ? '1px solid #FF6600' : '1px solid rgba(75, 85, 99, 0.5)',
                   boxShadow: !active ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
                   transition: 'all 0.2s',
-                  height: '42px',
+                  minHeight: '42px',
                 }}
                 onMouseEnter={(e) => {
                   if (!active) {
@@ -444,11 +446,12 @@ const CollapsibleGroup = ({
                       alignItems: 'center',
                       gap: '10px',
                       padding: '10px 12px',
-                      color: active ? '#FF6600' : '#9ca3af',
+                      color: '#9ca3af',
                       textDecoration: 'none',
                       fontFamily: "'Poppins', sans-serif",
-                      fontSize: '0.85rem',
-                      fontWeight: active ? 600 : 500,
+                      fontSize,
+                      fontWeight: 500,
+                      minWidth: 0,
                     }}
                   >
                     {linkContent}
@@ -466,8 +469,9 @@ const CollapsibleGroup = ({
                       color: active ? '#FF6600' : '#9ca3af',
                       textDecoration: 'none',
                       fontFamily: "'Poppins', sans-serif",
-                      fontSize: '0.85rem',
+                      fontSize,
                       fontWeight: active ? 600 : 500,
+                      minWidth: 0,
                     }}
                   >
                     {linkContent}
