@@ -9,7 +9,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 
-const SPREADSHEET_ID = '1ymgmW6ISadb8xKBpcNDXTnGr0buoOFVszSZmxaOxKBQ';
+const SPREADSHEET_ID = process.env.PLANILHA_FLUXO_PROJETADO_ID!;
 const SHEET_NAME = 'FLUXO PROJETADO';
 const RANGE = `'${SHEET_NAME}'!A:I`;
 

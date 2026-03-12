@@ -6,7 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 
-const SPREADSHEET_ID = '182mM7NKo8IxLe1QKP7kSvAP-pNTZQbWPEaLje7oE7s4';
+const SPREADSHEET_ID = process.env.PROJETOS_SPREADSHEET_ID!;
 const SHEET_NAME = 'Projetos';
 
 function getAuthenticatedClient() {

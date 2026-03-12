@@ -18,6 +18,8 @@ interface ModuloPermission {
   grupo: string;
   ordem: number;
   icone: string;
+  tipo: string;
+  urlExterna: string;
 }
 
 interface UseModuloPermissionsResult {
@@ -85,6 +87,8 @@ export function useModuloPermissions(
             grupo: m.grupo,
             ordem: m.ordem,
             icone: m.icone || 'dashboard',
+            tipo: m.tipo || 'interno',
+            urlExterna: m.urlExterna || '',
           })
         );
         setModulos(mods);

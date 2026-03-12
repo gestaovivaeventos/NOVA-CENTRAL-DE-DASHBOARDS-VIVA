@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 
 // Configurações
-const SPREADSHEET_ID = '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs';
+const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO!;
 const SHEET_NAME = 'KPIS';
 
 interface CreateKpiRequest {

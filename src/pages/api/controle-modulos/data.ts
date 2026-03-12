@@ -7,8 +7,6 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getExternalSheetData } from '@/lib/sheets-client';
 import cache from '@/lib/cache';
 
-const SPREADSHEET_ID = '1QSiCHm-kgDTLnwhtJVdsPLD70CbYTexH3WUE5LuDxtE';
-const SHEET_NAME = 'BASE MODULOS';
 const CACHE_KEY = 'controle-modulos:data';
 const CACHE_TTL = 30 * 1000; // 30s
 
@@ -21,14 +19,24 @@ export default async function handler(
   }
 
   try {
+    const spreadsheetId = process.env.CONTROLE_MODULOS_SPREADSHEET_ID;
+    const sheetName = process.env.CONTROLE_MODULOS_SHEET_NAME || 'BASE MODULOS';
+
+    if (!spreadsheetId) {
+      return res.status(500).json({
+        error: 'Configuração ausente',
+        message: 'CONTROLE_MODULOS_SPREADSHEET_ID não configurado',
+      });
+    }
+
     const forceRefresh = req.query.refresh === 'true';
     if (forceRefresh) {
       cache.invalidate(CACHE_KEY);
     }
 
     const rows = await getExternalSheetData(
-      SPREADSHEET_ID,
-      `${SHEET_NAME}!A:I`,
+      spreadsheetId,
+      `${sheetName}!A:K`,
       CACHE_KEY,
       CACHE_TTL
     );
@@ -50,6 +58,8 @@ export default async function handler(
         grupo: (row[6] || '').trim(),
         ordem: parseInt(row[7] || '0', 10),
         icone: (row[8] || '').trim(),
+        tipo: ((row[9] || '').trim().toLowerCase() || 'interno') as 'interno' | 'externo',
+        urlExterna: (row[10] || '').trim(),
       }));
 
     res.setHeader('Cache-Control', 'no-cache');

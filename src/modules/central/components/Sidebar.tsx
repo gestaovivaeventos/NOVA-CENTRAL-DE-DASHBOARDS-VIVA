@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
@@ -18,6 +18,8 @@ interface Dashboard {
   label: string;
   path: string;
   icon: string;
+  tipo: 'interno' | 'externo';
+  urlExterna: string;
 }
 
 // Definição de grupo
@@ -25,13 +27,30 @@ interface DashboardGroup {
   id: string;
   name: string;
   dashboards: Dashboard[];
+  iconName?: string;
+}
+
+// Info de grupo vinda da API
+interface GrupoAPIInfo {
+  nome: string;
+  icone: string;
+  ordem: number;
+  ativo: boolean;
 }
 
 // Grupos de dashboards - 100% dinâmico a partir da planilha BASE MODULOS
+// Agora recebe info dos grupos (API GRUPOS) para filtrar inativos e ordenar
 const buildDashboardGroups = (
-  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string }[],
-  allowedIds: Set<string>
+  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string; tipo?: string; urlExterna?: string }[],
+  allowedIds: Set<string>,
+  gruposInfo: GrupoAPIInfo[]
 ): DashboardGroup[] => {
+  // Mapa de grupo -> info (ativo, ordem, icone)
+  const grupoMap = new Map<string, GrupoAPIInfo>();
+  for (const g of gruposInfo) {
+    grupoMap.set(g.nome.toLowerCase(), g);
+  }
+
   // Filtra módulos permitidos, agrupa por grupo, ordena por ordem
   const allowed = modulos
     .filter(m => allowedIds.has(m.moduloId))
@@ -40,20 +59,40 @@ const buildDashboardGroups = (
   const groupMap = new Map<string, Dashboard[]>();
   for (const m of allowed) {
     const g = m.grupo || 'Outros';
+    // Verificar se o grupo está ativo (se não tiver info, considerar ativo)
+    const info = grupoMap.get(g.toLowerCase());
+    if (info && !info.ativo) continue;
+
     if (!groupMap.has(g)) groupMap.set(g, []);
     groupMap.get(g)!.push({
       id: m.moduloId,
       label: m.moduloNome,
       path: m.moduloPath,
       icon: m.icone || 'dashboard',
+      tipo: (m.tipo as 'interno' | 'externo') || 'interno',
+      urlExterna: m.urlExterna || '',
     });
   }
 
-  return Array.from(groupMap.entries()).map(([name, dashboards]) => ({
-    id: name.toLowerCase().replace(/\s+/g, '-'),
-    name,
-    dashboards,
-  }));
+  const groups = Array.from(groupMap.entries()).map(([name, dashboards]) => {
+    const info = grupoMap.get(name.toLowerCase());
+    return {
+      id: name.toLowerCase().replace(/\s+/g, '-'),
+      name,
+      dashboards,
+      iconName: info?.icone,
+    };
+  });
+
+  // Ordenar por ordem do grupo (da API), depois por nome
+  groups.sort((a, b) => {
+    const ordemA = grupoMap.get(a.name.toLowerCase())?.ordem ?? 99;
+    const ordemB = grupoMap.get(b.name.toLowerCase())?.ordem ?? 99;
+    if (ordemA !== ordemB) return ordemA - ordemB;
+    return a.name.localeCompare(b.name, 'pt-BR');
+  });
+
+  return groups;
 };
 
 // Ícones SVG inline
@@ -124,6 +163,12 @@ const icons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
     </svg>
   ),
+  code: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 18l6-6-6-6" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 6l-6 6 6 6" />
+    </svg>
+  ),
   branch: (
     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 3v12" />
@@ -162,6 +207,61 @@ const icons: Record<string, JSX.Element> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
     </svg>
   ),
+  externalLink: (
+    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ opacity: 0.6 }}>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+    </svg>
+  ),
+  marketing: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+    </svg>
+  ),
+  creditcard: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+    </svg>
+  ),
+  people: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+    </svg>
+  ),
+  report: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  ),
+  tool: (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+};
+
+// Mapeamento de nomes de ícone da API GRUPOS → chave do record 'icons'
+const grupoIconToSidebarIcon: Record<string, string> = {
+  'target': 'target',
+  'chart': 'chart',
+  'money': 'money',
+  'trophy': 'trophy',
+  'users': 'users',
+  'settings': 'settings',
+  'dashboard': 'dashboard',
+  'file-spreadsheet': 'results',
+  'code': 'code',
+  'git-branch': 'branch',
+  'bar-chart': 'chart',
+  'pie-chart': 'chart',
+  'trending-up': 'fluxo',
+  'database': 'settings',
+  'folder': 'projetos',
+  'link': 'settings',
+  'external-link': 'settings',
+  'wallet': 'wallet',
+  'funnel': 'funnel',
+  'clipboard': 'report',
+  'layout-dashboard': 'dashboard',
 };
 
 // Componente de Grupo colapsável
@@ -180,7 +280,16 @@ const CollapsibleGroup = ({
   onClose: () => void;
   router: ReturnType<typeof useRouter>;
 }) => {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Resolver ícone do grupo via API → mapeamento → SVG
+  const groupIcon = useMemo(() => {
+    if (group.iconName) {
+      const key = grupoIconToSidebarIcon[group.iconName];
+      if (key && icons[key]) return icons[key];
+    }
+    return icons.dashboard;
+  }, [group.iconName]);
 
   // Filtrar dashboards baseado na pesquisa
   const filteredDashboards = useMemo(() => {
@@ -216,31 +325,56 @@ const CollapsibleGroup = ({
           justifyContent: 'space-between',
           width: '100%',
           padding: '10px 12px',
-          backgroundColor: 'rgba(255, 255, 255, 0.05)',
-          border: 'none',
+          backgroundColor: 'rgba(255, 102, 0, 0.06)',
+          border: '1px solid rgba(255, 102, 0, 0.35)',
           borderRadius: '6px',
           cursor: 'pointer',
-          transition: 'background 0.2s',
+          transition: 'all 0.2s',
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+          e.currentTarget.style.background = 'rgba(255, 102, 0, 0.12)';
+          e.currentTarget.style.borderColor = 'rgba(255, 102, 0, 0.55)';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+          e.currentTarget.style.background = 'rgba(255, 102, 0, 0.06)';
+          e.currentTarget.style.borderColor = 'rgba(255, 102, 0, 0.35)';
         }}
       >
-        <span style={{ 
-          color: '#9ca3af', 
-          fontWeight: 600, 
-          fontSize: '0.8rem',
-          fontFamily: "'Poppins', sans-serif",
-          textTransform: 'uppercase',
-          letterSpacing: '0.5px',
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          flex: 1,
+          minWidth: 0,
         }}>
-          {group.name}
-        </span>
+          <span style={{
+            width: '18px',
+            minWidth: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#FF6600',
+            flexShrink: 0,
+          }}>
+            {groupIcon}
+          </span>
+          <span style={{ 
+            color: '#e5e7eb', 
+            fontWeight: 600, 
+            fontSize: '0.75rem',
+            lineHeight: 1.25,
+            fontFamily: "'Poppins', sans-serif",
+            textTransform: 'uppercase',
+            letterSpacing: '0.8px',
+            flex: 1,
+            textAlign: 'left',
+          }}>
+            {group.name}
+          </span>
+        </div>
         <span style={{ 
           color: '#6b7280',
+          marginLeft: '12px',
           transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
           transition: 'transform 0.2s',
         }}>
@@ -259,7 +393,22 @@ const CollapsibleGroup = ({
           {filteredDashboards.map((dashboard) => {
             const active = isActive(dashboard.path);
             const isFavorite = favorites.includes(dashboard.id);
+            const isExternal = dashboard.tipo === 'externo' && dashboard.urlExterna;
             
+            const linkContent = (
+              <>
+                <span style={{ opacity: active ? 1 : 0.7 }}>
+                  {icons[dashboard.icon] || icons.dashboard}
+                </span>
+                <span style={{ flex: 1 }}>{dashboard.label}</span>
+                {isExternal && (
+                  <span style={{ opacity: 0.5, flexShrink: 0 }}>
+                    {icons.externalLink}
+                  </span>
+                )}
+              </>
+            );
+
             return (
               <div
                 key={dashboard.id}
@@ -284,27 +433,46 @@ const CollapsibleGroup = ({
                   }
                 }}
               >
-                <Link
-                  href={dashboard.path}
-                  onClick={() => onClose()}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    padding: '10px 12px',
-                    color: active ? '#FF6600' : '#9ca3af',
-                    textDecoration: 'none',
-                    fontFamily: "'Poppins', sans-serif",
-                    fontSize: '0.85rem',
-                    fontWeight: active ? 600 : 500,
-                  }}
-                >
-                  <span style={{ opacity: active ? 1 : 0.7 }}>
-                    {icons[dashboard.icon] || icons.dashboard}
-                  </span>
-                  <span>{dashboard.label}</span>
-                </Link>
+                {isExternal ? (
+                  <a
+                    href={dashboard.urlExterna}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      color: active ? '#FF6600' : '#9ca3af',
+                      textDecoration: 'none',
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: '0.85rem',
+                      fontWeight: active ? 600 : 500,
+                    }}
+                  >
+                    {linkContent}
+                  </a>
+                ) : (
+                  <Link
+                    href={dashboard.path}
+                    onClick={() => onClose()}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '10px 12px',
+                      color: active ? '#FF6600' : '#9ca3af',
+                      textDecoration: 'none',
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: '0.85rem',
+                      fontWeight: active ? 600 : 500,
+                    }}
+                  >
+                    {linkContent}
+                  </Link>
+                )}
                 <button
                   onClick={(e) => {
                     e.preventDefault();
@@ -340,9 +508,27 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [gruposInfo, setGruposInfo] = useState<GrupoAPIInfo[]>([]);
   const { allowedIds, modulos } = useModuloPermissions(user?.username, user?.accessLevel);
 
-  const dashboardGroups = useMemo(() => buildDashboardGroups(modulos, allowedIds), [modulos, allowedIds]);
+  // Buscar dados de grupos da API (ícone, ordem, ativo)
+  const fetchGruposInfo = useCallback(async () => {
+    try {
+      const res = await fetch('/api/controle-modulos/grupos?refresh=true');
+      if (res.ok) {
+        const data = await res.json();
+        setGruposInfo(data.grupos || []);
+      }
+    } catch {
+      // silently fail — usa defaults
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGruposInfo();
+  }, [fetchGruposInfo]);
+
+  const dashboardGroups = useMemo(() => buildDashboardGroups(modulos, allowedIds, gruposInfo), [modulos, allowedIds, gruposInfo]);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
@@ -414,7 +600,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           style={{
             height: 'calc(100vh - 64px - 60px)', // Mobile: header + footer
             scrollbarWidth: 'thin',
-            scrollbarColor: '#FF6600 #1a1d21',
+            scrollbarColor: '#555 #1a1d21',
           }}
         >
           <style jsx>{`
@@ -426,11 +612,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               border-radius: 3px;
             }
             nav::-webkit-scrollbar-thumb {
-              background: #FF6600;
+              background: #555;
               border-radius: 3px;
             }
             nav::-webkit-scrollbar-thumb:hover {
-              background: #e55a00;
+              background: #777;
             }
             @media (min-width: 1024px) {
               nav {
