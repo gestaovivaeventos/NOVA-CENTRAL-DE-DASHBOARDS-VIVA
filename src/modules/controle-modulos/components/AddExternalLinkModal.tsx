@@ -1,11 +1,9 @@
 /**
- * Modal de edição de Módulo
- * Padrão do EditCardModal de Branches: overlay, dropdowns, searchable multi-select para usuários, botão salvar
+ * Modal para criar novo link externo (Looker Studio, Planilhas, etc.)
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Save, Settings, Search, Check, Plus, ChevronDown } from 'lucide-react';
-import type { ModuloConfig } from '../types';
+import { X, Plus, ExternalLink, Search, Check, ChevronDown } from 'lucide-react';
 
 interface Usuario {
   username: string;
@@ -13,12 +11,25 @@ interface Usuario {
   accessLevel: number;
 }
 
-interface EditModuloModalProps {
+interface AddExternalLinkModalProps {
   isOpen: boolean;
   onClose: () => void;
-  modulo: ModuloConfig | null;
-  onSave: (moduloId: string, field: string, value: string) => Promise<boolean>;
-  gruposExistentes?: string[];
+  onSave: (data: ExternalLinkData) => Promise<boolean>;
+  gruposExistentes: string[];
+}
+
+export interface ExternalLinkData {
+  moduloId: string;
+  moduloNome: string;
+  moduloPath: string;
+  nvlAcesso: number;
+  usuariosPermitidos: string;
+  ativo: string;
+  grupo: string;
+  ordem: number;
+  icone: string;
+  tipo: string;
+  urlExterna: string;
 }
 
 const ICONES_SUGERIDOS = [
@@ -30,67 +41,47 @@ const ICONES_SUGERIDOS = [
   { value: 'database', label: 'Dados' },
   { value: 'layout-dashboard', label: 'Dashboard' },
   { value: 'external-link', label: 'Externo' },
-  { value: 'chart', label: 'Chart' },
-  { value: 'dashboard', label: 'Painel' },
-  { value: 'settings', label: 'Configurações' },
-  { value: 'users', label: 'Usuários' },
-  { value: 'folder', label: 'Pasta' },
-  { value: 'target', label: 'Meta' },
-  { value: 'dollar-sign', label: 'Financeiro' },
-  { value: 'clipboard', label: 'Relatório' },
-  { value: 'git-branch', label: 'Branch' },
-  { value: 'check-circle', label: 'Check' },
 ];
 
-export default function EditModuloModal({
+export default function AddExternalLinkModal({
   isOpen,
   onClose,
-  modulo,
   onSave,
-  gruposExistentes = [],
-}: EditModuloModalProps) {
-  // Editable fields
-  const [nvlAcesso, setNvlAcesso] = useState('1');
-  const [ativo, setAtivo] = useState('TRUE');
+  gruposExistentes,
+}: AddExternalLinkModalProps) {
+  const [nome, setNome] = useState('');
+  const [url, setUrl] = useState('');
   const [grupo, setGrupo] = useState('');
+  const [grupoSearch, setGrupoSearch] = useState('');
+  const [grupoDropdownOpen, setGrupoDropdownOpen] = useState(false);
+  const [nvlAcesso, setNvlAcesso] = useState('0');
   const [ordem, setOrdem] = useState('1');
-  const [icone, setIcone] = useState('');
-  const [tipo, setTipo] = useState('interno');
-  const [urlExterna, setUrlExterna] = useState('');
+  const [icone, setIcone] = useState('link');
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
-
-  // Users data
   const [todosUsuarios, setTodosUsuarios] = useState<Usuario[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const userDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Grupo search/create
-  const [grupoSearch, setGrupoSearch] = useState('');
-  const [grupoDropdownOpen, setGrupoDropdownOpen] = useState(false);
-  const grupoDropdownRef = useRef<HTMLDivElement>(null);
 
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
-  // Sync state when modulo changes
-  useEffect(() => {
-    if (modulo) {
-      setNvlAcesso(String(modulo.nvlAcesso));
-      setAtivo(modulo.ativo ? 'TRUE' : 'FALSE');
-      setGrupo(modulo.grupo);
-      setOrdem(String(modulo.ordem));
-      setIcone(modulo.icone);
-      setTipo((modulo as any).tipo || 'interno');
-      setUrlExterna((modulo as any).urlExterna || '');
-      setUsuariosSelecionados(modulo.usuariosPermitidos || []);
-      setUserSearch('');
-      setUserDropdownOpen(false);
-    }
-  }, [modulo]);
+  const grupoDropdownRef = useRef<HTMLDivElement>(null);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch list of users
+  // Reset form when opening
   useEffect(() => {
     if (isOpen) {
+      setNome('');
+      setUrl('');
+      setGrupo('');
+      setGrupoSearch('');
+      setNvlAcesso('0');
+      setOrdem('1');
+      setIcone('link');
+      setUsuariosSelecionados([]);
+      setUserSearch('');
+      setError('');
+
       fetch('/api/controle-modulos/usuarios')
         .then(r => r.json())
         .then(d => setTodosUsuarios(d.usuarios || []))
@@ -98,21 +89,20 @@ export default function EditModuloModal({
     }
   }, [isOpen]);
 
-  // Close user dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
-        setUserDropdownOpen(false);
-      }
       if (grupoDropdownRef.current && !grupoDropdownRef.current.contains(e.target as Node)) {
         setGrupoDropdownOpen(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
+        setUserDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  // Lista de grupos (todos vindos da prop gruposExistentes = módulos + planilha GRUPOS)
   const todosGrupos = useMemo(() => {
     return [...gruposExistentes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [gruposExistentes]);
@@ -131,79 +121,52 @@ export default function EditModuloModal({
     );
   }, [todosUsuarios, userSearch]);
 
-  if (!isOpen || !modulo) return null;
+  if (!isOpen) return null;
 
-  // Detect changes
-  const hasChanges = (() => {
-    if (nvlAcesso !== String(modulo.nvlAcesso)) return true;
-    if (ativo !== (modulo.ativo ? 'TRUE' : 'FALSE')) return true;
-    if (grupo !== modulo.grupo) return true;
-    if (ordem !== String(modulo.ordem)) return true;
-    if (icone !== modulo.icone) return true;
-    if (tipo !== ((modulo as any).tipo || 'interno')) return true;
-    if (urlExterna !== ((modulo as any).urlExterna || '')) return true;
-    const originalUsers = (modulo.usuariosPermitidos || []).join(',');
-    const currentUsers = usuariosSelecionados.join(',');
-    if (currentUsers !== originalUsers) return true;
-    return false;
-  })();
+  // Gerar ID automaticamente a partir do nome
+  const generateId = (name: string) =>
+    name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
 
   const toggleUser = (username: string) => {
     setUsuariosSelecionados(prev =>
-      prev.includes(username)
-        ? prev.filter(u => u !== username)
-        : [...prev, username]
+      prev.includes(username) ? prev.filter(u => u !== username) : [...prev, username]
     );
   };
 
-  // Save all changed fields one by one
+  const isValid = nome.trim() && url.trim() && grupo.trim();
+
   const handleSave = async () => {
-    if (!hasChanges) {
-      onClose();
+    if (!isValid) {
+      setError('Preencha nome, URL e grupo.');
       return;
     }
 
     setSaving(true);
-    let allOk = true;
+    setError('');
 
-    if (nvlAcesso !== String(modulo.nvlAcesso)) {
-      const ok = await onSave(modulo.moduloId, 'nvl_acesso', nvlAcesso);
-      if (!ok) allOk = false;
-    }
-    if (ativo !== (modulo.ativo ? 'TRUE' : 'FALSE')) {
-      const ok = await onSave(modulo.moduloId, 'ativo', ativo);
-      if (!ok) allOk = false;
-    }
-    if (grupo !== modulo.grupo) {
-      const ok = await onSave(modulo.moduloId, 'grupo', grupo);
-      if (!ok) allOk = false;
-    }
-    if (ordem !== String(modulo.ordem)) {
-      const ok = await onSave(modulo.moduloId, 'ordem', ordem);
-      if (!ok) allOk = false;
-    }
-    if (icone !== modulo.icone) {
-      const ok = await onSave(modulo.moduloId, 'icone', icone);
-      if (!ok) allOk = false;
-    }
-    if (tipo !== ((modulo as any).tipo || 'interno')) {
-      const ok = await onSave(modulo.moduloId, 'tipo', tipo);
-      if (!ok) allOk = false;
-    }
-    if (urlExterna !== ((modulo as any).urlExterna || '')) {
-      const ok = await onSave(modulo.moduloId, 'url_externa', urlExterna);
-      if (!ok) allOk = false;
-    }
+    const data: ExternalLinkData = {
+      moduloId: generateId(nome),
+      moduloNome: nome.trim(),
+      moduloPath: '',
+      nvlAcesso: parseInt(nvlAcesso),
+      usuariosPermitidos: usuariosSelecionados.join(','),
+      ativo: 'TRUE',
+      grupo: grupo.trim(),
+      ordem: parseInt(ordem),
+      icone: icone,
+      tipo: 'externo',
+      urlExterna: url.trim(),
+    };
 
-    const originalUsers = (modulo.usuariosPermitidos || []).join(',');
-    const currentUsers = usuariosSelecionados.join(',');
-    if (currentUsers !== originalUsers) {
-      const ok = await onSave(modulo.moduloId, 'usuarios_permitidos', currentUsers);
-      if (!ok) allOk = false;
-    }
-
+    const ok = await onSave(data);
     setSaving(false);
-    if (allOk) onClose();
+    if (ok) onClose();
+    else setError('Erro ao salvar. Verifique se o ID já existe.');
   };
 
   return (
@@ -224,7 +187,7 @@ export default function EditModuloModal({
         style={{
           backgroundColor: '#2d3239',
           borderRadius: '16px',
-          border: '1px solid #FF6600',
+          border: '1px solid #8b5cf6',
           width: '90%',
           maxWidth: '600px',
           maxHeight: '85vh',
@@ -236,7 +199,7 @@ export default function EditModuloModal({
         <div
           style={{
             padding: '20px 24px',
-            borderBottom: '2px solid #FF6600',
+            borderBottom: '2px solid #8b5cf6',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -250,12 +213,12 @@ export default function EditModuloModal({
           <div className="flex items-center gap-3">
             <div
               style={{
-                backgroundColor: 'rgba(255,102,0,0.15)',
+                backgroundColor: 'rgba(139,92,246,0.15)',
                 padding: '8px',
                 borderRadius: '10px',
               }}
             >
-              <Settings size={22} color="#FF6600" />
+              <ExternalLink size={22} color="#8b5cf6" />
             </div>
             <div>
               <h2
@@ -266,22 +229,16 @@ export default function EditModuloModal({
                   fontFamily: "'Poppins', sans-serif",
                 }}
               >
-                {modulo.moduloNome}
+                Adicionar Link Externo
               </h2>
               <p style={{ color: '#6c757d', fontSize: '0.75rem' }}>
-                {modulo.moduloPath} &middot; ID: {modulo.moduloId}
+                Looker Studio, Planilhas, Relatórios, etc.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#6c757d',
-              cursor: 'pointer',
-              padding: '4px',
-            }}
+            style={{ background: 'none', border: 'none', color: '#6c757d', cursor: 'pointer', padding: '4px' }}
           >
             <X size={22} />
           </button>
@@ -289,60 +246,41 @@ export default function EditModuloModal({
 
         {/* Body */}
         <div style={{ padding: '24px' }}>
-          {/* Nível de Acesso */}
+          {/* Nome */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Nível de Acesso</label>
-            <select
-              value={nvlAcesso}
-              onChange={(e) => setNvlAcesso(e.target.value)}
-              style={{
-                ...inputStyle,
-                cursor: 'pointer',
-                borderColor: nvlAcesso === '0' ? '#10b981' : '#f59e0b',
-                color: nvlAcesso === '0' ? '#10b981' : '#f59e0b',
-              }}
-            >
-              <option value="0" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                0 — Rede (todos os usuários)
-              </option>
-              <option value="1" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                1 — Franqueadora (apenas franqueadora)
-              </option>
-            </select>
+            <label style={labelStyle}>Nome do Dashboard / Relatório *</label>
+            <input
+              type="text"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+              placeholder="Ex: Relatório Financeiro Mensal"
+              style={inputStyle}
+            />
+            {nome && (
+              <p style={{ color: '#6c757d', fontSize: '0.7rem', marginTop: 4 }}>
+                ID gerado: <code style={{ color: '#8b5cf6' }}>{generateId(nome)}</code>
+              </p>
+            )}
           </div>
 
-          {/* Ativo */}
+          {/* URL */}
           <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Status</label>
-            <select
-              value={ativo}
-              onChange={(e) => setAtivo(e.target.value)}
+            <label style={labelStyle}>URL Externa *</label>
+            <input
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://lookerstudio.google.com/reporting/..."
               style={{
                 ...inputStyle,
-                cursor: 'pointer',
-                borderColor: ativo === 'TRUE' ? '#10b981' : '#ef4444',
-                color: ativo === 'TRUE' ? '#10b981' : '#ef4444',
+                borderColor: url ? '#8b5cf6' : '#444',
               }}
-            >
-              <option value="TRUE" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                Ativo
-              </option>
-              <option value="FALSE" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                Inativo
-              </option>
-            </select>
+            />
           </div>
 
           {/* Grupo — Searchable com criação */}
           <div style={{ marginBottom: '20px' }} ref={grupoDropdownRef}>
-            <label style={labelStyle}>
-              Grupo
-              {grupoDropdownOpen && grupo && !grupoSearch && (
-                <span style={{ color: '#FF6600', fontWeight: 400, textTransform: 'none', marginLeft: 8 }}>
-                  atual: {grupo}
-                </span>
-              )}
-            </label>
+            <label style={labelStyle}>Grupo *</label>
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
@@ -354,7 +292,7 @@ export default function EditModuloModal({
                   setGrupoDropdownOpen(true);
                   setGrupoSearch('');
                 }}
-                placeholder={grupoDropdownOpen ? 'Digite para filtrar ou criar...' : 'Selecione ou digite um novo grupo...'}
+                placeholder={grupoDropdownOpen ? 'Digite para filtrar ou criar...' : 'Selecione ou crie um grupo...'}
                 style={{ ...inputStyle, paddingRight: 36 }}
               />
               <ChevronDown
@@ -398,20 +336,20 @@ export default function EditModuloModal({
                         gap: 8,
                         width: '100%',
                         padding: '8px 14px',
-                        background: grupo === g ? 'rgba(255,102,0,0.1)' : 'transparent',
+                        background: grupo === g ? 'rgba(139,92,246,0.1)' : 'transparent',
                         border: 'none',
                         borderBottom: '1px solid #333',
-                        color: grupo === g ? '#FF6600' : '#F8F9FA',
+                        color: grupo === g ? '#8b5cf6' : '#F8F9FA',
                         fontSize: '0.8rem',
                         fontFamily: 'Poppins, sans-serif',
                         cursor: 'pointer',
                         textAlign: 'left',
                         transition: 'background 0.15s',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = grupo === g ? 'rgba(255,102,0,0.15)' : 'rgba(255,255,255,0.05)')}
-                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = grupo === g ? 'rgba(255,102,0,0.1)' : 'transparent')}
+                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = grupo === g ? 'rgba(139,92,246,0.1)' : 'transparent')}
                     >
-                      {grupo === g && <Check size={14} color="#FF6600" />}
+                      {grupo === g && <Check size={14} color="#8b5cf6" />}
                       {g}
                     </button>
                   ))}
@@ -448,89 +386,61 @@ export default function EditModuloModal({
             </div>
           </div>
 
-          {/* Ordem */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Ordem</label>
-            <select
-              value={ordem}
-              onChange={(e) => setOrdem(e.target.value)}
-              style={{
-                ...inputStyle,
-                cursor: 'pointer',
-              }}
-            >
-              {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
-                <option key={n} value={String(n)} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                  {n}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Ícone */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Ícone</label>
-            <select
-              value={icone}
-              onChange={(e) => setIcone(e.target.value)}
-              style={{
-                ...inputStyle,
-                cursor: 'pointer',
-              }}
-            >
-              {!ICONES_SUGERIDOS.some(i => i.value === icone) && icone && (
-                <option value={icone} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                  {icone} (atual)
-                </option>
-              )}
-              {ICONES_SUGERIDOS.map((ic) => (
-                <option key={ic.value} value={ic.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                  {ic.label} ({ic.value})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Tipo */}
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Tipo</label>
-            <select
-              value={tipo}
-              onChange={(e) => setTipo(e.target.value)}
-              style={{
-                ...inputStyle,
-                cursor: 'pointer',
-                borderColor: tipo === 'externo' ? '#8b5cf6' : '#6c757d',
-                color: tipo === 'externo' ? '#8b5cf6' : '#F8F9FA',
-              }}
-            >
-              <option value="interno" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                Interno (rota Next.js)
-              </option>
-              <option value="externo" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                Externo (Looker Studio, Sheets, etc.)
-              </option>
-            </select>
-          </div>
-
-          {/* URL Externa (só aparece se tipo = externo) */}
-          {tipo === 'externo' && (
-            <div style={{ marginBottom: '20px' }}>
-              <label style={labelStyle}>URL Externa</label>
-              <input
-                type="url"
-                value={urlExterna}
-                onChange={(e) => setUrlExterna(e.target.value)}
-                placeholder="https://lookerstudio.google.com/..."
-                style={{
-                  ...inputStyle,
-                  borderColor: urlExterna ? '#8b5cf6' : '#444',
-                }}
-              />
+          {/* Row: Icone + Ordem */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: '20px' }}>
+            <div>
+              <label style={labelStyle}>Ícone</label>
+              <select
+                value={icone}
+                onChange={(e) => setIcone(e.target.value)}
+                style={{ ...inputStyle, cursor: 'pointer' }}
+              >
+                {ICONES_SUGERIDOS.map(i => (
+                  <option key={i.value} value={i.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                    {i.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+            <div>
+              <label style={labelStyle}>Ordem</label>
+              <select
+                value={ordem}
+                onChange={(e) => setOrdem(e.target.value)}
+                style={{ ...inputStyle, cursor: 'pointer' }}
+              >
+                {Array.from({ length: 20 }, (_, i) => i + 1).map(n => (
+                  <option key={n} value={String(n)} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                    {n}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
 
-          {/* Usuários Permitidos — Searchable multi-select */}
+          {/* Nível de Acesso */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Nível de Acesso</label>
+            <select
+              value={nvlAcesso}
+              onChange={(e) => setNvlAcesso(e.target.value)}
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+                borderColor: nvlAcesso === '0' ? '#10b981' : '#f59e0b',
+                color: nvlAcesso === '0' ? '#10b981' : '#f59e0b',
+              }}
+            >
+              <option value="0" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                0 — Rede (todos os usuários)
+              </option>
+              <option value="1" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                1 — Franqueadora (apenas franqueadora)
+              </option>
+            </select>
+          </div>
+
+          {/* Usuários Permitidos */}
           <div style={{ marginBottom: '20px' }} ref={userDropdownRef}>
             <label style={labelStyle}>
               Usuários Permitidos
@@ -541,7 +451,6 @@ export default function EditModuloModal({
               </span>
             </label>
 
-            {/* Selected chips */}
             {usuariosSelecionados.length > 0 && (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                 {usuariosSelecionados.map(u => (
@@ -551,12 +460,12 @@ export default function EditModuloModal({
                       display: 'inline-flex',
                       alignItems: 'center',
                       gap: 4,
-                      backgroundColor: 'rgba(255,102,0,0.12)',
-                      border: '1px solid rgba(255,102,0,0.3)',
+                      backgroundColor: 'rgba(139,92,246,0.12)',
+                      border: '1px solid rgba(139,92,246,0.3)',
                       borderRadius: 6,
                       padding: '3px 10px',
                       fontSize: '0.75rem',
-                      color: '#FF6600',
+                      color: '#8b5cf6',
                       fontFamily: 'Poppins, sans-serif',
                       fontWeight: 500,
                     }}
@@ -567,7 +476,7 @@ export default function EditModuloModal({
                       style={{
                         background: 'none',
                         border: 'none',
-                        color: '#FF6600',
+                        color: '#8b5cf6',
                         cursor: 'pointer',
                         padding: 0,
                         lineHeight: 1,
@@ -581,7 +490,6 @@ export default function EditModuloModal({
               </div>
             )}
 
-            {/* Search input */}
             <div style={{ position: 'relative' }}>
               <div style={{ position: 'relative' }}>
                 <Search
@@ -601,14 +509,9 @@ export default function EditModuloModal({
                   onChange={(e) => setUserSearch(e.target.value)}
                   onFocus={() => setUserDropdownOpen(true)}
                   placeholder="Buscar usuário..."
-                  style={{
-                    ...inputStyle,
-                    paddingLeft: 36,
-                  }}
+                  style={{ ...inputStyle, paddingLeft: 36 }}
                 />
               </div>
-
-              {/* Dropdown list */}
               {userDropdownOpen && (
                 <div
                   style={{
@@ -641,33 +544,33 @@ export default function EditModuloModal({
                             gap: 8,
                             width: '100%',
                             padding: '8px 14px',
-                            background: selected ? 'rgba(255,102,0,0.1)' : 'transparent',
+                            background: selected ? 'rgba(139,92,246,0.1)' : 'transparent',
                             border: 'none',
                             borderBottom: '1px solid #333',
-                            color: selected ? '#FF6600' : '#F8F9FA',
+                            color: selected ? '#8b5cf6' : '#F8F9FA',
                             fontSize: '0.8rem',
                             fontFamily: 'Poppins, sans-serif',
                             cursor: 'pointer',
                             textAlign: 'left',
                             transition: 'background 0.15s',
                           }}
-                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(255,102,0,0.15)' : 'rgba(255,255,255,0.05)')}
-                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(255,102,0,0.1)' : 'transparent')}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.05)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(139,92,246,0.1)' : 'transparent')}
                         >
                           <div
                             style={{
                               width: 18,
                               height: 18,
                               borderRadius: 4,
-                              border: selected ? '2px solid #FF6600' : '2px solid #555',
+                              border: selected ? '2px solid #8b5cf6' : '2px solid #555',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
                               flexShrink: 0,
-                              backgroundColor: selected ? 'rgba(255,102,0,0.15)' : 'transparent',
+                              backgroundColor: selected ? 'rgba(139,92,246,0.15)' : 'transparent',
                             }}
                           >
-                            {selected && <Check size={12} color="#FF6600" />}
+                            {selected && <Check size={12} color="#8b5cf6" />}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <span style={{ fontWeight: 600 }}>{u.username}</span>
@@ -695,22 +598,28 @@ export default function EditModuloModal({
             </div>
           </div>
 
+          {error && (
+            <p style={{ color: '#ef4444', fontSize: '0.8rem', marginBottom: 12, fontFamily: 'Poppins, sans-serif' }}>
+              {error}
+            </p>
+          )}
+
           {/* Botão Salvar */}
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !isValid}
             className="w-full flex items-center justify-center gap-2 rounded-lg transition-all duration-200"
             style={{
-              backgroundColor: hasChanges ? '#FF6600' : '#4b5563',
+              backgroundColor: isValid ? '#8b5cf6' : '#4b5563',
               border: 'none',
               padding: '12px',
               color: '#fff',
               fontFamily: 'Poppins, sans-serif',
               fontSize: '0.9rem',
               fontWeight: 700,
-              cursor: saving ? 'not-allowed' : 'pointer',
+              cursor: saving || !isValid ? 'not-allowed' : 'pointer',
               opacity: saving ? 0.7 : 1,
-              boxShadow: hasChanges ? '0 4px 12px rgba(255,102,0,0.3)' : 'none',
+              boxShadow: isValid ? '0 4px 12px rgba(139,92,246,0.3)' : 'none',
             }}
           >
             {saving ? (
@@ -725,12 +634,12 @@ export default function EditModuloModal({
                     animation: 'spin 0.8s linear infinite',
                   }}
                 />
-                Salvando...
+                Criando...
               </>
             ) : (
               <>
-                <Save size={18} />
-                {hasChanges ? 'Salvar alterações' : 'Sem alterações'}
+                <Plus size={18} />
+                Adicionar Link Externo
               </>
             )}
           </button>
@@ -746,7 +655,6 @@ export default function EditModuloModal({
   );
 }
 
-// ======= Styles compartilhados (mesmo padrão do EditCardModal) =======
 const labelStyle: React.CSSProperties = {
   display: 'block',
   color: '#adb5bd',

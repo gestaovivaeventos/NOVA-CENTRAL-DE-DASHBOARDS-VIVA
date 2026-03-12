@@ -59,11 +59,36 @@ export function useControleModulos() {
     [fetchModulos]
   );
 
+  const createModulo = useCallback(
+    async (data: Record<string, any>) => {
+      try {
+        const res = await fetch('/api/controle-modulos/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        if (!res.ok) {
+          const result = await res.json();
+          throw new Error(result.error || 'Erro ao criar módulo');
+        }
+
+        await fetchModulos(true);
+        return true;
+      } catch (err: any) {
+        setError(err.message);
+        return false;
+      }
+    },
+    [fetchModulos]
+  );
+
   return {
     modulos,
     loading,
     error,
     refetch: fetchModulos,
     updateModulo,
+    createModulo,
   };
 }
