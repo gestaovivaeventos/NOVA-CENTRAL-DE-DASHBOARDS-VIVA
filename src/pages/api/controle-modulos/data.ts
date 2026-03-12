@@ -4,7 +4,8 @@
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { getExternalSheetData } from '@/lib/sheets-client';
+import { getExternalSheetData, getAuthenticatedClient } from '@/lib/sheets-client';
+import { google } from 'googleapis';
 import cache from '@/lib/cache';
 
 const CACHE_KEY = 'controle-modulos:data';
@@ -29,17 +30,16 @@ export default async function handler(
       });
     }
 
-    const forceRefresh = req.query.refresh === 'true';
-    if (forceRefresh) {
-      cache.invalidate(CACHE_KEY);
-    }
+    // Sempre invalidar cache e buscar direto da planilha para garantir dados frescos
+    cache.invalidate(CACHE_KEY);
 
-    const rows = await getExternalSheetData(
+    const auth = getAuthenticatedClient();
+    const sheets = google.sheets({ version: 'v4', auth });
+    const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      `${sheetName}!A:K`,
-      CACHE_KEY,
-      CACHE_TTL
-    );
+      range: `${sheetName}!A:K`,
+    });
+    const rows = response.data.values || [];
 
     // Pular header (primeira linha)
     const dataRows = rows.slice(1);

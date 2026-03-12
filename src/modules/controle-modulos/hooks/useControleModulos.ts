@@ -14,11 +14,7 @@ export function useControleModulos() {
       setLoading(true);
       setError(null);
 
-      const url = forceRefresh
-        ? '/api/controle-modulos/data?refresh=true'
-        : '/api/controle-modulos/data';
-
-      const res = await fetch(url);
+      const res = await fetch('/api/controle-modulos/data?refresh=true');
       if (!res.ok) throw new Error('Erro ao buscar módulos');
 
       const data = await res.json();

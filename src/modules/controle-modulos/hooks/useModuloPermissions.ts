@@ -72,7 +72,7 @@ export function useModuloPermissions(
     setLoading(true);
     let cancelled = false;
 
-    fetch('/api/controle-modulos/data')
+    fetch('/api/controle-modulos/data?refresh=true')
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
