@@ -8,8 +8,6 @@ import { google } from 'googleapis';
 import { getAuthenticatedClient } from '@/lib/sheets-client';
 import cache from '@/lib/cache';
 
-const SPREADSHEET_ID = '1QSiCHm-kgDTLnwhtJVdsPLD70CbYTexH3WUE5LuDxtE';
-const SHEET_NAME = 'BASE MODULOS';
 const CACHE_KEY = 'controle-modulos:data';
 
 // Mapear campos para índice de coluna
@@ -23,6 +21,8 @@ const FIELD_TO_COL: Record<string, number> = {
   grupo: 6,            // G
   ordem: 7,            // H
   icone: 8,            // I
+  tipo: 9,             // J
+  url_externa: 10,     // K
 };
 
 export default async function handler(
@@ -34,6 +34,16 @@ export default async function handler(
   }
 
   try {
+    const spreadsheetId = process.env.CONTROLE_MODULOS_SPREADSHEET_ID;
+    const sheetName = process.env.CONTROLE_MODULOS_SHEET_NAME || 'BASE MODULOS';
+
+    if (!spreadsheetId) {
+      return res.status(500).json({
+        error: 'Configuração ausente',
+        message: 'CONTROLE_MODULOS_SPREADSHEET_ID não configurado',
+      });
+    }
+
     const { moduloId, field, value } = req.body;
 
     if (!moduloId || !field || value === undefined) {
@@ -54,8 +64,8 @@ export default async function handler(
     const sheets = google.sheets({ version: 'v4', auth });
 
     const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:I`,
+      spreadsheetId,
+      range: `${sheetName}!A:K`,
     });
 
     const rows = response.data.values || [];
@@ -76,8 +86,8 @@ export default async function handler(
     const colLetter = String.fromCharCode(65 + colIndex);
 
     await sheets.spreadsheets.values.update({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!${colLetter}${rowIndex}`,
+      spreadsheetId,
+      range: `${sheetName}!${colLetter}${rowIndex}`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [[value]] },
     });

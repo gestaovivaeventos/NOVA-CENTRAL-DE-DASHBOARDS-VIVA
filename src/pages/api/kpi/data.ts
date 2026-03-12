@@ -8,8 +8,8 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { KpiData, KpiApiResponse } from '@/modules/kpi/types';
 
 // Configurações
-const SPREADSHEET_ID = '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs';
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || 'AIzaSyBuGRH91CnRuDtN5RGsb5DvHEfhTxJnWSs';
+const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO!;
+const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY!;
 const SHEET_NAME = 'KPIS';
 
 // Cache em memória

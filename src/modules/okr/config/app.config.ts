@@ -1,8 +1,8 @@
 // Configurações da API
 export const config = {
   // Planilha de dados principal
-  spreadsheetId: '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs',
-  apiKey: 'AIzaSyBuGRH91CnRuDtN5RGsb5DvHEfhTxJnWSs',
+  spreadsheetId: process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO || '',
+  apiKey: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
 
   // Aba da planilha de OKRs
   sheetName: 'NOVO PAINEL OKR',

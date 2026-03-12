@@ -80,7 +80,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     });
 
     const sheets = google.sheets({ version: 'v4', auth });
-    const spreadsheetId = '1saWDiU5tILtSheGgykJEz-xR0pmemz29256Y7pfZvSs';
+    const spreadsheetId = process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO!;
 
     // Preparar batch updates
     const batchUpdates: Array<{ range: string; values: string[][] }> = [];

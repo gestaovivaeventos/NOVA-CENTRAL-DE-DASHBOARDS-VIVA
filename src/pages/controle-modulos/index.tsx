@@ -7,11 +7,40 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { RefreshCw, AlertTriangle, Settings, ChevronDown, ChevronRight, Edit2 } from 'lucide-react';
+import { RefreshCw, AlertTriangle, ChevronDown, ChevronRight, Edit2, Plus, Pencil, Settings, BarChart, PieChart, TrendingUp, Database, Folder, Link, ExternalLink, Target, DollarSign, Clipboard, GitBranch, CheckCircle, Users, LayoutDashboard, FileSpreadsheet, Code2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { Header, Sidebar, EditModuloModal } from '@/modules/controle-modulos/components';
+import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
 import type { ModuloConfig } from '@/modules/controle-modulos/types';
+import type { ExternalLinkData } from '@/modules/controle-modulos/components/AddExternalLinkModal';
+import type { GrupoInfo } from '@/modules/controle-modulos/components/GerenciarGruposModal';
+
+// Mapeamento de nomes de ícone para componentes Lucide
+const ICON_MAP: Record<string, React.ElementType> = {
+  settings: Settings,
+  'bar-chart': BarChart,
+  'pie-chart': PieChart,
+  'trending-up': TrendingUp,
+  database: Database,
+  folder: Folder,
+  link: Link,
+  'external-link': ExternalLink,
+  target: Target,
+  'dollar-sign': DollarSign,
+  money: DollarSign,
+  clipboard: Clipboard,
+  'git-branch': GitBranch,
+  'code': Code2,
+  'check-circle': CheckCircle,
+  users: Users,
+  'layout-dashboard': LayoutDashboard,
+  dashboard: LayoutDashboard,
+  'file-spreadsheet': FileSpreadsheet,
+  chart: BarChart,
+  trophy: Target,
+  wallet: DollarSign,
+  funnel: TrendingUp,
+};
 
 const SIDEBAR_WIDTH_EXPANDED = 260;
 const SIDEBAR_WIDTH_COLLAPSED = 60;
@@ -19,11 +48,32 @@ const SIDEBAR_WIDTH_COLLAPSED = 60;
 export default function ControleModulosPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { modulos, loading, error, refetch, updateModulo } = useControleModulos();
+  const { modulos, loading, error, refetch, updateModulo, createModulo } = useControleModulos();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingModulo, setEditingModulo] = useState<ModuloConfig | null>(null);
+  const [addLinkOpen, setAddLinkOpen] = useState(false);
+  const [gruposModalOpen, setGruposModalOpen] = useState(false);
+  const [editGrupoNome, setEditGrupoNome] = useState<string | null>(null);
+  const [gruposDaPlanilha, setGruposDaPlanilha] = useState<GrupoInfo[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Buscar grupos da planilha (com ícone)
+  const fetchGruposCustomizados = useCallback(async () => {
+    try {
+      const res = await fetch('/api/controle-modulos/grupos?refresh=true');
+      if (res.ok) {
+        const data = await res.json();
+        setGruposDaPlanilha(data.grupos || []);
+      }
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchGruposCustomizados();
+  }, [fetchGruposCustomizados]);
 
   // Derivar autorização diretamente dos dados já carregados (single source of truth)
   const isAuthorized = useMemo(() => {
@@ -77,6 +127,62 @@ export default function ControleModulosPage() {
     const ok = await updateModulo(moduloId, field, value);
     return ok;
   }, [updateModulo]);
+
+  // Salvar grupo via EditGrupoModal (PUT na API + renomear módulos se necessário)
+  const handleSaveGrupo = useCallback(async (
+    grupoOriginal: string,
+    updates: { nome?: string; icone?: string; ordem?: number; ativo?: boolean }
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/controle-modulos/grupos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ grupo: grupoOriginal, ...updates }),
+      });
+      if (!res.ok) return false;
+
+      // Se renomeou, atualizar grupo em todos os módulos
+      if (updates.nome && updates.nome !== grupoOriginal) {
+        const modsInGroup = gruposMap.get(grupoOriginal) || [];
+        for (const mod of modsInGroup) {
+          await updateModulo(mod.moduloId, 'grupo', updates.nome);
+        }
+        setExpandedGroups((prev) => {
+          const next = new Set(prev);
+          next.delete(grupoOriginal);
+          next.add(updates.nome!);
+          return next;
+        });
+      }
+
+      // Atualizar dados locais
+      await fetchGruposCustomizados();
+      await refetch();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [gruposMap, updateModulo, fetchGruposCustomizados, refetch]);
+
+  const handleCreateExternalLink = useCallback(async (data: ExternalLinkData) => {
+    const ok = await createModulo(data);
+    return ok;
+  }, [createModulo]);
+
+  // Lista de nomes de grupos existentes (módulos + planilha GRUPOS)
+  const gruposExistentes = useMemo(() => {
+    const nomesDaPlanilha = gruposDaPlanilha.map(g => g.nome);
+    return Array.from(new Set([...modulos.map(m => m.grupo).filter(Boolean), ...nomesDaPlanilha]));
+  }, [modulos, gruposDaPlanilha]);
+
+  // Mapa de ícone por grupo (planilha é a fonte)
+  const grupoIconeMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const g of gruposDaPlanilha) {
+      map.set(g.nome, g.icone);
+    }
+    return map;
+  }, [gruposDaPlanilha]);
 
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
@@ -151,6 +257,48 @@ export default function ControleModulosPage() {
               </span>
             )}
             <button
+              onClick={() => setGruposModalOpen(true)}
+              style={{
+                backgroundColor: 'rgba(255,102,0,0.10)',
+                border: '1px solid #FF6600',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                color: '#FF6600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.8rem',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 600,
+              }}
+              title="Gerenciar grupos"
+            >
+              <Plus size={16} />
+              Grupos
+            </button>
+            <button
+              onClick={() => setAddLinkOpen(true)}
+              style={{
+                backgroundColor: 'rgba(139,92,246,0.15)',
+                border: '1px solid #8b5cf6',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                color: '#8b5cf6',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.8rem',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 600,
+              }}
+              title="Adicionar link externo"
+            >
+              <Plus size={16} />
+              Link Externo
+            </button>
+            <button
               onClick={() => refetch(true)}
               disabled={loading}
               style={{
@@ -191,14 +339,14 @@ export default function ControleModulosPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 2fr 120px 90px 140px 70px 50px',
+                  gridTemplateColumns: '2fr 2fr 80px 120px 90px 140px 70px 50px',
                   gap: 0,
                   backgroundColor: '#1a1d21',
                   padding: '10px 16px',
                   borderBottom: '1px solid #333',
                 }}
               >
-                {['Módulo', 'Path', 'Nível', 'Status', 'Usuários', 'Ordem', ''].map((col) => (
+                {['Módulo', 'Path', 'Tipo', 'Nível', 'Status', 'Usuários', 'Ordem', ''].map((col) => (
                   <span
                     key={col}
                     style={{
@@ -216,8 +364,16 @@ export default function ControleModulosPage() {
               </div>
 
               {/* Groups */}
-              {Array.from(gruposMap.entries()).map(([grupo, mods]) => {
+              {Array.from(gruposMap.entries())
+                .sort(([a], [b]) => {
+                  const ordemA = gruposDaPlanilha.find(g => g.nome === a)?.ordem ?? 99;
+                  const ordemB = gruposDaPlanilha.find(g => g.nome === b)?.ordem ?? 99;
+                  return ordemA - ordemB;
+                })
+                .map(([grupo, mods]) => {
                 const isExpanded = expandedGroups.has(grupo);
+                const grupoInfo = gruposDaPlanilha.find(g => g.nome === grupo);
+                const isInativo = grupoInfo && !grupoInfo.ativo;
                 return (
                   <div key={grupo}>
                     {/* Group header row */}
@@ -233,6 +389,7 @@ export default function ControleModulosPage() {
                         cursor: 'pointer',
                         userSelect: 'none',
                         transition: 'background-color 0.15s',
+                        opacity: isInativo ? 0.5 : 1,
                       }}
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d3239'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#262a30'; }}
@@ -242,7 +399,11 @@ export default function ControleModulosPage() {
                       ) : (
                         <ChevronRight size={16} color="#FF6600" />
                       )}
-                      <Settings size={14} color="#FF6600" />
+                      {(() => {
+                        const IconComp = ICON_MAP[grupoIconeMap.get(grupo) || 'settings'] || Settings;
+                        return <IconComp size={14} color="#FF6600" />;
+                      })()}
+
                       <span
                         style={{
                           color: '#F8F9FA',
@@ -264,6 +425,63 @@ export default function ControleModulosPage() {
                       >
                         ({mods.length})
                       </span>
+
+                      {grupoInfo && (
+                        <span
+                          style={{
+                            color: '#FF6600',
+                            fontSize: '0.6rem',
+                            fontWeight: 600,
+                            fontFamily: 'Poppins, sans-serif',
+                            backgroundColor: 'rgba(255,102,0,0.1)',
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            border: '1px solid rgba(255,102,0,0.2)',
+                          }}
+                          title="Posição na sidebar"
+                        >
+                          Sidebar #{grupoInfo.ordem}
+                        </span>
+                      )}
+
+                      {isInativo && (
+                        <span
+                          style={{
+                            color: '#ef4444',
+                            fontSize: '0.6rem',
+                            fontWeight: 600,
+                            fontFamily: 'Poppins, sans-serif',
+                            backgroundColor: 'rgba(239,68,68,0.1)',
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            border: '1px solid rgba(239,68,68,0.3)',
+                          }}
+                        >
+                          INATIVO
+                        </span>
+                      )}
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditGrupoNome(grupo);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          padding: '2px 4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          opacity: 0.5,
+                          transition: 'opacity 0.15s',
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; }}
+                        title="Editar grupo"
+                      >
+                        <Pencil size={13} color="#FF6600" />
+                      </button>
                     </div>
 
                     {/* Module rows */}
@@ -278,7 +496,7 @@ export default function ControleModulosPage() {
                           onClick={() => setEditingModulo(mod)}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 2fr 120px 90px 140px 70px 50px',
+                            gridTemplateColumns: '2fr 2fr 80px 120px 90px 140px 70px 50px',
                             gap: 0,
                             padding: '10px 16px',
                             backgroundColor: '#212529',
@@ -318,6 +536,24 @@ export default function ControleModulosPage() {
                             }}
                           >
                             {mod.moduloPath}
+                          </span>
+
+                          {/* Tipo */}
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              fontSize: '0.65rem',
+                              fontWeight: 600,
+                              fontFamily: 'Poppins, sans-serif',
+                              color: (mod as any).tipo === 'externo' ? '#8b5cf6' : '#6c757d',
+                              backgroundColor: (mod as any).tipo === 'externo' ? 'rgba(139,92,246,0.1)' : 'rgba(107,114,128,0.1)',
+                              padding: '2px 6px',
+                              borderRadius: 6,
+                              width: 'fit-content',
+                            }}
+                          >
+                            {(mod as any).tipo === 'externo' ? '↗ Externo' : 'Interno'}
                           </span>
 
                           {/* Nível */}
@@ -412,6 +648,32 @@ export default function ControleModulosPage() {
         onClose={() => setEditingModulo(null)}
         modulo={editingModulo}
         onSave={handleSaveField}
+        gruposExistentes={gruposExistentes}
+      />
+
+      {/* Modal de novo link externo */}
+      <AddExternalLinkModal
+        isOpen={addLinkOpen}
+        onClose={() => setAddLinkOpen(false)}
+        onSave={handleCreateExternalLink}
+        gruposExistentes={gruposExistentes}
+      />
+
+      {/* Modal de gerenciar grupos */}
+      <GerenciarGruposModal
+        isOpen={gruposModalOpen}
+        onClose={() => setGruposModalOpen(false)}
+        gruposEmUso={Array.from(new Set(modulos.map(m => m.grupo).filter(Boolean)))}
+        onGruposChanged={fetchGruposCustomizados}
+      />
+
+      {/* Modal de editar grupo */}
+      <EditGrupoModal
+        isOpen={!!editGrupoNome}
+        onClose={() => setEditGrupoNome(null)}
+        grupoNome={editGrupoNome}
+        gruposDaPlanilha={gruposDaPlanilha}
+        onSave={handleSaveGrupo}
       />
     </>
   );

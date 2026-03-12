@@ -8,7 +8,7 @@ import { google } from 'googleapis';
 import cache from '@/lib/cache';
 
 // ID da planilha de Fluxo Projetado
-const SPREADSHEET_ID = '1ymgmW6ISadb8xKBpcNDXTnGr0buoOFVszSZmxaOxKBQ';
+const SPREADSHEET_ID = process.env.PLANILHA_FLUXO_PROJETADO_ID!;
 const SHEET_NAME = 'PARAMETROS PAINEL';
 const CACHE_KEY = 'fluxo-projetado:parametros';
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutos
