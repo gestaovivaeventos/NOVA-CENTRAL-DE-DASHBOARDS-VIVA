@@ -118,18 +118,17 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
 
       {/* ═══ KPI Cards (resumo) ═══ */}
       <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
+        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
         borderBottom: '1px solid #495057',
       }}>
         {[
-          { label: 'TOTAL CURSOS', valor: fmtInteiro(cursosFiltrados.length), cor: '#F8F9FA', destaque: false },
           { label: 'MATRICULADOS', valor: fmtNum(totais.matriculas), cor: CORES.azul, destaque: metricasAtivas.includes('matriculas') },
           { label: 'CONCLUINTES', valor: fmtNum(totais.concluintes), cor: CORES.verde, destaque: metricasAtivas.includes('concluintes') },
           { label: 'INGRESSANTES', valor: fmtNum(totais.ingressantes), cor: CORES.roxo, destaque: metricasAtivas.includes('ingressantes') },
         ].map((card, i) => (
           <div key={i} style={{
             padding: '14px 16px', textAlign: 'center',
-            borderRight: i < 3 ? '1px solid #495057' : 'none',
+            borderRight: i < 2 ? '1px solid #495057' : 'none',
             backgroundColor: card.destaque ? `${card.cor}08` : 'transparent',
           }}>
             <p style={{
@@ -141,8 +140,8 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
             </p>
             <p style={{
               color: card.cor, fontWeight: 700, margin: 0,
-              fontSize: i === 0 ? '1.3rem' : '0.95rem',
-              fontFamily: i === 0 ? "'Orbitron', monospace" : "'Poppins', sans-serif",
+              fontSize: '0.95rem',
+              fontFamily: "'Poppins', sans-serif",
             }}>
               {card.valor}
             </p>
@@ -246,7 +245,7 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                 { key: 'matriculas' as SortKey, label: 'MATRICULADOS', cor: CORES.azul },
                 { key: 'concluintes' as SortKey, label: 'CONCLUINTES', cor: CORES.verde },
                 { key: 'ingressantes' as SortKey, label: 'INGRESSANTES', cor: CORES.roxo },
-                { key: 'instituicoes' as SortKey, label: 'Nº Ensino Superior', cor: '#ADB5BD' },
+                { key: 'instituicoes' as SortKey, label: 'Instituições', cor: '#ADB5BD' },
               ].map(col => (
                 <th key={col.key} onClick={() => handleSort(col.key)} style={thStyle(col.key)}>
                   {col.label} {sortKey === col.key && (sortDir === 'asc' ? '▲' : '▼')}
@@ -332,10 +331,13 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                         <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
                           {fmtNum(curso.publica)}
                         </td>
-                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.68rem' }}>
-                          {fmtPct((curso.publica / (curso.matriculas || 1)) * 100)}
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
+                          {fmtNum(curso.publicaConc)}
                         </td>
-                        <td colSpan={2}></td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
+                          {fmtNum(curso.publicaIng)}
+                        </td>
+                        <td></td>
                       </tr>
                       {/* Pública → Presencial */}
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
@@ -346,12 +348,15 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                           ├ Presencial
                         </td>
                         <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
-                          {fmtNum(curso.presencial)}
+                          {fmtNum(curso.publicaPresencial)}
                         </td>
-                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
-                          {curso.presencial > 0 ? fmtPct((curso.presencial / (curso.matriculas || 1)) * 100) : '—'}
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.publicaPresencialConc)}
                         </td>
-                        <td colSpan={2}></td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.publicaPresencialIng)}
+                        </td>
+                        <td></td>
                       </tr>
                       {/* Pública → EAD */}
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
@@ -362,12 +367,15 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                           └ EAD
                         </td>
                         <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
-                          {fmtNum(curso.ead)}
+                          {fmtNum(curso.publicaEad)}
                         </td>
-                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
-                          {curso.ead > 0 ? fmtPct((curso.ead / (curso.matriculas || 1)) * 100) : '—'}
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.publicaEadConc)}
                         </td>
-                        <td colSpan={2}></td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.publicaEadIng)}
+                        </td>
+                        <td></td>
                       </tr>
 
                       {/* ── Privada ── */}
@@ -381,10 +389,13 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                         <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
                           {fmtNum(curso.privada)}
                         </td>
-                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.68rem' }}>
-                          {fmtPct((curso.privada / (curso.matriculas || 1)) * 100)}
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
+                          {fmtNum(curso.privadaConc)}
                         </td>
-                        <td colSpan={2}></td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.72rem' }}>
+                          {fmtNum(curso.privadaIng)}
+                        </td>
+                        <td></td>
                       </tr>
                       {/* Privada → Presencial */}
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
@@ -395,12 +406,15 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                           ├ Presencial
                         </td>
                         <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
-                          {fmtNum(curso.presencial)}
+                          {fmtNum(curso.privadaPresencial)}
                         </td>
-                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
-                          {curso.presencial > 0 ? fmtPct((curso.presencial / (curso.matriculas || 1)) * 100) : '—'}
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.privadaPresencialConc)}
                         </td>
-                        <td colSpan={2}></td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.privadaPresencialIng)}
+                        </td>
+                        <td></td>
                       </tr>
                       {/* Privada → EAD */}
                       <tr style={{ borderBottom: '1px solid #3D4349', backgroundColor: 'rgba(255,255,255,0.01)' }}>
@@ -411,12 +425,15 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
                           └ EAD
                         </td>
                         <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
-                          {fmtNum(curso.ead)}
+                          {fmtNum(curso.privadaEad)}
                         </td>
-                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#6C757D', fontSize: '0.64rem' }}>
-                          {curso.ead > 0 ? fmtPct((curso.ead / (curso.matriculas || 1)) * 100) : '—'}
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.privadaEadConc)}
                         </td>
-                        <td colSpan={2}></td>
+                        <td style={{ padding: '3px 8px', textAlign: 'right', color: '#ADB5BD', fontSize: '0.68rem' }}>
+                          {fmtNum(curso.privadaEadIng)}
+                        </td>
+                        <td></td>
                       </tr>
                     </>
                   )}

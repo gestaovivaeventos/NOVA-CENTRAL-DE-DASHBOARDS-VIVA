@@ -49,6 +49,7 @@ export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvoluc
   const chartOptions: any = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: { padding: { right: 40 } },
     interaction: { intersect: false, mode: 'index' as const },
     plugins: {
       legend: {
@@ -67,6 +68,8 @@ export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvoluc
         anchor: 'end' as const,
         align: 'top' as const,
         offset: 4,
+        clamp: true,
+        clip: false,
         formatter: (v: number) => fmtNum(v),
       },
       tooltip: {

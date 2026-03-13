@@ -31,8 +31,9 @@ interface SecaoTurmasProps {
 export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurmasProps) {
   const { evolucaoTurmas, distribuicaoEstados, rankingCursos, gruposEducacionais, instituicoes, cidadesPorEstado } = dados;
 
-  const ultimoAno = evolucaoTurmas[evolucaoTurmas.length - 1];
-  const anoAnterior = evolucaoTurmas.length >= 2 ? evolucaoTurmas[evolucaoTurmas.length - 2] : null;
+  const ultimoAno = evolucaoTurmas.find(e => e.ano === filtros.ano) || evolucaoTurmas[evolucaoTurmas.length - 1];
+  const idxAtual = evolucaoTurmas.indexOf(ultimoAno);
+  const anoAnterior = idxAtual > 0 ? evolucaoTurmas[idxAtual - 1] : null;
 
   // Variacao YoY
   const variacaoTotal = anoAnterior ? ((ultimoAno.totalTurmas - anoAnterior.totalTurmas) / anoAnterior.totalTurmas * 100) : 0;

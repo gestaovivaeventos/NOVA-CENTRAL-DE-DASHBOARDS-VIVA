@@ -152,7 +152,9 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                   </tr>
 
                   {/* Sub-linhas expandidas */}
-                  {isOpen && (
+                  {isOpen && (() => {
+                    const bk = (d: DadosEvolucaoAnual) => d.porMetrica[metrica.key];
+                    return (
                     <>
                       {/* Pública */}
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
@@ -165,8 +167,8 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                           ├ Pública
                         </td>
                         {dados.map((e, i) => {
-                          const vals = dados.map(d => d.publica);
-                          return renderCell(e.publica, variacao(vals, i), CORES.azul, true);
+                          const vals = dados.map(d => bk(d).publica);
+                          return renderCell(bk(e).publica, variacao(vals, i), CORES.azul, true);
                         })}
                       </tr>
 
@@ -181,8 +183,8 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                           ├ Presencial
                         </td>
                         {dados.map((e, i) => {
-                          const vals = dados.map(d => d.presencial);
-                          return renderCell(e.presencial, variacao(vals, i), CORES.verde, true);
+                          const vals = dados.map(d => bk(d).publicaPresencial);
+                          return renderCell(bk(e).publicaPresencial, variacao(vals, i), CORES.verde, true);
                         })}
                       </tr>
 
@@ -197,8 +199,8 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                           └ EAD
                         </td>
                         {dados.map((e, i) => {
-                          const vals = dados.map(d => d.ead);
-                          return renderCell(e.ead, variacao(vals, i), CORES.roxo, true);
+                          const vals = dados.map(d => bk(d).publicaEad);
+                          return renderCell(bk(e).publicaEad, variacao(vals, i), CORES.roxo, true);
                         })}
                       </tr>
 
@@ -213,8 +215,8 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                           ├ Privada
                         </td>
                         {dados.map((e, i) => {
-                          const vals = dados.map(d => d.privada);
-                          return renderCell(e.privada, variacao(vals, i), CORES.laranja, true);
+                          const vals = dados.map(d => bk(d).privada);
+                          return renderCell(bk(e).privada, variacao(vals, i), CORES.laranja, true);
                         })}
                       </tr>
 
@@ -229,8 +231,8 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                           ├ Presencial
                         </td>
                         {dados.map((e, i) => {
-                          const vals = dados.map(d => d.presencial);
-                          return renderCell(e.presencial, variacao(vals, i), CORES.verde, true);
+                          const vals = dados.map(d => bk(d).privadaPresencial);
+                          return renderCell(bk(e).privadaPresencial, variacao(vals, i), CORES.verde, true);
                         })}
                       </tr>
 
@@ -245,12 +247,13 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
                           └ EAD
                         </td>
                         {dados.map((e, i) => {
-                          const vals = dados.map(d => d.ead);
-                          return renderCell(e.ead, variacao(vals, i), CORES.roxo, true);
+                          const vals = dados.map(d => bk(d).privadaEad);
+                          return renderCell(bk(e).privadaEad, variacao(vals, i), CORES.roxo, true);
                         })}
                       </tr>
                     </>
-                  )}
+                    );
+                  })()}
                 </React.Fragment>
               );
             })}

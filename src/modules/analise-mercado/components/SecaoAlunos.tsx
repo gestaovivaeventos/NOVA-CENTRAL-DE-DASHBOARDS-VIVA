@@ -36,13 +36,20 @@ const METRICA_COR: Record<MetricaAtiva, string> = {
   ingressantes: CORES.roxo,
 };
 
+const METRICAS_OPTIONS: { key: MetricaAtiva; label: string; cor: string }[] = [
+  { key: 'matriculas', label: 'Matriculados', cor: '#3B82F6' },
+  { key: 'concluintes', label: 'Concluintes', cor: '#10B981' },
+  { key: 'ingressantes', label: 'Ingressantes', cor: '#8B5CF6' },
+];
+
 interface SecaoAlunosProps {
   dados: DadosAnaliseMercado;
   filtros: FiltrosAnaliseMercado;
   onEstadoClick: (uf: string) => void;
+  onMetricaChange: (key: MetricaAtiva) => void;
 }
 
-export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlunosProps) {
+export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaChange }: SecaoAlunosProps) {
   const { evolucaoAlunos, distribuicaoEstados, rankingCursos, instituicoes, cidadesPorEstado, demografia } = dados;
   const metricas = filtros.metricasAtivas;
   const unica = metricas.length === 1;
@@ -52,7 +59,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
     ? METRICA_LABEL[primaria]
     : metricas.map(k => METRICA_LABEL[k]).join(' / ');
 
-  const ultimoAno = evolucaoAlunos[evolucaoAlunos.length - 1];
+  const ultimoAno = evolucaoAlunos.find(e => e.ano === filtros.ano) || evolucaoAlunos[evolucaoAlunos.length - 1];
 
   // Map metric key: DadosEstado só tem matriculas e concluintes
   const mapMetricKey: 'matriculas' | 'concluintes' = primaria === 'concluintes' ? 'concluintes' : 'matriculas';
@@ -130,17 +137,20 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
     );
   };
 
+  // Breakdown da métrica primária selecionada
+  const bd = ultimoAno?.porMetrica?.[primaria] ?? { presencial: ultimoAno?.presencial || 0, ead: ultimoAno?.ead || 0, publica: ultimoAno?.publica || 0, privada: ultimoAno?.privada || 0, feminino: ultimoAno?.genero?.feminino || 0, masculino: ultimoAno?.genero?.masculino || 0 };
+
   // ─── Gênero evolution chart data ───
   const generoLineData = {
     labels: evolucaoAlunos.map(e => e.ano.toString()),
     datasets: [
       {
-        label: 'Feminino', data: evolucaoAlunos.map(e => e.genero.feminino),
+        label: 'Feminino', data: evolucaoAlunos.map(e => e.porMetrica?.[primaria]?.feminino ?? e.genero.feminino),
         borderColor: CORES.rosa, backgroundColor: `${CORES.rosa}15`,
         tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: CORES.rosa, borderWidth: 2,
       },
       {
-        label: 'Masculino', data: evolucaoAlunos.map(e => e.genero.masculino),
+        label: 'Masculino', data: evolucaoAlunos.map(e => e.porMetrica?.[primaria]?.masculino ?? e.genero.masculino),
         borderColor: CORES.azul, backgroundColor: `${CORES.azul}15`,
         tension: 0.4, fill: true, pointRadius: 3, pointBackgroundColor: CORES.azul, borderWidth: 2,
       },
@@ -159,7 +169,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
   };
 
   // Total gênero para cálculos
-  const totalGenero = (ultimoAno?.genero.feminino || 0) + (ultimoAno?.genero.masculino || 0);
+  const totalGenero = bd.feminino + bd.masculino;
 
   // Top 5 cursos por métrica principal (para bar chart no card de cursos por instituição)
   const top5Inst = [...instituicoes].sort((a, b) => b.cursos - a.cursos).slice(0, 15);
@@ -200,6 +210,48 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
            1. EVOLUÇÃO HISTÓRICA — Como o mercado evoluiu
          ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
       <SectionLabel num="1" label="Evolução Histórica" cor={CORES.azul} />
+
+      {/* Seletor de Métrica (single-select) */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        marginBottom: 14,
+      }}>
+        <span style={{
+          color: '#6C757D', fontSize: '0.7rem', fontWeight: 600,
+          textTransform: 'uppercase', letterSpacing: '0.04em',
+          fontFamily: "'Poppins', sans-serif",
+        }}>
+          Métrica:
+        </span>
+        {METRICAS_OPTIONS.map(m => {
+          const ativo = metricas.includes(m.key);
+          return (
+            <button
+              key={m.key}
+              onClick={() => onMetricaChange(m.key)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '6px 16px', borderRadius: 20,
+                backgroundColor: ativo ? `${m.cor}20` : 'transparent',
+                border: `1.5px solid ${ativo ? m.cor : '#495057'}`,
+                color: ativo ? m.cor : '#6C757D',
+                fontSize: '0.76rem', fontWeight: ativo ? 700 : 500,
+                cursor: 'pointer',
+                fontFamily: "'Poppins', sans-serif",
+                transition: 'all 0.2s',
+              }}
+            >
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%',
+                backgroundColor: ativo ? m.cor : '#495057',
+                transition: 'all 0.2s',
+              }} />
+              {m.label}
+            </button>
+          );
+        })}
+      </div>
+
       <div style={{ marginBottom: 24 }}>
         <GraficoEvolucao dados={evolucaoAlunos} metricasAtivas={metricas} />
       </div>
@@ -214,10 +266,10 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
           cor={CORES.verde}
           icone={<BarChart3 size={16} />}
           resumo={[
-            { label: 'Presencial', valor: fmtNum(ultimoAno?.presencial || 0), cor: CORES.verde },
-            { label: 'EAD', valor: fmtNum(ultimoAno?.ead || 0), cor: CORES.roxo },
-            { label: 'Pública', valor: fmtNum(ultimoAno?.publica || 0), cor: CORES.azul },
-            { label: 'Privada', valor: fmtNum(ultimoAno?.privada || 0), cor: CORES.laranja },
+            { label: 'Presencial', valor: fmtNum(bd.presencial), cor: CORES.verde },
+            { label: 'EAD', valor: fmtNum(bd.ead), cor: CORES.roxo },
+            { label: 'Pública', valor: fmtNum(bd.publica), cor: CORES.azul },
+            { label: 'Privada', valor: fmtNum(bd.privada), cor: CORES.laranja },
           ]}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 14 }}>
@@ -232,14 +284,14 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
               Por Modalidade
             </h4>
             <PropBar
-              a={ultimoAno?.presencial || 0} b={ultimoAno?.ead || 0}
+              a={bd.presencial} b={bd.ead}
               corA={CORES.verde} corB={CORES.roxo}
               labelA="Presencial" labelB="EAD"
             />
             <div style={{ height: 160, marginTop: 12 }}>
               <Doughnut data={{
                 labels: ['Presencial', 'EAD'],
-                datasets: [{ data: [ultimoAno?.presencial || 0, ultimoAno?.ead || 0], backgroundColor: [CORES.verde, CORES.roxo], borderColor: '#343A40', borderWidth: 3 }],
+                datasets: [{ data: [bd.presencial, bd.ead], backgroundColor: [CORES.verde, CORES.roxo], borderColor: '#343A40', borderWidth: 3 }],
               }} options={donutOptions} />
             </div>
           </div>
@@ -253,14 +305,14 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
               Por Tipo de Instituição
             </h4>
             <PropBar
-              a={ultimoAno?.publica || 0} b={ultimoAno?.privada || 0}
+              a={bd.publica} b={bd.privada}
               corA={CORES.azul} corB={CORES.laranja}
               labelA="Pública" labelB="Privada"
             />
             <div style={{ height: 160, marginTop: 12 }}>
               <Doughnut data={{
                 labels: ['Pública', 'Privada'],
-                datasets: [{ data: [ultimoAno?.publica || 0, ultimoAno?.privada || 0], backgroundColor: [CORES.azul, CORES.laranja], borderColor: '#343A40', borderWidth: 3 }],
+                datasets: [{ data: [bd.publica, bd.privada], backgroundColor: [CORES.azul, CORES.laranja], borderColor: '#343A40', borderWidth: 3 }],
               }} options={donutOptions} />
             </div>
           </div>
@@ -275,7 +327,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
               Por Gênero
             </h4>
             <PropBar
-              a={ultimoAno?.genero.feminino || 0} b={ultimoAno?.genero.masculino || 0}
+              a={bd.feminino} b={bd.masculino}
               corA={CORES.rosa} corB={CORES.azul}
               labelA="Feminino" labelB="Masculino"
             />
@@ -390,12 +442,26 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick }: SecaoAlun
           estadoSelecionado={filtros.estado}
           onEstadoClick={onEstadoClick}
         />
-        <TabelaRanking
-          titulo={`Ranking por Estado — ${tituloLabel}`}
-          dados={distribuicaoEstados}
-          colunas={rankEstadoColunas}
-          linhasVisiveis={10}
-        />
+        {filtros.estado ? (
+          <div style={{ position: 'relative' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+              <TabelaRanking
+                titulo={`Ranking por Estado — ${tituloLabel}`}
+                dados={distribuicaoEstados}
+                colunas={rankEstadoColunas}
+                linhasVisiveis={10}
+                fillHeight
+              />
+            </div>
+          </div>
+        ) : (
+          <TabelaRanking
+            titulo={`Ranking por Estado — ${tituloLabel}`}
+            dados={distribuicaoEstados}
+            colunas={rankEstadoColunas}
+            linhasVisiveis={10}
+          />
+        )}
       </div>
     </div>
   );

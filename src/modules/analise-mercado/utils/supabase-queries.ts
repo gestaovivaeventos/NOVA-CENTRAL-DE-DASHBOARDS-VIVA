@@ -5,6 +5,8 @@
  */
 
 import { supabase } from '@/lib/supabase';
+import { getCoordenadaMunicipio } from './coordenadas-municipios';
+import { fixText } from './fix-encoding';
 import type {
   DadosAnaliseMercado,
   DadosEvolucaoAnual,
@@ -20,7 +22,8 @@ import type {
 } from '../types';
 
 // ─── Cache localStorage (24h TTL) ───────────
-const CACHE_PREFIX = 'am_cache_';
+const CACHE_VERSION = 9; // Bump para invalidar cache quando schema muda
+const CACHE_PREFIX = `am_cache_v${CACHE_VERSION}_`;
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
 
 function cacheGet<T>(key: string): T | null {
@@ -47,16 +50,25 @@ function cacheSet<T>(key: string, data: T): void {
   }
 }
 
-/** Limpa todo o cache de análise de mercado */
+/** Limpa todo o cache de análise de mercado (versão atual e antigas) */
 export function invalidarCacheAnaliseMercado(): void {
   try {
-    const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
+    const keys = Object.keys(localStorage).filter(k => k.startsWith('am_cache_'));
     keys.forEach(k => localStorage.removeItem(k));
     console.log(`[Análise de Mercado] Cache limpo (${keys.length} entradas)`);
   } catch {
     // ignore
   }
 }
+
+// Limpar cache de versões antigas automaticamente na inicialização
+try {
+  const oldKeys = Object.keys(localStorage).filter(k => k.startsWith('am_cache_') && !k.startsWith(CACHE_PREFIX));
+  if (oldKeys.length > 0) {
+    oldKeys.forEach(k => localStorage.removeItem(k));
+    console.log(`[Análise de Mercado] Cache antigo removido (${oldKeys.length} entradas)`);
+  }
+} catch { /* ignore */ }
 
 /** Busca com cache: tenta localStorage primeiro, senão chama fetcher */
 async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
@@ -80,7 +92,7 @@ async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T
 }
 
 // ─── Mapeamento UF → Nome ───────────────────
-const UF_NOMES: Record<string, string> = {
+export const UF_NOMES: Record<string, string> = {
   AC: 'Acre', AL: 'Alagoas', AP: 'Amapá', AM: 'Amazonas', BA: 'Bahia',
   CE: 'Ceará', DF: 'Distrito Federal', ES: 'Espírito Santo', GO: 'Goiás',
   MA: 'Maranhão', MT: 'Mato Grosso', MS: 'Mato Grosso do Sul', MG: 'Minas Gerais',
@@ -157,9 +169,20 @@ export async function fetchAreasDisponiveis(): Promise<string[]> {
 }
 
 // ─── Fetch: Indicadores (KPI Cards) ─────────
-export async function fetchIndicadores(ano: number): Promise<IndicadorCard[]> {
-  return cachedFetch(`indicadores_${ano}`, async () => {
-  const { data, error } = await supabase.rpc('fn_indicadores', { p_ano: ano });
+export async function fetchIndicadores(ano: number, ies: number | null = null, rede: number | null = null, uf: string | null = null, municipio: string | null = null): Promise<IndicadorCard[]> {
+  const parts = [`indicadores_${ano}`];
+  if (rede) parts.push(`r${rede}`);
+  if (uf) parts.push(`uf${uf}`);
+  if (municipio) parts.push(`m${municipio}`);
+  if (ies) parts.push(`ies${ies}`);
+  const cacheKey = parts.join('_');
+  return cachedFetch(cacheKey, async () => {
+  const params: Record<string, unknown> = { p_ano: ano };
+  if (ies !== null) params.p_ies = ies;
+  if (rede !== null) params.p_rede = rede;
+  if (uf !== null) params.p_uf = uf;
+  if (municipio !== null) params.p_municipio = municipio;
+  const { data, error } = await supabase.rpc('fn_indicadores', params);
   if (error || !data || data.length === 0) return [];
 
   const rows = data as {
@@ -193,9 +216,20 @@ export async function fetchIndicadores(ano: number): Promise<IndicadorCard[]> {
 }
 
 // ─── Fetch: Evolução Anual ──────────────────
-export async function fetchEvolucaoAnual(): Promise<DadosEvolucaoAnual[]> {
-  return cachedFetch('evolucao', async () => {
-  const { data, error } = await supabase.rpc('fn_evolucao_anual');
+export async function fetchEvolucaoAnual(ies: number | null = null, rede: number | null = null, uf: string | null = null, municipio: string | null = null): Promise<DadosEvolucaoAnual[]> {
+  const parts = ['evolucao'];
+  if (rede) parts.push(`r${rede}`);
+  if (uf) parts.push(`uf${uf}`);
+  if (municipio) parts.push(`m${municipio}`);
+  if (ies) parts.push(`ies${ies}`);
+  const cacheKey = parts.join('_');
+  return cachedFetch(cacheKey, async () => {
+  const params: Record<string, unknown> = {};
+  if (ies !== null) params.p_ies = ies;
+  if (rede !== null) params.p_rede = rede;
+  if (uf !== null) params.p_uf = uf;
+  if (municipio !== null) params.p_municipio = municipio;
+  const { data, error } = await supabase.rpc('fn_evolucao_anual', Object.keys(params).length > 0 ? params : undefined);
   if (error || !data) return [];
 
   return (data as {
@@ -209,6 +243,30 @@ export async function fetchEvolucaoAnual(): Promise<DadosEvolucaoAnual[]> {
     privada_mat: number;
     feminino_mat: number;
     masculino_mat: number;
+    presencial_conc?: number;
+    ead_conc?: number;
+    publica_conc?: number;
+    privada_conc?: number;
+    feminino_conc?: number;
+    masculino_conc?: number;
+    presencial_ing?: number;
+    ead_ing?: number;
+    publica_ing?: number;
+    privada_ing?: number;
+    feminino_ing?: number;
+    masculino_ing?: number;
+    pub_pres_mat?: number;
+    pub_ead_mat?: number;
+    priv_pres_mat?: number;
+    priv_ead_mat?: number;
+    pub_pres_conc?: number;
+    pub_ead_conc?: number;
+    priv_pres_conc?: number;
+    priv_ead_conc?: number;
+    pub_pres_ing?: number;
+    pub_ead_ing?: number;
+    priv_pres_ing?: number;
+    priv_ead_ing?: number;
   }[]).map(r => ({
     ano: r.ano,
     matriculas: r.matriculas,
@@ -219,14 +277,59 @@ export async function fetchEvolucaoAnual(): Promise<DadosEvolucaoAnual[]> {
     publica: r.publica_mat,
     privada: r.privada_mat,
     genero: { feminino: r.feminino_mat, masculino: r.masculino_mat },
+    porMetrica: {
+      matriculas: {
+        presencial: r.presencial_mat,
+        ead: r.ead_mat,
+        publica: r.publica_mat,
+        privada: r.privada_mat,
+        feminino: r.feminino_mat,
+        masculino: r.masculino_mat,
+        publicaPresencial: r.pub_pres_mat ?? 0,
+        publicaEad: r.pub_ead_mat ?? 0,
+        privadaPresencial: r.priv_pres_mat ?? 0,
+        privadaEad: r.priv_ead_mat ?? 0,
+      },
+      concluintes: {
+        presencial: r.presencial_conc ?? r.presencial_mat,
+        ead: r.ead_conc ?? r.ead_mat,
+        publica: r.publica_conc ?? r.publica_mat,
+        privada: r.privada_conc ?? r.privada_mat,
+        feminino: r.feminino_conc ?? r.feminino_mat,
+        masculino: r.masculino_conc ?? r.masculino_mat,
+        publicaPresencial: r.pub_pres_conc ?? 0,
+        publicaEad: r.pub_ead_conc ?? 0,
+        privadaPresencial: r.priv_pres_conc ?? 0,
+        privadaEad: r.priv_ead_conc ?? 0,
+      },
+      ingressantes: {
+        presencial: r.presencial_ing ?? r.presencial_mat,
+        ead: r.ead_ing ?? r.ead_mat,
+        publica: r.publica_ing ?? r.publica_mat,
+        privada: r.privada_ing ?? r.privada_mat,
+        feminino: r.feminino_ing ?? r.feminino_mat,
+        masculino: r.masculino_ing ?? r.masculino_mat,
+        publicaPresencial: r.pub_pres_ing ?? 0,
+        publicaEad: r.pub_ead_ing ?? 0,
+        privadaPresencial: r.priv_pres_ing ?? 0,
+        privadaEad: r.priv_ead_ing ?? 0,
+      },
+    },
   }));
   });
 }
 
 // ─── Fetch: Distribuição por Estado ─────────
-export async function fetchDistribuicaoEstados(ano: number): Promise<DadosEstado[]> {
-  return cachedFetch(`estados_${ano}`, async () => {
-  const { data, error } = await supabase.rpc('fn_distribuicao_estados', { p_ano: ano });
+export async function fetchDistribuicaoEstados(ano: number, ies: number | null = null, rede: number | null = null): Promise<DadosEstado[]> {
+  const parts = [`estados_${ano}`];
+  if (rede) parts.push(`r${rede}`);
+  if (ies) parts.push(`ies${ies}`);
+  const cacheKey = parts.join('_');
+  return cachedFetch(cacheKey, async () => {
+  const params: Record<string, unknown> = { p_ano: ano };
+  if (ies !== null) params.p_ies = ies;
+  if (rede !== null) params.p_rede = rede;
+  const { data, error } = await supabase.rpc('fn_distribuicao_estados', params);
   if (error || !data) return [];
 
   const rows = data as {
@@ -245,7 +348,7 @@ export async function fetchDistribuicaoEstados(ano: number): Promise<DadosEstado
     nome: UF_NOMES[r.uf] || r.uf,
     matriculas: r.matriculas,
     concluintes: r.concluintes,
-    turmas: Math.round(r.cursos * 1.05), // estimativa: ~1.05 turma por curso
+    turmas: 0,
     instituicoes: r.instituicoes,
     percentual: totalMat > 0 ? Number(((r.matriculas / totalMat) * 100).toFixed(1)) : 0,
   }));
@@ -253,12 +356,17 @@ export async function fetchDistribuicaoEstados(ano: number): Promise<DadosEstado
 }
 
 // ─── Fetch: Cidades por Estado ──────────────
-export async function fetchCidadesEstado(ano: number, uf: string): Promise<DadosCidade[]> {
-  return cachedFetch(`cidades_${ano}_${uf}`, async () => {
-  const { data, error } = await supabase.rpc('fn_cidades_estado', { p_ano: ano, p_uf: uf });
+export async function fetchCidadesEstado(ano: number, uf: string, ies: number | null = null, rede: number | null = null): Promise<DadosCidade[]> {
+  const parts = [`cidades_${ano}_${uf}`];
+  if (rede) parts.push(`r${rede}`);
+  if (ies) parts.push(`ies${ies}`);
+  const cacheKey = parts.join('_');
+  return cachedFetch(cacheKey, async () => {
+  const params: Record<string, unknown> = { p_ano: ano, p_uf: uf };
+  if (ies !== null) params.p_ies = ies;
+  if (rede !== null) params.p_rede = rede;
+  const { data, error } = await supabase.rpc('fn_cidades_estado', params);
   if (error || !data) return [];
-
-  const coords = COORDS_CAPITAIS[uf] || { lat: -15.79, lng: -47.88 };
 
   return (data as {
     municipio: string;
@@ -266,24 +374,39 @@ export async function fetchCidadesEstado(ano: number, uf: string): Promise<Dados
     concluintes: number;
     ingressantes: number;
     instituicoes: number;
-  }[]).map((r, i) => ({
-    nome: r.municipio,
-    uf,
-    // Espaçar cidades ao redor da capital para visualização no mapa
-    lat: coords.lat + (i * 0.3 * (i % 2 === 0 ? 1 : -1)),
-    lng: coords.lng + (i * 0.25 * (i % 2 === 0 ? -1 : 1)),
-    matriculas: r.matriculas,
-    concluintes: r.concluintes,
-    turmas: Math.round(r.matriculas / 200),
-    instituicoes: r.instituicoes,
-  }));
+  }[]).map((r) => {
+    const nomeFix = fixText(r.municipio);
+    const coord = getCoordenadaMunicipio(nomeFix, uf, COORDS_CAPITAIS);
+    return {
+      nome: nomeFix,
+      uf,
+      lat: coord.lat,
+      lng: coord.lng,
+      matriculas: r.matriculas,
+      concluintes: r.concluintes,
+      ingressantes: r.ingressantes,
+      turmas: 0,
+      instituicoes: r.instituicoes,
+    };
+  });
   });
 }
 
 // ─── Fetch: Ranking de Cursos ───────────────
-export async function fetchRankingCursos(ano: number): Promise<DadosCurso[]> {
-  return cachedFetch(`cursos_${ano}`, async () => {
-  const { data, error } = await supabase.rpc('fn_ranking_cursos', { p_ano: ano });
+export async function fetchRankingCursos(ano: number, ies: number | null = null, rede: number | null = null, uf: string | null = null, municipio: string | null = null): Promise<DadosCurso[]> {
+  const parts = [`cursos_${ano}`];
+  if (rede) parts.push(`r${rede}`);
+  if (uf) parts.push(`uf${uf}`);
+  if (municipio) parts.push(`m${municipio}`);
+  if (ies) parts.push(`ies${ies}`);
+  const cacheKey = parts.join('_');
+  return cachedFetch(cacheKey, async () => {
+  const params: Record<string, unknown> = { p_ano: ano, p_limit: 500 };
+  if (ies !== null) params.p_ies = ies;
+  if (rede !== null) params.p_rede = rede;
+  if (uf !== null) params.p_uf = uf;
+  if (municipio !== null) params.p_municipio = municipio;
+  const { data, error } = await supabase.rpc('fn_ranking_cursos', params);
   if (error || !data) return [];
 
   const rows = data as {
@@ -299,33 +422,74 @@ export async function fetchRankingCursos(ano: number): Promise<DadosCurso[]> {
     privada_mat: number;
     feminino_mat: number;
     masculino_mat: number;
+    pub_pres_mat?: number;
+    pub_ead_mat?: number;
+    priv_pres_mat?: number;
+    priv_ead_mat?: number;
+    publica_conc?: number;
+    privada_conc?: number;
+    publica_ing?: number;
+    privada_ing?: number;
+    pub_pres_conc?: number;
+    pub_ead_conc?: number;
+    priv_pres_conc?: number;
+    priv_ead_conc?: number;
+    pub_pres_ing?: number;
+    pub_ead_ing?: number;
+    priv_pres_ing?: number;
+    priv_ead_ing?: number;
   }[];
 
   const totalMat = rows.reduce((s, r) => s + r.matriculas, 0);
 
   return rows.map(r => ({
-    nome: r.nome,
-    area: r.area,
+    nome: fixText(r.nome),
+    area: fixText(r.area),
     matriculas: r.matriculas,
     concluintes: r.concluintes,
     ingressantes: r.ingressantes,
-    turmas: Math.max(1, Math.round(r.matriculas / 180)),
-    mediaPorTurma: r.matriculas > 0 ? Math.round(r.matriculas / Math.max(1, Math.round(r.matriculas / 180))) : 0,
+    turmas: 0,
+    mediaPorTurma: 0,
     instituicoes: r.instituicoes,
     percentual: totalMat > 0 ? Number(((r.matriculas / totalMat) * 100).toFixed(1)) : 0,
     presencial: r.presencial_mat,
     ead: r.ead_mat,
     publica: r.publica_mat,
     privada: r.privada_mat,
+    publicaPresencial: r.pub_pres_mat ?? 0,
+    publicaEad: r.pub_ead_mat ?? 0,
+    privadaPresencial: r.priv_pres_mat ?? 0,
+    privadaEad: r.priv_ead_mat ?? 0,
+    publicaConc: r.publica_conc ?? 0,
+    privadaConc: r.privada_conc ?? 0,
+    publicaIng: r.publica_ing ?? 0,
+    privadaIng: r.privada_ing ?? 0,
+    publicaPresencialConc: r.pub_pres_conc ?? 0,
+    publicaEadConc: r.pub_ead_conc ?? 0,
+    privadaPresencialConc: r.priv_pres_conc ?? 0,
+    privadaEadConc: r.priv_ead_conc ?? 0,
+    publicaPresencialIng: r.pub_pres_ing ?? 0,
+    publicaEadIng: r.pub_ead_ing ?? 0,
+    privadaPresencialIng: r.priv_pres_ing ?? 0,
+    privadaEadIng: r.priv_ead_ing ?? 0,
     genero: { feminino: r.feminino_mat, masculino: r.masculino_mat },
   }));
   });
 }
 
 // ─── Fetch: Instituições ────────────────────
-export async function fetchInstituicoes(ano: number): Promise<DadosInstituicao[]> {
-  return cachedFetch(`instituicoes_${ano}`, async () => {
-  const { data, error } = await supabase.rpc('fn_instituicoes', { p_ano: ano });
+export async function fetchInstituicoes(ano: number, rede: number | null = null, uf: string | null = null, municipio: string | null = null): Promise<DadosInstituicao[]> {
+  const parts = [`instituicoes_${ano}`];
+  if (rede) parts.push(`r${rede}`);
+  if (uf) parts.push(`uf${uf}`);
+  if (municipio) parts.push(`m${municipio}`);
+  const cacheKey = parts.join('_');
+  return cachedFetch(cacheKey, async () => {
+  const params: Record<string, unknown> = { p_ano: ano, p_limit: 5000 };
+  if (rede !== null) params.p_rede = rede;
+  if (uf !== null) params.p_uf = uf;
+  if (municipio !== null) params.p_municipio = municipio;
+  const { data, error } = await supabase.rpc('fn_instituicoes', params);
   if (error || !data) return [];
 
   return (data as {
@@ -339,14 +503,15 @@ export async function fetchInstituicoes(ano: number): Promise<DadosInstituicao[]
     concluintes: number;
     ingressantes: number;
   }[]).map(r => ({
-    nome: r.nome,
+    codIes: r.cod_ies,
+    nome: fixText(r.nome),
     tipo: r.tipo === 1 ? 'publica' as const : 'privada' as const,
     modalidade: 'ambas' as const, // não temos essa info consolidada por IES
     cursos: r.cursos,
     matriculas: r.matriculas,
     concluintes: r.concluintes,
     ingressantes: r.ingressantes,
-    turmas: Math.max(1, Math.round(r.matriculas / 180)),
+    turmas: 0,
     uf: r.uf,
   }));
   });
@@ -355,25 +520,20 @@ export async function fetchInstituicoes(ano: number): Promise<DadosInstituicao[]
 // ─── Derivar: Evolução Turmas ───────────────
 // Estimativa baseada nos dados de evolução anual
 function derivarEvolucaoTurmas(evolucao: DadosEvolucaoAnual[]): DadosTurma[] {
-  return evolucao.map(e => {
-    const estimativaTurmas = Math.round(e.matriculas / 180);
-    const turmasPublica = Math.round(e.publica / 180);
-    const turmasPrivada = Math.round(e.privada / 180);
-    return {
-      ano: e.ano,
-      totalTurmas: estimativaTurmas,
-      mediaPorTurma: e.matriculas > 0 ? Math.round(e.matriculas / estimativaTurmas) : 0,
-      medianaPorTurma: Math.round(e.matriculas / estimativaTurmas * 0.93),
-      turmasPublica,
-      turmasPrivada,
-    };
-  });
+  return evolucao.map(e => ({
+    ano: e.ano,
+    totalTurmas: 0,
+    mediaPorTurma: 0,
+    medianaPorTurma: 0,
+    turmasPublica: 0,
+    turmasPrivada: 0,
+  }));
 }
 
 // ─── Derivar: Demografia ────────────────────
 // Gênero extraído direto da evolução
-function derivarDemografia(evolucao: DadosEvolucaoAnual[]): DadosDemografia {
-  const ultimo = evolucao[evolucao.length - 1];
+function derivarDemografia(evolucao: DadosEvolucaoAnual[], ano: number): DadosDemografia {
+  const ultimo = evolucao.find(e => e.ano === ano) || evolucao[evolucao.length - 1];
   const totalGenero = ultimo ? ultimo.genero.feminino + ultimo.genero.masculino : 1;
   const pctFem = ultimo ? Number(((ultimo.genero.feminino / totalGenero) * 100).toFixed(1)) : 58;
   const pctMasc = ultimo ? Number(((ultimo.genero.masculino / totalGenero) * 100).toFixed(1)) : 42;
@@ -418,25 +578,41 @@ function derivarGruposEducacionais(instituicoes: DadosInstituicao[]): GrupoEduca
 }
 
 // ─── Fetch completo ─────────────────────────
-export async function fetchDadosAnaliseMercado(ano: number): Promise<DadosAnaliseMercado> {
-  // Buscar dados principais em paralelo (sem cidades – serão lazy-loaded)
-  const [indicadores, evolucao, estados, cursos, instituicoes, anos] = await Promise.all([
-    fetchIndicadores(ano),
-    fetchEvolucaoAnual(),
-    fetchDistribuicaoEstados(ano),
-    fetchRankingCursos(ano),
-    fetchInstituicoes(ano),
+export async function fetchDadosAnaliseMercado(
+  ano: number,
+  rede: number | null = null,
+  uf: string | null = null,
+  municipio: string | null = null,
+  ies: number | null = null,
+): Promise<DadosAnaliseMercado> {
+  // Buscar dados principais em paralelo
+  // - Indicadores / Evolução / Cursos: filtrados pela hierarquia completa
+  // - Estados: filtrado por rede apenas (mapa precisa de todos os estados)
+  // - Instituições: filtrado por rede + uf + municipio (dropdown, sem filtrar por ies)
+  // - Cidades: lazy-loaded quando estado selecionado
+  const [indicadores, evolucao, estados, cursos, instituicoes, anos, cidades] = await Promise.all([
+    fetchIndicadores(ano, ies, rede, uf, municipio),
+    fetchEvolucaoAnual(ies, rede, uf, municipio),
+    fetchDistribuicaoEstados(ano, ies, rede),
+    fetchRankingCursos(ano, ies, rede, uf, municipio),
+    fetchInstituicoes(ano, rede, uf, municipio),
     fetchAnosDisponiveis(),
+    uf ? fetchCidadesEstado(ano, uf, null, rede) : Promise.resolve([] as DadosCidade[]),
   ]);
+
+  const cidadesPorEstado: Record<string, DadosCidade[]> = {};
+  if (uf && cidades.length > 0) {
+    cidadesPorEstado[uf] = cidades;
+  }
 
   return {
     indicadores,
     evolucaoAlunos: evolucao,
     distribuicaoEstados: estados,
-    cidadesPorEstado: {},
+    cidadesPorEstado,
     rankingCursos: cursos,
     instituicoes,
-    demografia: derivarDemografia(evolucao),
+    demografia: derivarDemografia(evolucao, ano),
     evolucaoTurmas: derivarEvolucaoTurmas(evolucao),
     gruposEducacionais: derivarGruposEducacionais(instituicoes),
     franquias: FRANQUIAS,

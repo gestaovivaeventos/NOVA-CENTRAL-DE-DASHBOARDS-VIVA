@@ -20,6 +20,7 @@ interface TabelaRankingProps<T extends Record<string, any>> {
   colunas: Coluna<T>[];
   linhasVisiveis?: number;
   destaqueCor?: string;
+  fillHeight?: boolean;
 }
 
 export default function TabelaRanking<T extends Record<string, any>>({
@@ -28,6 +29,7 @@ export default function TabelaRanking<T extends Record<string, any>>({
   colunas,
   linhasVisiveis = 10,
   destaqueCor = '#FF6600',
+  fillHeight = false,
 }: TabelaRankingProps<T>) {
   const [sortKey, setSortKey] = useState<string>(colunas[1]?.key || colunas[0]?.key || '');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
@@ -62,7 +64,7 @@ export default function TabelaRanking<T extends Record<string, any>>({
   const maxBodyHeight = linhasVisiveis * 40;
 
   return (
-    <div style={{ backgroundColor: '#343A40', borderRadius: 12, border: '1px solid #495057', overflow: 'hidden' }}>
+    <div style={{ backgroundColor: '#343A40', borderRadius: 12, border: '1px solid #495057', overflow: 'hidden', ...(fillHeight ? { height: '100%', display: 'flex', flexDirection: 'column' as const } : {}) }}>
       {titulo && (
         <div style={{ padding: '16px 20px', borderBottom: '1px solid #495057' }}>
           <h3 style={{
@@ -74,9 +76,9 @@ export default function TabelaRanking<T extends Record<string, any>>({
         </div>
       )}
 
-      <div style={{ overflowX: 'auto' }}>
+      <div style={{ overflowX: 'auto', ...(fillHeight ? { flex: 1, overflowY: 'auto' } : { maxHeight: maxBodyHeight + 42, overflowY: dadosOrdenados.length > linhasVisiveis ? 'auto' : 'hidden' }) }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-          <thead>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
             <tr style={{ backgroundColor: '#2D3238' }}>
               <th style={{
                 color: '#6C757D', fontWeight: 600, padding: '10px 12px', textAlign: 'center',
@@ -97,6 +99,7 @@ export default function TabelaRanking<T extends Record<string, any>>({
                     borderBottom: '2px solid #495057', cursor: 'pointer',
                     whiteSpace: 'nowrap', width: col.largura,
                     transition: 'color 0.15s',
+                    backgroundColor: '#2D3238',
                   }}
                 >
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -107,14 +110,8 @@ export default function TabelaRanking<T extends Record<string, any>>({
               ))}
             </tr>
           </thead>
-        </table>
-        <div style={{
-          maxHeight: maxBodyHeight,
-          overflowY: dadosOrdenados.length > linhasVisiveis ? 'auto' : 'hidden',
-        }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-            <tbody>
-              {dadosOrdenados.map((row, i) => (
+          <tbody>
+            {dadosOrdenados.map((row, i) => (
               <tr
                 key={i}
                 style={{
@@ -128,7 +125,7 @@ export default function TabelaRanking<T extends Record<string, any>>({
                 <td style={{
                   padding: '10px 12px', textAlign: 'center',
                   color: i < 3 ? destaqueCor : '#6C757D', fontWeight: i < 3 ? 700 : 400,
-                  fontSize: '0.8rem',
+                  fontSize: '0.8rem', width: '40px',
                 }}>
                   {i + 1}
                 </td>
@@ -140,6 +137,7 @@ export default function TabelaRanking<T extends Record<string, any>>({
                       textAlign: col.tipo === 'texto' ? 'left' : 'right',
                       color: col.tipo === 'texto' ? '#F8F9FA' : '#ADB5BD',
                       fontWeight: col.tipo === 'texto' ? 500 : 400,
+                      width: col.largura,
                     }}
                   >
                     {formatarValor(row[col.key], col.tipo)}
@@ -149,7 +147,6 @@ export default function TabelaRanking<T extends Record<string, any>>({
             ))}
           </tbody>
         </table>
-        </div>
       </div>
     </div>
   );

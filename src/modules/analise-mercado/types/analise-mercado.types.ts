@@ -4,16 +4,18 @@
 
 // ─── Filtros ──────────────────────────────────
 export type TipoInstituicao = 'todos' | 'publica' | 'privada';
-export type VisaoAtiva = 'alunos' | 'turmas';
+export type VisaoAtiva = 'alunos' | 'turmas' | 'ens-medio';
 export type MetricaAtiva = 'matriculas' | 'concluintes' | 'ingressantes';
 
 export interface FiltrosAnaliseMercado {
   ano: number;
   tipoInstituicao: TipoInstituicao;
-  franquiaId: string | null;
   estado: string | null;
-  areaConhecimento: string | null;
+  municipio: string | null;
+  instituicaoId: number | null;
   curso: string | null;
+  franquiaId: string | null;
+  areaConhecimento: string | null;
   metricasAtivas: MetricaAtiva[];
 }
 
@@ -35,21 +37,42 @@ export interface IndicadorCard {
   comparativoBrasil?: number;
 }
 
+// ─── Breakdown por métrica ──────────────────
+export interface BreakdownMetrica {
+  presencial: number;
+  ead: number;
+  publica: number;
+  privada: number;
+  feminino: number;
+  masculino: number;
+  publicaPresencial: number;
+  publicaEad: number;
+  privadaPresencial: number;
+  privadaEad: number;
+}
+
 // ─── Evolução Histórica ─────────────────────
 export interface DadosEvolucaoAnual {
   ano: number;
   matriculas: number;
   concluintes: number;
   ingressantes: number;
+  /** @deprecated Use porMetrica.matriculas instead */
   presencial: number;
+  /** @deprecated Use porMetrica.matriculas instead */
   ead: number;
+  /** @deprecated Use porMetrica.matriculas instead */
   publica: number;
+  /** @deprecated Use porMetrica.matriculas instead */
   privada: number;
+  /** @deprecated Use porMetrica.matriculas instead */
   genero: { feminino: number; masculino: number };
+  porMetrica: Record<MetricaAtiva, BreakdownMetrica>;
 }
 
 // ─── Nº Cursos por Instituição ──────────────
 export interface DadosInstituicao {
+  codIes: number;
   nome: string;
   tipo: 'publica' | 'privada';
   modalidade: 'presencial' | 'ead' | 'ambas';
@@ -80,6 +103,7 @@ export interface DadosCidade {
   lng: number;
   matriculas: number;
   concluintes: number;
+  ingressantes: number;
   turmas: number;
   instituicoes: number;
 }
@@ -99,6 +123,22 @@ export interface DadosCurso {
   ead: number;
   publica: number;
   privada: number;
+  publicaPresencial: number;
+  publicaEad: number;
+  privadaPresencial: number;
+  privadaEad: number;
+  publicaConc: number;
+  privadaConc: number;
+  publicaIng: number;
+  privadaIng: number;
+  publicaPresencialConc: number;
+  publicaEadConc: number;
+  privadaPresencialConc: number;
+  privadaEadConc: number;
+  publicaPresencialIng: number;
+  publicaEadIng: number;
+  privadaPresencialIng: number;
+  privadaEadIng: number;
   genero: { feminino: number; masculino: number };
 }
 

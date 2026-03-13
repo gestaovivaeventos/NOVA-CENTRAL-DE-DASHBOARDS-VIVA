@@ -13,6 +13,7 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import {
   MapContainer, TileLayer, GeoJSON, CircleMarker, Tooltip as LTooltip, useMap,
 } from 'react-leaflet';
+import { Search } from 'lucide-react';
 import type { Map as LeafletMap, Layer, PathOptions } from 'leaflet';
 import type { Feature, FeatureCollection } from 'geojson';
 import type { DadosEstado, DadosCidade } from '../types';
@@ -126,6 +127,7 @@ export default function MapaBrasilLeaflet({
   const [geoData, setGeoData] = useState<FeatureCollection | null>(null);
   const [estadoExpandido, setEstadoExpandido] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [buscaCidade, setBuscaCidade] = useState('');
   const geoRef = useRef<any>(null);
 
   // Load GeoJSON
@@ -159,14 +161,17 @@ export default function MapaBrasilLeaflet({
     ? dadosMap.get(estadoExpandido)?.[metrica] || 0
     : 0;
 
-  // Bubble radius
+  // Bubble radius — escala com número de cidades
   const getRadius = useMemo(() => {
-    if (cidadesEstado.length === 0) return () => 6;
+    const n = cidadesEstado.length;
+    if (n === 0) return () => 6;
     const maxV = Math.max(...cidadesEstado.map(c => c[metrica]));
+    // Quanto mais cidades, menores os raios
+    const MAX_R = n > 200 ? 18 : n > 100 ? 22 : n > 50 ? 26 : 30;
+    const MIN_R = n > 200 ? 4 : n > 100 ? 5 : 6;
     return (val: number) => {
-      const MIN = 5, MAX = 20;
-      if (maxV === 0) return MIN;
-      return MIN + ((val / maxV) * (MAX - MIN));
+      if (maxV === 0) return MIN_R;
+      return MIN_R + ((val / maxV) * (MAX_R - MIN_R));
     };
   }, [cidadesEstado, metrica]);
 
@@ -182,11 +187,13 @@ export default function MapaBrasilLeaflet({
   const handleEstadoClick = useCallback((uf: string) => {
     if (estadoExpandido) return;
     setEstadoExpandido(uf);
+    setBuscaCidade('');
     onEstadoClick?.(uf);
   }, [estadoExpandido, onEstadoClick]);
 
   const handleVoltar = useCallback(() => {
     setEstadoExpandido(null);
+    setBuscaCidade('');
     setHovered(null);
     onEstadoClick?.('');
   }, [onEstadoClick]);
@@ -341,9 +348,9 @@ export default function MapaBrasilLeaflet({
                 radius={r}
                 pathOptions={{
                   fillColor: CORES.laranja,
-                  fillOpacity: isTop5 ? 0.85 : 0.6,
+                  fillOpacity: isTop5 ? 0.85 : (cidadesEstado.length > 100 ? 0.35 : 0.55),
                   color: '#FF6600',
-                  weight: isTop5 ? 2.5 : 1.5,
+                  weight: isTop5 ? 2 : 1,
                 }}
               >
                 <LTooltip
@@ -370,17 +377,33 @@ export default function MapaBrasilLeaflet({
 
       {/* Ranking cidades (drill-down) */}
       {estadoExpandido && cidadesEstado.length > 0 && (
-        <div style={{ padding: '0 20px 16px' }}>
-          <div style={{ overflowX: 'auto' }}>
+        <div style={{ padding: '12px 20px 16px' }}>
+          <div style={{ position: 'relative', marginBottom: 8 }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#6C757D' }} />
+            <input
+              type="text"
+              placeholder="Buscar cidade..."
+              value={buscaCidade}
+              onChange={e => setBuscaCidade(e.target.value)}
+              style={{
+                width: '100%', padding: '8px 12px 8px 32px', borderRadius: 6,
+                border: '1px solid #495057', backgroundColor: '#2D3238', color: '#F8F9FA',
+                fontSize: '0.78rem', fontFamily: "'Poppins', sans-serif", outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+          </div>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 350 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2D3238' }}>
-                  {['#', 'Cidade', metricaLabel, 'Concluintes', 'Turmas', 'Ensino Superior', '% Estado'].map((h, i) => (
+                  {['#', 'Cidade', metricaLabel, 'Concluintes', 'Ingressantes', 'IES', '% Estado'].map((h, i) => (
                     <th key={h} style={{
                       color: '#6C757D', fontWeight: 600, padding: '8px 8px',
                       textAlign: i <= 1 ? 'left' : 'right', fontSize: '0.68rem',
                       textTransform: 'uppercase', letterSpacing: '0.04em',
                       borderBottom: '2px solid #495057',
+                      position: 'sticky', top: 0, backgroundColor: '#2D3238', zIndex: 1,
                     }}>
                       {h}
                     </th>
@@ -388,7 +411,9 @@ export default function MapaBrasilLeaflet({
                 </tr>
               </thead>
               <tbody>
-                {cidadesEstado.map((cidade, idx) => {
+                {cidadesEstado
+                  .filter(c => !buscaCidade || c.nome.toLowerCase().includes(buscaCidade.toLowerCase()))
+                  .map((cidade, idx) => {
                   const pctEstado = totalEstadoExpandido > 0
                     ? ((cidade[metrica] / totalEstadoExpandido) * 100).toFixed(1) : '0.0';
                   return (
@@ -408,7 +433,7 @@ export default function MapaBrasilLeaflet({
                         {fmtInteiro(cidade[metrica])}
                       </td>
                       <td style={{ padding: '7px 8px', color: '#ADB5BD', textAlign: 'right' }}>{fmtInteiro(cidade.concluintes)}</td>
-                      <td style={{ padding: '7px 8px', color: '#ADB5BD', textAlign: 'right' }}>{fmtInteiro(cidade.turmas)}</td>
+                      <td style={{ padding: '7px 8px', color: '#ADB5BD', textAlign: 'right' }}>{fmtInteiro(cidade.ingressantes)}</td>
                       <td style={{ padding: '7px 8px', color: '#ADB5BD', textAlign: 'right' }}>{cidade.instituicoes}</td>
                       <td style={{ padding: '7px 8px', textAlign: 'right' }}>
                         <span style={{
