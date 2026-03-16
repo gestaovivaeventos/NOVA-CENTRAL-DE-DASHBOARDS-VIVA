@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
@@ -469,6 +469,7 @@ const CollapsibleGroup = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [openSubgrupos, setOpenSubgrupos] = useState<Set<string>>(new Set());
+  const preSearchState = useRef<{ isOpen: boolean; openSubgrupos: Set<string> } | null>(null);
 
   const toggleSubgrupo = (nome: string) => {
     setOpenSubgrupos(prev => {
@@ -505,19 +506,35 @@ const CollapsibleGroup = ({
     if (!searchTerm) return group.subgrupos;
     const search = searchTerm.toLowerCase();
     return group.subgrupos
-      .map(sg => ({
-        ...sg,
-        dashboards: sg.dashboards.filter(d => d.label.toLowerCase().includes(search)),
-      }))
+      .map(sg => {
+        // Se o nome do subgrupo bate com a busca, mostra todos os dashboards dele
+        if (sg.nome.toLowerCase().includes(search)) {
+          return sg;
+        }
+        // Senão, filtra individual os dashboards
+        return {
+          ...sg,
+          dashboards: sg.dashboards.filter(d => d.label.toLowerCase().includes(search)),
+        };
+      })
       .filter(sg => sg.dashboards.length > 0);
   }, [group.subgrupos, searchTerm]);
 
   useEffect(() => {
     if (searchTerm && (filteredDashboards.length > 0 || filteredSubgrupos.length > 0)) {
+      // Salvar estado antes de expandir tudo pela busca
+      if (!preSearchState.current) {
+        preSearchState.current = { isOpen, openSubgrupos: new Set(openSubgrupos) };
+      }
       setIsOpen(true);
       if (filteredSubgrupos.length > 0) {
         setOpenSubgrupos(new Set(filteredSubgrupos.map(sg => sg.nome)));
       }
+    } else if (!searchTerm && preSearchState.current) {
+      // Restaurar estado anterior quando a busca é limpa
+      setIsOpen(preSearchState.current.isOpen);
+      setOpenSubgrupos(preSearchState.current.openSubgrupos);
+      preSearchState.current = null;
     }
   }, [searchTerm, filteredDashboards.length, filteredSubgrupos.length]);
 
