@@ -635,7 +635,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
                         </button>
                         )}
                         {/* Botão de editar para franquias em UTI */}
-                        {isUtiStatus(franquia.saude) && (
+                        {canEditFlags && isUtiStatus(franquia.saude) && (
                           <button
                             onClick={() => handleAlterarSaude(franquia)}
                             title="Alterar status UTI"
