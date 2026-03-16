@@ -581,7 +581,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
                 return [
                   `META: ${metaStr}`,
                   `REALIZADO: ${realizadoStr}`,
-                  `% ATING. META MÊS: ${ating}`,
+                  `% ATING. META ACUMULADA: ${ating}`,
                 ];
               }
               return '';
@@ -849,7 +849,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
               {/* Card de Atingimento da Meta Parcial com gráfico doughnut */}
               {atingMetaParcialPercent > 0 && (
                 <div className="kpi-card kpi-card-atingimento">
-                  <span className="kpi-label atingimento-label">ATINGIMENTO DA META PARCIAL</span>
+                  <span className="kpi-label atingimento-label">% ATING. META ACUMULADA</span>
                   <div className="atingimento-chart-container">
                     <Doughnut data={doughnutParcialConfig.data} options={doughnutParcialConfig.options} />
                     <div className="atingimento-center-text">

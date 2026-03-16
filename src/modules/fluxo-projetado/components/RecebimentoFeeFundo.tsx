@@ -27,6 +27,7 @@ export interface FundoFee {
   situacao?: string;          // SITUAÇÃO (Coluna U)
   feeInicialV?: number;       // FEE INICIAL (Coluna V)
   feeReplanejado?: number;    // FEE REPLANEJADO (Coluna W)
+  pretendeAbrirCP?: boolean;  // PRETENDE ABRIR CP (Coluna X)
   // Legado - manter para compatibilidade
   feeRecebido?: number;        
   feeDisponivelAntecipacao?: number;
@@ -906,7 +907,30 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {getSituacaoDot(fundo.situacao)}
                                 <div>
-                                  <span className="text-sm font-medium text-white block truncate" style={{ maxWidth: '200px' }} title={fundo.nome}>{fundo.nome}</span>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span className="text-sm font-medium text-white block truncate" style={{ maxWidth: '200px' }} title={fundo.nome}>{fundo.nome}</span>
+                                    {fundo.pretendeAbrirCP && (
+                                      <span
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          padding: '1px 6px',
+                                          borderRadius: '4px',
+                                          fontSize: '0.6rem',
+                                          fontWeight: 700,
+                                          letterSpacing: '0.05em',
+                                          background: 'rgba(251, 191, 36, 0.15)',
+                                          color: '#fbbf24',
+                                          border: '1px solid rgba(251, 191, 36, 0.3)',
+                                          whiteSpace: 'nowrap',
+                                          lineHeight: '1.4',
+                                        }}
+                                        title="Pretende Abrir CP"
+                                      >
+                                        CP
+                                      </span>
+                                    )}
+                                  </div>
                                   <span className="text-xs text-gray-500 block">Cód: {fundo.id}</span>
                                 </div>
                               </div>
