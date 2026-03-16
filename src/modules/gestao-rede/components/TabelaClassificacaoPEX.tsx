@@ -10,6 +10,10 @@ import { AlertTriangle, Users, Shield, Award, TrendingUp, AlertCircle, HeartPuls
 import { Franquia, SaudeFranquia, FlagsEstruturais } from '../types';
 import ModalAlterarSaude from './ModalAlterarSaude';
 import ModalEditarFlags from './ModalEditarFlags';
+import { useAuth } from '@/context/AuthContext';
+
+// Usuários autorizados a alterar flags
+const ALLOWED_FLAG_EDITORS = ['EVERDAN', 'vitor', 'marcos', 'cris', 'gabriel.braz'];
 
 // Tipo para alterações pendentes
 interface AlteracaoPendente {
@@ -46,6 +50,9 @@ const CLASSIFICACOES: {
 ];
 
 export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaClassificacaoPEXProps) {
+  const { user } = useAuth();
+  const canEditFlags = ALLOWED_FLAG_EDITORS.includes(user?.username || '');
+  
   const [modalSaudeOpen, setModalSaudeOpen] = useState(false);
   const [modalFlagsOpen, setModalFlagsOpen] = useState(false);
   const [franquiaSelecionada, setFranquiaSelecionada] = useState<Franquia | null>(null);
@@ -218,6 +225,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
             body: JSON.stringify({
               chaveData: alteracao.chaveData,
               flags: alteracao.novoValor,
+              username: user?.username,
             }),
           });
           const result = await response.json();
@@ -606,6 +614,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {renderFlags(franquia)}
                         {/* Botão de editar flags */}
+                        {canEditFlags && (
                         <button
                           onClick={() => handleEditarFlags(franquia)}
                           title="Editar flags"
@@ -624,6 +633,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
                         >
                           <Flag size={10} />
                         </button>
+                        )}
                         {/* Botão de editar para franquias em UTI */}
                         {isUtiStatus(franquia.saude) && (
                           <button

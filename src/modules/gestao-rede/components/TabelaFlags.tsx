@@ -8,6 +8,10 @@ import React, { useState, useMemo } from 'react';
 import { Users, Shield, AlertTriangle, DollarSign, Flag, Save, Loader2, X, AlertCircle } from 'lucide-react';
 import { Franquia, SaudeFranquia, FlagsEstruturais } from '../types';
 import ModalEditarFlags from './ModalEditarFlags';
+import { useAuth } from '@/context/AuthContext';
+
+// Usuários autorizados a alterar flags
+const ALLOWED_FLAG_EDITORS = ['EVERDAN', 'vitor', 'marcos', 'cris', 'gabriel.braz'];
 
 // Tipo para alterações pendentes
 interface AlteracaoFlagPendente {
@@ -95,6 +99,9 @@ const FLAGS_CONFIG: {
 ];
 
 export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Estruturais', onRefresh }: TabelaFlagsProps) {
+  const { user } = useAuth();
+  const canEditFlags = ALLOWED_FLAG_EDITORS.includes(user?.username || '');
+  
   const [modalFlagsOpen, setModalFlagsOpen] = useState(false);
   const [franquiaSelecionada, setFranquiaSelecionada] = useState<Franquia | null>(null);
   
@@ -178,6 +185,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
           body: JSON.stringify({
             chaveData: alteracao.chaveData,
             flags: alteracao.novoValor,
+            username: user?.username,
           }),
         });
         const result = await response.json();
@@ -481,6 +489,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                           {SAUDE_LABELS[franquia.saude]}
                         </span>
                         {/* Botão editar flags */}
+                        {canEditFlags && (
                         <button
                           onClick={() => handleEditarFlags(franquia)}
                           title="Editar flags"
@@ -499,6 +508,7 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                         >
                           <Flag size={10} />
                         </button>
+                        )}
                       </div>
                     </div>
                   </div>

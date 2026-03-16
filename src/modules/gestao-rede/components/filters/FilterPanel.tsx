@@ -41,11 +41,13 @@ const OPCOES_FLAGS = [
 interface FilterPanelProps {
   filtros: FiltrosGestaoRede;
   onFiltrosChange: (filtros: Partial<FiltrosGestaoRede>) => void;
+  consultoresDisponiveis?: string[];
 }
 
 export default function FilterPanel({
   filtros,
   onFiltrosChange,
+  consultoresDisponiveis = [],
 }: FilterPanelProps) {
   // Estado para controlar se os filtros estão expandidos
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
@@ -120,6 +122,17 @@ export default function FilterPanel({
             onChange={(flags) => onFiltrosChange({ flags })}
             placeholder="Todas as flags"
           />
+
+          {/* Filtro de Consultor Responsável */}
+          {consultoresDisponiveis.length > 0 && (
+            <MultiSelect
+              label="Consultor Responsável"
+              options={consultoresDisponiveis.map(c => ({ key: c, label: c, cor: '#6b8fa8' }))}
+              selectedValues={filtros.consultorResponsavel}
+              onChange={(consultorResponsavel) => onFiltrosChange({ consultorResponsavel })}
+              placeholder="Todos os consultores"
+            />
+          )}
         </div>
       </div>
     </div>

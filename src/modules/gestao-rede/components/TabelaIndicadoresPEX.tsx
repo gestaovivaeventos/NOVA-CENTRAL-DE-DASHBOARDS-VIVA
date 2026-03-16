@@ -328,7 +328,7 @@ export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}
           textTransform: 'uppercase',
           margin: 0,
         }}>
-          Indicadores PEX — Meta x Resultado
+          Indicadores Rede — Meta x Resultado
         </h3>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>

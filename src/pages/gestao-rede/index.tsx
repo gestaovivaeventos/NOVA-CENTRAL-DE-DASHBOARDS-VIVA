@@ -79,7 +79,17 @@ export default function GestaoRedeDashboard() {
     maturidade: [],
     classificacao: [],
     flags: [],
+    consultorResponsavel: [],
   });
+
+  // Extrair consultores disponíveis das franquias
+  const consultoresDisponiveis = useMemo(() => {
+    const consultores = new Set<string>();
+    franquias.forEach(f => {
+      if (f.consultorResponsavel) consultores.add(f.consultorResponsavel);
+    });
+    return Array.from(consultores).sort();
+  }, [franquias]);
 
   // Estado para bloco de inativas colapsável
   const [inativasExpandido, setInativasExpandido] = useState(false);
@@ -144,6 +154,7 @@ export default function GestaoRedeDashboard() {
         currentPage="dashboard"
         filtros={filtros}
         onFiltrosChange={setFiltros}
+        consultoresDisponiveis={consultoresDisponiveis}
       >
         {/* Header */}
         <div style={{ backgroundColor: '#212529' }}>
