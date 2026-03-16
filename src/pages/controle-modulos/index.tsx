@@ -7,13 +7,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { RefreshCw, AlertTriangle, ChevronDown, ChevronRight, Edit2, Plus, Pencil, Settings, BarChart, PieChart, TrendingUp, Database, Folder, Link, ExternalLink, Target, DollarSign, Clipboard, GitBranch, CheckCircle, Users, LayoutDashboard, FileSpreadsheet, Code2 } from 'lucide-react';
+import { RefreshCw, AlertTriangle, ChevronDown, ChevronRight, Edit2, Plus, Pencil, Settings, BarChart, PieChart, TrendingUp, Database, Folder, Link, ExternalLink, Target, DollarSign, Clipboard, GitBranch, CheckCircle, Users, LayoutDashboard, FileSpreadsheet, Code2, FolderOpen } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal } from '@/modules/controle-modulos/components';
+import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal, GerenciarSubgruposModal, EditSubgrupoModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
 import type { ModuloConfig } from '@/modules/controle-modulos/types';
 import type { ExternalLinkData } from '@/modules/controle-modulos/components/AddExternalLinkModal';
 import type { GrupoInfo } from '@/modules/controle-modulos/components/GerenciarGruposModal';
+import type { SubgrupoInfo } from '@/modules/controle-modulos/components/GerenciarSubgruposModal';
 
 // Mapeamento de nomes de ícone para componentes Lucide
 const ICON_MAP: Record<string, React.ElementType> = {
@@ -56,7 +57,12 @@ export default function ControleModulosPage() {
   const [gruposModalOpen, setGruposModalOpen] = useState(false);
   const [editGrupoNome, setEditGrupoNome] = useState<string | null>(null);
   const [gruposDaPlanilha, setGruposDaPlanilha] = useState<GrupoInfo[]>([]);
+  const [subgruposDaPlanilha, setSubgruposDaPlanilha] = useState<SubgrupoInfo[]>([]);
+  const [subgruposModalOpen, setSubgruposModalOpen] = useState(false);
+  const [editSubgrupoNome, setEditSubgrupoNome] = useState<string | null>(null);
+  const [editSubgrupoGrupo, setEditSubgrupoGrupo] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedSubgrupos, setExpandedSubgrupos] = useState<Set<string>>(new Set());
 
   // Buscar grupos da planilha (com ícone)
   const fetchGruposCustomizados = useCallback(async () => {
@@ -74,6 +80,23 @@ export default function ControleModulosPage() {
   useEffect(() => {
     fetchGruposCustomizados();
   }, [fetchGruposCustomizados]);
+
+  // Buscar subgrupos da planilha
+  const fetchSubgrupos = useCallback(async () => {
+    try {
+      const res = await fetch('/api/controle-modulos/subgrupos?refresh=true');
+      if (res.ok) {
+        const data = await res.json();
+        setSubgruposDaPlanilha(data.subgrupos || []);
+      }
+    } catch {
+      // silently fail
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSubgrupos();
+  }, [fetchSubgrupos]);
 
   // Derivar autorização diretamente dos dados já carregados (single source of truth)
   const isAuthorized = useMemo(() => {
@@ -114,6 +137,21 @@ export default function ControleModulosPage() {
     }
   }, [gruposMap]);
 
+  // Expandir todos os subgrupos quando carregar pela primeira vez
+  useEffect(() => {
+    if (subgruposDaPlanilha.length > 0 && expandedSubgrupos.size === 0) {
+      const keys = subgruposDaPlanilha.map(sg => `${sg.grupo}::${sg.nome}`);
+      // incluir subgrupos órfãos (módulos com subgrupo não registrado)
+      modulos.forEach(m => {
+        if (m.subgrupo) {
+          const k = `${m.grupo || 'Outros'}::${m.subgrupo}`;
+          if (!keys.includes(k)) keys.push(k);
+        }
+      });
+      setExpandedSubgrupos(new Set(keys));
+    }
+  }, [subgruposDaPlanilha, modulos]);
+
   const toggleGroup = useCallback((grupo: string) => {
     setExpandedGroups(prev => {
       const next = new Set(prev);
@@ -141,12 +179,8 @@ export default function ControleModulosPage() {
       });
       if (!res.ok) return false;
 
-      // Se renomeou, atualizar grupo em todos os módulos
+      // Se renomeou, atualizar grupo expandido
       if (updates.nome && updates.nome !== grupoOriginal) {
-        const modsInGroup = gruposMap.get(grupoOriginal) || [];
-        for (const mod of modsInGroup) {
-          await updateModulo(mod.moduloId, 'grupo', updates.nome);
-        }
         setExpandedGroups((prev) => {
           const next = new Set(prev);
           next.delete(grupoOriginal);
@@ -155,14 +189,15 @@ export default function ControleModulosPage() {
         });
       }
 
-      // Atualizar dados locais
+      // Atualizar dados locais (o cascade no servidor já atualizou BASE MODULOS e SUBGRUPOS)
       await fetchGruposCustomizados();
+      await fetchSubgrupos();
       await refetch();
       return true;
     } catch {
       return false;
     }
-  }, [gruposMap, updateModulo, fetchGruposCustomizados, refetch]);
+  }, [fetchGruposCustomizados, fetchSubgrupos, refetch]);
 
   const handleCreateExternalLink = useCallback(async (data: ExternalLinkData) => {
     const ok = await createModulo(data);
@@ -183,6 +218,41 @@ export default function ControleModulosPage() {
     }
     return map;
   }, [gruposDaPlanilha]);
+
+  // Subgrupos formatados para os dropdowns de módulos
+  const subgruposExistentes = useMemo(() => {
+    return subgruposDaPlanilha.filter(s => s.ativo).map(s => ({ nome: s.nome, grupo: s.grupo }));
+  }, [subgruposDaPlanilha]);
+
+  // Salvar subgrupo via EditSubgrupoModal
+  const handleSaveSubgrupo = useCallback(async (
+    subgrupoOriginal: string,
+    grupoPaiOriginal: string,
+    updates: { nome?: string; novoGrupo?: string; icone?: string; ordem?: number; ativo?: boolean }
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/controle-modulos/subgrupos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subgrupo: subgrupoOriginal, grupo: grupoPaiOriginal, ...updates }),
+      });
+      if (!res.ok) return false;
+
+      // Se renomeou, atualizar subgrupo em todos os módulos que o usam
+      if (updates.nome && updates.nome !== subgrupoOriginal) {
+        const modsInSubgrupo = modulos.filter(m => (m as any).subgrupo === subgrupoOriginal && m.grupo.toLowerCase() === grupoPaiOriginal.toLowerCase());
+        for (const mod of modsInSubgrupo) {
+          await updateModulo(mod.moduloId, 'subgrupo', updates.nome);
+        }
+      }
+
+      await fetchSubgrupos();
+      await refetch();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [modulos, updateModulo, fetchSubgrupos, refetch]);
 
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
@@ -276,6 +346,27 @@ export default function ControleModulosPage() {
             >
               <Plus size={16} />
               Grupos
+            </button>
+            <button
+              onClick={() => setSubgruposModalOpen(true)}
+              style={{
+                backgroundColor: 'rgba(16,185,129,0.10)',
+                border: '1px solid #10b981',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                color: '#10b981',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '0.8rem',
+                fontFamily: 'Poppins, sans-serif',
+                fontWeight: 600,
+              }}
+              title="Gerenciar subgrupos"
+            >
+              <FolderOpen size={16} />
+              Subgrupos
             </button>
             <button
               onClick={() => setAddLinkOpen(true)}
@@ -484,11 +575,64 @@ export default function ControleModulosPage() {
                       </button>
                     </div>
 
-                    {/* Module rows */}
-                    {isExpanded && mods.map((mod) => {
-                      const nivelColor = mod.nvlAcesso === 0 ? '#10b981' : '#f59e0b';
-                      const nivelLabel = mod.nvlAcesso === 0 ? 'Rede' : 'Franqueadora';
-                      const hasUsers = mod.usuariosPermitidos.length > 0;
+                    {/* Module rows (organized by subgroups, interleaved by ordem) */}
+                    {isExpanded && (() => {
+                      // Separar módulos por subgrupo
+                      const modsComSubgrupo = new Map<string, ModuloConfig[]>();
+                      const modsSemSubgrupo: ModuloConfig[] = [];
+                      
+                      for (const mod of mods) {
+                        const sub = (mod as any).subgrupo || '';
+                        if (sub) {
+                          if (!modsComSubgrupo.has(sub)) modsComSubgrupo.set(sub, []);
+                          modsComSubgrupo.get(sub)!.push(mod);
+                        } else {
+                          modsSemSubgrupo.push(mod);
+                        }
+                      }
+
+                      // Subgrupos cadastrados para este grupo
+                      const subgruposDoGrupo = subgruposDaPlanilha
+                        .filter(s => s.grupo.toLowerCase() === grupo.toLowerCase())
+                        .sort((a, b) => a.ordem - b.ordem);
+
+                      // Construir lista intercalada: items = módulos avulsos + subgrupos, ordenados por ordem
+                      type RenderItem =
+                        | { type: 'mod'; mod: ModuloConfig; ordem: number }
+                        | { type: 'subgrupo'; sg: SubgrupoInfo; mods: ModuloConfig[]; ordem: number }
+                        | { type: 'orphan-sg'; nome: string; mods: ModuloConfig[]; ordem: number };
+
+                      const renderItems: RenderItem[] = [];
+
+                      // Módulos sem subgrupo: cada um é um item com sua própria ordem
+                      for (const mod of modsSemSubgrupo) {
+                        renderItems.push({ type: 'mod', mod, ordem: mod.ordem });
+                      }
+
+                      // Subgrupos cadastrados que têm módulos
+                      for (const sg of subgruposDoGrupo) {
+                        const sgMods = modsComSubgrupo.get(sg.nome);
+                        if (sgMods && sgMods.length > 0) {
+                          renderItems.push({ type: 'subgrupo', sg, mods: sgMods, ordem: sg.ordem });
+                        }
+                      }
+
+                      // Subgrupos órfãos (referenciados por módulos mas não cadastrados)
+                      for (const [sgName, sgMods] of modsComSubgrupo.entries()) {
+                        if (!subgruposDoGrupo.some(sg => sg.nome === sgName)) {
+                          renderItems.push({ type: 'orphan-sg', nome: sgName, mods: sgMods, ordem: 99 });
+                        }
+                      }
+
+                      // Ordenar tudo por ordem
+                      renderItems.sort((a, b) => a.ordem - b.ordem);
+
+                      const renderModRow = (mod: ModuloConfig, insideSubgrupo = false) => {
+                        const nivelColor = mod.nvlAcesso === 0 ? '#10b981' : '#f59e0b';
+                        const nivelLabel = mod.nvlAcesso === 0 ? 'Rede' : 'Franqueadora';
+                        const hasUsers = mod.usuariosPermitidos.length > 0;
+                        const bgColor = insideSubgrupo ? '#1b2228' : '#212529';
+                        const bgHover = insideSubgrupo ? '#232d34' : '#2d3239';
 
                       return (
                         <div
@@ -498,16 +642,17 @@ export default function ControleModulosPage() {
                             display: 'grid',
                             gridTemplateColumns: '2fr 2fr 80px 120px 90px 140px 70px 50px',
                             gap: 0,
-                            padding: '10px 16px',
-                            backgroundColor: '#212529',
+                            padding: insideSubgrupo ? '10px 16px 10px 40px' : '10px 16px',
+                            backgroundColor: bgColor,
                             borderBottom: '1px solid #2a2e33',
+                            borderLeft: insideSubgrupo ? '3px solid rgba(16,185,129,0.25)' : 'none',
                             cursor: 'pointer',
                             transition: 'background-color 0.15s',
                             opacity: mod.ativo ? 1 : 0.5,
                             alignItems: 'center',
                           }}
-                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d3239'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#212529'; }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = bgHover; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = bgColor; }}
                         >
                           {/* Nome */}
                           <span
@@ -633,7 +778,130 @@ export default function ControleModulosPage() {
                           </div>
                         </div>
                       );
-                    })}
+                      };
+
+                      const toggleSubgrupo = (grupoName: string, sgNome: string) => {
+                        const key = `${grupoName}::${sgNome}`;
+                        setExpandedSubgrupos(prev => {
+                          const next = new Set(prev);
+                          if (next.has(key)) next.delete(key); else next.add(key);
+                          return next;
+                        });
+                      };
+
+                      const renderSubgrupoHeader = (nome: string, count: number, ordem: number, registered: boolean, grupoName: string) => {
+                        const sgKey = `${grupoName}::${nome}`;
+                        const isSgExpanded = expandedSubgrupos.has(sgKey);
+                        const accentColor = registered ? '#10b981' : '#6c757d';
+
+                        return (
+                        <div
+                          key={`sg-header-${grupoName}-${nome}`}
+                          onClick={() => toggleSubgrupo(grupoName, nome)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '7px 16px 7px 24px',
+                            backgroundColor: isSgExpanded ? '#1a1e23' : '#1e2227',
+                            borderBottom: '1px solid #2a2e33',
+                            borderLeft: `3px solid ${accentColor}`,
+                            cursor: 'pointer',
+                            transition: 'background-color 0.15s',
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#252a30'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isSgExpanded ? '#1a1e23' : '#1e2227'; }}
+                        >
+                          {isSgExpanded
+                            ? <ChevronDown size={13} color={accentColor} />
+                            : <ChevronRight size={13} color={accentColor} />
+                          }
+                          <FolderOpen size={12} color={accentColor} />
+                          <span
+                            style={{
+                              color: accentColor,
+                              fontFamily: "'Poppins', sans-serif",
+                              fontWeight: 600,
+                              fontSize: '0.72rem',
+                              textTransform: 'uppercase',
+                              letterSpacing: '0.04em',
+                            }}
+                          >
+                            {nome}
+                          </span>
+                          <span style={{ color: '#6c757d', fontSize: '0.65rem', fontFamily: 'Poppins, sans-serif' }}>
+                            ({count})
+                          </span>
+                          <span
+                            style={{
+                              color: '#6c757d',
+                              fontSize: '0.55rem',
+                              fontFamily: 'Poppins, sans-serif',
+                              backgroundColor: 'rgba(107,114,128,0.1)',
+                              padding: '1px 4px',
+                              borderRadius: 3,
+                            }}
+                          >
+                            #{ordem}
+                          </span>
+                          {!registered && (
+                            <span style={{ color: '#555', fontSize: '0.55rem' }}>(não registrado)</span>
+                          )}
+                          {registered && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditSubgrupoNome(nome);
+                                setEditSubgrupoGrupo(grupoName);
+                              }}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: '2px 4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                opacity: 0.5,
+                                transition: 'opacity 0.15s',
+                              }}
+                              onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.5'; }}
+                              title="Editar subgrupo"
+                            >
+                              <Pencil size={11} color="#10b981" />
+                            </button>
+                          )}
+                        </div>
+                        );
+                      };
+
+                      return (
+                        <>
+                          {renderItems.map((item) => {
+                            if (item.type === 'mod') {
+                              return renderModRow(item.mod);
+                            }
+                            if (item.type === 'subgrupo') {
+                              const sgKey = `${grupo}::${item.sg.nome}`;
+                              return (
+                                <React.Fragment key={`sg-${grupo}-${item.sg.nome}`}>
+                                  {renderSubgrupoHeader(item.sg.nome, item.mods.length, item.sg.ordem, true, grupo)}
+                                  {expandedSubgrupos.has(sgKey) && item.mods.map(m => renderModRow(m, true))}
+                                </React.Fragment>
+                              );
+                            }
+                            // orphan-sg
+                            const orphanKey = `${grupo}::${item.nome}`;
+                            return (
+                              <React.Fragment key={`sg-orphan-${grupo}-${item.nome}`}>
+                                {renderSubgrupoHeader(item.nome, item.mods.length, 99, false, grupo)}
+                                {expandedSubgrupos.has(orphanKey) && item.mods.map(m => renderModRow(m, true))}
+                              </React.Fragment>
+                            );
+                          })}
+                        </>
+                      );
+                    })()}
                   </div>
                 );
               })}
@@ -649,6 +917,7 @@ export default function ControleModulosPage() {
         modulo={editingModulo}
         onSave={handleSaveField}
         gruposExistentes={gruposExistentes}
+        subgruposExistentes={subgruposExistentes}
       />
 
       {/* Modal de novo link externo */}
@@ -657,6 +926,7 @@ export default function ControleModulosPage() {
         onClose={() => setAddLinkOpen(false)}
         onSave={handleCreateExternalLink}
         gruposExistentes={gruposExistentes}
+        subgruposExistentes={subgruposExistentes}
       />
 
       {/* Modal de gerenciar grupos */}
@@ -674,6 +944,25 @@ export default function ControleModulosPage() {
         grupoNome={editGrupoNome}
         gruposDaPlanilha={gruposDaPlanilha}
         onSave={handleSaveGrupo}
+      />
+
+      {/* Modal de gerenciar subgrupos */}
+      <GerenciarSubgruposModal
+        isOpen={subgruposModalOpen}
+        onClose={() => setSubgruposModalOpen(false)}
+        gruposExistentes={gruposExistentes}
+        onSubgruposChanged={fetchSubgrupos}
+      />
+
+      {/* Modal de editar subgrupo */}
+      <EditSubgrupoModal
+        isOpen={!!editSubgrupoNome}
+        onClose={() => { setEditSubgrupoNome(null); setEditSubgrupoGrupo(null); }}
+        subgrupoNome={editSubgrupoNome}
+        subgrupoGrupo={editSubgrupoGrupo}
+        subgruposDaPlanilha={subgruposDaPlanilha}
+        gruposExistentes={gruposExistentes}
+        onSave={handleSaveSubgrupo}
       />
     </>
   );

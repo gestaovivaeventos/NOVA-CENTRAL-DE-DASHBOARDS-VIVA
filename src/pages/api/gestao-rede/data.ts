@@ -223,6 +223,7 @@ function processarDados(rows: string[][]): Franquia[] {
       // Campos adicionais
       cluster: getValue('cluster')?.trim() || '',
       dataEncerramento: getValue('dt_encerramento')?.trim() || '',
+      consultorResponsavel: getValue('consultor_responsavel')?.trim() || '',
       // Campos de evolução de saúde
       saudeAnterior,
       mesesNaSaudeAtual,
@@ -253,10 +254,10 @@ export default async function handler(
     console.log('[API gestao-rede/data] Aba:', SHEET_NAME);
     
     // Buscar dados da planilha externa com cache
-    // Colunas: A-P (originais) + Q (cluster) + R (dt_encerramento)
+    // Colunas: A-R (originais) + novas colunas (consultor_responsavel, ultima_alteracao_flags)
     const rows = await getExternalSheetData(
       SPREADSHEET_ID,
-      `'${SHEET_NAME}'!A:R`, // Colunas A até R (incluindo cluster e dt_encerramento)
+      `'${SHEET_NAME}'!A:T`, // Colunas A até T (incluindo consultor_responsavel e ultima_alteracao_flags)
       CACHE_KEY,
       CACHE_TTL.PONTUACAO_OFICIAL
     );

@@ -76,6 +76,7 @@ export interface FranquiaRaw {
   longitude: string;
   cluster: string;
   dt_encerramento: string;
+  consultor_responsavel: string;
 }
 
 /**
@@ -103,6 +104,7 @@ export interface Franquia {
   // Campos adicionais
   cluster: string;              // Cluster da franquia (ex: "INCUBAÇÃO 0")
   dataEncerramento: string;     // Data de encerramento da franquia
+  consultorResponsavel: string; // Consultor responsável pela franquia
   // Campos de evolução de saúde (calculados a partir do histórico)
   saudeAnterior?: SaudeFranquia;       // Saúde do mês anterior
   mesesNaSaudeAtual?: number;          // Quantos meses consecutivos na saúde atual
@@ -161,6 +163,7 @@ export interface FiltrosGestaoRede {
   maturidade: string[];
   classificacao: string[];
   flags: string[];
+  consultorResponsavel: string[];
 }
 
 /**

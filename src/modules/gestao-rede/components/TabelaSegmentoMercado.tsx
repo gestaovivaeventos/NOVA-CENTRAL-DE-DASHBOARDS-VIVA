@@ -188,20 +188,20 @@ export default function TabelaSegmentoMercado({ franquias, titulo = 'Análise po
                           }}
                         />
                         <div>
-                          <span style={{
+                          <div style={{
                             color: '#F8F9FA',
                             fontWeight: 600,
                             fontSize: '0.95rem',
                           }}>
                             {segmento.label}
-                          </span>
-                          <span style={{
-                            color: '#6c757d',
-                            fontSize: '0.8rem',
-                            marginLeft: '8px',
+                          </div>
+                          <div style={{
+                            color: '#F59E0B',
+                            fontSize: '0.9rem',
+                            fontWeight: 600,
                           }}>
                             {segmento.total} franquias
-                          </span>
+                          </div>
                         </div>
                       </div>
                     </td>

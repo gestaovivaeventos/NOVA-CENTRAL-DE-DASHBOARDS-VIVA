@@ -281,8 +281,10 @@ export default async function handler(
 
         // Montar linha atualizada
         const currentRow = rows[rowIndex];
+        const oldNome = (currentRow[0] || '').trim();
+        const newNome = nome != null ? nome.trim() : oldNome;
         const updatedRow = [
-          nome != null ? nome.trim() : (currentRow[0] || '').trim(),
+          newNome,
           icone != null ? icone.trim() : (currentRow[1] || 'settings').trim(),
           ordem != null ? String(ordem) : (currentRow[2] || '99'),
           ativo != null ? (ativo ? 'TRUE' : 'FALSE') : (currentRow[3] || 'TRUE'),
@@ -294,6 +296,59 @@ export default async function handler(
           valueInputOption: 'RAW',
           requestBody: { values: [updatedRow] },
         });
+
+        // Cascade: se renomeou, atualizar grupo em BASE MODULOS e SUBGRUPOS
+        if (newNome.toLowerCase() !== oldNome.toLowerCase()) {
+          const baseSheetName = process.env.CONTROLE_MODULOS_SHEET_NAME || 'BASE MODULOS';
+
+          // 1) Atualizar coluna G (grupo) em BASE MODULOS
+          try {
+            const baseData = await sheets.spreadsheets.values.get({
+              spreadsheetId,
+              range: `${baseSheetName}!A:L`,
+            });
+            const baseRows = baseData.data.values || [];
+            for (let i = 1; i < baseRows.length; i++) {
+              const rowGrupo = (baseRows[i][6] || '').trim();
+              if (rowGrupo.toLowerCase() === oldNome.toLowerCase()) {
+                await sheets.spreadsheets.values.update({
+                  spreadsheetId,
+                  range: `${baseSheetName}!G${i + 1}`,
+                  valueInputOption: 'RAW',
+                  requestBody: { values: [[newNome]] },
+                });
+              }
+            }
+          } catch (err: any) {
+            console.error('[API/grupos] Cascade BASE MODULOS erro:', err.message);
+          }
+
+          // 2) Atualizar coluna B (grupo) em SUBGRUPOS
+          try {
+            const sgData = await sheets.spreadsheets.values.get({
+              spreadsheetId,
+              range: `SUBGRUPOS!A:E`,
+            });
+            const sgRows = sgData.data.values || [];
+            for (let i = 1; i < sgRows.length; i++) {
+              const sgGrupo = (sgRows[i][1] || '').trim();
+              if (sgGrupo.toLowerCase() === oldNome.toLowerCase()) {
+                await sheets.spreadsheets.values.update({
+                  spreadsheetId,
+                  range: `SUBGRUPOS!B${i + 1}`,
+                  valueInputOption: 'RAW',
+                  requestBody: { values: [[newNome]] },
+                });
+              }
+            }
+          } catch (err: any) {
+            console.error('[API/grupos] Cascade SUBGRUPOS erro:', err.message);
+          }
+
+          // Invalidar caches relacionados
+          cache.invalidate('controle-modulos:data');
+          cache.invalidate('controle-modulos:subgrupos');
+        }
       }
 
       cache.invalidate(CACHE_KEY);

@@ -16,9 +16,16 @@ const CACHE_KEY = 'gestao-rede:data';
 const SAUDE_COLUMN_INDEX = 8;
 const SAUDE_COLUMN_LETTER = 'I';
 
+// Coluna de log de última alteração de flags/saúde
+const LOG_COLUMN_LETTER = 'S';
+
+// Usuários autorizados a alterar saúde UTI
+const ALLOWED_EDITORS = ['EVERDAN', 'vitor', 'marcos', 'cris', 'gabriel.braz'];
+
 interface UpdateSaudeRequest {
   chaveData: string;  // Identificador único da linha (coluna A)
   novoStatus: 'UTI_RECUPERACAO' | 'UTI_REPASSE';
+  username?: string;  // Usuário que está fazendo a alteração
 }
 
 interface UpdateSaudeResponse {
@@ -83,13 +90,21 @@ export default async function handler(
   }
 
   try {
-    const { chaveData, novoStatus } = req.body as UpdateSaudeRequest;
+    const { chaveData, novoStatus, username } = req.body as UpdateSaudeRequest;
 
     // Validar entrada
     if (!chaveData || !novoStatus) {
       return res.status(400).json({
         success: false,
         error: 'Parâmetros obrigatórios: chaveData e novoStatus',
+      });
+    }
+
+    // Validar permissão do usuário
+    if (!username || !ALLOWED_EDITORS.includes(username)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Usuário não autorizado a alterar status UTI',
       });
     }
 
@@ -135,6 +150,32 @@ export default async function handler(
     });
 
     console.log('[API update-saude] Célula atualizada:', range);
+
+    // Registrar log da alteração na coluna S (ultima_alteracao_flags)
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+    const logAlteracao = `${username}, Saúde → ${valorPlanilha}, ${dataAtual}`;
+    const logRange = `'${SHEET_NAME}'!${LOG_COLUMN_LETTER}${rowNumber}`;
+    
+    // Ler log existente para não sobrescrever
+    const logAtual = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: logRange,
+    });
+    const logExistente = logAtual.data.values?.[0]?.[0] || '';
+    const novoLog = logExistente 
+      ? `${logAlteracao} | ${logExistente}`
+      : logAlteracao;
+    
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: logRange,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[novoLog]],
+      },
+    });
+
+    console.log('[API update-saude] Log registrado:', logRange, 'Valor:', logAlteracao);
 
     // Invalidar cache para forçar recarregamento dos dados
     cache.invalidate(CACHE_KEY);
