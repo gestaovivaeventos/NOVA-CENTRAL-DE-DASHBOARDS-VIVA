@@ -156,12 +156,22 @@ export default async function handler(
     const logAlteracao = `${username}, Saúde → ${valorPlanilha}, ${dataAtual}`;
     const logRange = `'${SHEET_NAME}'!${LOG_COLUMN_LETTER}${rowNumber}`;
     
+    // Ler log existente para não sobrescrever
+    const logAtual = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: logRange,
+    });
+    const logExistente = logAtual.data.values?.[0]?.[0] || '';
+    const novoLog = logExistente 
+      ? `${logAlteracao} | ${logExistente}`
+      : logAlteracao;
+    
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: logRange,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[logAlteracao]],
+        values: [[novoLog]],
       },
     });
 

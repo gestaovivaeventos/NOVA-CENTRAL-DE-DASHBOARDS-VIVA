@@ -191,16 +191,26 @@ export default async function handler(
     // Registrar log da alteração na coluna S (ultima_alteracao_flags)
     const logRange = `'${SHEET_NAME}'!${LOG_COLUMN_LETTER}${rowNumber}`;
     
+    // Ler log existente para não sobrescrever
+    const logAtual = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: logRange,
+    });
+    const logExistente = logAtual.data.values?.[0]?.[0] || '';
+    const novoLog = logExistente 
+      ? `${logAlteracao} | ${logExistente}`
+      : logAlteracao;
+    
     await sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: logRange,
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[logAlteracao]],
+        values: [[novoLog]],
       },
     });
 
-    console.log('[API update-flags] Log registrado:', logRange, 'Valor:', logAlteracao);
+    console.log('[API update-flags] Log registrado:', logRange, 'Valor:', novoLog);
 
     // Invalidar cache para forçar recarregamento dos dados
     cache.invalidate(CACHE_KEY);
