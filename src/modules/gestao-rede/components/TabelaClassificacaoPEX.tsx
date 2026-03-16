@@ -212,6 +212,7 @@ export default function TabelaClassificacaoPEX({ franquias, onRefresh }: TabelaC
             body: JSON.stringify({
               chaveData: alteracao.chaveData,
               novoStatus: alteracao.novoValor,
+              username: user?.username,
             }),
           });
           const result = await response.json();
