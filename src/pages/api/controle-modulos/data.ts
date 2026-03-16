@@ -37,7 +37,7 @@ export default async function handler(
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:K`,
+      range: `${sheetName}!A:L`,
     });
     const rows = response.data.values || [];
 
@@ -60,6 +60,7 @@ export default async function handler(
         icone: (row[8] || '').trim(),
         tipo: ((row[9] || '').trim().toLowerCase() || 'interno') as 'interno' | 'externo',
         urlExterna: (row[10] || '').trim(),
+        subgrupo: (row[11] || '').trim(),
       }));
 
     res.setHeader('Cache-Control', 'no-cache');

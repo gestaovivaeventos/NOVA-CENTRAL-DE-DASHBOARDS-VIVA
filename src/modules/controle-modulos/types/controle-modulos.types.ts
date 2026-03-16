@@ -23,6 +23,7 @@ export interface ModuloConfig {
   icone: string;
   tipo: TipoModulo; // 'interno' = rota Next.js, 'externo' = link externo (Looker, Sheets, etc)
   urlExterna: string; // URL completa quando tipo = 'externo'
+  subgrupo: string; // Nome do subgrupo dentro do grupo (vazio = sem subgrupo)
 }
 
 // Dados brutos da planilha (linha como array)
@@ -41,6 +42,7 @@ export interface ModuloPayload {
   icone: string;
   tipo: TipoModulo;
   urlExterna: string;
+  subgrupo: string;
 }
 
 // Grupos de módulos para exibição
