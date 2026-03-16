@@ -41,6 +41,7 @@ export default async function handler(
       icone = 'link',
       tipo = 'externo',
       urlExterna = '',
+      subgrupo = '',
     } = req.body;
 
     if (!moduloId || !moduloNome) {
@@ -89,11 +90,12 @@ export default async function handler(
       icone.trim(),
       tipo,
       urlExterna.trim(),
+      (subgrupo || '').trim(),
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:K`,
+      range: `${sheetName}!A:L`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [newRow] },
     });

@@ -16,6 +16,7 @@ interface AddExternalLinkModalProps {
   onClose: () => void;
   onSave: (data: ExternalLinkData) => Promise<boolean>;
   gruposExistentes: string[];
+  subgruposExistentes?: { nome: string; grupo: string }[];
 }
 
 export interface ExternalLinkData {
@@ -30,6 +31,7 @@ export interface ExternalLinkData {
   icone: string;
   tipo: string;
   urlExterna: string;
+  subgrupo: string;
 }
 
 const ICONES_SUGERIDOS = [
@@ -48,6 +50,7 @@ export default function AddExternalLinkModal({
   onClose,
   onSave,
   gruposExistentes,
+  subgruposExistentes = [],
 }: AddExternalLinkModalProps) {
   const [nome, setNome] = useState('');
   const [url, setUrl] = useState('');
@@ -57,6 +60,7 @@ export default function AddExternalLinkModal({
   const [nvlAcesso, setNvlAcesso] = useState('0');
   const [ordem, setOrdem] = useState('1');
   const [icone, setIcone] = useState('link');
+  const [subgrupo, setSubgrupo] = useState('');
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
   const [todosUsuarios, setTodosUsuarios] = useState<Usuario[]>([]);
   const [userSearch, setUserSearch] = useState('');
@@ -78,6 +82,7 @@ export default function AddExternalLinkModal({
       setNvlAcesso('0');
       setOrdem('1');
       setIcone('link');
+      setSubgrupo('');
       setUsuariosSelecionados([]);
       setUserSearch('');
       setError('');
@@ -161,6 +166,7 @@ export default function AddExternalLinkModal({
       icone: icone,
       tipo: 'externo',
       urlExterna: url.trim(),
+      subgrupo: subgrupo,
     };
 
     const ok = await onSave(data);
@@ -384,6 +390,35 @@ export default function AddExternalLinkModal({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Subgrupo */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>
+              Subgrupo
+              <span style={{ color: '#6c757d', fontWeight: 400, textTransform: 'none', marginLeft: 8 }}>
+                (opcional)
+              </span>
+            </label>
+            <select
+              value={subgrupo}
+              onChange={(e) => setSubgrupo(e.target.value)}
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="" style={{ color: '#6c757d', backgroundColor: '#1a1d21' }}>
+                Sem subgrupo
+              </option>
+              {subgruposExistentes
+                .filter(s => !grupo || s.grupo.toLowerCase() === grupo.toLowerCase())
+                .map(s => (
+                  <option key={`${s.grupo}-${s.nome}`} value={s.nome} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                    {s.nome}
+                  </option>
+                ))}
+            </select>
           </div>
 
           {/* Row: Icone + Ordem */}

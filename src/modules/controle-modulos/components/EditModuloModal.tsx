@@ -19,6 +19,7 @@ interface EditModuloModalProps {
   modulo: ModuloConfig | null;
   onSave: (moduloId: string, field: string, value: string) => Promise<boolean>;
   gruposExistentes?: string[];
+  subgruposExistentes?: { nome: string; grupo: string }[];
 }
 
 const ICONES_SUGERIDOS = [
@@ -48,6 +49,7 @@ export default function EditModuloModal({
   modulo,
   onSave,
   gruposExistentes = [],
+  subgruposExistentes = [],
 }: EditModuloModalProps) {
   // Editable fields
   const [nvlAcesso, setNvlAcesso] = useState('1');
@@ -57,6 +59,7 @@ export default function EditModuloModal({
   const [icone, setIcone] = useState('');
   const [tipo, setTipo] = useState('interno');
   const [urlExterna, setUrlExterna] = useState('');
+  const [subgrupo, setSubgrupo] = useState('');
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
 
   // Users data
@@ -82,6 +85,7 @@ export default function EditModuloModal({
       setIcone(modulo.icone);
       setTipo((modulo as any).tipo || 'interno');
       setUrlExterna((modulo as any).urlExterna || '');
+      setSubgrupo((modulo as any).subgrupo || '');
       setUsuariosSelecionados(modulo.usuariosPermitidos || []);
       setUserSearch('');
       setUserDropdownOpen(false);
@@ -142,6 +146,7 @@ export default function EditModuloModal({
     if (icone !== modulo.icone) return true;
     if (tipo !== ((modulo as any).tipo || 'interno')) return true;
     if (urlExterna !== ((modulo as any).urlExterna || '')) return true;
+    if (subgrupo !== ((modulo as any).subgrupo || '')) return true;
     const originalUsers = (modulo.usuariosPermitidos || []).join(',');
     const currentUsers = usuariosSelecionados.join(',');
     if (currentUsers !== originalUsers) return true;
@@ -192,6 +197,10 @@ export default function EditModuloModal({
     }
     if (urlExterna !== ((modulo as any).urlExterna || '')) {
       const ok = await onSave(modulo.moduloId, 'url_externa', urlExterna);
+      if (!ok) allOk = false;
+    }
+    if (subgrupo !== ((modulo as any).subgrupo || '')) {
+      const ok = await onSave(modulo.moduloId, 'subgrupo', subgrupo);
       if (!ok) allOk = false;
     }
 
@@ -446,6 +455,35 @@ export default function EditModuloModal({
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Subgrupo */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>
+              Subgrupo
+              <span style={{ color: '#6c757d', fontWeight: 400, textTransform: 'none', marginLeft: 8 }}>
+                (opcional)
+              </span>
+            </label>
+            <select
+              value={subgrupo}
+              onChange={(e) => setSubgrupo(e.target.value)}
+              style={{
+                ...inputStyle,
+                cursor: 'pointer',
+              }}
+            >
+              <option value="" style={{ color: '#6c757d', backgroundColor: '#1a1d21' }}>
+                Sem subgrupo
+              </option>
+              {subgruposExistentes
+                .filter(s => !grupo || s.grupo.toLowerCase() === grupo.toLowerCase())
+                .map(s => (
+                  <option key={`${s.grupo}-${s.nome}`} value={s.nome} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                    {s.nome}
+                  </option>
+                ))}
+            </select>
           </div>
 
           {/* Ordem */}

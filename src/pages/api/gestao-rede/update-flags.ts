@@ -25,9 +25,16 @@ const CACHE_KEY = 'gestao-rede:data';
 // A coluna J (flags) continua sendo usada apenas para leitura
 const FLAGS_COLUMN_LETTER = 'O';
 
+// Coluna de log de última alteração de flags
+const LOG_COLUMN_LETTER = 'S';
+
+// Usuários autorizados a alterar flags
+const ALLOWED_FLAG_EDITORS = ['EVERDAN', 'vitor', 'marcos', 'cris', 'gabriel.braz'];
+
 interface UpdateFlagsRequest {
   chaveData: string;  // Identificador único da linha (coluna A)
   flags: FlagsEstruturais;
+  username?: string;  // Usuário que está fazendo a alteração
 }
 
 interface UpdateFlagsResponse {
@@ -114,7 +121,7 @@ export default async function handler(
   }
 
   try {
-    const { chaveData, flags } = req.body as UpdateFlagsRequest;
+    const { chaveData, flags, username } = req.body as UpdateFlagsRequest;
 
     // Validar entrada
     if (!chaveData || flags === undefined) {
@@ -124,10 +131,32 @@ export default async function handler(
       });
     }
 
+    // Validar permissão do usuário
+    if (!username || !ALLOWED_FLAG_EDITORS.includes(username)) {
+      return res.status(403).json({
+        success: false,
+        error: 'Usuário não autorizado a alterar flags',
+      });
+    }
+
     // Converter flags para string da planilha
     const valorPlanilha = flagsToString(flags);
 
-    console.log('[API update-flags] Atualizando flags:', { chaveData, flags, valorPlanilha });
+    // Gerar descrição da alteração para o log
+    const flagsAtivas: string[] = [];
+    if (flags.governanca) flagsAtivas.push(FLAG_LABELS.governanca);
+    if (flags.necessidadeCapitalGiro) flagsAtivas.push(FLAG_LABELS.necessidadeCapitalGiro);
+    if (flags.timeCritico) flagsAtivas.push(FLAG_LABELS.timeCritico);
+    if (flags.socioOperador) flagsAtivas.push(FLAG_LABELS.socioOperador);
+    
+    const descricaoAlteracao = flagsAtivas.length > 0 
+      ? flagsAtivas.join(' | ') 
+      : 'Flags removidas';
+    
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+    const logAlteracao = `${username}, ${descricaoAlteracao}, ${dataAtual}`;
+
+    console.log('[API update-flags] Atualizando flags:', { chaveData, flags, valorPlanilha, username });
 
     // Autenticar
     const auth = await getAuthClient();
@@ -158,6 +187,30 @@ export default async function handler(
     });
 
     console.log('[API update-flags] Célula atualizada:', range, 'Valor:', valorPlanilha);
+
+    // Registrar log da alteração na coluna S (ultima_alteracao_flags)
+    const logRange = `'${SHEET_NAME}'!${LOG_COLUMN_LETTER}${rowNumber}`;
+    
+    // Ler log existente para não sobrescrever
+    const logAtual = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: logRange,
+    });
+    const logExistente = logAtual.data.values?.[0]?.[0] || '';
+    const novoLog = logExistente 
+      ? `${logAlteracao} | ${logExistente}`
+      : logAlteracao;
+    
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: logRange,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: {
+        values: [[novoLog]],
+      },
+    });
+
+    console.log('[API update-flags] Log registrado:', logRange, 'Valor:', novoLog);
 
     // Invalidar cache para forçar recarregamento dos dados
     cache.invalidate(CACHE_KEY);

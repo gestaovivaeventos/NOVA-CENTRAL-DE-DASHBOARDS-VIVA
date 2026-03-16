@@ -58,6 +58,7 @@ const COLUNAS = {
   SITUACAO: 20,                // U - Situação do fundo
   FEE_INICIAL_V: 21,           // V - FEE INICIAL
   FEE_REPLANEJADO: 22,         // W - FEE REPLANEJADO
+  PRETENDE_ABRIR_CP: 23,       // X - PRETENDE ABRIR CP
 };
 
 // Linha onde começa o cabeçalho (0-indexed)
@@ -78,6 +79,7 @@ interface FundoRealizado {
   situacao?: string;      // Coluna U - Situação do fundo
   feeInicialV?: number;   // Coluna V - FEE INICIAL
   feeReplanejado?: number; // Coluna W - FEE REPLANEJADO
+  pretendeAbrirCP?: boolean; // Coluna X - PRETENDE ABRIR CP
 }
 
 // Função para obter cliente autenticado
@@ -228,6 +230,7 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     const situacao = (row[COLUNAS.SITUACAO] || '').toString().trim(); // Coluna U
     const feeInicialV = parseNumber(row[COLUNAS.FEE_INICIAL_V]); // Coluna V
     const feeReplanejado = parseNumber(row[COLUNAS.FEE_REPLANEJADO]); // Coluna W
+    const pretendeAbrirCP = (row[COLUNAS.PRETENDE_ABRIR_CP] || '').toString().trim().toUpperCase() === 'SIM'; // Coluna X
     // Coluna T: % Atingimento MAC (pode vir como decimal 0.75 ou percentual 75)
     const rawAtingMac = row[COLUNAS.PERCENTUAL_ATING_MAC];
     let percentualAtingMac = 0;
@@ -262,6 +265,7 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
       situacao: situacao, // Coluna U
       feeInicialV: feeInicialV, // Coluna V
       feeReplanejado: feeReplanejado, // Coluna W
+      pretendeAbrirCP: pretendeAbrirCP, // Coluna X
     };
     
     fundos.push(fundo);

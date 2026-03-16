@@ -15,6 +15,7 @@ interface TabelaFranquiasProps {
     maturidade?: string[];
     classificacao?: string[];
     flags?: string[];
+    consultorResponsavel?: string[];
   };
 }
 
@@ -122,6 +123,11 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
             return false;
           });
           if (!temFlag) return false;
+        }
+        
+        // Filtro de consultor responsável
+        if (filtros?.consultorResponsavel && filtros.consultorResponsavel.length > 0) {
+          if (!f.consultorResponsavel || !filtros.consultorResponsavel.includes(f.consultorResponsavel)) return false;
         }
         
         return true;

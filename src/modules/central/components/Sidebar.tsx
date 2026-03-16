@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
-import { Search, X } from 'lucide-react';
+import { Search, X, ChevronDown, FolderOpen } from 'lucide-react';
 import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
 interface SidebarProps {
@@ -20,6 +20,16 @@ interface Dashboard {
   icon: string;
   tipo: 'interno' | 'externo';
   urlExterna: string;
+  subgrupo: string;
+  ordem: number;
+}
+
+// Definição de subgrupo
+interface SubgrupoItem {
+  nome: string;
+  icone: string;
+  ordem: number;
+  dashboards: Dashboard[];
 }
 
 // Definição de grupo
@@ -27,6 +37,7 @@ interface DashboardGroup {
   id: string;
   name: string;
   dashboards: Dashboard[];
+  subgrupos: SubgrupoItem[];
   iconName?: string;
 }
 
@@ -38,20 +49,35 @@ interface GrupoAPIInfo {
   ativo: boolean;
 }
 
+// Info de subgrupo vinda da API
+interface SubgrupoAPIInfo {
+  nome: string;
+  grupo: string;
+  icone: string;
+  ordem: number;
+  ativo: boolean;
+}
+
 // Grupos de dashboards - 100% dinâmico a partir da planilha BASE MODULOS
-// Agora recebe info dos grupos (API GRUPOS) para filtrar inativos e ordenar
 const buildDashboardGroups = (
-  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string; tipo?: string; urlExterna?: string }[],
+  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string; tipo?: string; urlExterna?: string; subgrupo?: string }[],
   allowedIds: Set<string>,
-  gruposInfo: GrupoAPIInfo[]
+  gruposInfo: GrupoAPIInfo[],
+  subgruposInfo: SubgrupoAPIInfo[]
 ): DashboardGroup[] => {
-  // Mapa de grupo -> info (ativo, ordem, icone)
   const grupoMap = new Map<string, GrupoAPIInfo>();
   for (const g of gruposInfo) {
     grupoMap.set(g.nome.toLowerCase(), g);
   }
 
-  // Filtra módulos permitidos, agrupa por grupo, ordena por ordem
+  const subgrupoMap = new Map<string, SubgrupoAPIInfo[]>();
+  for (const sg of subgruposInfo) {
+    if (!sg.ativo) continue;
+    const key = sg.grupo.toLowerCase();
+    if (!subgrupoMap.has(key)) subgrupoMap.set(key, []);
+    subgrupoMap.get(key)!.push(sg);
+  }
+
   const allowed = modulos
     .filter(m => allowedIds.has(m.moduloId))
     .sort((a, b) => a.ordem - b.ordem);
@@ -59,7 +85,6 @@ const buildDashboardGroups = (
   const groupMap = new Map<string, Dashboard[]>();
   for (const m of allowed) {
     const g = m.grupo || 'Outros';
-    // Verificar se o grupo está ativo (se não tiver info, considerar ativo)
     const info = grupoMap.get(g.toLowerCase());
     if (info && !info.ativo) continue;
 
@@ -71,20 +96,59 @@ const buildDashboardGroups = (
       icon: m.icone || 'dashboard',
       tipo: (m.tipo as 'interno' | 'externo') || 'interno',
       urlExterna: m.urlExterna || '',
+      subgrupo: m.subgrupo || '',
+      ordem: m.ordem,
     });
   }
 
   const groups = Array.from(groupMap.entries()).map(([name, dashboards]) => {
     const info = grupoMap.get(name.toLowerCase());
+    const sgInfos = subgrupoMap.get(name.toLowerCase()) || [];
+    
+    // Separar dashboards com e sem subgrupo
+    const withSub = new Map<string, Dashboard[]>();
+    const withoutSub: Dashboard[] = [];
+    
+    for (const d of dashboards) {
+      if (d.subgrupo) {
+        if (!withSub.has(d.subgrupo)) withSub.set(d.subgrupo, []);
+        withSub.get(d.subgrupo)!.push(d);
+      } else {
+        withoutSub.push(d);
+      }
+    }
+
+    const subgrupos: SubgrupoItem[] = sgInfos
+      .sort((a, b) => a.ordem - b.ordem)
+      .filter(sg => withSub.has(sg.nome))
+      .map(sg => ({
+        nome: sg.nome,
+        icone: sg.icone || 'folder',
+        ordem: sg.ordem,
+        dashboards: withSub.get(sg.nome) || [],
+      }));
+
+    // Subgrupos referenciados por módulos mas não cadastrados
+    for (const [sgName, sgDashes] of withSub.entries()) {
+      if (!subgrupos.some(s => s.nome === sgName)) {
+        subgrupos.push({
+          nome: sgName,
+          icone: 'folder',
+          ordem: 99,
+          dashboards: sgDashes,
+        });
+      }
+    }
+
     return {
       id: name.toLowerCase().replace(/\s+/g, '-'),
       name,
-      dashboards,
+      dashboards: withoutSub,
+      subgrupos,
       iconName: info?.icone,
     };
   });
 
-  // Ordenar por ordem do grupo (da API), depois por nome
   groups.sort((a, b) => {
     const ordemA = grupoMap.get(a.name.toLowerCase())?.ordem ?? 99;
     const ordemB = grupoMap.get(b.name.toLowerCase())?.ordem ?? 99;
@@ -264,7 +328,130 @@ const grupoIconToSidebarIcon: Record<string, string> = {
   'layout-dashboard': 'dashboard',
 };
 
-// Componente de Grupo colapsável
+// Componente de Dashboard Item (reutilizável)
+const DashboardItem = ({
+  dashboard,
+  active,
+  isFavorite,
+  onToggleFavorite,
+  onClose,
+  indent,
+}: {
+  dashboard: Dashboard;
+  active: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: (id: string) => void;
+  onClose: () => void;
+  indent: number;
+}) => {
+  const isExternal = dashboard.tipo === 'externo' && dashboard.urlExterna;
+  const labelLen = dashboard.label.length;
+  const fontSize = labelLen > 30 ? '0.72rem' : labelLen > 20 ? '0.78rem' : '0.82rem';
+
+  const linkContent = (
+    <>
+      <span style={{ opacity: active ? 1 : 0.55, flexShrink: 0, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {icons[dashboard.icon] || icons.dashboard}
+      </span>
+      <span style={{ flex: 1, minWidth: 0, lineHeight: '1.3', wordBreak: 'break-word' }}>{dashboard.label}</span>
+      {isExternal && (
+        <span style={{ opacity: 0.4, flexShrink: 0 }}>
+          {icons.externalLink}
+        </span>
+      )}
+    </>
+  );
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        backgroundColor: active ? 'rgba(255, 102, 0, 0.12)' : 'transparent',
+        borderLeft: active ? '3px solid #FF6600' : '3px solid transparent',
+        transition: 'all 0.15s ease',
+      }}
+      onMouseEnter={(e) => {
+        if (!active) {
+          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.04)';
+          e.currentTarget.style.borderLeftColor = 'rgba(255, 102, 0, 0.3)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!active) {
+          e.currentTarget.style.backgroundColor = 'transparent';
+          e.currentTarget.style.borderLeftColor = 'transparent';
+        }
+      }}
+    >
+      {isExternal ? (
+        <a
+          href={dashboard.urlExterna}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: `8px 12px 8px ${indent}px`,
+            color: '#9ca3af',
+            textDecoration: 'none',
+            fontFamily: "'Poppins', sans-serif",
+            fontSize,
+            fontWeight: 500,
+            minWidth: 0,
+          }}
+        >
+          {linkContent}
+        </a>
+      ) : (
+        <Link
+          href={dashboard.path}
+          onClick={() => onClose()}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: `8px 12px 8px ${indent}px`,
+            color: active ? '#FF6600' : '#9ca3af',
+            textDecoration: 'none',
+            fontFamily: "'Poppins', sans-serif",
+            fontSize,
+            fontWeight: active ? 600 : 500,
+            minWidth: 0,
+          }}
+        >
+          {linkContent}
+        </Link>
+      )}
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onToggleFavorite(dashboard.id);
+        }}
+        style={{
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '6px 10px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: isFavorite ? '#fbbf24' : '#3a3f47',
+          transition: 'color 0.2s',
+        }}
+        title={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+      >
+        {isFavorite ? icons.starFilled : icons.star}
+      </button>
+    </div>
+  );
+};
+
+// Componente de Grupo colapsável - Estilo Mundo Viva
 const CollapsibleGroup = ({ 
   group, 
   searchTerm,
@@ -281,8 +468,17 @@ const CollapsibleGroup = ({
   router: ReturnType<typeof useRouter>;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [openSubgrupos, setOpenSubgrupos] = useState<Set<string>>(new Set());
+  const preSearchState = useRef<{ isOpen: boolean; openSubgrupos: Set<string> } | null>(null);
 
-  // Resolver ícone do grupo via API → mapeamento → SVG
+  const toggleSubgrupo = (nome: string) => {
+    setOpenSubgrupos(prev => {
+      const next = new Set(prev);
+      if (next.has(nome)) next.delete(nome); else next.add(nome);
+      return next;
+    });
+  };
+
   const groupIcon = useMemo(() => {
     if (group.iconName) {
       const key = grupoIconToSidebarIcon[group.iconName];
@@ -291,216 +487,245 @@ const CollapsibleGroup = ({
     return icons.dashboard;
   }, [group.iconName]);
 
-  // Filtrar dashboards baseado na pesquisa
+  // Todos os dashboards do grupo (incluindo os de subgrupos)
+  const allDashboards = useMemo(() => {
+    const all = [...group.dashboards];
+    for (const sg of group.subgrupos) {
+      all.push(...sg.dashboards);
+    }
+    return all;
+  }, [group.dashboards, group.subgrupos]);
+
   const filteredDashboards = useMemo(() => {
     if (!searchTerm) return group.dashboards;
     const search = searchTerm.toLowerCase();
-    return group.dashboards.filter(d => 
-      d.label.toLowerCase().includes(search)
-    );
+    return group.dashboards.filter(d => d.label.toLowerCase().includes(search));
   }, [group.dashboards, searchTerm]);
 
-  // Expandir automaticamente quando há busca com resultados
-  useEffect(() => {
-    if (searchTerm && filteredDashboards.length > 0) {
-      setIsOpen(true);
-    }
-  }, [searchTerm, filteredDashboards.length]);
+  const filteredSubgrupos = useMemo(() => {
+    if (!searchTerm) return group.subgrupos;
+    const search = searchTerm.toLowerCase();
+    return group.subgrupos
+      .map(sg => {
+        // Se o nome do subgrupo bate com a busca, mostra todos os dashboards dele
+        if (sg.nome.toLowerCase().includes(search)) {
+          return sg;
+        }
+        // Senão, filtra individual os dashboards
+        return {
+          ...sg,
+          dashboards: sg.dashboards.filter(d => d.label.toLowerCase().includes(search)),
+        };
+      })
+      .filter(sg => sg.dashboards.length > 0);
+  }, [group.subgrupos, searchTerm]);
 
-  // Não renderizar se não houver dashboards após filtro
-  if (filteredDashboards.length === 0) return null;
+  useEffect(() => {
+    if (searchTerm && (filteredDashboards.length > 0 || filteredSubgrupos.length > 0)) {
+      // Salvar estado antes de expandir tudo pela busca
+      if (!preSearchState.current) {
+        preSearchState.current = { isOpen, openSubgrupos: new Set(openSubgrupos) };
+      }
+      setIsOpen(true);
+      if (filteredSubgrupos.length > 0) {
+        setOpenSubgrupos(new Set(filteredSubgrupos.map(sg => sg.nome)));
+      }
+    } else if (!searchTerm && preSearchState.current) {
+      // Restaurar estado anterior quando a busca é limpa
+      setIsOpen(preSearchState.current.isOpen);
+      setOpenSubgrupos(preSearchState.current.openSubgrupos);
+      preSearchState.current = null;
+    }
+  }, [searchTerm, filteredDashboards.length, filteredSubgrupos.length]);
+
+  const totalVisible = filteredDashboards.length + filteredSubgrupos.reduce((sum, sg) => sum + sg.dashboards.length, 0);
+  if (totalVisible === 0) return null;
 
   const isActive = (path: string) => {
     return router.pathname === path || router.pathname.startsWith(path + '/');
   };
 
+  // Verifica se algum dashboard do grupo está ativo
+  const groupHasActive = allDashboards.some(d => d.tipo !== 'externo' && isActive(d.path));
+
   return (
-    <div style={{ marginBottom: '8px' }}>
-      {/* Header do grupo */}
+    <div style={{ marginBottom: 2 }}>
+      {/* Header do grupo - full-width, estilo Mundo Viva */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         style={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
           width: '100%',
-          padding: '10px 12px',
-          backgroundColor: 'rgba(255, 102, 0, 0.06)',
-          border: '1px solid rgba(255, 102, 0, 0.35)',
-          borderRadius: '6px',
+          padding: '11px 14px',
+          backgroundColor: isOpen ? 'rgba(255, 102, 0, 0.1)' : groupHasActive ? 'rgba(255, 102, 0, 0.05)' : 'transparent',
+          border: 'none',
+          borderLeft: isOpen ? '3px solid #FF6600' : groupHasActive ? '3px solid rgba(255, 102, 0, 0.4)' : '3px solid transparent',
           cursor: 'pointer',
-          transition: 'all 0.2s',
+          transition: 'all 0.15s ease',
+          gap: 10,
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 102, 0, 0.12)';
-          e.currentTarget.style.borderColor = 'rgba(255, 102, 0, 0.55)';
+          if (!isOpen) {
+            e.currentTarget.style.backgroundColor = 'rgba(255, 102, 0, 0.07)';
+            e.currentTarget.style.borderLeftColor = 'rgba(255, 102, 0, 0.5)';
+          }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = 'rgba(255, 102, 0, 0.06)';
-          e.currentTarget.style.borderColor = 'rgba(255, 102, 0, 0.35)';
+          if (!isOpen) {
+            e.currentTarget.style.backgroundColor = groupHasActive ? 'rgba(255, 102, 0, 0.05)' : 'transparent';
+            e.currentTarget.style.borderLeftColor = groupHasActive ? 'rgba(255, 102, 0, 0.4)' : 'transparent';
+          }
         }}
       >
-        <div style={{
+        <span style={{
+          width: 20,
+          minWidth: 20,
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          justifyContent: 'center',
+          color: isOpen ? '#FF6600' : '#6b7280',
+          transition: 'color 0.15s',
+        }}>
+          {groupIcon}
+        </span>
+        <span style={{
+          color: isOpen ? '#e5e7eb' : '#9ca3af',
+          fontWeight: 600,
+          fontSize: '0.73rem',
+          lineHeight: 1.25,
+          fontFamily: "'Poppins', sans-serif",
+          textTransform: 'uppercase',
+          letterSpacing: '0.7px',
           flex: 1,
-          minWidth: 0,
+          textAlign: 'left',
+          transition: 'color 0.15s',
         }}>
-          <span style={{
-            width: '18px',
-            minWidth: '18px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FF6600',
-            flexShrink: 0,
-          }}>
-            {groupIcon}
-          </span>
-          <span style={{ 
-            color: '#e5e7eb', 
-            fontWeight: 600, 
-            fontSize: '0.75rem',
-            lineHeight: 1.25,
-            fontFamily: "'Poppins', sans-serif",
-            textTransform: 'uppercase',
-            letterSpacing: '0.8px',
-            flex: 1,
-            textAlign: 'left',
-          }}>
-            {group.name}
-          </span>
-        </div>
-        <span style={{ 
-          color: '#6b7280',
-          marginLeft: '12px',
+          {group.name}
+        </span>
+        <span style={{
+          color: isOpen ? '#FF6600' : '#4b5563',
+          display: 'flex',
+          alignItems: 'center',
+          transition: 'all 0.2s',
           transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-          transition: 'transform 0.2s',
         }}>
-          {icons.chevron}
+          <ChevronDown size={16} />
         </span>
       </button>
 
-      {/* Lista de dashboards */}
+      {/* Conteúdo expandido - intercalado por ordem */}
       {isOpen && (
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: '4px',
-          marginTop: '4px',
+        <div style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.15)',
+          borderLeft: '3px solid rgba(255, 102, 0, 0.15)',
         }}>
-          {filteredDashboards.map((dashboard) => {
-            const isExternal = dashboard.tipo === 'externo' && dashboard.urlExterna;
-            const active = isExternal ? false : isActive(dashboard.path);
-            const isFavorite = favorites.includes(dashboard.id);
-            const labelLen = dashboard.label.length;
-            const fontSize = labelLen > 30 ? '0.72rem' : labelLen > 20 ? '0.78rem' : '0.85rem';
-            
-            const linkContent = (
-              <>
-                <span style={{ opacity: active ? 1 : 0.7, flexShrink: 0 }}>
-                  {icons[dashboard.icon] || icons.dashboard}
-                </span>
-                <span style={{ flex: 1, minWidth: 0, lineHeight: '1.25', wordBreak: 'break-word' }}>{dashboard.label}</span>
-                {isExternal && (
-                  <span style={{ opacity: 0.5, flexShrink: 0 }}>
-                    {icons.externalLink}
-                  </span>
-                )}
-              </>
-            );
+          {(() => {
+            // Montar lista intercalada: dashboards avulsos + subgrupos, ordenados por ordem
+            type SidebarRenderItem =
+              | { type: 'dash'; dashboard: Dashboard; ordem: number }
+              | { type: 'subgrupo'; sg: typeof filteredSubgrupos[0]; ordem: number };
 
-            return (
-              <div
-                key={dashboard.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  borderRadius: '8px',
-                  backgroundColor: active ? 'rgba(255, 102, 0, 0.1)' : 'transparent',
-                  border: active ? '1px solid #FF6600' : '1px solid rgba(75, 85, 99, 0.5)',
-                  boxShadow: !active ? '0 2px 8px rgba(0, 0, 0, 0.3)' : 'none',
-                  transition: 'all 0.2s',
-                  minHeight: '42px',
-                }}
-                onMouseEnter={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!active) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }
-                }}
-              >
-                {isExternal ? (
-                  <a
-                    href={dashboard.urlExterna}
-                    target="_blank"
-                    rel="noopener noreferrer"
+            const items: SidebarRenderItem[] = [];
+
+            for (const d of filteredDashboards) {
+              items.push({ type: 'dash', dashboard: d, ordem: d.ordem });
+            }
+            for (const sg of filteredSubgrupos) {
+              items.push({ type: 'subgrupo', sg, ordem: sg.ordem });
+            }
+
+            items.sort((a, b) => a.ordem - b.ordem);
+
+            return items.map((item) => {
+              if (item.type === 'dash') {
+                const dashboard = item.dashboard;
+                return (
+                  <DashboardItem
+                    key={dashboard.id}
+                    dashboard={dashboard}
+                    active={dashboard.tipo !== 'externo' && isActive(dashboard.path)}
+                    isFavorite={favorites.includes(dashboard.id)}
+                    onToggleFavorite={onToggleFavorite}
+                    onClose={onClose}
+                    indent={28}
+                  />
+                );
+              }
+
+              // Subgrupo
+              const sg = item.sg;
+              const sgOpen = openSubgrupos.has(sg.nome);
+              const sgHasActive = sg.dashboards.some(d => d.tipo !== 'externo' && isActive(d.path));
+              return (
+                <div key={`sg-${sg.nome}`}>
+                  <button
+                    onClick={() => toggleSubgrupo(sg.nome)}
                     style={{
-                      flex: 1,
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
-                      color: '#9ca3af',
-                      textDecoration: 'none',
-                      fontFamily: "'Poppins', sans-serif",
-                      fontSize,
-                      fontWeight: 500,
-                      minWidth: 0,
+                      width: '100%',
+                      padding: '7px 14px 7px 22px',
+                      backgroundColor: sgOpen ? 'rgba(16, 185, 129, 0.06)' : 'transparent',
+                      border: 'none',
+                      borderLeft: sgOpen ? '2px solid #10b981' : sgHasActive ? '2px solid rgba(16, 185, 129, 0.3)' : '2px solid transparent',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                      gap: 8,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!sgOpen) {
+                        e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.04)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!sgOpen) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
                     }}
                   >
-                    {linkContent}
-                  </a>
-                ) : (
-                  <Link
-                    href={dashboard.path}
-                    onClick={() => onClose()}
-                    style={{
+                    <FolderOpen size={13} color={sgOpen ? '#10b981' : '#555'} />
+                    <span style={{
+                      color: sgOpen ? '#a7f3d0' : '#6b7280',
+                      fontWeight: 600,
+                      fontSize: '0.68rem',
+                      fontFamily: "'Poppins', sans-serif",
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
                       flex: 1,
+                      textAlign: 'left',
+                    }}>
+                      {sg.nome}
+                    </span>
+                    <span style={{
+                      color: sgOpen ? '#10b981' : '#4b5563',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '10px',
-                      padding: '10px 12px',
-                      color: active ? '#FF6600' : '#9ca3af',
-                      textDecoration: 'none',
-                      fontFamily: "'Poppins', sans-serif",
-                      fontSize,
-                      fontWeight: active ? 600 : 500,
-                      minWidth: 0,
-                    }}
-                  >
-                    {linkContent}
-                  </Link>
-                )}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onToggleFavorite(dashboard.id);
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: isFavorite ? '#fbbf24' : '#4b5563',
-                    transition: 'color 0.2s',
-                  }}
-                  title={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                >
-                  {isFavorite ? icons.starFilled : icons.star}
-                </button>
-              </div>
-            );
-          })}
+                      transition: 'all 0.2s',
+                      transform: sgOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}>
+                      <ChevronDown size={13} />
+                    </span>
+                  </button>
+                  {sgOpen && (
+                    <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.1)' }}>
+                      {sg.dashboards.map((dashboard) => (
+                        <DashboardItem
+                          key={dashboard.id}
+                          dashboard={dashboard}
+                          active={dashboard.tipo !== 'externo' && isActive(dashboard.path)}
+                          isFavorite={favorites.includes(dashboard.id)}
+                          onToggleFavorite={onToggleFavorite}
+                          onClose={onClose}
+                          indent={40}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            });
+          })()}
         </div>
       )}
     </div>
@@ -513,6 +738,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState<string[]>([]);
   const [gruposInfo, setGruposInfo] = useState<GrupoAPIInfo[]>([]);
+  const [subgruposInfo, setSubgruposInfo] = useState<SubgrupoAPIInfo[]>([]);
   const { allowedIds, modulos } = useModuloPermissions(user?.username, user?.accessLevel);
 
   // Buscar dados de grupos da API (ícone, ordem, ativo)
@@ -528,11 +754,25 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   }, []);
 
+  // Buscar dados de subgrupos da API
+  const fetchSubgruposInfo = useCallback(async () => {
+    try {
+      const res = await fetch('/api/controle-modulos/subgrupos');
+      if (res.ok) {
+        const data = await res.json();
+        setSubgruposInfo(data.subgrupos || []);
+      }
+    } catch {
+      // silently fail
+    }
+  }, []);
+
   useEffect(() => {
     fetchGruposInfo();
-  }, [fetchGruposInfo]);
+    fetchSubgruposInfo();
+  }, [fetchGruposInfo, fetchSubgruposInfo]);
 
-  const dashboardGroups = useMemo(() => buildDashboardGroups(modulos, allowedIds, gruposInfo), [modulos, allowedIds, gruposInfo]);
+  const dashboardGroups = useMemo(() => buildDashboardGroups(modulos, allowedIds, gruposInfo, subgruposInfo), [modulos, allowedIds, gruposInfo, subgruposInfo]);
 
   // Carregar favoritos do localStorage
   useEffect(() => {
@@ -600,78 +840,72 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Navigation - Altura responsiva considerando header mobile (64px) e footer (60px) */}
         <nav 
-          className="p-3 overflow-y-auto overflow-x-hidden"
+          className="overflow-y-auto overflow-x-hidden"
           style={{
-            height: 'calc(100vh - 64px - 60px)', // Mobile: header + footer
+            height: 'calc(100vh - 64px - 60px)',
             scrollbarWidth: 'thin',
-            scrollbarColor: '#555 #1a1d21',
+            scrollbarColor: '#444 #1a1d21',
           }}
         >
           <style jsx>{`
             nav::-webkit-scrollbar {
-              width: 6px;
+              width: 5px;
             }
             nav::-webkit-scrollbar-track {
               background: #1a1d21;
-              border-radius: 3px;
             }
             nav::-webkit-scrollbar-thumb {
-              background: #555;
+              background: #444;
               border-radius: 3px;
             }
             nav::-webkit-scrollbar-thumb:hover {
-              background: #777;
+              background: #666;
             }
             @media (min-width: 1024px) {
               nav {
-                height: calc(100vh - 80px - 60px) !important; /* Desktop: header (80px) + footer (60px) */
+                height: calc(100vh - 80px - 60px) !important;
               }
             }
           `}</style>
           {/* Barra de Pesquisa */}
-          <div style={{ position: 'relative', marginBottom: '20px' }}>
+          <div style={{ padding: '12px 12px 8px', position: 'relative' }}>
             <div style={{
               position: 'absolute',
-              left: '14px',
+              left: '24px',
               top: '50%',
               transform: 'translateY(-50%)',
               color: '#FF6600',
               pointerEvents: 'none',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s ease',
             }}>
-              <Search size={18} strokeWidth={2.5} />
+              <Search size={16} strokeWidth={2.5} />
             </div>
             <input
               type="text"
-              placeholder="Buscar dashboards..."
+              placeholder="Buscar..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px 14px 12px 42px',
-                borderRadius: '10px',
-                border: '2px solid #404854',
-                background: 'linear-gradient(135deg, rgba(255, 102, 0, 0.05) 0%, rgba(255, 102, 0, 0.02) 100%)',
+                padding: '10px 12px 10px 38px',
+                borderRadius: '8px',
+                border: '1px solid #333',
+                background: '#15181c',
                 color: '#e5e7eb',
-                fontSize: '0.9rem',
+                fontSize: '0.82rem',
                 fontFamily: "'Poppins', sans-serif",
                 fontWeight: '500',
                 outline: 'none',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                transition: 'all 0.2s ease',
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = '#FF6600';
-                e.target.style.background = 'linear-gradient(135deg, rgba(255, 102, 0, 0.12) 0%, rgba(255, 102, 0, 0.06) 100%)';
-                e.target.style.boxShadow = '0 0 20px rgba(255, 102, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)';
+                e.target.style.boxShadow = '0 0 0 1px rgba(255, 102, 0, 0.2)';
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = '#404854';
-                e.target.style.background = 'linear-gradient(135deg, rgba(255, 102, 0, 0.05) 0%, rgba(255, 102, 0, 0.02) 100%)';
-                e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)';
+                e.target.style.borderColor = '#333';
+                e.target.style.boxShadow = 'none';
               }}
             />
             {searchTerm && (
@@ -679,34 +913,26 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 onClick={() => setSearchTerm('')}
                 style={{
                   position: 'absolute',
-                  right: '12px',
+                  right: '20px',
                   top: '50%',
                   transform: 'translateY(-50%)',
-                  background: 'rgba(255, 102, 0, 0.1)',
+                  background: 'none',
                   border: 'none',
-                  color: '#FF6600',
-                  borderRadius: '6px',
-                  padding: '4px 8px',
+                  color: '#666',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 102, 0, 0.2)';
-                  e.currentTarget.style.transform = 'translateY(-50%) scale(1.1)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 102, 0, 0.1)';
-                  e.currentTarget.style.transform = 'translateY(-50%) scale(1)';
+                  padding: 4,
                 }}
                 title="Limpar pesquisa"
               >
-                <X size={16} strokeWidth={2.5} />
+                <X size={14} />
               </button>
             )}
           </div>
+
+          {/* Separador */}
+          <div style={{ height: 1, background: '#2a2d32', margin: '4px 0 6px' }} />
 
           {/* Grupos de Dashboards */}
           {dashboardGroups.map((group) => (

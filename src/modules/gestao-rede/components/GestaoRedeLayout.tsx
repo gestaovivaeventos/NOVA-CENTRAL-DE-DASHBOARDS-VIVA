@@ -25,6 +25,7 @@ interface GestaoRedeLayoutProps {
   currentPage: 'dashboard' | 'metas';
   filtros?: FiltrosGestaoRede;
   onFiltrosChange?: (filtros: FiltrosGestaoRede) => void;
+  consultoresDisponiveis?: string[];
 }
 
 const SIDEBAR_WIDTH_EXPANDED = 300;
@@ -34,7 +35,8 @@ export default function GestaoRedeLayout({
   children, 
   currentPage, 
   filtros, 
-  onFiltrosChange
+  onFiltrosChange,
+  consultoresDisponiveis
 }: GestaoRedeLayoutProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -263,6 +265,7 @@ export default function GestaoRedeLayout({
                 <FilterPanel
                   filtros={filtros}
                   onFiltrosChange={handleFiltrosChange}
+                  consultoresDisponiveis={consultoresDisponiveis}
                 />
               </div>
             </>
