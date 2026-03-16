@@ -6,7 +6,6 @@ import { Sidebar, Header, OkrKrCard, Loader, PresentationTimer } from '@/modules
 import { fetchOkrData } from '@/modules/okr/hooks/useOkrData';
 import { OkrData } from '@/modules/okr/types';
 import { useAuth } from '@/context/AuthContext';
-import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
 // Lista de todos os times possíveis (para mapeamento de ícones)
 const ALL_TEAMS = [
@@ -379,17 +378,6 @@ const OkrPageContent: React.FC = () => {
 export default function OkrPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
-
-  // Verificar autenticação e permissão do módulo pela planilha
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (!authLoading && user && !permissionsLoading && !allowedIds.has('okr')) {
-      router.push('/');
-    }
-  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
 
   return (
     <>

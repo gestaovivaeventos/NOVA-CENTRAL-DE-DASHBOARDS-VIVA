@@ -66,7 +66,10 @@ export function useModuloPermissions(
   useEffect(() => {
     if (!username) {
       setAllowedIds(new Set());
-      setLoading(false);
+      // Manter loading=true enquanto username é undefined (auth ainda carregando).
+      // O Shell.tsx trata não-autenticados antes de checar permissões,
+      // então isso não causa spinner infinito na tela de login.
+      setLoading(true);
       return;
     }
 

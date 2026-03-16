@@ -14,23 +14,11 @@ import { Header, Sidebar, RecebimentoFeeFundo, ReceitasMensaisAgrupadas } from '
 import { useFluxoRealizado, useReceitasMensais } from '@/modules/fluxo-projetado/hooks';
 import { Loader2, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
 export default function FluxoRealizadoDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
 
-  // Verificar autenticação e permissão do módulo pela planilha
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (!authLoading && user && !permissionsLoading && !allowedIds.has('fluxo-projetado')) {
-      router.push('/');
-    }
-  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
-  
   // Estado para controle da sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 

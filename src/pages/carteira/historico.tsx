@@ -7,7 +7,6 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
-import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import { useCarteiraData } from '@/modules/carteira/hooks';
 import { useFiltrosCarteira } from '@/modules/carteira/context/FiltrosCarteiraContext';
 import { 
@@ -22,7 +21,6 @@ import { PaginaCarteiraAtiva, FiltrosCarteira } from '@/modules/carteira/types';
 export default function HistoricoPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
   
   // Usar filtros do Context (compartilhado entre páginas)
   const { filtros, updateFiltros } = useFiltrosCarteira();
@@ -49,15 +47,7 @@ export default function HistoricoPage() {
     updateFiltros(novosFiltros);
   };
 
-  // Verificar autenticação e permissão do módulo pela planilha
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (!authLoading && user && !permissionsLoading && !allowedIds.has('carteira')) {
-      router.push('/');
-    }
-  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
+  // Verificar autenticação e permissão do módulo pela planilha (removido - Shell.tsx já cuida)
 
   // Marcar cliente e carregar estado da sidebar
   useEffect(() => {

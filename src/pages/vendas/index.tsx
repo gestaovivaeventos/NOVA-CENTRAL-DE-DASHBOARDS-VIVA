@@ -37,7 +37,6 @@ import { getPeriodoDatas, identificarPeriodo } from '@/modules/vendas/utils/peri
 import { META_CONFIG, PAGES } from '@/modules/vendas/config/app.config';
 import type { FiltrosState, FiltrosOpcoes, PaginaAtiva } from '@/modules/vendas/types/filtros.types';
 import { useAuth } from '@/context/AuthContext';
-import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import { filterDataByPermission } from '@/utils/permissoes';
 import { useVendasFilters, INITIAL_FILTERS } from '@/modules/vendas/context';
 
@@ -47,17 +46,6 @@ const MESES_NOMES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'se
 export default function Dashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
-  
-  // Verificar autenticação e permissão do módulo pela planilha
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (!authLoading && user && !permissionsLoading && !allowedIds.has('vendas')) {
-      router.push('/');
-    }
-  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
   
   // Função para obter página da URL
   const getPaginaFromPath = (path: string): PaginaAtiva => {

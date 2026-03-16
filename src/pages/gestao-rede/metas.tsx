@@ -11,7 +11,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { Save, AlertCircle, CheckCircle, Search } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import { GestaoRedeLayout, Card } from '@/modules/gestao-rede';
 import { MetaIndicadorUnidade } from '@/modules/gestao-rede/types';
 
@@ -51,7 +50,6 @@ function formatarData(data: string): string {
 export default function MetasGestaoRede() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
 
   const [metas, setMetas] = useState<MetaIndicadorUnidade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,16 +59,6 @@ export default function MetasGestaoRede() {
   const [alteracoes, setAlteracoes] = useState<Map<string, Map<string, string>>>(new Map());
   const [busca, setBusca] = useState('');
   const [filtroMes, setFiltroMes] = useState<string>('todos');
-
-  // Auth check - permissão do módulo pela planilha
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (!authLoading && user && !permissionsLoading && !allowedIds.has('gestao-rede')) {
-      router.push('/');
-    }
-  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
 
   // Fetch metas
   const fetchMetas = useCallback(async () => {

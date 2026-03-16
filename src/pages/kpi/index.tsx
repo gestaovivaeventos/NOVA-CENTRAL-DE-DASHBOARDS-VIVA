@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo, createContext, useContext, ReactNo
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
-import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 import { 
   Sidebar, 
   Header, 
@@ -41,7 +40,6 @@ const useAppContext = () => {
 export default function KpiPage() {
   const router = useRouter();
   const { user, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
   
   // Estado do módulo KPI
   const [selectedTeam, setSelectedTeam] = useState<string>('');
@@ -60,16 +58,6 @@ export default function KpiPage() {
 
   // FEAT usa rosa, outros usam laranja
   const accentColor = selectedTeam === 'FEAT' ? '#EA2B82' : '#ff6600';
-
-  // Verificar autenticação e permissão do módulo pela planilha
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-    if (!authLoading && user && !permissionsLoading && !allowedIds.has('kpi')) {
-      router.push('/');
-    }
-  }, [user, authLoading, router, permissionsLoading, allowedIds]);
 
   // Extrair ano da competência (formato DD/MM/YYYY)
   const extractYear = (competencia: string): string | null => {

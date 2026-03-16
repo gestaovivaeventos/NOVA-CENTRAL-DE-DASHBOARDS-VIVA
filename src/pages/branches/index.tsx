@@ -100,15 +100,7 @@ export default function BranchesPage() {
     }
   }, [isAuthorized, initialized, initHeaders]);
 
-  // Redirecionar se não autorizado
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (!authLoading && isAuthenticated && !permissionsLoading && !isAuthorized) {
-      router.push('/');
-    }
-  }, [authLoading, isAuthenticated, isAuthorized, permissionsLoading, router]);
+  // Redirecionar se não autorizado (removido - Shell.tsx já cuida)
 
   // Filtrar releases e branches por usuário
   const filteredReleases = useMemo(() => {

@@ -10,23 +10,11 @@ import { Header, FluxoAnualCard, DetalhamentoMensal, Sidebar, CalculadoraProjeca
 import { DadosFluxoAnual, ParametrosFranquiaCard } from '@/modules/fluxo-projetado/components/FluxoAnualCard';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
 
 export default function FluxoProjetadoDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
 
-  // Verificar autenticação e permissão do módulo pela planilha
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login');
-    }
-    if (!authLoading && user && !permissionsLoading && !allowedIds.has('fluxo-projetado')) {
-      router.push('/');
-    }
-  }, [isAuthenticated, authLoading, router, user, permissionsLoading, allowedIds]);
-  
   // Estado para controle da sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
