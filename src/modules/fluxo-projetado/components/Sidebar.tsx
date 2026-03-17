@@ -36,8 +36,12 @@ export default function Sidebar({
   const [showConfig, setShowConfig] = useState(false);
   
   useEffect(() => {
-    const hoje = new Date();
-    setDataAtual(`${hoje.toLocaleDateString('pt-BR')}, ${hoje.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`);
+    const agora = new Date();
+    // Se ainda não são 7h, a última atualização foi ontem às 07:00
+    if (agora.getHours() < 7) {
+      agora.setDate(agora.getDate() - 1);
+    }
+    setDataAtual(`${agora.toLocaleDateString('pt-BR')}, 07:00`);
   }, []);
 
   const handleParametrosSaved = () => {
@@ -102,8 +106,9 @@ export default function Sidebar({
                 </p>
                 <p
                   style={{
-                    color: '#4a5568',
-                    fontSize: '0.6rem',
+                    color: '#9ca3af',
+                    fontSize: '0.75rem',
+                    fontWeight: 500,
                   }}
                 >
                   Atualizado: {dataAtual || new Date().toLocaleDateString('pt-BR')}

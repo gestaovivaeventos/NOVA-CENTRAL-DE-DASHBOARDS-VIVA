@@ -51,6 +51,56 @@ const formatarPercentual = (valor: number): string => {
   return `${valor.toFixed(2)}%`;
 };
 
+function FaltaReceberTooltip({ faltaReceber, faltaRecAntec, percentualAntecipacao, children }: { faltaReceber: number; faltaRecAntec: number; percentualAntecipacao: number; children: React.ReactNode }) {
+  const [show, setShow] = React.useState(false);
+  return (
+    <div
+      style={{ position: 'relative', display: 'inline-block', cursor: 'help' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      {children}
+      {show && (
+        <div style={{
+          position: 'absolute',
+          bottom: 'calc(100% + 8px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#1a1d24',
+          border: '1px solid #374151',
+          borderRadius: '8px',
+          padding: '10px 14px',
+          zIndex: 100,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.5)',
+          pointerEvents: 'none',
+        }}>
+          <div style={{ fontSize: '0.65rem', color: '#6b7280', marginBottom: '8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Composição Falta Receber</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+              <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Falta Receber Total</span>
+              <span style={{ color: '#fb923c', fontSize: '0.75rem', fontWeight: 600 }}>{formatarMoeda(faltaReceber)}</span>
+            </div>
+            <div style={{ borderTop: '1px solid #2d3748', paddingTop: '5px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '20px' }}>
+              <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Falta Rec. Antecipação</span>
+              <span style={{ fontSize: '0.75rem', fontWeight: 600, color: (percentualAntecipacao > 0 && faltaRecAntec > 0) ? '#f59e0b' : '#4b5563' }}>
+                {percentualAntecipacao > 0 ? formatarMoeda(faltaRecAntec) : '—'}
+              </span>
+            </div>
+          </div>
+          <div style={{
+            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+            width: 0, height: 0,
+            borderLeft: '6px solid transparent',
+            borderRight: '6px solid transparent',
+            borderTop: '6px solid #374151',
+          }} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FeeTooltip({ feeInicialV, feeReplanejado, children }: { feeInicialV?: number; feeReplanejado?: number; children: React.ReactNode }) {
   const [show, setShow] = React.useState(false);
   return (
@@ -544,7 +594,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
           ) : (
             <div className="space-y-4">
               {/* Resumo rápido em cards */}
-              <div className="grid grid-cols-5 gap-3">
+<div className="grid grid-cols-6 gap-3">
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total Fundos</p>
                   <p className="text-2xl font-bold text-white">{totalFundos}</p>
@@ -560,6 +610,10 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Receber</p>
                   <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
+                </div>
+                <div className="p-3 bg-gray-900/50 rounded-lg text-center">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Falta Rec. Antec.</p>
+                  <p className="text-lg font-bold text-amber-400">{formatarMoeda(totalFaltaRecAntec)}</p>
                 </div>
                 <div className="p-3 bg-gray-900/50 rounded-lg text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Saque Disponível</p>
@@ -892,6 +946,8 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                         const status = calcularStatus(fundo, percentualAntecipacao, diasBaileAntecipar);
                         const percentualRecebido = calcularPercentualAntecipacaoRecebido(fundo);
                         const faltaReceber = calcularFaltaReceber(fundo);
+                        const vlrAntecipacaoRow = percentualAntecipacao > 0 ? fundo.feeTotal * (percentualAntecipacao / 100) : 0;
+                        const faltaRecAntec = Math.max(0, vlrAntecipacaoRow - Math.min(fundo.feeAntecipacaoRecebido, vlrAntecipacaoRow));
                         const saqueDisponivel = calcularSaqueDisponivel(fundo, percentualAntecipacao, diasBaileAntecipar);
                         const bgColor = rowIndex % 2 === 0 ? '#343A40' : '#2c3136';
                         
@@ -977,7 +1033,9 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                             </td>
                             {/* FALTA RECEBER */}
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#fb923c', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                              {formatarMoeda(faltaReceber)}
+                              <FaltaReceberTooltip faltaReceber={faltaReceber} faltaRecAntec={faltaRecAntec} percentualAntecipacao={percentualAntecipacao}>
+                                {formatarMoeda(faltaReceber)}
+                              </FaltaReceberTooltip>
                             </td>
                             {/* SALDO FUNDO */}
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', color: '#60a5fa', fontWeight: 500, whiteSpace: 'nowrap' }}>
