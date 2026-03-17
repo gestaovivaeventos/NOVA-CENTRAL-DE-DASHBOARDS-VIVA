@@ -105,8 +105,8 @@ function extrairMesAno(dataValue: any): { mes: number; ano: number } | null {
     };
   }
   
-  // Tenta formato YYYY-MM-DD
-  const matchIso = dataStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  // Tenta formato YYYY-MM-DD (com ou sem horário)
+  const matchIso = dataStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (matchIso) {
     return {
       mes: parseInt(matchIso[2], 10),
