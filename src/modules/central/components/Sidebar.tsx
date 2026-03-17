@@ -739,7 +739,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [gruposInfo, setGruposInfo] = useState<GrupoAPIInfo[]>([]);
   const [subgruposInfo, setSubgruposInfo] = useState<SubgrupoAPIInfo[]>([]);
-  const { allowedIds, modulos } = useModuloPermissions(user?.username, user?.accessLevel);
+  const [gruposLoaded, setGruposLoaded] = useState(false);
+  const [subgruposLoaded, setSubgruposLoaded] = useState(false);
+  const { allowedIds, modulos, loading: modulosLoading } = useModuloPermissions(user?.username, user?.accessLevel);
 
   // Buscar dados de grupos da API (ícone, ordem, ativo)
   const fetchGruposInfo = useCallback(async () => {
@@ -751,6 +753,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       }
     } catch {
       // silently fail — usa defaults
+    } finally {
+      setGruposLoaded(true);
     }
   }, []);
 
@@ -764,6 +768,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       }
     } catch {
       // silently fail
+    } finally {
+      setSubgruposLoaded(true);
     }
   }, []);
 
@@ -771,6 +777,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     fetchGruposInfo();
     fetchSubgruposInfo();
   }, [fetchGruposInfo, fetchSubgruposInfo]);
+
+  const allDataLoaded = !modulosLoading && gruposLoaded && subgruposLoaded;
 
   const dashboardGroups = useMemo(() => buildDashboardGroups(modulos, allowedIds, gruposInfo, subgruposInfo), [modulos, allowedIds, gruposInfo, subgruposInfo]);
 
@@ -934,18 +942,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {/* Separador */}
           <div style={{ height: 1, background: '#2a2d32', margin: '4px 0 6px' }} />
 
-          {/* Grupos de Dashboards */}
-          {dashboardGroups.map((group) => (
-            <CollapsibleGroup
-              key={group.id}
-              group={group}
-              searchTerm={searchTerm}
-              favorites={favorites}
-              onToggleFavorite={toggleFavorite}
-              onClose={onClose}
-              router={router}
-            />
-          ))}
+          {/* Grupos de Dashboards - só renderizar após todos os dados carregarem */}
+          {!allDataLoaded ? (
+            <div style={{ padding: '16px 14px' }}>
+              {[1, 2, 3, 4, 5].map(i => (
+                <div key={i} style={{ marginBottom: 12 }}>
+                  <div style={{
+                    height: 14,
+                    width: `${60 + i * 8}%`,
+                    backgroundColor: 'rgba(255,255,255,0.04)',
+                    borderRadius: 4,
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }} />
+                </div>
+              ))}
+              <style>{`
+                @keyframes pulse {
+                  0%, 100% { opacity: 0.4; }
+                  50% { opacity: 0.8; }
+                }
+              `}</style>
+            </div>
+          ) : (
+            dashboardGroups.map((group) => (
+              <CollapsibleGroup
+                key={group.id}
+                group={group}
+                searchTerm={searchTerm}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                onClose={onClose}
+                router={router}
+              />
+            ))
+          )}
 
           {/* Mensagem quando nenhum resultado */}
           {searchTerm && dashboardGroups.every(g => 

@@ -52,6 +52,7 @@ export default function EditModuloModal({
   subgruposExistentes = [],
 }: EditModuloModalProps) {
   // Editable fields
+  const [moduloNome, setModuloNome] = useState('');
   const [nvlAcesso, setNvlAcesso] = useState('1');
   const [ativo, setAtivo] = useState('TRUE');
   const [grupo, setGrupo] = useState('');
@@ -78,6 +79,7 @@ export default function EditModuloModal({
   // Sync state when modulo changes
   useEffect(() => {
     if (modulo) {
+      setModuloNome(modulo.moduloNome);
       setNvlAcesso(String(modulo.nvlAcesso));
       setAtivo(modulo.ativo ? 'TRUE' : 'FALSE');
       setGrupo(modulo.grupo);
@@ -139,6 +141,7 @@ export default function EditModuloModal({
 
   // Detect changes
   const hasChanges = (() => {
+    if (moduloNome !== modulo.moduloNome) return true;
     if (nvlAcesso !== String(modulo.nvlAcesso)) return true;
     if (ativo !== (modulo.ativo ? 'TRUE' : 'FALSE')) return true;
     if (grupo !== modulo.grupo) return true;
@@ -171,6 +174,10 @@ export default function EditModuloModal({
     setSaving(true);
     let allOk = true;
 
+    if (moduloNome !== modulo.moduloNome) {
+      const ok = await onSave(modulo.moduloId, 'modulo_nome', moduloNome);
+      if (!ok) allOk = false;
+    }
     if (nvlAcesso !== String(modulo.nvlAcesso)) {
       const ok = await onSave(modulo.moduloId, 'nvl_acesso', nvlAcesso);
       if (!ok) allOk = false;
@@ -298,6 +305,21 @@ export default function EditModuloModal({
 
         {/* Body */}
         <div style={{ padding: '24px' }}>
+          {/* Nome do Módulo */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Nome do Módulo</label>
+            <input
+              type="text"
+              value={moduloNome}
+              onChange={(e) => setModuloNome(e.target.value)}
+              placeholder="Nome exibido na sidebar..."
+              style={{
+                ...inputStyle,
+                borderColor: moduloNome !== modulo?.moduloNome ? '#FF6600' : '#444',
+              }}
+            />
+          </div>
+
           {/* Nível de Acesso */}
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>Nível de Acesso</label>
