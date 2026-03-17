@@ -28,7 +28,7 @@ export default function FluxoRealizadoDashboard() {
   // Hook para buscar dados reais de FEE por fundo
   const { fundos: fundosFee, loading: loadingFee, percentualAntecipacao, diasBaileAntecipar } = useFluxoRealizado(franquiaSelecionada);
 
-  // Hook para buscar dados reais de receitas mensais (aba RPS FEE E MARGEM)
+  // Hook para buscar dados reais de receitas mensais (aba rps_fee)
   const { receitas: receitasMensais, loading: loadingReceitas } = useReceitasMensais(franquiaSelecionada);
 
   // Ler franquia da URL quando a página carrega

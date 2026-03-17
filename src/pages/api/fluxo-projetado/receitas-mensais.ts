@@ -1,6 +1,6 @@
 /**
- * API: Receitas Mensais (RPS FEE E MARGEM)
- * Busca dados da aba RPS FEE E MARGEM da planilha BACKEND FLUXO PROJETADO FRANQUIAS
+ * API: Receitas Mensais (rps_fee)
+ * Busca dados da aba rps_fee da planilha BACKEND FLUXO PROJETADO FRANQUIAS
  * Agrupa receitas por mês/ano com detalhamento por tipo
  */
 
@@ -10,12 +10,12 @@ import cache from '@/lib/cache';
 
 // ID da planilha de Fluxo Projetado
 const SPREADSHEET_ID = process.env.PLANILHA_FLUXO_PROJETADO_ID!;
-const SHEET_NAME = 'RPS FEE E MARGEM';
+const SHEET_NAME = 'rps_fee';
 const CACHE_KEY = 'receitas-mensais';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
 /**
- * Mapeamento das colunas da aba RPS FEE E MARGEM
+ * Mapeamento das colunas da aba rps_fee
  * Baseado nas informações do usuário:
  * 
  * C (2) = FRANQUIA
