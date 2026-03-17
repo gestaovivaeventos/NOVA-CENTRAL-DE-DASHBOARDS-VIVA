@@ -4,10 +4,10 @@
  * Click no card abre modal de edição com dropdowns
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { RefreshCw, AlertTriangle, ChevronDown, ChevronRight, Edit2, Plus, Pencil, Settings, BarChart, PieChart, TrendingUp, Database, Folder, Link, ExternalLink, Target, DollarSign, Clipboard, GitBranch, CheckCircle, Users, LayoutDashboard, FileSpreadsheet, Code2, FolderOpen } from 'lucide-react';
+import { RefreshCw, AlertTriangle, ChevronDown, ChevronRight, Edit2, Plus, Pencil, Settings, BarChart, PieChart, TrendingUp, Database, Folder, Link, ExternalLink, Target, DollarSign, Clipboard, GitBranch, CheckCircle, Users, LayoutDashboard, FileSpreadsheet, Code2, FolderOpen, GripVertical, Search, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal, GerenciarSubgruposModal, EditSubgrupoModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
@@ -49,7 +49,15 @@ const SIDEBAR_WIDTH_COLLAPSED = 60;
 export default function ControleModulosPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { modulos, loading, error, refetch, updateModulo, createModulo } = useControleModulos();
+  const { modulos: modulosFromHook, loading, error, refetch, updateModulo, createModulo } = useControleModulos();
+  const [localModulos, setLocalModulos] = useState<ModuloConfig[]>([]);
+  // Sync local state with hook data (only when not in the middle of a drag)
+  const isDraggingRef = useRef(false);
+  useEffect(() => {
+    if (!isDraggingRef.current) setLocalModulos(modulosFromHook);
+  }, [modulosFromHook]);
+  // Use localModulos everywhere so optimistic updates work instantly
+  const modulos = localModulos;
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [editingModulo, setEditingModulo] = useState<ModuloConfig | null>(null);
@@ -63,6 +71,20 @@ export default function ControleModulosPage() {
   const [editSubgrupoGrupo, setEditSubgrupoGrupo] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [expandedSubgrupos, setExpandedSubgrupos] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Drag-and-drop state
+  // 'grupo' = group-level drag, 'item' = module or subgroup within a group
+  const dragRef = useRef<{
+    type: 'grupo' | 'item';
+    id: string;            // for grupo: grupo name; for item: "mod::moduloId" or "sg::sgName"
+    parentGrupo?: string;  // only for item
+  } | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragOverPosition, setDragOverPosition] = useState<'above' | 'below'>('below');
+  const [isDragging, setIsDragging] = useState(false);
+  // Throttle ref: prevent redundant re-renders when hovering same target
+  const lastDragOverKey = useRef<string>('');
 
   // Buscar grupos da planilha (com ícone)
   const fetchGruposCustomizados = useCallback(async () => {
@@ -129,6 +151,35 @@ export default function ControleModulosPage() {
     });
     return map;
   }, [modulos]);
+
+  // Filtered map based on search query
+  const filteredGruposMap = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return gruposMap;
+
+    const filtered = new Map<string, ModuloConfig[]>();
+    for (const [grupo, mods] of gruposMap.entries()) {
+      // Check if group name matches
+      const grupoMatches = grupo.toLowerCase().includes(q);
+      if (grupoMatches) {
+        // Show entire group
+        filtered.set(grupo, mods);
+        continue;
+      }
+      // Filter modules: match by name, path, subgrupo
+      const matchedMods = mods.filter(m => {
+        const sub = (m.subgrupo || '').toLowerCase();
+        return m.moduloNome.toLowerCase().includes(q)
+          || m.moduloPath.toLowerCase().includes(q)
+          || m.moduloId.toLowerCase().includes(q)
+          || sub.includes(q);
+      });
+      if (matchedMods.length > 0) {
+        filtered.set(grupo, matchedMods);
+      }
+    }
+    return filtered;
+  }, [gruposMap, searchQuery]);
 
   // Expandir todos os grupos quando carregar pela primeira vez
   useEffect(() => {
@@ -253,6 +304,300 @@ export default function ControleModulosPage() {
       return false;
     }
   }, [modulos, updateModulo, fetchSubgrupos, refetch]);
+
+  // ====== Drag and drop handlers ======
+  const handleDragStart = useCallback((
+    e: React.DragEvent,
+    type: 'grupo' | 'item',
+    id: string,
+    parentGrupo?: string,
+  ) => {
+    dragRef.current = { type, id, parentGrupo };
+    isDraggingRef.current = true;
+    setIsDragging(true);
+    lastDragOverKey.current = '';
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', `${type}::${id}`);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '0.4';
+    }
+  }, []);
+
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    dragRef.current = null;
+    isDraggingRef.current = false;
+    setDragOverId(null);
+    setIsDragging(false);
+    lastDragOverKey.current = '';
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = '1';
+    }
+  }, []);
+
+  const handleDragOverGrupo = useCallback((e: React.DragEvent, targetGrupo: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragRef.current || dragRef.current.type !== 'grupo') return;
+    if (dragRef.current.id === targetGrupo) { setDragOverId(null); return; }
+    e.dataTransfer.dropEffect = 'move';
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? 'above' : 'below';
+    // Throttle: skip if same target+position
+    const key = `grupo::${targetGrupo}::${pos}`;
+    if (lastDragOverKey.current === key) return;
+    lastDragOverKey.current = key;
+    setDragOverPosition(pos);
+    setDragOverId(`grupo::${targetGrupo}`);
+  }, []);
+
+  const handleDragOverItem = useCallback((e: React.DragEvent, itemId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragRef.current || dragRef.current.type !== 'item') return;
+    if (dragRef.current.id === itemId) { setDragOverId(null); return; }
+    e.dataTransfer.dropEffect = 'move';
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const midY = rect.top + rect.height / 2;
+    const pos = e.clientY < midY ? 'above' : 'below';
+    // Throttle: skip if same target+position
+    const key = `item::${itemId}::${pos}`;
+    if (lastDragOverKey.current === key) return;
+    lastDragOverKey.current = key;
+    setDragOverPosition(pos);
+    setDragOverId(`item::${itemId}`);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    const related = e.relatedTarget as Node | null;
+    if (related && (e.currentTarget as HTMLElement).contains(related)) return;
+    setDragOverId(null);
+    lastDragOverKey.current = '';
+  }, []);
+
+  const handleDropGrupo = useCallback(async (
+    e: React.DragEvent,
+    targetGrupo: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragRef.current || dragRef.current.type !== 'grupo') return;
+    const sourceGrupo = dragRef.current.id;
+    if (sourceGrupo === targetGrupo) return;
+
+    const orderedGrupos = Array.from(gruposMap.keys()).sort((a, b) => {
+      const ordemA = gruposDaPlanilha.find(g => g.nome === a)?.ordem ?? 99;
+      const ordemB = gruposDaPlanilha.find(g => g.nome === b)?.ordem ?? 99;
+      return ordemA - ordemB;
+    });
+
+    const fromIdx = orderedGrupos.indexOf(sourceGrupo);
+    if (fromIdx === -1 || !orderedGrupos.includes(targetGrupo)) return;
+
+    const reordered = [...orderedGrupos];
+    reordered.splice(fromIdx, 1);
+    const insertAt = dragOverPosition === 'above'
+      ? reordered.indexOf(targetGrupo)
+      : reordered.indexOf(targetGrupo) + 1;
+    reordered.splice(insertAt, 0, sourceGrupo);
+
+    const items = reordered.map((nome, idx) => ({ id: nome, ordem: idx + 1 }));
+
+    setGruposDaPlanilha(prev => prev.map(g => {
+      const newItem = items.find(i => i.id.toLowerCase() === g.nome.toLowerCase());
+      return newItem ? { ...g, ordem: newItem.ordem } : g;
+    }));
+
+    setDragOverId(null);
+    dragRef.current = null;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    lastDragOverKey.current = '';
+
+    try {
+      await fetch('/api/controle-modulos/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'grupo', items }),
+      });
+      await fetchGruposCustomizados();
+    } catch { /* silently fail */ }
+  }, [gruposMap, gruposDaPlanilha, dragOverPosition, fetchGruposCustomizados]);
+
+  // Unified drop handler for modules & subgroups within a group
+  const handleDropItem = useCallback(async (
+    e: React.DragEvent,
+    targetItemId: string, // "mod::xxx" or "sg::xxx"
+    parentGrupo: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragRef.current || dragRef.current.type !== 'item') return;
+    const sourceItemId = dragRef.current.id;
+    if (sourceItemId === targetItemId) return;
+    if (dragRef.current.parentGrupo !== parentGrupo) return;
+
+    // Build unified ordered list of items in this group
+    const groupMods = modulos.filter(m => (m.grupo || 'Outros') === parentGrupo);
+    const modsSemSubgrupo = groupMods.filter(m => !(m as any).subgrupo);
+    const modsComSubgrupo = new Map<string, ModuloConfig[]>();
+    for (const m of groupMods) {
+      const sub = (m as any).subgrupo || '';
+      if (sub) {
+        if (!modsComSubgrupo.has(sub)) modsComSubgrupo.set(sub, []);
+        modsComSubgrupo.get(sub)!.push(m);
+      }
+    }
+
+    const subgruposDoGrupo = subgruposDaPlanilha
+      .filter(s => s.grupo.toLowerCase() === parentGrupo.toLowerCase())
+      .sort((a, b) => a.ordem - b.ordem);
+
+    type UnifiedItem = { itemId: string; ordem: number };
+    const unifiedItems: UnifiedItem[] = [];
+
+    for (const mod of modsSemSubgrupo) {
+      unifiedItems.push({ itemId: `mod::${mod.moduloId}`, ordem: mod.ordem });
+    }
+    for (const sg of subgruposDoGrupo) {
+      if (modsComSubgrupo.has(sg.nome)) {
+        unifiedItems.push({ itemId: `sg::${sg.nome}`, ordem: sg.ordem });
+      }
+    }
+    // Orphan subgroups
+    for (const [sgName] of modsComSubgrupo.entries()) {
+      if (!subgruposDoGrupo.some(s => s.nome === sgName)) {
+        unifiedItems.push({ itemId: `sg::${sgName}`, ordem: 99 });
+      }
+    }
+
+    unifiedItems.sort((a, b) => a.ordem - b.ordem);
+
+    const fromIdx = unifiedItems.findIndex(i => i.itemId === sourceItemId);
+    const toIdx = unifiedItems.findIndex(i => i.itemId === targetItemId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const reordered = [...unifiedItems];
+    const [removed] = reordered.splice(fromIdx, 1);
+    const insertAt = dragOverPosition === 'above'
+      ? reordered.findIndex(i => i.itemId === targetItemId)
+      : reordered.findIndex(i => i.itemId === targetItemId) + 1;
+    reordered.splice(insertAt, 0, removed);
+
+    // Assign new ordem
+    const newOrders = reordered.map((item, idx) => ({ ...item, ordem: idx + 1 }));
+
+    // Split into module and subgrupo updates
+    const moduloUpdates: { id: string; ordem: number }[] = [];
+    const subgrupoUpdates: { id: string; grupo: string; ordem: number }[] = [];
+
+    for (const item of newOrders) {
+      if (item.itemId.startsWith('mod::')) {
+        moduloUpdates.push({ id: item.itemId.slice(5), ordem: item.ordem });
+      } else if (item.itemId.startsWith('sg::')) {
+        subgrupoUpdates.push({ id: item.itemId.slice(4), grupo: parentGrupo, ordem: item.ordem });
+      }
+    }
+
+    // Optimistic update for subgroups
+    if (subgrupoUpdates.length > 0) {
+      setSubgruposDaPlanilha(prev => prev.map(sg => {
+        const upd = subgrupoUpdates.find(u => u.id.toLowerCase() === sg.nome.toLowerCase() && u.grupo.toLowerCase() === sg.grupo.toLowerCase());
+        return upd ? { ...sg, ordem: upd.ordem } : sg;
+      }));
+    }
+    // Optimistic update for modules
+    if (moduloUpdates.length > 0) {
+      setLocalModulos(prev => prev.map(m => {
+        const upd = moduloUpdates.find(u => u.id === m.moduloId);
+        return upd ? { ...m, ordem: upd.ordem } : m;
+      }));
+    }
+
+    setDragOverId(null);
+    dragRef.current = null;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    lastDragOverKey.current = '';
+
+    try {
+      const promises: Promise<any>[] = [];
+      if (moduloUpdates.length > 0) {
+        promises.push(fetch('/api/controle-modulos/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'modulo', items: moduloUpdates }),
+        }));
+      }
+      if (subgrupoUpdates.length > 0) {
+        promises.push(fetch('/api/controle-modulos/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'subgrupo', items: subgrupoUpdates }),
+        }));
+      }
+      await Promise.all(promises);
+      await Promise.all([refetch(), fetchSubgrupos()]);
+    } catch { /* silently fail */ }
+  }, [modulos, subgruposDaPlanilha, dragOverPosition, refetch, fetchSubgrupos]);
+
+  // Drop handler for modules INSIDE a subgroup (reorder among siblings)
+  const handleDropModuloInsideSg = useCallback(async (
+    e: React.DragEvent,
+    targetModuloId: string,
+    parentGrupo: string,
+    parentSubgrupo: string,
+  ) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!dragRef.current || dragRef.current.type !== 'item') return;
+    const sourceId = dragRef.current.id;
+    if (!sourceId.startsWith('mod::')) return;
+    const sourceModuloId = sourceId.slice(5);
+    if (sourceModuloId === targetModuloId) return;
+
+    const scopeMods = modulos
+      .filter(m => {
+        const mGrupo = m.grupo || 'Outros';
+        const mSub = (m as any).subgrupo || '';
+        return mGrupo === parentGrupo && mSub === parentSubgrupo;
+      })
+      .sort((a, b) => a.ordem - b.ordem);
+
+    const fromIdx = scopeMods.findIndex(m => m.moduloId === sourceModuloId);
+    const toIdx = scopeMods.findIndex(m => m.moduloId === targetModuloId);
+    if (fromIdx === -1 || toIdx === -1) return;
+
+    const reordered = [...scopeMods];
+    const [removed] = reordered.splice(fromIdx, 1);
+    const insertAt = dragOverPosition === 'above'
+      ? reordered.findIndex(m => m.moduloId === targetModuloId)
+      : reordered.findIndex(m => m.moduloId === targetModuloId) + 1;
+    reordered.splice(insertAt, 0, removed);
+
+    const items = reordered.map((m, idx) => ({ id: m.moduloId, ordem: idx + 1 }));
+
+    // Optimistic update for modules
+    setLocalModulos(prev => prev.map(m => {
+      const upd = items.find(i => i.id === m.moduloId);
+      return upd ? { ...m, ordem: upd.ordem } : m;
+    }));
+
+    setDragOverId(null);
+    dragRef.current = null;
+    isDraggingRef.current = false;
+    setIsDragging(false);
+    lastDragOverKey.current = '';
+
+    try {
+      await fetch('/api/controle-modulos/reorder', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'modulo', items }),
+      });
+      await refetch();
+    } catch { /* silently fail */ }
+  }, [modulos, dragOverPosition, refetch]);
 
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
@@ -426,20 +771,63 @@ export default function ControleModulosPage() {
             </div>
           ) : (
             <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #333' }}>
+              {/* Search bar */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '10px 16px',
+                backgroundColor: '#1a1d21',
+                borderBottom: '1px solid #333',
+              }}>
+                <Search size={16} color="#6c757d" style={{ flexShrink: 0 }} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar módulos, grupos ou subgrupos..."
+                  style={{
+                    flex: 1,
+                    background: 'transparent',
+                    border: 'none',
+                    outline: 'none',
+                    color: '#F8F9FA',
+                    fontFamily: "'Poppins', sans-serif",
+                    fontSize: '0.82rem',
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      color: '#6c757d',
+                    }}
+                    title="Limpar busca"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
               {/* Table header */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: '2fr 2fr 80px 120px 90px 140px 70px 50px',
+                  gridTemplateColumns: '30px 2fr 2fr 80px 120px 90px 140px 70px 50px',
                   gap: 0,
                   backgroundColor: '#1a1d21',
                   padding: '10px 16px',
                   borderBottom: '1px solid #333',
                 }}
               >
-                {['Módulo', 'Path', 'Tipo', 'Nível', 'Status', 'Usuários', 'Ordem', ''].map((col) => (
+                {['', 'Módulo', 'Path', 'Tipo', 'Nível', 'Status', 'Usuários', 'Ordem', ''].map((col, i) => (
                   <span
-                    key={col}
+                    key={`${col}-${i}`}
                     style={{
                       color: '#6c757d',
                       fontFamily: 'Poppins, sans-serif',
@@ -455,7 +843,7 @@ export default function ControleModulosPage() {
               </div>
 
               {/* Groups */}
-              {Array.from(gruposMap.entries())
+              {Array.from(filteredGruposMap.entries())
                 .sort(([a], [b]) => {
                   const ordemA = gruposDaPlanilha.find(g => g.nome === a)?.ordem ?? 99;
                   const ordemB = gruposDaPlanilha.find(g => g.nome === b)?.ordem ?? 99;
@@ -469,14 +857,25 @@ export default function ControleModulosPage() {
                   <div key={grupo}>
                     {/* Group header row */}
                     <div
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, 'grupo', grupo)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOverGrupo(e, grupo)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDropGrupo(e, grupo)}
                       onClick={() => toggleGroup(grupo)}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
                         gap: 10,
                         padding: '10px 16px',
-                        backgroundColor: '#262a30',
+                        backgroundColor: dragOverId === `grupo::${grupo}` ? 'rgba(255,102,0,0.06)' : '#262a30',
                         borderBottom: '1px solid #333',
+                        boxShadow: dragOverId === `grupo::${grupo}` && dragOverPosition === 'above'
+                          ? 'inset 0 3px 0 0 #FF6600'
+                          : dragOverId === `grupo::${grupo}` && dragOverPosition === 'below'
+                            ? 'inset 0 -3px 0 0 #FF6600'
+                            : 'none',
                         cursor: 'pointer',
                         userSelect: 'none',
                         transition: 'background-color 0.15s',
@@ -485,6 +884,13 @@ export default function ControleModulosPage() {
                       onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d3239'; }}
                       onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#262a30'; }}
                     >
+                      <span
+                        onMouseDown={(e) => e.stopPropagation()}
+                        style={{ cursor: 'grab', display: 'flex', alignItems: 'center', color: '#4b5563', flexShrink: 0 }}
+                        title="Arrastar para reordenar"
+                      >
+                        <GripVertical size={16} />
+                      </span>
                       {isExpanded ? (
                         <ChevronDown size={16} color="#FF6600" />
                       ) : (
@@ -627,24 +1033,66 @@ export default function ControleModulosPage() {
                       // Ordenar tudo por ordem
                       renderItems.sort((a, b) => a.ordem - b.ordem);
 
-                      const renderModRow = (mod: ModuloConfig, insideSubgrupo = false) => {
+                      const renderModRow = (mod: ModuloConfig, insideSubgrupo = false, parentSubgrupoName = '') => {
                         const nivelColor = mod.nvlAcesso === 0 ? '#10b981' : '#f59e0b';
                         const nivelLabel = mod.nvlAcesso === 0 ? 'Rede' : 'Franqueadora';
                         const hasUsers = mod.usuariosPermitidos.length > 0;
                         const bgColor = insideSubgrupo ? '#1b2228' : '#212529';
                         const bgHover = insideSubgrupo ? '#232d34' : '#2d3239';
+                        const itemDragId = `mod::${mod.moduloId}`;
+                        const isDropTarget = dragOverId === `item::${itemDragId}`;
 
                       return (
                         <div
                           key={mod.moduloId}
+                          draggable
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            handleDragStart(e, 'item', itemDragId, grupo);
+                          }}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => {
+                            e.stopPropagation();
+                            // When dragging a subgroup over modules inside another subgroup,
+                            // delegate the indicator to the parent subgroup header
+                            if (insideSubgrupo && dragRef.current?.id?.startsWith('sg::')) {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                              const midY = rect.top + rect.height / 2;
+                              setDragOverPosition(e.clientY < midY ? 'above' : 'below');
+                              setDragOverId(`item::sg::${parentSubgrupoName}`);
+                              return;
+                            }
+                            handleDragOverItem(e, itemDragId);
+                          }}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => {
+                            // When dragging a subgroup onto modules inside another subgroup,
+                            // delegate the drop to the parent subgroup
+                            if (insideSubgrupo && dragRef.current?.id?.startsWith('sg::')) {
+                              handleDropItem(e, `sg::${parentSubgrupoName}`, grupo);
+                              return;
+                            }
+                            if (insideSubgrupo) {
+                              handleDropModuloInsideSg(e, mod.moduloId, grupo, parentSubgrupoName);
+                            } else {
+                              handleDropItem(e, itemDragId, grupo);
+                            }
+                          }}
                           onClick={() => setEditingModulo(mod)}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '2fr 2fr 80px 120px 90px 140px 70px 50px',
+                            gridTemplateColumns: '30px 2fr 2fr 80px 120px 90px 140px 70px 50px',
                             gap: 0,
                             padding: insideSubgrupo ? '10px 16px 10px 40px' : '10px 16px',
-                            backgroundColor: bgColor,
+                            backgroundColor: isDropTarget ? 'rgba(255,102,0,0.06)' : bgColor,
                             borderBottom: '1px solid #2a2e33',
+                            boxShadow: isDropTarget && dragOverPosition === 'above'
+                              ? 'inset 0 3px 0 0 #FF6600'
+                              : isDropTarget && dragOverPosition === 'below'
+                                ? 'inset 0 -3px 0 0 #FF6600'
+                                : 'none',
                             borderLeft: insideSubgrupo ? '3px solid rgba(16,185,129,0.25)' : 'none',
                             cursor: 'pointer',
                             transition: 'background-color 0.15s',
@@ -654,6 +1102,14 @@ export default function ControleModulosPage() {
                           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = bgHover; }}
                           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = bgColor; }}
                         >
+                          {/* Drag handle */}
+                          <span
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ cursor: 'grab', display: 'flex', alignItems: 'center', color: '#4b5563' }}
+                            title="Arrastar para reordenar"
+                          >
+                            <GripVertical size={14} />
+                          </span>
                           {/* Nome */}
                           <span
                             style={{
@@ -793,18 +1249,37 @@ export default function ControleModulosPage() {
                         const sgKey = `${grupoName}::${nome}`;
                         const isSgExpanded = expandedSubgrupos.has(sgKey);
                         const accentColor = registered ? '#10b981' : '#6c757d';
+                        const itemDragId = `sg::${nome}`;
+                        const isDropTarget = dragOverId === `item::${itemDragId}`;
 
                         return (
                         <div
                           key={`sg-header-${grupoName}-${nome}`}
+                          draggable={registered}
+                          onDragStart={(e) => {
+                            e.stopPropagation();
+                            handleDragStart(e, 'item', itemDragId, grupoName);
+                          }}
+                          onDragEnd={handleDragEnd}
+                          onDragOver={(e) => {
+                            e.stopPropagation();
+                            handleDragOverItem(e, itemDragId);
+                          }}
+                          onDragLeave={handleDragLeave}
+                          onDrop={(e) => handleDropItem(e, itemDragId, grupoName)}
                           onClick={() => toggleSubgrupo(grupoName, nome)}
                           style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: 8,
                             padding: '7px 16px 7px 24px',
-                            backgroundColor: isSgExpanded ? '#1a1e23' : '#1e2227',
+                            backgroundColor: isDropTarget ? 'rgba(16,185,129,0.06)' : (isSgExpanded ? '#1a1e23' : '#1e2227'),
                             borderBottom: '1px solid #2a2e33',
+                            boxShadow: isDropTarget && dragOverPosition === 'above'
+                              ? 'inset 0 3px 0 0 #10b981'
+                              : isDropTarget && dragOverPosition === 'below'
+                                ? 'inset 0 -3px 0 0 #10b981'
+                                : 'none',
                             borderLeft: `3px solid ${accentColor}`,
                             cursor: 'pointer',
                             transition: 'background-color 0.15s',
@@ -812,6 +1287,15 @@ export default function ControleModulosPage() {
                           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#252a30'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = isSgExpanded ? '#1a1e23' : '#1e2227'; }}
                         >
+                          {registered && (
+                            <span
+                              onClick={(e) => e.stopPropagation()}
+                              style={{ cursor: 'grab', display: 'flex', alignItems: 'center', color: '#4b5563', flexShrink: 0 }}
+                              title="Arrastar para reordenar"
+                            >
+                              <GripVertical size={13} />
+                            </span>
+                          )}
                           {isSgExpanded
                             ? <ChevronDown size={13} color={accentColor} />
                             : <ChevronRight size={13} color={accentColor} />
@@ -879,14 +1363,14 @@ export default function ControleModulosPage() {
                         <>
                           {renderItems.map((item) => {
                             if (item.type === 'mod') {
-                              return renderModRow(item.mod);
+                              return renderModRow(item.mod, false, '');
                             }
                             if (item.type === 'subgrupo') {
                               const sgKey = `${grupo}::${item.sg.nome}`;
                               return (
                                 <React.Fragment key={`sg-${grupo}-${item.sg.nome}`}>
                                   {renderSubgrupoHeader(item.sg.nome, item.mods.length, item.sg.ordem, true, grupo)}
-                                  {expandedSubgrupos.has(sgKey) && item.mods.map(m => renderModRow(m, true))}
+                                  {expandedSubgrupos.has(sgKey) && item.mods.map(m => renderModRow(m, true, item.sg.nome))}
                                 </React.Fragment>
                               );
                             }
@@ -895,7 +1379,7 @@ export default function ControleModulosPage() {
                             return (
                               <React.Fragment key={`sg-orphan-${grupo}-${item.nome}`}>
                                 {renderSubgrupoHeader(item.nome, item.mods.length, 99, false, grupo)}
-                                {expandedSubgrupos.has(orphanKey) && item.mods.map(m => renderModRow(m, true))}
+                                {expandedSubgrupos.has(orphanKey) && item.mods.map(m => renderModRow(m, true, item.nome))}
                               </React.Fragment>
                             );
                           })}

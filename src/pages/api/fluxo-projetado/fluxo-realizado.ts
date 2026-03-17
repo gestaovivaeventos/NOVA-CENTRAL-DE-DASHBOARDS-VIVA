@@ -1,6 +1,6 @@
 /**
  * API: Fluxo Realizado - Fundos por Franquia
- * Busca dados da aba FUNDOS CARTEIRA (FLUXO REALIZADO)
+ * Busca dados da aba carteira_realizado
  * Retorna lista de fundos com FEE, antecipação e saldo para o componente RecebimentoFeeFundo
  */
 
@@ -10,13 +10,13 @@ import cache from '@/lib/cache';
 
 // ID da planilha de Fluxo Projetado
 const SPREADSHEET_ID = process.env.PLANILHA_FLUXO_PROJETADO_ID!;
-const SHEET_NAME = 'FUNDOS CARTEIRA (FLUXO REALIZADO)';
+const SHEET_NAME = 'carteira_realizado';
 const CACHE_KEY = 'fluxo-realizado:fundos';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
 
 /**
- * Mapeamento das colunas da aba FUNDOS CARTEIRA (FLUXO REALIZADO)
- * Linha 1 = Título/metadata, Linha 2 = Cabeçalho, Linha 3+ = Dados
+ * Mapeamento das colunas da aba carteira_realizado
+ * Linha 1 = Cabeçalho, Linha 2+ = Dados
  * 
  * A (0) = FRANQUIA
  * B (1) = COD FUNDO
@@ -61,8 +61,8 @@ const COLUNAS = {
   PRETENDE_ABRIR_CP: 23,       // X - PRETENDE ABRIR CP
 };
 
-// Linha onde começa o cabeçalho (0-indexed)
-const HEADER_ROW = 1;
+// Linha onde começa o cabeçalho (0-indexed): linha 1 da planilha = índice 0
+const HEADER_ROW = 0;
 
 interface FundoRealizado {
   id: string;
@@ -197,7 +197,7 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
 
   const rows = response.data.values || [];
   
-  if (!rows || rows.length <= 2) {
+  if (!rows || rows.length <= 1) {
     console.log('[Fluxo Realizado API] Nenhum dado encontrado na planilha');
     return [];
   }

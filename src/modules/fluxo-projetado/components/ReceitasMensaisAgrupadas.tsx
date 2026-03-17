@@ -60,6 +60,9 @@ export default function ReceitasMensaisAgrupadas({ receitas, loading = false }: 
               <p className="text-xs text-gray-400">
                 Histórico mês a mês da franquia
               </p>
+              <p className="text-xs text-cyan-400 mt-0.5 font-medium">
+                ⚠️ Dados de RPS compensadas a partir de 16/03/2026
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
