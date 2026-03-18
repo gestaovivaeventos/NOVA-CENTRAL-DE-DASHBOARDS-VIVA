@@ -1,7 +1,7 @@
 /**
  * useAnaliseMercado — Hook principal do módulo Análise de Mercado
- * Busca dados reais do Supabase (INEP)
- * Hierarquia de filtros: Ano → Rede → Estado → Município → Instituição → Curso
+ * Busca dados INEP via Google Sheets (5 bases regionais)
+ * Hierarquia de filtros: Ano → Estado → Município → Rede → Instituição → Curso
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -12,18 +12,27 @@ import type {
   DadosFranquia,
   DadosInstituicao,
   TipoInstituicao,
+  TipoModalidade,
 } from '../types';
 import {
   fetchDadosAnaliseMercado,
   fetchAnosDisponiveis,
   fetchAreasDisponiveis,
   invalidarCacheAnaliseMercado,
-} from '../utils/supabase-queries';
+  UF_NOMES,
+} from '../utils/sheets-queries';
 
-/** Converter tipoInstituicao (string) → tp_rede (number) para SQL */
+/** Converter tipoInstituicao (string) → tp_rede (number) para filtro */
 function redeToNumber(tipo: TipoInstituicao): number | null {
   if (tipo === 'publica') return 1;
   if (tipo === 'privada') return 2;
+  return null;
+}
+
+/** Converter modalidade (string) → tp_modalidade_ensino (number) */
+function modalidadeToNumber(mod: TipoModalidade): number | null {
+  if (mod === 'presencial') return 1;
+  if (mod === 'ead') return 2;
   return null;
 }
 
@@ -46,6 +55,7 @@ const DADOS_VAZIO: DadosAnaliseMercado = {
 const FILTROS_INICIAIS: FiltrosAnaliseMercado = {
   ano: 2024,
   tipoInstituicao: 'todos',
+  modalidade: 'todos',
   estado: null,
   municipio: null,
   instituicaoId: null,
@@ -106,12 +116,13 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
       const thisCancelled = cancelledRef;
 
       const rede = redeToNumber(filtros.tipoInstituicao);
-      const { ano, estado, municipio, instituicaoId } = filtros;
+      const modalidade = modalidadeToNumber(filtros.modalidade);
+      const { ano, estado, municipio, instituicaoId, curso } = filtros;
 
       async function carregarDados() {
         try {
           const [dados, anos, areas] = await Promise.all([
-            fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId),
+            fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId, curso, modalidade),
             anosDisp.length > 0 ? Promise.resolve(anosDisp) : fetchAnosDisponiveis(),
             areasDisp.length > 0 ? Promise.resolve(areasDisp) : fetchAreasDisponiveis(),
           ]);
@@ -138,25 +149,38 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
       cancelledRef.current = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [filtros.ano, filtros.tipoInstituicao, filtros.estado, filtros.municipio, filtros.instituicaoId, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtros.ano, filtros.tipoInstituicao, filtros.modalidade, filtros.estado, filtros.municipio, filtros.instituicaoId, filtros.curso, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ──── Cascading resets na hierarquia ────
   const setFiltros = useCallback((patch: Partial<FiltrosAnaliseMercado>) => {
     setFiltrosState(prev => {
       const next = { ...prev, ...patch };
 
-      // Hierarquia: Ano → Rede → Estado → Município → Instituição → Curso
+      // Hierarquia: Ano → Estado → Município → Rede → Modalidade → Instituição → Curso
       // Mudar um nível reseta todos os níveis abaixo
-      if ('tipoInstituicao' in patch && patch.tipoInstituicao !== prev.tipoInstituicao) {
+      if ('ano' in patch && patch.ano !== prev.ano) {
         next.estado = null;
         next.municipio = null;
+        next.tipoInstituicao = 'todos';
+        next.modalidade = 'todos';
         next.instituicaoId = null;
         next.curso = null;
       } else if ('estado' in patch && patch.estado !== prev.estado) {
         next.municipio = null;
+        next.tipoInstituicao = 'todos';
+        next.modalidade = 'todos';
         next.instituicaoId = null;
         next.curso = null;
       } else if ('municipio' in patch && patch.municipio !== prev.municipio) {
+        next.tipoInstituicao = 'todos';
+        next.modalidade = 'todos';
+        next.instituicaoId = null;
+        next.curso = null;
+      } else if ('tipoInstituicao' in patch && patch.tipoInstituicao !== prev.tipoInstituicao) {
+        next.modalidade = 'todos';
+        next.instituicaoId = null;
+        next.curso = null;
+      } else if ('modalidade' in patch && patch.modalidade !== prev.modalidade) {
         next.instituicaoId = null;
         next.curso = null;
       } else if ('instituicaoId' in patch && patch.instituicaoId !== prev.instituicaoId) {
@@ -179,11 +203,13 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     return dadosBase.evolucaoAlunos.map(e => e.ano);
   }, [anosDisp, dadosBase]);
 
+  // Estado vazio carregado uma vez para o dropdown — lista completa dos 27 estados
+  // Não deriva de distribuicaoEstados (que pode estar filtrada), garantindo o dropdown sempre funcional
   const estadosDisponiveis = useMemo(() => {
-    return dadosBase.distribuicaoEstados
-      .map(e => ({ uf: e.uf, nome: e.nome }))
-      .sort((a, b) => a.nome.localeCompare(b.nome));
-  }, [dadosBase.distribuicaoEstados]);
+    return Object.entries(UF_NOMES)
+      .map(([uf, nome]) => ({ uf, nome }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }, []);
 
   const municipiosDisponiveis = useMemo(() => {
     if (!filtros.estado) return [];
@@ -224,6 +250,12 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     }
     if (filtros.areaConhecimento || filtros.curso) {
       resultado = { ...resultado, rankingCursos: cursosFiltrados };
+    }
+
+    // Filtrar instituições pela IES selecionada (sem afetar o dropdown — que usa dadosBase.instituicoes)
+    if (filtros.instituicaoId) {
+      const instFiltrada = dadosBase.instituicoes.filter(i => i.codIes === filtros.instituicaoId);
+      resultado = { ...resultado, instituicoes: instFiltrada };
     }
 
     // Gerar dados da franquia

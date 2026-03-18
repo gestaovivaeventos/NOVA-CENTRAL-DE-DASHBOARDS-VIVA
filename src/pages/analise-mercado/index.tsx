@@ -121,7 +121,7 @@ export default function AnaliseMercadoPage() {
         }}>
           <span>📊</span>
           <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, flex: 1 }}>
-            <strong>Dados INEP</strong> — Censo da Educação Superior via Supabase
+            <strong>Dados INEP</strong> — Censo da Educação Superior via Google Sheets
             {dados.ultimaAtualizacao && (
               <span style={{ color: '#6B7280', marginLeft: 8 }}>
                 (cache: {new Date(dados.ultimaAtualizacao).toLocaleString('pt-BR')})

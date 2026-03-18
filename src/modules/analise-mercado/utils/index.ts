@@ -3,4 +3,4 @@
 // ============================================
 export * from './formatters';
 export * from './mock-data';
-export * from './supabase-queries';
+export * from './sheets-queries';

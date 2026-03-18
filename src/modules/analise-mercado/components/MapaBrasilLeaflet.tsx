@@ -18,6 +18,7 @@ import type { Map as LeafletMap, Layer, PathOptions } from 'leaflet';
 import type { Feature, FeatureCollection } from 'geojson';
 import type { DadosEstado, DadosCidade } from '../types';
 import { fmtNum, fmtInteiro, CORES } from '../utils/formatters';
+import { fetchCidadesEstado } from '../utils/sheets-queries';
 
 // ─── Leaflet: import dinâmico (evita "window is not defined" no SSR) ───
 const L = typeof window !== 'undefined' ? require('leaflet') : null;
@@ -140,6 +141,8 @@ export default function MapaBrasilLeaflet({
   const [estadoExpandido, setEstadoExpandido] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const [buscaCidade, setBuscaCidade] = useState('');
+  const [cidadesCarregadas, setCidadesCarregadas] = useState<Record<string, DadosCidade[]>>({});
+  const [carregandoCidades, setCarregandoCidades] = useState(false);
   const geoRef = useRef<any>(null);
 
   // Load GeoJSON (cache em memória — só baixa 1x)
@@ -162,11 +165,39 @@ export default function MapaBrasilLeaflet({
 
   const metricaLabel = metrica === 'matriculas' ? 'Matrículas' : metrica === 'concluintes' ? 'Concluintes' : 'Turmas';
 
+  // Mesclar cidades vindas por prop + carregadas sob demanda
+  const todasCidades = useMemo(() => {
+    const merged = { ...cidades };
+    for (const [uf, list] of Object.entries(cidadesCarregadas)) {
+      if (!merged[uf] || merged[uf].length === 0) merged[uf] = list;
+    }
+    return merged;
+  }, [cidades, cidadesCarregadas]);
+
   // Cidades do estado expandido
   const cidadesEstado = useMemo(() => {
-    if (!estadoExpandido || !cidades) return [];
-    return (cidades[estadoExpandido] || []).sort((a, b) => b[metrica] - a[metrica]);
-  }, [estadoExpandido, cidades, metrica]);
+    if (!estadoExpandido) return [];
+    return (todasCidades[estadoExpandido] || []).sort((a, b) => b[metrica] - a[metrica]);
+  }, [estadoExpandido, todasCidades, metrica]);
+
+  // Buscar cidades sob demanda quando expandir um estado
+  useEffect(() => {
+    if (!estadoExpandido) return;
+    // Já temos cidades? Não precisa buscar
+    if (todasCidades[estadoExpandido] && todasCidades[estadoExpandido].length > 0) return;
+
+    let cancelled = false;
+    setCarregandoCidades(true);
+    fetchCidadesEstado(ano || 2024, estadoExpandido)
+      .then(result => {
+        if (cancelled) return;
+        setCidadesCarregadas(prev => ({ ...prev, [estadoExpandido]: result }));
+      })
+      .catch(err => console.error('[Mapa] Erro ao carregar cidades:', err))
+      .finally(() => { if (!cancelled) setCarregandoCidades(false); });
+
+    return () => { cancelled = true; };
+  }, [estadoExpandido, todasCidades, ano]);
 
   const totalEstadoExpandido = estadoExpandido
     ? dadosMap.get(estadoExpandido)?.[metrica] || 0
@@ -292,7 +323,9 @@ export default function MapaBrasilLeaflet({
           </h3>
           <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: '4px 0 0' }}>
             {estadoExpandido
-              ? `Total: ${fmtInteiro(totalEstadoExpandido)} ${metricaLabel.toLowerCase()} • ${cidadesEstado.length} cidades`
+              ? carregandoCidades
+                ? 'Carregando cidades...'
+                : `Total: ${fmtInteiro(totalEstadoExpandido)} ${metricaLabel.toLowerCase()} • ${cidadesEstado.length} cidades`
               : 'Clique em um estado para expandir'}
           </p>
         </div>

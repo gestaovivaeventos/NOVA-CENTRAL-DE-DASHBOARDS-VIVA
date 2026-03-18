@@ -209,21 +209,7 @@ export default function AnaliseMercadoLayout({
                         </select>
                       </div>
 
-                      {/* 2. Rede (Pública × Privada) */}
-                      <div>
-                        <label style={sidebarLabelStyle}>Rede</label>
-                        <select
-                          style={sidebarSelectStyle}
-                          value={filtros.tipoInstituicao}
-                          onChange={e => onFiltrosChange({ tipoInstituicao: e.target.value as 'todos' | 'publica' | 'privada' })}
-                        >
-                          <option value="todos">Todas</option>
-                          <option value="publica">Pública</option>
-                          <option value="privada">Privada</option>
-                        </select>
-                      </div>
-
-                      {/* 3. Estado (UF) */}
+                      {/* 2. Estado (UF) */}
                       <div>
                         <label style={sidebarLabelStyle}>Estado (UF)</label>
                         <select
@@ -238,7 +224,7 @@ export default function AnaliseMercadoLayout({
                         </select>
                       </div>
 
-                      {/* 4. Município */}
+                      {/* 3. Município */}
                       <FiltroComBusca
                         label="Município"
                         value={filtros.municipio ?? ''}
@@ -247,7 +233,35 @@ export default function AnaliseMercadoLayout({
                         onChange={v => onFiltrosChange({ municipio: v || null })}
                       />
 
-                      {/* 5. Instituição */}
+                      {/* 4. Rede (Pública × Privada) */}
+                      <div>
+                        <label style={sidebarLabelStyle}>Rede</label>
+                        <select
+                          style={sidebarSelectStyle}
+                          value={filtros.tipoInstituicao}
+                          onChange={e => onFiltrosChange({ tipoInstituicao: e.target.value as 'todos' | 'publica' | 'privada' })}
+                        >
+                          <option value="todos">Todas</option>
+                          <option value="publica">Pública</option>
+                          <option value="privada">Privada</option>
+                        </select>
+                      </div>
+
+                      {/* 5. Modalidade (Presencial × EAD) */}
+                      <div>
+                        <label style={sidebarLabelStyle}>Modalidade</label>
+                        <select
+                          style={sidebarSelectStyle}
+                          value={filtros.modalidade}
+                          onChange={e => onFiltrosChange({ modalidade: e.target.value as 'todos' | 'presencial' | 'ead' })}
+                        >
+                          <option value="todos">Todas</option>
+                          <option value="presencial">Presencial</option>
+                          <option value="ead">EAD</option>
+                        </select>
+                      </div>
+
+                      {/* 6. Instituição */}
                       <FiltroComBusca
                         label="Instituição"
                         value={filtros.instituicaoId ? String(filtros.instituicaoId) : ''}
@@ -256,7 +270,7 @@ export default function AnaliseMercadoLayout({
                         onChange={v => onFiltrosChange({ instituicaoId: v ? Number(v) : null })}
                       />
 
-                      {/* 6. Curso */}
+                      {/* 7. Curso */}
                       <FiltroComBusca
                         label="Curso"
                         value={filtros.curso ?? ''}
@@ -266,11 +280,12 @@ export default function AnaliseMercadoLayout({
                       />
 
                       {/* Limpar todos os filtros */}
-                      {(filtros.tipoInstituicao !== 'todos' || filtros.estado || filtros.municipio || filtros.instituicaoId || filtros.curso) && (
+                      {(filtros.tipoInstituicao !== 'todos' || filtros.modalidade !== 'todos' || filtros.estado || filtros.municipio || filtros.instituicaoId || filtros.curso) && (
                         <button
                           onClick={() => {
                             onFiltrosChange({
                               tipoInstituicao: 'todos',
+                              modalidade: 'todos',
                               estado: null,
                               municipio: null,
                               instituicaoId: null,

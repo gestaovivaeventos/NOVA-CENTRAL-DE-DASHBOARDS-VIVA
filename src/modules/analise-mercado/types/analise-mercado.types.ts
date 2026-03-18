@@ -4,12 +4,14 @@
 
 // ─── Filtros ──────────────────────────────────
 export type TipoInstituicao = 'todos' | 'publica' | 'privada';
+export type TipoModalidade = 'todos' | 'presencial' | 'ead';
 export type VisaoAtiva = 'alunos' | 'turmas' | 'ens-medio';
 export type MetricaAtiva = 'matriculas' | 'concluintes' | 'ingressantes';
 
 export interface FiltrosAnaliseMercado {
   ano: number;
   tipoInstituicao: TipoInstituicao;
+  modalidade: TipoModalidade;
   estado: string | null;
   municipio: string | null;
   instituicaoId: number | null;
