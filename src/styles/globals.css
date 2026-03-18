@@ -593,11 +593,15 @@ body {
 /* Main Content KPI */
 .main-content {
   @apply flex-grow p-5 transition-all duration-300;
+  min-width: 0;
+  overflow-x: auto;
 }
 
 /* Page Container KPI */
 .page-container {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* KPI Time Section */

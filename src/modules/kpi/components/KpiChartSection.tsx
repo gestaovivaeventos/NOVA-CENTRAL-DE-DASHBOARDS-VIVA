@@ -99,9 +99,16 @@ const formatValor = (valor: number | null, grandeza: string, minDecimals = 0): s
   } else if (
     grandezaLower === 'número inteiro' ||
     grandezaLower === 'numero inteiro' ||
-    grandezaLower === 'inteiro'
+    grandezaLower === 'inteiro' ||
+    grandezaLower === 'número' ||
+    grandezaLower === 'numero'
   ) {
     return Math.round(valor).toLocaleString('pt-BR');
+  } else if (grandezaLower === 'tempo') {
+    const totalMinutes = Math.round(valor * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   } else {
     return valor.toLocaleString('pt-BR', {
       minimumFractionDigits: minDecimals,
@@ -183,10 +190,11 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
   const labels = sortedData.map((d) => d.competencia);
   const labelsFormatados = labels.map(formatCompetencia);
   const situacoes = sortedData.map((d) => (d.situacao || 'Ativo').toString().trim().toUpperCase());
-  // Metas: null para meses inativos
+  // Metas: null para meses inativos ou sem meta definida
   const metas = sortedData.map((d, idx) => {
     const situacao = (d.situacao || 'Ativo').toString().trim().toUpperCase();
     if (situacao === 'INATIVO') return null;
+    if (d.meta === null || d.meta === undefined) return null;
     return d.meta;
   });
   const resultados = sortedData.map((d) => d.resultado);
@@ -462,15 +470,22 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
         borderColor: '#fff',
         backgroundColor: 'transparent',
         borderWidth: 2,
-        pointRadius: 5,
+        pointRadius: (context: any) => {
+          const val = context.dataset.data[context.dataIndex];
+          return val === null || val === undefined ? 0 : 5;
+        },
         pointBackgroundColor: '#fff',
         pointBorderColor: 'transparent',
         pointBorderWidth: 2,
         tension: 0,
         fill: false,
         order: 1,
+        spanGaps: true,
         datalabels: {
-          display: true,
+          display: (context: any) => {
+            const val = context.dataset.data[context.dataIndex];
+            return val !== null && val !== undefined;
+          },
           backgroundColor: '#1E1E1E',
           borderColor: 'rgba(255, 255, 255, 0.2)',
           borderWidth: 1,
@@ -519,6 +534,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
             return 8;
           },
           formatter: (value: any, context: any) => {
+            if (value === null || value === undefined) return '';
             const g = grandezas[context.dataIndex] || grandeza;
             return formatValor(value, g);
           },
@@ -650,7 +666,7 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
               Inativo a partir de {inativacaoInfo}
             </span>
           )}
-          {onEdit && (
+          {false && onEdit && (
             <button
               onClick={onEdit}
               className="p-2 rounded-lg hover:bg-gray-700 transition-colors"
@@ -700,10 +716,12 @@ export const KpiChartSection: React.FC<KpiChartSectionProps> = ({
           <div className="kpi-card">
             <span className="kpi-label">MÉDIA ATING. (%)</span>
             <span className="kpi-value">
-              {mediaAtingimento.toLocaleString('pt-BR', {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              })}%
+              {atingimentos.some((p) => typeof p === 'number' && !isNaN(p))
+                ? `${mediaAtingimento.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 1,
+                    maximumFractionDigits: 1,
+                  })}%`
+                : '-'}
             </span>
           </div>
 
