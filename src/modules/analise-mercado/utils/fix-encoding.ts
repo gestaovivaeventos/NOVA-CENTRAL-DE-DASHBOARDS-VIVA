@@ -64,7 +64,87 @@ const PATTERNS: [RegExp, string][] = [
   [new RegExp(`${R}${R}es\\b`, 'g'), 'ções'],
   [new RegExp(`${R}${R}ES\\b`, 'g'), 'ÇÕES'],
 
-  // Palavras específicas (mais confiáveis que padrões genéricos)
+  // ─── Nomes de IES / termos institucionais ────────────────────
+  [new RegExp(`UNIVERSIT${R}RIO`, 'g'), 'UNIVERSITÁRIO'],
+  [new RegExp(`Universit${R}rio`, 'g'), 'Universitário'],
+  [new RegExp(`universit${R}rio`, 'g'), 'universitário'],
+  [new RegExp(`UNIVERSIT${R}RIA`, 'g'), 'UNIVERSITÁRIA'],
+
+  [new RegExp(`PIT${R}GORAS`, 'g'), 'PITÁGORAS'],
+  [new RegExp(`Pit${R}goras`, 'g'), 'Pitágoras'],
+
+  [new RegExp(`EST${R}CIO`, 'g'), 'ESTÁCIO'],
+  [new RegExp(`Est${R}cio`, 'g'), 'Estácio'],
+
+  [new RegExp(`\\bS${R}\\b`, 'g'), 'SÁ'],
+  [new RegExp(`\\bs${R}\\b`, 'g'), 'sá'],
+
+  [new RegExp(`TECNOL${R}GIC`, 'g'), 'TECNOLÓGIC'],
+  [new RegExp(`Tecnol${R}gic`, 'g'), 'Tecnológic'],
+  [new RegExp(`tecnol${R}gic`, 'g'), 'tecnológic'],
+
+  [new RegExp(`PEDAG${R}GIC`, 'g'), 'PEDAGÓGIC'],
+  [new RegExp(`Pedag${R}gic`, 'g'), 'Pedagógic'],
+
+  [new RegExp(`CAT${R}LIC`, 'g'), 'CATÓLIC'],
+  [new RegExp(`Cat${R}lic`, 'g'), 'Católic'],
+
+  [new RegExp(`EVANG${R}LIC`, 'g'), 'EVANGÉLIC'],
+  [new RegExp(`Evang${R}lic`, 'g'), 'Evangélic'],
+
+  [new RegExp(`PRESBIT${R}RIAN`, 'g'), 'PRESBITERIAN'],
+  [new RegExp(`Presbit${R}rian`, 'g'), 'Presbiterian'],
+
+  [new RegExp(`METODIST${R}`, 'g'), 'METODISTÁ'],
+
+  [new RegExp(`POLIT${R}CNIC`, 'g'), 'POLITÉCNIC'],
+  [new RegExp(`Polit${R}cnic`, 'g'), 'Politécnic'],
+
+  [new RegExp(`ACAD${R}MIC`, 'g'), 'ACADÊMIC'],
+  [new RegExp(`Acad${R}mic`, 'g'), 'Acadêmic'],
+  [new RegExp(`acad${R}mic`, 'g'), 'acadêmic'],
+
+  [new RegExp(`COM${R}RCIO`, 'g'), 'COMÉRCIO'],
+  [new RegExp(`IND${R}STRI`, 'g'), 'INDÚSTRI'],
+  [new RegExp(`ind${R}stri`, 'g'), 'indústri'],
+
+  [new RegExp(`AGR${R}COLA`, 'g'), 'AGRÍCOLA'],
+  [new RegExp(`Agr${R}cola`, 'g'), 'Agrícola'],
+  [new RegExp(`agr${R}cola`, 'g'), 'agrícola'],
+
+  [new RegExp(`AGR${R}RIA`, 'g'), 'AGRÁRIA'],
+  [new RegExp(`Agr${R}ria`, 'g'), 'Agrária'],
+
+  [new RegExp(`T${R}CNIC`, 'g'), 'TÉCNIC'],
+  [new RegExp(`T${R}cnic`, 'g'), 'Técnic'],
+  [new RegExp(`t${R}cnic`, 'g'), 'técnic'],
+
+  [new RegExp(`SUPERIOR${R}`, 'g'), 'SUPERIORÉ'],
+
+  [new RegExp(`\\bAM${R}RICA\\b`, 'g'), 'AMÉRICA'],
+  [new RegExp(`\\bAm${R}rica\\b`, 'g'), 'América'],
+  [new RegExp(`\\bam${R}rica\\b`, 'g'), 'américa'],
+
+  [new RegExp(`INTEGR${R}D`, 'g'), 'INTEGRAD'],
+
+  [new RegExp(`PAR${R}`, 'g'), 'PARÁ'],
+  [new RegExp(`MARANH${R}O`, 'g'), 'MARANHÃO'],
+  [new RegExp(`CEAR${R}`, 'g'), 'CEARÁ'],
+  [new RegExp(`GOI${R}S`, 'g'), 'GOIÁS'],
+  [new RegExp(`PIAU${R}`, 'g'), 'PIAUÍ'],
+  [new RegExp(`AMAP${R}`, 'g'), 'AMAPÁ'],
+  [new RegExp(`ROND${R}NIA`, 'g'), 'RONDÔNIA'],
+  [new RegExp(`PAR${R}NA`, 'g'), 'PARANÁ'],
+  [new RegExp(`PARA${R}BA`, 'g'), 'PARAÍBA'],
+
+  [new RegExp(`MUNIC${R}PIO`, 'g'), 'MUNICÍPIO'],
+  [new RegExp(`Munic${R}pio`, 'g'), 'Município'],
+
+  [new RegExp(`NEG${R}CIO`, 'g'), 'NEGÓCIO'],
+
+  [new RegExp(`EDU${R}`, 'g'), 'EDUCAÇ'],
+
+  // ─── Palavras específicas originais ──────────────────────────
   [new RegExp(`Sa${R}de`, 'g'), 'Saúde'],
   [new RegExp(`sa${R}de`, 'g'), 'saúde'],
   [new RegExp(`SA${R}DE`, 'g'), 'SAÚDE'],

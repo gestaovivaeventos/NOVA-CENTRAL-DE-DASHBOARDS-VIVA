@@ -24,9 +24,10 @@ const METRICAS: Record<MetricaAtiva, MetricaConfig> = {
 interface GraficoEvolucaoProps {
   dados: DadosEvolucaoAnual[];
   metricasAtivas: MetricaAtiva[];
+  ano?: number;
 }
 
-export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvolucaoProps) {
+function GraficoEvolucao({ dados, metricasAtivas, ano }: GraficoEvolucaoProps) {
   const configs = metricasAtivas.map(k => METRICAS[k]);
 
   const chartData = {
@@ -129,3 +130,5 @@ export default function GraficoEvolucao({ dados, metricasAtivas }: GraficoEvoluc
     </div>
   );
 }
+
+export default React.memo(GraficoEvolucao);

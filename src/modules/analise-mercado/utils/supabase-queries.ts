@@ -22,9 +22,9 @@ import type {
 } from '../types';
 
 // ─── Cache localStorage (24h TTL) ───────────
-const CACHE_VERSION = 9; // Bump para invalidar cache quando schema muda
+const CACHE_VERSION = 11; // Bump para invalidar cache quando schema muda
 const CACHE_PREFIX = `am_cache_v${CACHE_VERSION}_`;
-const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 horas
+const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 dias — dados INEP são censo anual
 
 function cacheGet<T>(key: string): T | null {
   try {
@@ -207,8 +207,8 @@ export async function fetchIndicadores(ano: number, ies: number | null = null, r
 
   return [
     { id: 'mat', titulo: 'Matrículas Ativas', valor: atual.total_matriculas, variacao: varMat, tendencia: tendencia(varMat), cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
-    { id: 'conc', titulo: 'Concluintes/Ano', valor: atual.total_concluintes, variacao: varConc, tendencia: tendencia(varConc), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
     { id: 'ing', titulo: 'Ingressantes/Ano', valor: atual.total_ingressantes, variacao: varIng, tendencia: tendencia(varIng), cor: '#8B5CF6', subtitulo: 'Novos alunos' },
+    { id: 'conc', titulo: 'Concluintes/Ano', valor: atual.total_concluintes, variacao: varConc, tendencia: tendencia(varConc), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
     { id: 'ies', titulo: 'Ensino Superior', valor: atual.total_ies, variacao: varIes, tendencia: tendencia(varIes), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
     { id: 'cursos', titulo: 'Cursos Ativos', valor: atual.total_cursos, variacao: varCursos, tendencia: tendencia(varCursos), cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
   ];

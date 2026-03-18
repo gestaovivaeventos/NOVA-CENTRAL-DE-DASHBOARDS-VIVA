@@ -4,7 +4,7 @@
  * Content: área principal com os dashboards
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Image from 'next/image';
 import {
@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { Franquia, FiltrosAnaliseMercado, DadosInstituicao } from '../types';
+import FiltroComBusca from './FiltroComBusca';
 
 interface AnaliseMercadoLayoutProps {
   children: React.ReactNode;
@@ -61,64 +62,20 @@ export default function AnaliseMercadoLayout({
     return false;
   });
   const [dataAtual, setDataAtual] = useState('');
-  const [buscaInstituicao, setBuscaInstituicao] = useState('');
-  const [dropdownAberto, setDropdownAberto] = useState(false);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-  const [buscaCurso, setBuscaCurso] = useState('');
-  const [dropdownCursoAberto, setDropdownCursoAberto] = useState(false);
-  const dropdownCursoRef = React.useRef<HTMLDivElement>(null);
-  const [buscaMunicipio, setBuscaMunicipio] = useState('');
-  const [dropdownMunicipioAberto, setDropdownMunicipioAberto] = useState(false);
-  const dropdownMunicipioRef = React.useRef<HTMLDivElement>(null);
 
-  // Fechar dropdowns ao clicar fora
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownAberto(false);
-      }
-      if (dropdownCursoRef.current && !dropdownCursoRef.current.contains(e.target as Node)) {
-        setDropdownCursoAberto(false);
-      }
-      if (dropdownMunicipioRef.current && !dropdownMunicipioRef.current.contains(e.target as Node)) {
-        setDropdownMunicipioAberto(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Nome da instituição selecionada
-  const nomeInstSelecionada = filtros.instituicaoId
-    ? instituicoesDisponiveis.find(i => i.codIes === filtros.instituicaoId)?.nome ?? ''
-    : '';
-
-  // Filtrar lista de instituições pela busca (mostra todas se busca vazia)
-  const instFiltradas = buscaInstituicao.length >= 2
-    ? instituicoesDisponiveis.filter(i =>
-        i.nome.toLowerCase().includes(buscaInstituicao.toLowerCase())
-      ).slice(0, 50)
-    : instituicoesDisponiveis.slice(0, 50);
-
-  // Filtrar lista de cursos pela busca (mostra todos se busca vazia)
-  const cursosFiltrados = buscaCurso.length >= 2
-    ? cursosDisponiveis.filter(c =>
-        c.toLowerCase().includes(buscaCurso.toLowerCase())
-      ).slice(0, 50)
-    : cursosDisponiveis.slice(0, 50);
-
-  // Filtrar lista de municípios pela busca (mostra todos se busca vazia)
-  const municipiosFiltrados = buscaMunicipio.length >= 2
-    ? municipiosDisponiveis.filter(m =>
-        m.toLowerCase().includes(buscaMunicipio.toLowerCase())
-      ).slice(0, 50)
-    : municipiosDisponiveis.slice(0, 50);
-
-  // Nome do município selecionado
-  const nomeMunicipioSelecionado = filtros.municipio ?? '';
-
-  // Nome do curso selecionado
-  const nomeCursoSelecionado = filtros.curso ?? '';
+  // Options estáveis para FiltroComBusca (evita re-render desnecessário)
+  const optionsMunicipios = useMemo(() =>
+    municipiosDisponiveis.map(m => ({ value: m, label: m })),
+    [municipiosDisponiveis]
+  );
+  const optionsInstituicoes = useMemo(() =>
+    instituicoesDisponiveis.map(i => ({ value: String(i.codIes), label: i.nome })),
+    [instituicoesDisponiveis]
+  );
+  const optionsCursos = useMemo(() =>
+    cursosDisponiveis.map(c => ({ value: c, label: c })),
+    [cursosDisponiveis]
+  );
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -188,9 +145,11 @@ export default function AnaliseMercadoLayout({
 
         {/* Conteúdo Sidebar */}
         <div
-          className={`${isCollapsed ? 'px-2 pt-4' : 'p-4 pt-4'} flex flex-col`}
-          style={{ height: 'calc(100% - 90px)', overflowY: 'auto', overflowX: 'hidden' }}
+          className={`${isCollapsed ? 'px-2 pt-4' : 'p-4 pt-4'}`}
+          style={{ height: 'calc(100% - 90px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
         >
+          {/* Área rolável: filtros */}
+          <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
           {/* ── Seção: Filtros de Dados ── */}
           {!isCollapsed ? (
             <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -279,283 +238,32 @@ export default function AnaliseMercadoLayout({
                         </select>
                       </div>
 
-                      {/* 4. Município (busca + dropdown) */}
-                      <div>
-                        <label style={sidebarLabelStyle}>Município</label>
-                        <div ref={dropdownMunicipioRef} style={{ position: 'relative' }}>
-                          {filtros.municipio ? (
-                            <div style={{
-                              ...sidebarSelectStyle,
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              gap: 6, cursor: 'default',
-                            }}>
-                              <span style={{
-                                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                fontSize: '0.7rem',
-                              }} title={nomeMunicipioSelecionado}>
-                                {nomeMunicipioSelecionado}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  onFiltrosChange({ municipio: null });
-                                  setBuscaMunicipio('');
-                                }}
-                                style={{
-                                  background: 'none', border: 'none', color: '#FF6600',
-                                  cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0, flexShrink: 0,
-                                }}
-                                title="Limpar filtro"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ) : (
-                            <input
-                              type="text"
-                              placeholder={filtros.estado ? 'Buscar município...' : 'Selecione um estado'}
-                              value={buscaMunicipio}
-                              onChange={e => {
-                                setBuscaMunicipio(e.target.value);
-                                setDropdownMunicipioAberto(true);
-                              }}
-                              onFocus={() => { if (filtros.estado) setDropdownMunicipioAberto(true); }}
-                              disabled={!filtros.estado}
-                              style={{
-                                ...(filtros.estado ? sidebarSelectStyle : disabledSelectStyle),
-                                cursor: filtros.estado ? 'text' : 'not-allowed',
-                              }}
-                            />
-                          )}
-                          {dropdownMunicipioAberto && municipiosFiltrados.length > 0 && (
-                            <div style={{
-                              position: 'absolute', top: '100%', left: 0, right: 0,
-                              backgroundColor: '#2D3238', border: '1px solid #495057',
-                              borderRadius: '0 0 6px 6px', maxHeight: 200, overflowY: 'auto',
-                              zIndex: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                            }}>
-                              {municipiosFiltrados.map(m => (
-                                <button
-                                  key={m}
-                                  onClick={() => {
-                                    onFiltrosChange({ municipio: m });
-                                    setBuscaMunicipio('');
-                                    setDropdownMunicipioAberto(false);
-                                  }}
-                                  style={{
-                                    width: '100%', textAlign: 'left', padding: '6px 10px',
-                                    backgroundColor: 'transparent', border: 'none',
-                                    color: '#F8F9FA', fontSize: '0.7rem', cursor: 'pointer',
-                                    borderBottom: '1px solid #3a3f47',
-                                    fontFamily: "'Poppins', sans-serif",
-                                  }}
-                                  onMouseEnter={e => { (e.target as HTMLElement).style.backgroundColor = 'rgba(255,102,0,0.15)'; }}
-                                  onMouseLeave={e => { (e.target as HTMLElement).style.backgroundColor = 'transparent'; }}
-                                >
-                                  {m}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          {dropdownMunicipioAberto && buscaMunicipio.length >= 2 && municipiosFiltrados.length === 0 && (
-                            <div style={{
-                              position: 'absolute', top: '100%', left: 0, right: 0,
-                              backgroundColor: '#2D3238', border: '1px solid #495057',
-                              borderRadius: '0 0 6px 6px', padding: '8px 10px',
-                              zIndex: 100, color: '#6C757D', fontSize: '0.7rem',
-                              fontFamily: "'Poppins', sans-serif",
-                            }}>
-                              Nenhum município encontrado
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      {/* 4. Município */}
+                      <FiltroComBusca
+                        label="Município"
+                        value={filtros.municipio ?? ''}
+                        placeholder="Todos"
+                        options={optionsMunicipios}
+                        onChange={v => onFiltrosChange({ municipio: v || null })}
+                      />
 
-                      {/* 5. Instituição (busca) */}
-                      <div>
-                        <label style={sidebarLabelStyle}>Instituição</label>
-                        <div ref={dropdownRef} style={{ position: 'relative' }}>
-                          {filtros.instituicaoId ? (
-                            <div style={{
-                              ...sidebarSelectStyle,
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              gap: 6, cursor: 'default',
-                            }}>
-                              <span style={{
-                                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                fontSize: '0.7rem',
-                              }} title={nomeInstSelecionada}>
-                                {nomeInstSelecionada}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  onFiltrosChange({ instituicaoId: null });
-                                  setBuscaInstituicao('');
-                                }}
-                                style={{
-                                  background: 'none', border: 'none', color: '#FF6600',
-                                  cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0, flexShrink: 0,
-                                }}
-                                title="Limpar filtro"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ) : (
-                            <input
-                              type="text"
-                              placeholder="Buscar instituição..."
-                              value={buscaInstituicao}
-                              onChange={e => {
-                                setBuscaInstituicao(e.target.value);
-                                setDropdownAberto(true);
-                              }}
-                              onFocus={() => setDropdownAberto(true)}
-                              style={{
-                                ...sidebarSelectStyle,
-                                cursor: 'text',
-                              }}
-                            />
-                          )}
-                          {dropdownAberto && instFiltradas.length > 0 && (
-                            <div style={{
-                              position: 'absolute', top: '100%', left: 0, right: 0,
-                              backgroundColor: '#2D3238', border: '1px solid #495057',
-                              borderRadius: '0 0 6px 6px', maxHeight: 200, overflowY: 'auto',
-                              zIndex: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                            }}>
-                              {instFiltradas.map(inst => (
-                                <button
-                                  key={inst.codIes}
-                                  onClick={() => {
-                                    onFiltrosChange({ instituicaoId: inst.codIes });
-                                    setBuscaInstituicao('');
-                                    setDropdownAberto(false);
-                                  }}
-                                  style={{
-                                    width: '100%', textAlign: 'left', padding: '6px 10px',
-                                    backgroundColor: 'transparent', border: 'none',
-                                    color: '#F8F9FA', fontSize: '0.7rem', cursor: 'pointer',
-                                    borderBottom: '1px solid #3a3f47',
-                                    fontFamily: "'Poppins', sans-serif",
-                                  }}
-                                  onMouseEnter={e => { (e.target as HTMLElement).style.backgroundColor = 'rgba(255,102,0,0.15)'; }}
-                                  onMouseLeave={e => { (e.target as HTMLElement).style.backgroundColor = 'transparent'; }}
-                                >
-                                  <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {inst.nome}
-                                  </span>
-                                  <span style={{ color: '#6C757D', fontSize: '0.6rem' }}>
-                                    {inst.uf} · {inst.tipo === 'publica' ? 'Pública' : 'Privada'} · {inst.matriculas.toLocaleString('pt-BR')} matr.
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          {dropdownAberto && buscaInstituicao.length >= 2 && instFiltradas.length === 0 && (
-                            <div style={{
-                              position: 'absolute', top: '100%', left: 0, right: 0,
-                              backgroundColor: '#2D3238', border: '1px solid #495057',
-                              borderRadius: '0 0 6px 6px', padding: '8px 10px',
-                              zIndex: 100, color: '#6C757D', fontSize: '0.7rem',
-                              fontFamily: "'Poppins', sans-serif",
-                            }}>
-                              Nenhuma instituição encontrada
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      {/* 5. Instituição */}
+                      <FiltroComBusca
+                        label="Instituição"
+                        value={filtros.instituicaoId ? String(filtros.instituicaoId) : ''}
+                        placeholder="Todas"
+                        options={optionsInstituicoes}
+                        onChange={v => onFiltrosChange({ instituicaoId: v ? Number(v) : null })}
+                      />
 
-                      {/* 6. Curso (busca) */}
-                      <div>
-                        <label style={sidebarLabelStyle}>Curso</label>
-                        <div ref={dropdownCursoRef} style={{ position: 'relative' }}>
-                          {filtros.curso ? (
-                            <div style={{
-                              ...sidebarSelectStyle,
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              gap: 6, cursor: 'default',
-                            }}>
-                              <span style={{
-                                flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                                fontSize: '0.7rem',
-                              }} title={nomeCursoSelecionado}>
-                                {nomeCursoSelecionado}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  onFiltrosChange({ curso: null });
-                                  setBuscaCurso('');
-                                }}
-                                style={{
-                                  background: 'none', border: 'none', color: '#FF6600',
-                                  cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: 0, flexShrink: 0,
-                                }}
-                                title="Limpar filtro"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ) : (
-                            <input
-                              type="text"
-                              placeholder="Buscar curso..."
-                              value={buscaCurso}
-                              onChange={e => {
-                                setBuscaCurso(e.target.value);
-                                setDropdownCursoAberto(true);
-                              }}
-                              onFocus={() => setDropdownCursoAberto(true)}
-                              style={{
-                                ...sidebarSelectStyle,
-                                cursor: 'text',
-                              }}
-                            />
-                          )}
-                          {dropdownCursoAberto && cursosFiltrados.length > 0 && (
-                            <div style={{
-                              position: 'absolute', top: '100%', left: 0, right: 0,
-                              backgroundColor: '#2D3238', border: '1px solid #495057',
-                              borderRadius: '0 0 6px 6px', maxHeight: 200, overflowY: 'auto',
-                              zIndex: 100, boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                            }}>
-                              {cursosFiltrados.map(curso => (
-                                <button
-                                  key={curso}
-                                  onClick={() => {
-                                    onFiltrosChange({ curso });
-                                    setBuscaCurso('');
-                                    setDropdownCursoAberto(false);
-                                  }}
-                                  style={{
-                                    width: '100%', textAlign: 'left', padding: '6px 10px',
-                                    backgroundColor: 'transparent', border: 'none',
-                                    color: '#F8F9FA', fontSize: '0.7rem', cursor: 'pointer',
-                                    borderBottom: '1px solid #3a3f47',
-                                    fontFamily: "'Poppins', sans-serif",
-                                  }}
-                                  onMouseEnter={e => { (e.target as HTMLElement).style.backgroundColor = 'rgba(255,102,0,0.15)'; }}
-                                  onMouseLeave={e => { (e.target as HTMLElement).style.backgroundColor = 'transparent'; }}
-                                >
-                                  <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                    {curso}
-                                  </span>
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                          {dropdownCursoAberto && buscaCurso.length >= 2 && cursosFiltrados.length === 0 && (
-                            <div style={{
-                              position: 'absolute', top: '100%', left: 0, right: 0,
-                              backgroundColor: '#2D3238', border: '1px solid #495057',
-                              borderRadius: '0 0 6px 6px', padding: '8px 10px',
-                              zIndex: 100, color: '#6C757D', fontSize: '0.7rem',
-                              fontFamily: "'Poppins', sans-serif",
-                            }}>
-                              Nenhum curso encontrado
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      {/* 6. Curso */}
+                      <FiltroComBusca
+                        label="Curso"
+                        value={filtros.curso ?? ''}
+                        placeholder="Todos"
+                        options={optionsCursos}
+                        onChange={v => onFiltrosChange({ curso: v || null })}
+                      />
 
                       {/* Limpar todos os filtros */}
                       {(filtros.tipoInstituicao !== 'todos' || filtros.estado || filtros.municipio || filtros.instituicaoId || filtros.curso) && (
@@ -568,9 +276,6 @@ export default function AnaliseMercadoLayout({
                               instituicaoId: null,
                               curso: null,
                             });
-                            setBuscaInstituicao('');
-                            setBuscaMunicipio('');
-                            setBuscaCurso('');
                           }}
                           style={{
                             width: '100%', padding: '6px 10px',
@@ -609,12 +314,10 @@ export default function AnaliseMercadoLayout({
             </div>
           )}
 
-          {/* Espaçador */}
-          <div className="flex-grow" />
+          </div>{/* fim área rolável */}
 
-          {/* Área inferior: Central + Sair */}
-          <div className={`${isCollapsed ? 'pb-4' : 'pb-6'}`}>
-            <hr className="border-gray-700/50 mb-4" />
+          {/* Área inferior fixa: Central + Sair */}
+          <div className={`${isCollapsed ? 'pb-4' : 'pb-4'}`} style={{ flexShrink: 0, paddingTop: 8, borderTop: '1px solid rgba(107,114,128,0.3)' }}>
             <a
               href="/"
               className={`

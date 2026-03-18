@@ -30,8 +30,19 @@ if (L) {
   });
 }
 
-// ─── GeoJSON do Brasil ───
+// ─── GeoJSON do Brasil (cache em memória) ───
 const BRASIL_GEO_URL = 'https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson';
+let _geoCache: FeatureCollection | null = null;
+let _geoPromise: Promise<FeatureCollection> | null = null;
+
+function loadGeoJSON(): Promise<FeatureCollection> {
+  if (_geoCache) return Promise.resolve(_geoCache);
+  if (_geoPromise) return _geoPromise;
+  _geoPromise = fetch(BRASIL_GEO_URL)
+    .then(res => res.json())
+    .then((data: FeatureCollection) => { _geoCache = data; return data; });
+  return _geoPromise;
+}
 
 /** Sigla → nome completo */
 const UF_TO_NAME: Record<string, string> = {
@@ -85,6 +96,7 @@ interface MapaBrasilProps {
   estadoSelecionado?: string | null;
   onEstadoClick?: (uf: string) => void;
   altura?: number;
+  ano?: number;
 }
 
 // ─── Zoom / center por UF ───
@@ -122,7 +134,7 @@ const BRASIL_CENTER: [number, number] = [-14.5, -53.0];
 const BRASIL_ZOOM = 4;
 
 export default function MapaBrasilLeaflet({
-  dados, metrica, cidades, estadoSelecionado, onEstadoClick, altura = 440,
+  dados, metrica, cidades, estadoSelecionado, onEstadoClick, altura = 440, ano,
 }: MapaBrasilProps) {
   const [geoData, setGeoData] = useState<FeatureCollection | null>(null);
   const [estadoExpandido, setEstadoExpandido] = useState<string | null>(null);
@@ -130,10 +142,9 @@ export default function MapaBrasilLeaflet({
   const [buscaCidade, setBuscaCidade] = useState('');
   const geoRef = useRef<any>(null);
 
-  // Load GeoJSON
+  // Load GeoJSON (cache em memória — só baixa 1x)
   useEffect(() => {
-    fetch(BRASIL_GEO_URL)
-      .then(res => res.json())
+    loadGeoJSON()
       .then(data => setGeoData(data))
       .catch(err => console.error('Erro ao carregar GeoJSON:', err));
   }, []);
@@ -276,8 +287,8 @@ export default function MapaBrasilLeaflet({
             fontFamily: "'Poppins', sans-serif",
           }}>
             {estadoExpandido
-              ? `${UF_TO_NAME[estadoExpandido]} — Cidades`
-              : `Distribuição Geográfica — ${metricaLabel}`}
+              ? `${UF_TO_NAME[estadoExpandido]} — Cidades${ano ? ` (${ano})` : ''}`
+              : `Distribuição Geográfica — ${metricaLabel}${ano ? ` (${ano})` : ''}`}
           </h3>
           <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: '4px 0 0' }}>
             {estadoExpandido

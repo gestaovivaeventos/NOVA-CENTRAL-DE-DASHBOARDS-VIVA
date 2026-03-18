@@ -253,7 +253,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
       </div>
 
       <div style={{ marginBottom: 24 }}>
-        <GraficoEvolucao dados={evolucaoAlunos} metricasAtivas={metricas} />
+        <GraficoEvolucao dados={evolucaoAlunos} metricasAtivas={metricas} ano={filtros.ano} />
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -281,7 +281,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
               color: CORES.verde, fontSize: '0.75rem', fontWeight: 600, margin: '0 0 10px',
               fontFamily: "'Poppins', sans-serif", textTransform: 'uppercase', letterSpacing: '0.04em',
             }}>
-              Por Modalidade
+              {`Por Modalidade (${filtros.ano})`}
             </h4>
             <PropBar
               a={bd.presencial} b={bd.ead}
@@ -302,7 +302,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
               color: CORES.azul, fontSize: '0.75rem', fontWeight: 600, margin: '0 0 10px',
               fontFamily: "'Poppins', sans-serif", textTransform: 'uppercase', letterSpacing: '0.04em',
             }}>
-              Por Tipo de Instituição
+              {`Por Tipo de Instituição (${filtros.ano})`}
             </h4>
             <PropBar
               a={bd.publica} b={bd.privada}
@@ -324,7 +324,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
               color: CORES.rosa, fontSize: '0.75rem', fontWeight: 600, margin: '0 0 10px',
               fontFamily: "'Poppins', sans-serif", textTransform: 'uppercase', letterSpacing: '0.04em',
             }}>
-              Por Gênero
+              {`Por Gênero (${filtros.ano})`}
             </h4>
             <PropBar
               a={bd.feminino} b={bd.masculino}
@@ -367,7 +367,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
           }))}
         >
           <div style={{ marginTop: 14 }}>
-            <TabelaComparativa dados={evolucaoAlunos} metricasAtivas={metricas} />
+            <TabelaComparativa dados={evolucaoAlunos} metricasAtivas={metricas} ano={filtros.ano} />
           </div>
         </CardInsight>
       </div>
@@ -381,6 +381,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
           dados={rankingCursos}
           areaFiltro={filtros.areaConhecimento}
           metricasAtivas={metricas}
+          ano={filtros.ano}
         />
       </div>
 
@@ -390,7 +391,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
       <SectionLabel num="5" label="Cursos por Instituição" cor={CORES.laranja} />
       <div style={{ marginBottom: 24 }}>
         <CardInsight
-          titulo="Cursos por Instituição"
+          titulo={`Cursos por Instituição (${filtros.ano})`}
           cor={CORES.laranja}
           icone={<Building2 size={16} />}
           resumo={[
@@ -441,12 +442,13 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
           cidades={cidadesPorEstado}
           estadoSelecionado={filtros.estado}
           onEstadoClick={onEstadoClick}
+          ano={filtros.ano}
         />
         {filtros.estado ? (
           <div style={{ position: 'relative' }}>
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
               <TabelaRanking
-                titulo={`Ranking por Estado — ${tituloLabel}`}
+                titulo={`Ranking por Estado — ${tituloLabel} (${filtros.ano})`}
                 dados={distribuicaoEstados}
                 colunas={rankEstadoColunas}
                 linhasVisiveis={10}
@@ -456,7 +458,7 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
           </div>
         ) : (
           <TabelaRanking
-            titulo={`Ranking por Estado — ${tituloLabel}`}
+            titulo={`Ranking por Estado — ${tituloLabel} (${filtros.ano})`}
             dados={distribuicaoEstados}
             colunas={rankEstadoColunas}
             linhasVisiveis={10}

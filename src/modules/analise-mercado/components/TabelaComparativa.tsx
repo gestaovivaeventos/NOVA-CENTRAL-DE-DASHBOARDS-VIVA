@@ -27,9 +27,10 @@ const METRICAS: MetricaRow[] = [
 interface TabelaComparativaProps {
   dados: DadosEvolucaoAnual[];
   metricasAtivas?: MetricaAtiva[];
+  ano?: number;
 }
 
-export default function TabelaComparativa({ dados, metricasAtivas = [] }: TabelaComparativaProps) {
+function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativaProps) {
   const [expandido, setExpandido] = useState<Set<TipoMetrica>>(new Set());
 
   const toggleExpandir = (key: TipoMetrica) => {
@@ -263,3 +264,5 @@ export default function TabelaComparativa({ dados, metricasAtivas = [] }: Tabela
     </div>
   );
 }
+
+export default React.memo(TabelaComparativa);

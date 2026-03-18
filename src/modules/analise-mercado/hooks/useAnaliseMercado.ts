@@ -4,7 +4,7 @@
  * Hierarquia de filtros: Ano → Rede → Estado → Município → Instituição → Curso
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import type {
   DadosAnaliseMercado,
   FiltrosAnaliseMercado,
@@ -58,6 +58,7 @@ const FILTROS_INICIAIS: FiltrosAnaliseMercado = {
 interface UseAnaliseMercadoReturn {
   dados: DadosAnaliseMercado;
   loading: boolean;
+  initialLoading: boolean;
   filtros: FiltrosAnaliseMercado;
   setFiltros: (patch: Partial<FiltrosAnaliseMercado>) => void;
   visaoAtiva: VisaoAtiva;
@@ -73,6 +74,7 @@ interface UseAnaliseMercadoReturn {
 
 export function useAnaliseMercado(): UseAnaliseMercadoReturn {
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [dadosBase, setDadosBase] = useState<DadosAnaliseMercado>(DADOS_VAZIO);
   const [filtros, setFiltrosState] = useState<FiltrosAnaliseMercado>(FILTROS_INICIAIS);
   const [visaoAtiva, setVisaoAtiva] = useState<VisaoAtiva>('alunos');
@@ -86,36 +88,56 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     setRefreshKey(k => k + 1);
   }, []);
 
-  // ──── Fetch principal: depende de TODOS os filtros da hierarquia ────
+  // ──── Fetch principal com debounce: evita fetches cancelados ao mudar filtros rápido ────
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cancelledRef = useRef(false);
+
   useEffect(() => {
-    let cancelled = false;
+    // Cancelar fetch anterior
+    cancelledRef.current = true;
+
+    // Limpar debounce anterior
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
     setLoading(true);
 
-    const rede = redeToNumber(filtros.tipoInstituicao);
-    const { ano, estado, municipio, instituicaoId } = filtros;
+    debounceRef.current = setTimeout(() => {
+      cancelledRef.current = false;
+      const thisCancelled = cancelledRef;
 
-    async function carregarDados() {
-      try {
-        const [dados, anos, areas] = await Promise.all([
-          fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId),
-          anosDisp.length > 0 ? Promise.resolve(anosDisp) : fetchAnosDisponiveis(),
-          areasDisp.length > 0 ? Promise.resolve(areasDisp) : fetchAreasDisponiveis(),
-        ]);
+      const rede = redeToNumber(filtros.tipoInstituicao);
+      const { ano, estado, municipio, instituicaoId } = filtros;
 
-        if (cancelled) return;
-        setDadosBase(dados);
+      async function carregarDados() {
+        try {
+          const [dados, anos, areas] = await Promise.all([
+            fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId),
+            anosDisp.length > 0 ? Promise.resolve(anosDisp) : fetchAnosDisponiveis(),
+            areasDisp.length > 0 ? Promise.resolve(areasDisp) : fetchAreasDisponiveis(),
+          ]);
 
-        if (anos.length > 0) setAnosDisp(anos);
-        if (areas.length > 0) setAreasDisp(areas);
-      } catch (err) {
-        console.error('[Análise de Mercado] Erro ao buscar dados:', err);
-      } finally {
-        if (!cancelled) setLoading(false);
+          if (thisCancelled.current) return;
+          setDadosBase(dados);
+
+          if (anos.length > 0) setAnosDisp(anos);
+          if (areas.length > 0) setAreasDisp(areas);
+        } catch (err) {
+          console.error('[Análise de Mercado] Erro ao buscar dados:', err);
+        } finally {
+          if (!thisCancelled.current) {
+            setLoading(false);
+            setInitialLoading(false);
+          }
+        }
       }
-    }
 
-    carregarDados();
-    return () => { cancelled = true; };
+      carregarDados();
+    }, 300);
+
+    return () => {
+      cancelledRef.current = true;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [filtros.ano, filtros.tipoInstituicao, filtros.estado, filtros.municipio, filtros.instituicaoId, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ──── Cascading resets na hierarquia ────
@@ -244,6 +266,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
   return {
     dados,
     loading,
+    initialLoading,
     filtros,
     setFiltros,
     visaoAtiva,

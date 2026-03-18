@@ -25,6 +25,7 @@ export default function AnaliseMercadoPage() {
   const {
     dados,
     loading,
+    initialLoading,
     filtros,
     setFiltros,
     visaoAtiva,
@@ -48,7 +49,7 @@ export default function AnaliseMercadoPage() {
     }
   }, [isAuthenticated, authLoading, user, router, ready]);
 
-  if (authLoading || loading || !ready) {
+  if (authLoading || initialLoading || !ready) {
     return (
       <div style={{
         minHeight: '100vh', backgroundColor: '#212529',
@@ -98,6 +99,20 @@ export default function AnaliseMercadoPage() {
         estadosDisponiveis={estadosDisponiveis}
         municipiosDisponiveis={municipiosDisponiveis}
       >
+        {/* Indicador de refetch (loading sutil) */}
+        {loading && !initialLoading && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            height: 3, backgroundColor: 'rgba(255,102,0,0.2)', overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', width: '40%', backgroundColor: '#FF6600',
+              animation: 'loadbar 1s ease-in-out infinite',
+            }} />
+            <style jsx>{`@keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }`}</style>
+          </div>
+        )}
+
         {/* Fonte de dados */}
         <div style={{
           backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
@@ -138,6 +153,7 @@ export default function AnaliseMercadoPage() {
               key={ind.id}
               indicador={ind}
               compacto={dados.indicadores.length > 4}
+              ano={filtros.ano}
             />
           ))}
         </div>

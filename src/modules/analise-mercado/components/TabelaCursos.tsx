@@ -14,11 +14,12 @@ interface TabelaCursosProps {
   dados: DadosCurso[];
   areaFiltro?: string | null;
   metricasAtivas?: MetricaAtiva[];
+  ano?: number;
 }
 
 type SortKey = keyof DadosCurso;
 
-export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['matriculas'] }: TabelaCursosProps) {
+function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['matriculas'], ano }: TabelaCursosProps) {
   const [expandido, setExpandido] = useState<Set<string>>(new Set());
   const [busca, setBusca] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('matriculas');
@@ -136,7 +137,7 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
               textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px',
               fontFamily: "'Poppins', sans-serif",
             }}>
-              {card.label}
+              {card.label}{ano ? ` (${ano})` : ''}
             </p>
             <p style={{
               color: card.cor, fontWeight: 700, margin: 0,
@@ -494,3 +495,5 @@ export default function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['mat
     </div>
   );
 }
+
+export default React.memo(TabelaCursos);

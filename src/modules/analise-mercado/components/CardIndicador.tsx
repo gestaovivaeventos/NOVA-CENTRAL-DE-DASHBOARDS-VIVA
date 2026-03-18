@@ -13,9 +13,10 @@ interface CardIndicadorProps {
   /** Quando há franquia selecionada, exibir comparativo Brasil */
   comparativo?: { label: string; valor: number };
   compacto?: boolean;
+  ano?: number;
 }
 
-export default function CardIndicador({ indicador, comparativo, compacto }: CardIndicadorProps) {
+function CardIndicador({ indicador, comparativo, compacto, ano }: CardIndicadorProps) {
   const IconeTrend = indicador.tendencia === 'up' ? TrendingUp : indicador.tendencia === 'down' ? TrendingDown : Minus;
   const corTrend = corVariacao(indicador.variacao);
 
@@ -42,7 +43,7 @@ export default function CardIndicador({ indicador, comparativo, compacto }: Card
         textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px',
         fontFamily: "'Poppins', sans-serif",
       }}>
-        {indicador.titulo}
+        {indicador.titulo}{ano ? ` (${ano})` : ''}
       </p>
 
       {/* Valor principal */}
@@ -84,3 +85,5 @@ export default function CardIndicador({ indicador, comparativo, compacto }: Card
     </div>
   );
 }
+
+export default React.memo(CardIndicador);

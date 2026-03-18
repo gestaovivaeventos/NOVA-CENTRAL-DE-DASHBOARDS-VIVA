@@ -217,9 +217,9 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
           {/* KPI mini-row */}
           <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
             {[
-              { label: 'TOTAL TURMAS', valor: fmtInteiro(ultimoAno?.totalTurmas || 0), cor: CORES.laranja },
-              { label: 'MÉDIA ALUNOS/TURMA', valor: fmtInteiro(ultimoAno?.mediaPorTurma || 0), cor: CORES.azul },
-              { label: 'MEDIANA ALUNOS/TURMA', valor: fmtInteiro(ultimoAno?.medianaPorTurma || 0), cor: CORES.verde },
+              { label: `TOTAL TURMAS (${filtros.ano})`, valor: fmtInteiro(ultimoAno?.totalTurmas || 0), cor: CORES.laranja },
+              { label: `MÉDIA ALUNOS/TURMA (${filtros.ano})`, valor: fmtInteiro(ultimoAno?.mediaPorTurma || 0), cor: CORES.azul },
+              { label: `MEDIANA ALUNOS/TURMA (${filtros.ano})`, valor: fmtInteiro(ultimoAno?.medianaPorTurma || 0), cor: CORES.verde },
               { label: 'VARIAÇÃO YoY', valor: `${variacaoTotal >= 0 ? '+' : ''}${variacaoTotal.toFixed(1)}%`, cor: variacaoTotal >= 0 ? CORES.verde : CORES.vermelho },
             ].map(kpi => (
               <div key={kpi.label} style={{
@@ -247,7 +247,7 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
       <SectionLabel num="2" label="Distribuição do Mercado" cor={CORES.verde} />
       <div style={{ marginBottom: 24 }}>
         <CardInsight
-          titulo="Instituição · Média/Turma"
+          titulo={`Instituição · Média/Turma (${filtros.ano})`}
           cor={CORES.verde}
           icone={<BarChart3 size={16} />}
           resumo={[
@@ -264,7 +264,7 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
                 color: CORES.azul, fontSize: '0.75rem', fontWeight: 600, margin: '0 0 10px',
                 fontFamily: "'Poppins', sans-serif", textTransform: 'uppercase', letterSpacing: '0.04em',
               }}>
-                Por Tipo de Instituição
+                {`Por Tipo de Instituição (${filtros.ano})`}
               </h4>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <PropBar
@@ -287,7 +287,7 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
                 color: CORES.amarelo, fontSize: '0.75rem', fontWeight: 600, margin: '0 0 10px',
                 fontFamily: "'Poppins', sans-serif", textTransform: 'uppercase', letterSpacing: '0.04em',
               }}>
-                Média e Mediana de Alunos/Turma
+                {`Média e Mediana de Alunos/Turma (${filtros.ano})`}
               </h4>
               <div style={{ height: 180 }}>
                 <Line data={mediaLineData} options={{
@@ -370,7 +370,7 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
       <SectionLabel num="4" label="Análise por Curso" cor={CORES.laranja} />
       <div style={{ marginBottom: 24 }}>
         <CardInsight
-          titulo="Top Cursos por Volume de Turmas"
+          titulo={`Top Cursos por Volume de Turmas (${filtros.ano})`}
           cor={CORES.laranja}
           icone={<BookOpen size={16} />}
           resumo={[
@@ -431,7 +431,7 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
       <SectionLabel num="5" label="Grupos Educacionais" cor={CORES.laranja} />
       <div style={{ marginBottom: 24 }}>
         <CardInsight
-          titulo="Grupos Educacionais (Mantenedoras)"
+          titulo={`Grupos Educacionais (Mantenedoras) (${filtros.ano})`}
           cor={CORES.laranja}
           icone={<Building2 size={16} />}
           resumo={[
@@ -477,9 +477,10 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
           cidades={cidadesPorEstado}
           estadoSelecionado={filtros.estado}
           onEstadoClick={onEstadoClick}
+          ano={filtros.ano}
         />
         <TabelaRanking
-          titulo="Ranking por Estado — Turmas"
+          titulo={`Ranking por Estado — Turmas (${filtros.ano})`}
           dados={distribuicaoEstados}
           colunas={rankEstadoColunas}
           linhasVisiveis={10}
