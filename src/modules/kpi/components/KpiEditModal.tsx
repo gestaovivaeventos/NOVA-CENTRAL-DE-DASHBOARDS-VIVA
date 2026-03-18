@@ -50,7 +50,7 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
 }) => {
   const [nome, setNome] = useState(kpiName);
   const [tendencia, setTendencia] = useState<'MAIOR, MELHOR' | 'MENOR, MELHOR' | ''>('');
-  const [grandeza, setGrandeza] = useState<'Moeda' | '%' | 'Número inteiro' | ''>('');
+  const [grandeza, setGrandeza] = useState<'Moeda' | '%' | 'Número' | 'Tempo' | ''>('');
   const [metas, setMetas] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,8 +77,10 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
         setGrandeza('Moeda');
       } else if (grand.includes('%') || grand.includes('percent')) {
         setGrandeza('%');
+      } else if (grand.includes('tempo')) {
+        setGrandeza('Tempo');
       } else {
-        setGrandeza('Número inteiro');
+        setGrandeza('Número');
       }
       
       // Metas por competência
@@ -91,6 +93,12 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
             if (grand.includes('%') || grand.includes('percent')) {
               // Multiplicar por 100 para exibir (0.10 -> 10)
               metaStr = (d.meta * 100).toString().replace('.', ',');
+            } else if (grand.includes('tempo')) {
+              // Converter fração de dia para HH:MM
+              const totalMinutes = Math.round(d.meta * 24 * 60);
+              const hours = Math.floor(totalMinutes / 60);
+              const minutes = totalMinutes % 60;
+              metaStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
             } else {
               metaStr = d.meta.toString().replace('.', ',');
             }
@@ -138,8 +146,18 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
 
   // Handler para mudança nas metas
   const handleMetaChange = (competencia: string, value: string) => {
-    const cleanValue = value.replace(/[^0-9.,]/g, '');
-    setMetas((prev) => ({ ...prev, [competencia]: cleanValue }));
+    if (grandeza === 'Tempo') {
+      // Para tempo: permitir apenas dígitos, auto-inserir ":"
+      const digits = value.replace(/[^0-9]/g, '').slice(0, 4);
+      let formatted = digits;
+      if (digits.length > 2) {
+        formatted = digits.slice(0, 2) + ':' + digits.slice(2);
+      }
+      setMetas((prev) => ({ ...prev, [competencia]: formatted }));
+    } else {
+      const cleanValue = value.replace(/[^0-9.,]/g, '');
+      setMetas((prev) => ({ ...prev, [competencia]: cleanValue }));
+    }
     setError(null);
   };
 
@@ -290,7 +308,8 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
                 <option value="">Selecione...</option>
                 <option value="Moeda">Moeda (R$)</option>
                 <option value="%">Percentual (%)</option>
-                <option value="Número inteiro">Número inteiro</option>
+                <option value="Número">Número</option>
+                <option value="Tempo">Tempo (HH:MM)</option>
               </select>
             </div>
           </div>
@@ -311,7 +330,7 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
                       type="text"
                       value={metas[comp] || ''}
                       onChange={(e) => handleMetaChange(comp, e.target.value)}
-                      placeholder="0"
+                      placeholder={grandeza === 'Tempo' ? '00:00' : '0'}
                       className="w-full px-3 py-2 rounded-lg bg-dark-primary border border-gray-600 text-white text-center text-sm focus:outline-none focus:border-orange-500"
                     />
                   </div>
@@ -320,7 +339,8 @@ export const KpiEditModal: React.FC<KpiEditModalProps> = ({
               <p className="text-xs text-gray-500 mt-2">
                 {grandeza === 'Moeda' && 'Informe os valores em reais (ex: 10000)'}
                 {grandeza === '%' && 'Informe os valores em porcentagem (ex: 85)'}
-                {grandeza === 'Número inteiro' && 'Informe valores inteiros (ex: 100)'}
+                {grandeza === 'Número' && 'Informe valores numéricos (ex: 100)'}
+                {grandeza === 'Tempo' && 'Informe no formato HH:MM (ex: 15:36)'}
               </p>
             </div>
           )}

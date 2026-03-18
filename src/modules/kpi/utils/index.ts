@@ -36,9 +36,17 @@ export const formatarValor = (valor: number | null, grandeza: string, minDecimal
   } else if (
     grandezaLower === 'número inteiro' ||
     grandezaLower === 'numero inteiro' ||
-    grandezaLower === 'inteiro'
+    grandezaLower === 'inteiro' ||
+    grandezaLower === 'número' ||
+    grandezaLower === 'numero'
   ) {
     return Math.round(valor).toLocaleString('pt-BR');
+  } else if (grandezaLower === 'tempo') {
+    // Valor vem como fração de dia do Google Sheets (ex: 0.65 = 15:36)
+    const totalMinutes = Math.round(valor * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   } else {
     return valor.toLocaleString('pt-BR', {
       minimumFractionDigits: minDecimals,

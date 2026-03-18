@@ -7,7 +7,7 @@ export interface KpiData {
   competencia: string;
   time: string;
   kpi: string;
-  meta: number;
+  meta: number | null;
   resultado: number | null;
   percentual: number;
   atingimento: number | null;  // Coluna G - % ATINGIMENTO

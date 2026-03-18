@@ -41,7 +41,9 @@ const monthNames = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set
 const formatValue = (value: number | undefined | null, grandeza: string): string => {
   if (value === undefined || value === null || isNaN(value)) return '-';
   
-  if (grandeza === 'Moeda') {
+  const g = grandeza?.toLowerCase() || '';
+  
+  if (g === 'moeda' || g === 'r$' || g === 'real') {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
@@ -49,12 +51,19 @@ const formatValue = (value: number | undefined | null, grandeza: string): string
     }).format(value);
   }
   
-  if (grandeza === '%') {
+  if (g === '%' || g === 'percentual' || g === 'porcentagem') {
     // Valor já vem como percentual da planilha (10 = 10%), não multiplicar por 100
     return value.toLocaleString('pt-BR', {
       minimumFractionDigits: 1,
       maximumFractionDigits: 2,
     }) + '%';
+  }
+
+  if (g === 'tempo') {
+    const totalMinutes = Math.round(value * 24 * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
   }
   
   return new Intl.NumberFormat('pt-BR').format(value);
@@ -388,6 +397,13 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
     if (grandeza === '%') {
       return `${value.toFixed(1)}%`;
     }
+
+    if (grandeza === 'tempo') {
+      const totalMinutes = Math.round(value * 24 * 60);
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    }
     
     if (value >= 1000000) {
       return `${(value / 1000000).toFixed(1)} mi`;
@@ -407,9 +423,9 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
   }
 
   return (
-    <div className="bg-dark-card rounded-xl overflow-hidden">
-      <div className="overflow-x-auto" style={{ maxWidth: '100%' }}>
-        <table className="w-full text-sm" style={{ minWidth: '1200px' }}>
+    <div className="bg-dark-card rounded-xl" style={{ overflow: 'hidden', width: '100%', maxWidth: '100%' }}>
+      <div style={{ overflowX: 'auto', overflowY: 'visible', maxWidth: '100%', WebkitOverflowScrolling: 'touch' }}>
+        <table className="text-sm" style={{ minWidth: '1400px', width: '100%' }}>
           <thead>
             <tr className="border-b border-gray-700">
               <th className="px-4 py-3 text-left text-gray-400 font-medium sticky left-0 bg-dark-card z-10 min-w-[200px]">
@@ -466,7 +482,7 @@ const KpiTableView: React.FC<KpiTableViewProps> = ({ kpiGroups, accentColor, onE
                           )
                         )}
                         <div>
-                          <div className="font-medium text-white truncate max-w-[160px]" title={row.kpiName}>
+                          <div className="font-medium text-white text-xs leading-tight max-w-[180px] break-words" title={row.kpiName}>
                             {row.kpiName}
                           </div>
                           <div className="text-xs text-gray-500">{row.grandeza}</div>

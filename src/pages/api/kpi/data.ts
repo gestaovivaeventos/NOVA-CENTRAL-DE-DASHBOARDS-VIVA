@@ -61,7 +61,9 @@ async function fetchKpiData(): Promise<KpiData[]> {
         competencia: row[COL_MAP.COMPETENCIA] || '',
         time: row[COL_MAP.TIME] || '',
         kpi: row[COL_MAP.KPI] || '',
-        meta: parseFloat((row[COL_MAP.META] || '0').replace(',', '.')),
+        meta: row[COL_MAP.META] && String(row[COL_MAP.META]).trim() !== ''
+          ? parseFloat(String(row[COL_MAP.META]).replace(',', '.'))
+          : null,
         resultado:
           resultadoCell !== null && resultadoCell !== undefined && String(resultadoCell).trim() !== ''
             ? parseFloat(String(resultadoCell).replace(',', '.'))

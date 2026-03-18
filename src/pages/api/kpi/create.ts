@@ -156,15 +156,20 @@ function createRow(
   // Processar valor da meta
   let metaValue: string | number = '';
   if (meta) {
-    // Converter para número (trocar vírgula por ponto)
-    const numericValue = parseFloat(meta.replace(',', '.'));
-    
-    if (!isNaN(numericValue)) {
-      if (grandeza === '%') {
-        // Para percentual, dividir por 100 (60 -> 0.60)
-        metaValue = numericValue / 100;
-      } else {
-        metaValue = numericValue;
+    if (grandeza === 'Tempo') {
+      // Para tempo, armazenar como string no formato HH:MM
+      metaValue = meta;
+    } else {
+      // Converter para número (trocar vírgula por ponto)
+      const numericValue = parseFloat(meta.replace(',', '.'));
+      
+      if (!isNaN(numericValue)) {
+        if (grandeza === '%') {
+          // Para percentual, dividir por 100 (60 -> 0.60)
+          metaValue = numericValue / 100;
+        } else {
+          metaValue = numericValue;
+        }
       }
     }
   }
@@ -312,7 +317,18 @@ export default async function handler(
           pattern: '0.00%',
         };
         break;
-      case 'Número inteiro':
+      case 'Número':
+        numberFormat = {
+          type: 'NUMBER',
+          pattern: '#,##0',
+        };
+        break;
+      case 'Tempo':
+        numberFormat = {
+          type: 'TIME',
+          pattern: 'HH:MM',
+        };
+        break;
       default:
         numberFormat = {
           type: 'NUMBER',
