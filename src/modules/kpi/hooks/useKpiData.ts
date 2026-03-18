@@ -41,6 +41,23 @@ const parseResultado = (value: string | null | undefined): number | null => {
   return isNaN(parsed) ? null : parsed;
 };
 
+// Função para parsear valores de tempo (HH:MM) para fração de dia
+const parseTimeValue = (value: string | null | undefined): number | null => {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    return null;
+  }
+  const str = String(value).trim();
+  // Detectar formato HH:MM
+  const timeMatch = str.match(/^(\d{1,2}):(\d{2})$/);
+  if (timeMatch) {
+    const hours = parseInt(timeMatch[1], 10);
+    const minutes = parseInt(timeMatch[2], 10);
+    return (hours * 60 + minutes) / (24 * 60); // Fração de dia
+  }
+  // Fallback para parse numérico normal
+  return parseResultado(value);
+};
+
 export function useKpiData() {
   const [data, setData] = useState<KpiData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,15 +79,17 @@ export function useKpiData() {
       const processedData: KpiData[] = rows
         .slice(1)
         .map((row: string[]) => {
+          const grandeza = (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase();
+          const isTempo = grandeza === 'tempo';
           return {
             competencia: row[kpiColumns.COMPETENCIA] || '',
             time: row[kpiColumns.TIME] || '',
             kpi: row[kpiColumns.KPI] || '',
-            meta: parseNumericValue(row[kpiColumns.META]),
-            resultado: parseResultado(row[kpiColumns.RESULTADO]),
+            meta: isTempo ? parseTimeValue(row[kpiColumns.META]) : parseResultado(row[kpiColumns.META]),
+            resultado: isTempo ? parseTimeValue(row[kpiColumns.RESULTADO]) : parseResultado(row[kpiColumns.RESULTADO]),
             atingimento: parseResultado(row[kpiColumns.ATINGIMENTO]),
             percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
-            grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
+            grandeza,
             tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
             tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
             situacao: (row[kpiColumns.SITUACAO_KPI] || 'Ativo').toString().trim(),
@@ -106,15 +125,17 @@ export async function fetchKpiData(): Promise<KpiData[]> {
   const processedData: KpiData[] = rows
     .slice(1)
     .map((row: string[]) => {
+      const grandeza = (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase();
+      const isTempo = grandeza === 'tempo';
       return {
         competencia: row[kpiColumns.COMPETENCIA] || '',
         time: row[kpiColumns.TIME] || '',
         kpi: row[kpiColumns.KPI] || '',
-        meta: parseNumericValue(row[kpiColumns.META]),
-        resultado: parseResultado(row[kpiColumns.RESULTADO]),
+        meta: isTempo ? parseTimeValue(row[kpiColumns.META]) : parseResultado(row[kpiColumns.META]),
+        resultado: isTempo ? parseTimeValue(row[kpiColumns.RESULTADO]) : parseResultado(row[kpiColumns.RESULTADO]),
         atingimento: parseResultado(row[kpiColumns.ATINGIMENTO]),
         percentual: parseNumericValue(row[kpiColumns.PERCENTUAL]),
-        grandeza: (row[kpiColumns.GRANDEZA] || '').trim().toLowerCase(),
+        grandeza,
         tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
         situacao: (row[kpiColumns.SITUACAO_KPI] || 'Ativo').toString().trim(),

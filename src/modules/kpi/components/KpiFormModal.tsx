@@ -11,7 +11,7 @@ interface KpiFormData {
   terminoMes: string;
   terminoAno: string;
   tendencia: 'MAIOR, MELHOR' | 'MENOR, MELHOR' | '';
-  grandeza: 'Moeda' | '%' | 'Número inteiro' | '';
+  grandeza: 'Moeda' | '%' | 'Número' | 'Tempo' | '';
   metas: Record<string, string>;
 }
 
@@ -240,12 +240,25 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
 
   // Handler para mudança nas metas
   const handleMetaChange = (key: string, value: string) => {
-    // Permitir apenas números e ponto/vírgula para decimais
-    const cleanValue = value.replace(/[^0-9.,]/g, '');
-    setFormData((prev) => ({
-      ...prev,
-      metas: { ...prev.metas, [key]: cleanValue },
-    }));
+    if (formData.grandeza === 'Tempo') {
+      // Para tempo: permitir apenas dígitos, auto-inserir ":"
+      const digits = value.replace(/[^0-9]/g, '').slice(0, 4);
+      let formatted = digits;
+      if (digits.length > 2) {
+        formatted = digits.slice(0, 2) + ':' + digits.slice(2);
+      }
+      setFormData((prev) => ({
+        ...prev,
+        metas: { ...prev.metas, [key]: formatted },
+      }));
+    } else {
+      // Permitir apenas números e ponto/vírgula para decimais
+      const cleanValue = value.replace(/[^0-9.,]/g, '');
+      setFormData((prev) => ({
+        ...prev,
+        metas: { ...prev.metas, [key]: cleanValue },
+      }));
+    }
     setError(null);
   };
 
@@ -466,7 +479,8 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
                 <option value="">Selecione...</option>
                 <option value="Moeda">Moeda (R$)</option>
                 <option value="%">Percentual (%)</option>
-                <option value="Número inteiro">Número inteiro</option>
+                <option value="Número">Número</option>
+                <option value="Tempo">Tempo (HH:MM)</option>
               </select>
               <p className="text-xs text-gray-500 mt-1">
                 Formato de exibição dos valores
@@ -508,7 +522,7 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
                         type="text"
                         value={formData.metas[key] || ''}
                         onChange={(e) => handleMetaChange(key, e.target.value)}
-                        placeholder="0"
+                        placeholder={formData.grandeza === 'Tempo' ? '00:00' : '0'}
                         className="w-full px-3 py-2 rounded-lg bg-dark-primary border border-gray-600 text-white text-center text-sm focus:outline-none focus:border-orange-500"
                       />
                     </div>
@@ -518,7 +532,8 @@ export const KpiFormModal: React.FC<KpiFormModalProps> = ({
               <p className="text-xs text-gray-500 mt-2">
                 {formData.grandeza === 'Moeda' && 'Informe os valores em reais (ex: 10000)'}
                 {formData.grandeza === '%' && 'Informe os valores em porcentagem (ex: 85)'}
-                {formData.grandeza === 'Número inteiro' && 'Informe valores inteiros (ex: 100)'}
+                {formData.grandeza === 'Número' && 'Informe valores numéricos (ex: 100)'}
+                {formData.grandeza === 'Tempo' && 'Informe no formato HH:MM (ex: 15:36)'}
               </p>
             </div>
           )}

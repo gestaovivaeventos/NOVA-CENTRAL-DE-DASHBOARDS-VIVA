@@ -160,12 +160,17 @@ export default async function handler(
       const metaStr = data.metas[competencia] || '';
       
       if (metaStr) {
-        const numericValue = parseFloat(metaStr.replace(',', '.'));
-        if (!isNaN(numericValue)) {
-          if (data.grandeza === '%') {
-            metaValue = numericValue / 100;
-          } else {
-            metaValue = numericValue;
+        if (data.grandeza === 'Tempo') {
+          // Para tempo, armazenar como string no formato HH:MM
+          metaValue = metaStr;
+        } else {
+          const numericValue = parseFloat(metaStr.replace(',', '.'));
+          if (!isNaN(numericValue)) {
+            if (data.grandeza === '%') {
+              metaValue = numericValue / 100;
+            } else {
+              metaValue = numericValue;
+            }
           }
         }
       }
@@ -203,7 +208,9 @@ export default async function handler(
             values: [{
               userEnteredValue: typeof metaValue === 'number' 
                 ? { numberValue: metaValue }
-                : { stringValue: '' }
+                : typeof metaValue === 'string' && metaValue !== ''
+                  ? { stringValue: metaValue }
+                  : { stringValue: '' }
             }]
           }],
           fields: 'userEnteredValue',
@@ -304,6 +311,9 @@ export default async function handler(
         break;
       case '%':
         numberFormat = { type: 'PERCENT', pattern: '0.00%' };
+        break;
+      case 'Tempo':
+        numberFormat = { type: 'TIME', pattern: 'HH:MM' };
         break;
       default:
         numberFormat = { type: 'NUMBER', pattern: '#,##0' };
