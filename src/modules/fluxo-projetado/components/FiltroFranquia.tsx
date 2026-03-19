@@ -1,10 +1,11 @@
 /**
  * Filtro de Franquia
  * Dropdown para seleção de franquia
+ * Busca dinâmica da lista de franquias da aba carteira_realizado
  * Respeita o nível de acesso do usuário
  */
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { MapPin, Search, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -14,55 +15,34 @@ interface FiltroFranquiaProps {
   fullWidth?: boolean;
 }
 
-// Lista completa de franquias disponíveis (baseada na planilha FLUXO PROJETADO)
-const todasFranquias = [
-  'Barbacena',
-  'Belo Horizonte',
-  'Cacoal',
-  'Campo Grande',
-  'Campos',
-  'Cascavel',
-  'Contagem',
-  'Cuiaba',
-  'Curitiba',
-  'Divinópolis',
-  'Florianópolis',
-  'Fortaleza',
-  'Governador Valadares',
-  'Ipatinga',
-  'Itaperuna Muriae',
-  'João Pessoa',
-  'Juiz de Fora',
-  'Lavras',
-  'Linhares',
-  'Londrina',
-  'Montes Claros',
-  'Palmas',
-  'Passos',
-  'Petropolis',
-  'Pocos de Caldas',
-  'Porto Alegre',
-  'Porto Velho',
-  'Pouso Alegre',
-  'Recife',
-  'Região dos Lagos',
-  'Rio Branco',
-  'Rio de Janeiro',
-  'Salvador',
-  'São Luís',
-  'Sao Paulo',
-  'Uba',
-  'Uberlândia',
-  'Vitória',
-  'Volta Redonda - VivaMixx',
-];
-
 export default function FiltroFranquia({ franquiaSelecionada, onFranquiaChange, fullWidth = false }: FiltroFranquiaProps) {
   const { user } = useAuth();
   const [aberto, setAberto] = useState(false);
   const [busca, setBusca] = useState('');
+  const [todasFranquias, setTodasFranquias] = useState<string[]>([]);
+  const [loadingFranquias, setLoadingFranquias] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Buscar franquias da API (aba carteira_realizado, coluna A)
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchFranquias() {
+      try {
+        const response = await fetch('/api/fluxo-projetado/franquias');
+        const json = await response.json();
+        if (!cancelled && json.data) {
+          setTodasFranquias(json.data);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar franquias:', err);
+      } finally {
+        if (!cancelled) setLoadingFranquias(false);
+      }
+    }
+    fetchFranquias();
+    return () => { cancelled = true; };
+  }, []);
   
   // Franqueado (accessLevel = 0) só pode ver sua própria unidade
   const isFranqueado = user?.accessLevel === 0;
@@ -172,7 +152,11 @@ export default function FiltroFranquia({ franquiaSelecionada, onFranquiaChange, 
 
           {/* Lista de franquias */}
           <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
-            {franquiasFiltradas.length === 0 ? (
+            {loadingFranquias ? (
+              <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280', fontSize: '0.8125rem' }}>
+                Carregando franquias...
+              </div>
+            ) : franquiasFiltradas.length === 0 ? (
               <div style={{ padding: '12px', textAlign: 'center', color: '#6b7280', fontSize: '0.8125rem' }}>
                 Nenhuma franquia encontrada
               </div>
