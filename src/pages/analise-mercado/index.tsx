@@ -25,6 +25,7 @@ export default function AnaliseMercadoPage() {
   const {
     dados,
     loading,
+    loadingEvolucao,
     initialLoading,
     filtros,
     setFiltros,
@@ -198,6 +199,7 @@ export default function AnaliseMercadoPage() {
             filtros={filtros}
             onEstadoClick={handleEstadoClick}
             onMetricaChange={(key) => setFiltros({ metricasAtivas: [key] })}
+            loadingEvolucao={loadingEvolucao}
           />
         )}
         {visaoAtiva === 'turmas' && (

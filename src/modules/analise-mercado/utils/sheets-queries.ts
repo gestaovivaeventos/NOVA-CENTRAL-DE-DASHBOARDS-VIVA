@@ -25,7 +25,7 @@ import type {
 } from '../types';
 
 // ─── Cache localStorage (30 dias TTL) ─────────────────────────────
-const CACHE_VERSION = 15;
+const CACHE_VERSION = 18;
 const CACHE_PREFIX = `am_cache_v${CACHE_VERSION}_`;
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 
@@ -239,15 +239,15 @@ function addToBreakdown(
 
 // ─── Anos Disponíveis (endpoint leve, sem carregar planilhas) ───────
 export async function fetchAnosDisponiveis(): Promise<number[]> {
-  return cachedFetch('anos_sheets_v2', async () => {
+  return cachedFetch('anos_sheets_v3', async () => {
     try {
       const res = await fetch('/api/analise-mercado/inep?action=anos');
-      if (!res.ok) return [2023, 2024];
+      if (!res.ok) return [2022, 2023, 2024];
       const json = await res.json();
       const anos = (json.anos || []) as number[];
-      return anos.length > 0 ? anos : [2023, 2024];
+      return anos.length > 0 ? anos : [2022, 2023, 2024];
     } catch {
-      return [2023, 2024];
+      return [2022, 2023, 2024];
     }
   });
 }
@@ -708,7 +708,7 @@ function derivarGruposEducacionais(instituicoes: DadosInstituicao[]): GrupoEduca
   return grupos;
 }
 
-// ─── Fetch completo (usa action=dashboard — agregação server-side) ─
+// ─── Fetch completo (usa action=dashboard — só ano atual + anterior) ─
 export async function fetchDadosAnaliseMercado(
   ano: number,
   rede: number | null = null,
@@ -780,5 +780,40 @@ export async function fetchDadosAnaliseMercado(
       ultimaAtualizacao: new Date().toISOString(),
       fonte: `Censo da Educação Superior — INEP (${anosDisp.length > 0 ? `${anosDisp[0]}–${anosDisp[anosDisp.length - 1]}` : 'N/A'})`,
     };
+  });
+}
+
+// ─── Fetch evolução histórica (lazy) — chama action=evolucao ─────
+export async function fetchEvolucaoLazy(
+  rede: number | null = null,
+  uf: string | null = null,
+  municipio: string | null = null,
+  ies: number | null = null,
+  curso: string | null = null,
+  modalidade: number | null = null,
+): Promise<DadosEvolucaoAnual[]> {
+  const parts = ['evol_lazy'];
+  if (rede) parts.push(`r${rede}`);
+  if (uf) parts.push(`uf${uf}`);
+  if (municipio) parts.push(`m${municipio}`);
+  if (ies) parts.push(`ies${ies}`);
+  if (curso) parts.push(`c${curso}`);
+  if (modalidade) parts.push(`mod${modalidade}`);
+  const cacheKey = parts.join('_');
+
+  return cachedFetch(cacheKey, async () => {
+    const query = new URLSearchParams();
+    query.set('action', 'evolucao');
+    if (uf) query.set('uf', uf);
+    if (rede) query.set('rede', String(rede));
+    if (municipio) query.set('municipio', municipio);
+    if (ies) query.set('ies', String(ies));
+    if (curso) query.set('curso', curso);
+    if (modalidade) query.set('modalidade', String(modalidade));
+
+    const res = await fetch(`/api/analise-mercado/inep?${query.toString()}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.evolucao || []) as DadosEvolucaoAnual[];
   });
 }

@@ -79,7 +79,7 @@ export default function SecaoGenero({ evolucao, demografia }: SecaoGeneroProps) 
     },
     scales: {
       x: { ticks: { color: '#6C757D', font: { size: 10 } }, grid: { display: false } },
-      y: { ticks: { color: '#6C757D', font: { size: 10 }, callback: (v: any) => fmtNum(v) }, grid: { color: '#3D4349' } },
+      y: { beginAtZero: true, ticks: { color: '#6C757D', font: { size: 10 }, callback: (v: any) => fmtNum(v) }, grid: { color: '#3D4349' } },
     },
   };
 

@@ -47,9 +47,10 @@ interface SecaoAlunosProps {
   filtros: FiltrosAnaliseMercado;
   onEstadoClick: (uf: string) => void;
   onMetricaChange: (key: MetricaAtiva) => void;
+  loadingEvolucao?: boolean;
 }
 
-export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaChange }: SecaoAlunosProps) {
+export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaChange, loadingEvolucao = false }: SecaoAlunosProps) {
   const { evolucaoAlunos, distribuicaoEstados, rankingCursos, instituicoes, cidadesPorEstado, demografia } = dados;
   const metricas = filtros.metricasAtivas;
   const unica = metricas.length === 1;
@@ -252,8 +253,26 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
         })}
       </div>
 
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 24, position: 'relative' }}>
         <GraficoEvolucao dados={evolucaoAlunos} metricasAtivas={metricas} ano={filtros.ano} />
+        {loadingEvolucao && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            backgroundColor: 'rgba(33,37,41,0.75)',
+            borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 10,
+          }}>
+            <div style={{
+              width: 20, height: 20,
+              border: '3px solid #FF6600', borderTopColor: 'transparent',
+              borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+            }} />
+            <span style={{ color: '#adb5bd', fontSize: '0.8rem', fontFamily: "'Poppins', sans-serif" }}>
+              Carregando evolução histórica...
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -366,8 +385,26 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
             cor: METRICA_COR[m],
           }))}
         >
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 14, position: 'relative' }}>
             <TabelaComparativa dados={evolucaoAlunos} metricasAtivas={metricas} ano={filtros.ano} />
+            {loadingEvolucao && (
+              <div style={{
+                position: 'absolute', inset: 0,
+                backgroundColor: 'rgba(33,37,41,0.75)',
+                borderRadius: 8,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 10,
+              }}>
+                <div style={{
+                  width: 16, height: 16,
+                  border: '2px solid #FF6600', borderTopColor: 'transparent',
+                  borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+                }} />
+                <span style={{ color: '#adb5bd', fontSize: '0.75rem', fontFamily: "'Poppins', sans-serif" }}>
+                  Completando dados históricos...
+                </span>
+              </div>
+            )}
           </div>
         </CardInsight>
       </div>

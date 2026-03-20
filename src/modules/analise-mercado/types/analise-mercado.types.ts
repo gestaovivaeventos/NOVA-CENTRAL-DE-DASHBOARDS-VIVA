@@ -32,7 +32,7 @@ export interface IndicadorCard {
   id: string;
   titulo: string;
   valor: number;
-  variacao: number;
+  variacao: number | null;
   tendencia: 'up' | 'down' | 'stable';
   cor: string;
   subtitulo?: string;
@@ -59,6 +59,8 @@ export interface DadosEvolucaoAnual {
   matriculas: number;
   concluintes: number;
   ingressantes: number;
+  ies?: number;
+  cursos?: number;
   /** @deprecated Use porMetrica.matriculas instead */
   presencial: number;
   /** @deprecated Use porMetrica.matriculas instead */

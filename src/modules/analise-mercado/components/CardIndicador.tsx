@@ -78,7 +78,7 @@ function CardIndicador({ indicador, comparativo, compacto, ano }: CardIndicadorP
       <div style={{ borderTop: '1px solid #495057', marginTop: 10, paddingTop: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
         <IconeTrend size={14} color={corTrend} />
         <span style={{ color: corTrend, fontSize: '0.75rem', fontWeight: 600 }}>
-          {fmtVariacao(indicador.variacao)}
+          {fmtVariacao(indicador.variacao ?? 0)}
         </span>
         <span style={{ color: '#6C757D', fontSize: '0.65rem' }}>vs. ano anterior</span>
       </div>

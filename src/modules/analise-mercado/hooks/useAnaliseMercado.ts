@@ -16,6 +16,7 @@ import type {
 } from '../types';
 import {
   fetchDadosAnaliseMercado,
+  fetchEvolucaoLazy,
   fetchAnosDisponiveis,
   fetchAreasDisponiveis,
   invalidarCacheAnaliseMercado,
@@ -68,6 +69,7 @@ const FILTROS_INICIAIS: FiltrosAnaliseMercado = {
 interface UseAnaliseMercadoReturn {
   dados: DadosAnaliseMercado;
   loading: boolean;
+  loadingEvolucao: boolean;
   initialLoading: boolean;
   filtros: FiltrosAnaliseMercado;
   setFiltros: (patch: Partial<FiltrosAnaliseMercado>) => void;
@@ -84,6 +86,7 @@ interface UseAnaliseMercadoReturn {
 
 export function useAnaliseMercado(): UseAnaliseMercadoReturn {
   const [loading, setLoading] = useState(true);
+  const [loadingEvolucao, setLoadingEvolucao] = useState(true);
   const [initialLoading, setInitialLoading] = useState(true);
   const [dadosBase, setDadosBase] = useState<DadosAnaliseMercado>(DADOS_VAZIO);
   const [filtros, setFiltrosState] = useState<FiltrosAnaliseMercado>(FILTROS_INICIAIS);
@@ -129,7 +132,6 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
 
           if (thisCancelled.current) return;
           setDadosBase(dados);
-
           if (anos.length > 0) setAnosDisp(anos);
           if (areas.length > 0) setAreasDisp(areas);
         } catch (err) {
@@ -138,6 +140,24 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
           if (!thisCancelled.current) {
             setLoading(false);
             setInitialLoading(false);
+          }
+        }
+
+        // Evolução histórica (todos os anos) em segundo plano — atualiza gráficos
+        if (!thisCancelled.current) {
+          setLoadingEvolucao(true);
+          try {
+            const evolucao = await fetchEvolucaoLazy(rede, estado, municipio, instituicaoId, curso, modalidade);
+            if (!thisCancelled.current && evolucao.length > 0) {
+              setDadosBase(prev => ({
+                ...prev,
+                evolucaoAlunos: evolucao,
+              }));
+            }
+          } catch (err) {
+            console.error('[Análise de Mercado] Erro ao buscar evolução:', err);
+          } finally {
+            if (!thisCancelled.current) setLoadingEvolucao(false);
           }
         }
       }
@@ -298,6 +318,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
   return {
     dados,
     loading,
+    loadingEvolucao,
     initialLoading,
     filtros,
     setFiltros,

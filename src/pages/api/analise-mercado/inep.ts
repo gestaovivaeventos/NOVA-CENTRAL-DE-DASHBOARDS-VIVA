@@ -19,7 +19,7 @@ import cache from '@/lib/cache';
 
 // ─── Planilhas regionais por ano (IDs lidos de variáveis de ambiente) ─────
 const REGIOES = ['SUL', 'SUDESTE', 'NORTE', 'CENTRO_OESTE', 'NORDESTE'];
-const INEP_ANOS = [2023, 2024]; // anos configurados
+const INEP_ANOS = [2022, 2023, 2024]; // anos configurados
 
 function buildSheetsPorAno(): Record<number, Record<string, string>> {
   const result: Record<number, Record<string, string>> = {};
@@ -262,7 +262,7 @@ const UF_NOMES: Record<string, string> = {
   SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins',
 };
 
-// ─── action=dashboard — Agregação completa server-side ────────────
+// ─── action=dashboard — Só ano selecionado + anterior em PARALELO ─
 async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
   const { uf, ano, rede, municipio, ies, curso, modalidade } = req.query;
   const ufStr = uf ? String(uf).toUpperCase() : null;
@@ -276,47 +276,54 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
   const regioes = regioesParaConsultar(ufStr);
   const filters = { uf: ufStr, rede: redeNum, municipio: municipioStr, ies: iesNum, curso: cursoStr, modalidade: modalidadeNum };
 
-  // Carregar dados: ano atual, ano anterior (variação), todos os anos (evolução)
-  const [rowsAtual, rowsAnterior, ...allYearResults] = await Promise.all([
+  // Carrega ano selecionado + ano anterior em paralelo para calcular variação
+  const anoAnt = anoNum - 1;
+  const temAnoAnterior = ANOS_DISPONIVEIS.includes(anoAnt);
+  const [rowsAtual, rowsAnterior] = await Promise.all([
     loadRows(anoNum, regioes, filters),
-    loadRows(anoNum - 1, regioes, filters),
-    ...ANOS_DISPONIVEIS.map(a => loadRows(a, regioes, filters)),
+    temAnoAnterior ? loadRows(anoAnt, regioes, filters) : Promise.resolve([]),
   ]);
 
-  // ── 1. Indicadores (cards KPI) ──
-  function agregar(rows: InepRow[]) {
-    let mat = 0, conc = 0, ing = 0;
-    const iesSet = new Set<number>(), cursoSet = new Set<number>();
-    for (const r of rows) { mat += r.QT_MAT; conc += r.QT_CONC; ing += r.QT_ING; iesSet.add(r.CO_IES); cursoSet.add(r.CO_CURSO); }
-    return { mat, conc, ing, ies: iesSet.size, cursos: cursoSet.size };
-  }
-  const atual = agregar(rowsAtual);
-  const anterior = agregar(rowsAnterior);
-  const indicadores = atual.mat === 0 && atual.conc === 0 && atual.ing === 0 ? [] : [
-    { id: 'mat', titulo: 'Matrículas Ativas', valor: atual.mat, variacao: vari(atual.mat, anterior.mat), tendencia: tend(vari(atual.mat, anterior.mat)), cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
-    { id: 'ing', titulo: 'Ingressantes/Ano', valor: atual.ing, variacao: vari(atual.ing, anterior.ing), tendencia: tend(vari(atual.ing, anterior.ing)), cor: '#8B5CF6', subtitulo: 'Novos alunos' },
-    { id: 'conc', titulo: 'Concluintes/Ano', valor: atual.conc, variacao: vari(atual.conc, anterior.conc), tendencia: tend(vari(atual.conc, anterior.conc)), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
-    { id: 'ies', titulo: 'Ensino Superior', valor: atual.ies, variacao: vari(atual.ies, anterior.ies), tendencia: tend(vari(atual.ies, anterior.ies)), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
-    { id: 'cursos', titulo: 'Cursos Ativos', valor: atual.cursos, variacao: vari(atual.cursos, anterior.cursos), tendencia: tend(vari(atual.cursos, anterior.cursos)), cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
+  // ── 1. Indicadores (cards KPI) — variação calculada server-side (atual/anterior - 1) ──
+  let mat = 0, conc = 0, ing = 0;
+  const iesSet = new Set<number>(), cursoSet = new Set<number>();
+  for (const r of rowsAtual) { mat += r.QT_MAT; conc += r.QT_CONC; ing += r.QT_ING; iesSet.add(r.CO_IES); cursoSet.add(r.CO_CURSO); }
+
+  // Agregar ano anterior
+  let matAnt = 0, concAnt = 0, ingAnt = 0;
+  const iesSetAnt = new Set<number>(), cursoSetAnt = new Set<number>();
+  for (const r of rowsAnterior) { matAnt += r.QT_MAT; concAnt += r.QT_CONC; ingAnt += r.QT_ING; iesSetAnt.add(r.CO_IES); cursoSetAnt.add(r.CO_CURSO); }
+
+  // Variação: (atual / anterior) - 1, em percentual
+  const varCalc = (a: number, b: number) => b === 0 ? 0 : Number((((a / b) - 1) * 100).toFixed(1));
+
+  const matVar = temAnoAnterior ? varCalc(mat, matAnt) : 0;
+  const ingVar = temAnoAnterior ? varCalc(ing, ingAnt) : 0;
+  const concVar = temAnoAnterior ? varCalc(conc, concAnt) : 0;
+  const iesVar = temAnoAnterior ? varCalc(iesSet.size, iesSetAnt.size) : 0;
+  const cursosVar = temAnoAnterior ? varCalc(cursoSet.size, cursoSetAnt.size) : 0;
+
+  const indicadores = mat === 0 && conc === 0 && ing === 0 ? [] : [
+    { id: 'mat', titulo: 'Matrículas Ativas', valor: mat, variacao: matVar, tendencia: tend(matVar), cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
+    { id: 'ing', titulo: 'Ingressantes/Ano', valor: ing, variacao: ingVar, tendencia: tend(ingVar), cor: '#8B5CF6', subtitulo: 'Novos alunos' },
+    { id: 'conc', titulo: 'Concluintes/Ano', valor: conc, variacao: concVar, tendencia: tend(concVar), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
+    { id: 'ies', titulo: 'Ensino Superior', valor: iesSet.size, variacao: iesVar, tendencia: tend(iesVar), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
+    { id: 'cursos', titulo: 'Cursos Ativos', valor: cursoSet.size, variacao: cursosVar, tendencia: tend(cursosVar), cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
   ];
 
-  // ── 2. Evolução anual (todos os anos) ──
-  const allRows = allYearResults.flat();
-  const porAno = new Map<number, InepRow[]>();
-  for (const r of allRows) { const arr = porAno.get(r.NU_ANO_CENSO) || []; arr.push(r); porAno.set(r.NU_ANO_CENSO, arr); }
-
+  // ── 2. Evolução — apenas o ano atual (o gráfico completo vem de action=evolucao) ──
   const evolucao: unknown[] = [];
-  for (const [a, anoRows] of Array.from(porAno.entries()).sort((x, y) => x[0] - y[0])) {
+  if (rowsAtual.length > 0) {
     const bdMat = mkBd(), bdConc = mkBd(), bdIng = mkBd();
     let totalMat = 0, totalConc = 0, totalIng = 0;
-    for (const r of anoRows) {
+    for (const r of rowsAtual) {
       totalMat += r.QT_MAT; totalConc += r.QT_CONC; totalIng += r.QT_ING;
       addBd(bdMat, r, r.QT_MAT, r.QT_MAT_FEM, r.QT_MAT_MASC);
       addBd(bdConc, r, r.QT_CONC, r.QT_CONC_FEM, r.QT_CONC_MASC);
       addBd(bdIng, r, r.QT_ING, r.QT_ING_FEM, r.QT_ING_MASC);
     }
     evolucao.push({
-      ano: a, matriculas: totalMat, concluintes: totalConc, ingressantes: totalIng,
+      ano: anoNum, matriculas: totalMat, concluintes: totalConc, ingressantes: totalIng,
       presencial: bdMat.presencial, ead: bdMat.ead, publica: bdMat.publica, privada: bdMat.privada,
       genero: { feminino: bdMat.feminino, masculino: bdMat.masculino },
       porMetrica: { matriculas: bdMat, concluintes: bdConc, ingressantes: bdIng },
@@ -401,6 +408,48 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
   });
 }
 
+// ─── action=evolucao — Lazy: todos os anos, apenas agregação temporal ─
+async function handleEvolucao(req: NextApiRequest, res: NextApiResponse) {
+  const { uf, rede, municipio, ies, curso, modalidade } = req.query;
+  const ufStr = uf ? String(uf).toUpperCase() : null;
+  const filters = {
+    uf: ufStr,
+    rede: rede ? Number(rede) : null,
+    municipio: municipio ? String(municipio) : null,
+    ies: ies ? Number(ies) : null,
+    curso: curso ? String(curso) : null,
+    modalidade: modalidade ? Number(modalidade) : null,
+  };
+  const regioes = regioesParaConsultar(ufStr);
+
+  const evolucao: unknown[] = [];
+  // Sequencial para não estourar memória — cada ano já pode estar em cache
+  for (const a of ANOS_DISPONIVEIS) {
+    const rows = await loadRows(a, regioes, filters);
+    if (rows.length === 0) continue;
+    const bdMat = mkBd(), bdConc = mkBd(), bdIng = mkBd();
+    let totalMat = 0, totalConc = 0, totalIng = 0;
+    const iesSet = new Set<number>(), cursoSet = new Set<number>();
+    for (const r of rows) {
+      totalMat += r.QT_MAT; totalConc += r.QT_CONC; totalIng += r.QT_ING;
+      iesSet.add(r.CO_IES); cursoSet.add(r.CO_CURSO);
+      addBd(bdMat, r, r.QT_MAT, r.QT_MAT_FEM, r.QT_MAT_MASC);
+      addBd(bdConc, r, r.QT_CONC, r.QT_CONC_FEM, r.QT_CONC_MASC);
+      addBd(bdIng, r, r.QT_ING, r.QT_ING_FEM, r.QT_ING_MASC);
+    }
+    evolucao.push({
+      ano: a, matriculas: totalMat, concluintes: totalConc, ingressantes: totalIng,
+      ies: iesSet.size, cursos: cursoSet.size,
+      presencial: bdMat.presencial, ead: bdMat.ead, publica: bdMat.publica, privada: bdMat.privada,
+      genero: { feminino: bdMat.feminino, masculino: bdMat.masculino },
+      porMetrica: { matriculas: bdMat, concluintes: bdConc, ingressantes: bdIng },
+    });
+  }
+
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=7200');
+  return res.status(200).json({ evolucao });
+}
+
 // ─── Handler ──────────────────────────────────────────────────────
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -416,9 +465,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ anos: ANOS_DISPONIVEIS });
     }
 
-    // Dashboard: retorna todos os dados agregados (sem enviar linhas brutas)
+    // Dashboard principal: só ano atual + anterior (rápido)
     if (action === 'dashboard') {
       return handleDashboard(req, res);
+    }
+
+    // Evolução histórica (lazy): todos os anos, chamado em segundo plano
+    if (action === 'evolucao') {
+      return handleEvolucao(req, res);
     }
 
     // Fallback raw rows (para uso específico, ex: cidades drill-down)
