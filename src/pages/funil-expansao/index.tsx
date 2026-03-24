@@ -1,0 +1,544 @@
+/**
+ * Página Principal - Dashboard Funil de Expansão
+ * 4 abas: Indicadores Principais, Operacionais, Composição, Campanhas
+ * Acesso restrito: Franqueadora + usuários cris/gabriel
+ */
+
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+import {
+  Header,
+  Sidebar,
+  Loading,
+  Footer,
+  KPICard,
+  FunilVisual,
+  HorizontalBarTable,
+  AssertividadeCard,
+  DataTableExpansao,
+} from '@/modules/funil-expansao/components';
+import { useFunilExpansaoData } from '@/modules/funil-expansao/hooks';
+import {
+  filtrarLeads,
+  calcularKPIs,
+  calcularFunil,
+  agruparPorOrigem,
+  calcularAssertividadeTerritorio,
+  calcularAssertividadePersona,
+  agruparPorPersona,
+  agruparPorPerfil,
+  agruparMotivosPerda,
+  agruparMotivosQualificacao,
+  agruparCampanhas,
+  agruparConjuntos,
+  agruparAnuncios,
+  agruparPorCidade,
+  extrairOrigens,
+} from '@/modules/funil-expansao/utils/calculos';
+import { formatNumber, formatPercent } from '@/modules/funil-expansao/utils/formatacao';
+import { PAGES, COLORS } from '@/modules/funil-expansao/config/app.config';
+import type { FiltrosExpansao, PaginaAtivaExpansao } from '@/modules/funil-expansao/types';
+import { useAuth } from '@/context/AuthContext';
+import { Users, TrendingUp, Target, Award, MapPin, RefreshCw, AlertTriangle } from 'lucide-react';
+
+const INITIAL_FILTROS: FiltrosExpansao = {
+  tipoFunil: 'TODOS',
+  origem: 'Todas',
+  periodoInicio: `${new Date().getFullYear()}-01-01`,
+  periodoFim: new Date().toISOString().split('T')[0],
+};
+
+export default function FunilExpansaoDashboard() {
+  const router = useRouter();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  // Página ativa
+  const getPaginaFromPath = (path: string): PaginaAtivaExpansao => {
+    if (path.includes('/funil-expansao/operacionais')) return 'operacionais';
+    if (path.includes('/funil-expansao/composicao')) return 'composicao';
+    if (path.includes('/funil-expansao/campanhas')) return 'campanhas';
+    return 'indicadores';
+  };
+
+  const [paginaAtiva, setPaginaAtiva] = useState<PaginaAtivaExpansao>(() => getPaginaFromPath(router.asPath));
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [filtros, setFiltros] = useState<FiltrosExpansao>(INITIAL_FILTROS);
+
+  // Client-side init
+  useEffect(() => {
+    setIsClient(true);
+    const saved = localStorage.getItem('funilExpansaoSidebarCollapsed');
+    if (saved === 'true') setSidebarCollapsed(true);
+  }, []);
+
+  // Sync sidebar state
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('funilExpansaoSidebarCollapsed', String(sidebarCollapsed));
+    }
+  }, [sidebarCollapsed]);
+
+  // Sync URL
+  useEffect(() => {
+    const paginaCorreta = getPaginaFromPath(router.asPath);
+    if (paginaAtiva !== paginaCorreta) setPaginaAtiva(paginaCorreta);
+    if (router.asPath === '/funil-expansao' || router.asPath === '/funil-expansao/') {
+      router.replace('/funil-expansao/indicadores', undefined, { shallow: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePaginaChange = useCallback((novaPagina: string) => {
+    const pagina = novaPagina as PaginaAtivaExpansao;
+    setPaginaAtiva(pagina);
+    router.push(`/funil-expansao/${pagina}`, undefined, { shallow: true });
+  }, [router]);
+
+  // Dados
+  const { data: rawData, loading, error, lastUpdate } = useFunilExpansaoData();
+
+  // Filtrar dados
+  const dadosFiltrados = useMemo(() => filtrarLeads(rawData, filtros), [rawData, filtros]);
+
+  // Origens para o filtro
+  const origens = useMemo(() => extrairOrigens(rawData), [rawData]);
+
+  // KPIs
+  const kpis = useMemo(() => calcularKPIs(dadosFiltrados), [dadosFiltrados]);
+
+  // Funil completo
+  const funil = useMemo(() => calcularFunil(dadosFiltrados), [dadosFiltrados]);
+
+  // Dados operacionais
+  const dadosOrigem = useMemo(() => agruparPorOrigem(dadosFiltrados), [dadosFiltrados]);
+  const assertTerritorio = useMemo(() => calcularAssertividadeTerritorio(dadosFiltrados), [dadosFiltrados]);
+  const assertPersona = useMemo(() => calcularAssertividadePersona(dadosFiltrados), [dadosFiltrados]);
+  const dadosPersona = useMemo(() => agruparPorPersona(dadosFiltrados), [dadosFiltrados]);
+  const dadosPerfil = useMemo(() => agruparPorPerfil(dadosFiltrados), [dadosFiltrados]);
+  const motivosQualificacao = useMemo(() => agruparMotivosQualificacao(dadosFiltrados), [dadosFiltrados]);
+  const motivosPerda = useMemo(() => agruparMotivosPerda(dadosFiltrados), [dadosFiltrados]);
+
+  // Dados de campanhas
+  const campanhas = useMemo(() => agruparCampanhas(dadosFiltrados), [dadosFiltrados]);
+  const conjuntos = useMemo(() => agruparConjuntos(dadosFiltrados), [dadosFiltrados]);
+  const anuncios = useMemo(() => agruparAnuncios(dadosFiltrados), [dadosFiltrados]);
+
+  // Dados de composição
+  const cidadesData = useMemo(() => agruparPorCidade(dadosFiltrados), [dadosFiltrados]);
+
+  // Auth check
+  if (authLoading || !isClient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#212529' }}>
+        <Loading mensagem="Carregando..." />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    if (typeof window !== 'undefined') router.push('/login');
+    return null;
+  }
+
+  // Contagem de ativos por funil para o painel (ativo = motivoPerda vazio)
+  const ativosInvestidor = dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && !l.motivoPerda).length;
+  const ativosOperador = dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && !l.motivoPerda).length;
+
+  // Vendas por tipo de funil
+  const vendasInvestidor = {
+    ganhas: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('CANDIDATO APROVADO')).length,
+    perdidas: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.motivoPerda !== '').length,
+    recuperacao: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('RECUPERA')).length,
+    franquias: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('CANDIDATO APROVADO')).length,
+  };
+
+  const vendasOperador = {
+    ganhas: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('CANDIDATO APROVADO')).length,
+    perdidas: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.motivoPerda !== '').length,
+    recuperacao: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('RECUPERA')).length,
+    franquias: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('CANDIDATO APROVADO')).length,
+  };
+
+  const vendasTratamento = {
+    ganhas: 0,
+    perdidas: dadosFiltrados.filter(l => l.motivoPerda !== '' && l.tipoFunil === 'TRATAMENTO').length,
+    recuperacao: dadosFiltrados.filter(l => l.status.includes('RECUPERA') && l.tipoFunil === 'TRATAMENTO').length,
+  };
+
+  // Split investidor/operador
+  const totalQualificados = ativosInvestidor + ativosOperador;
+  const splitInvestidor = totalQualificados > 0 ? (ativosInvestidor / totalQualificados) * 100 : 0;
+  const splitOperador = totalQualificados > 0 ? (ativosOperador / totalQualificados) * 100 : 0;
+
+  return (
+    <>
+      <Head>
+        <title>Funil de Expansão | VIVA Eventos</title>
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      </Head>
+
+      <div className="min-h-screen" style={{ backgroundColor: '#212529' }}>
+        <Sidebar
+          paginaAtiva={paginaAtiva}
+          onPaginaChange={handlePaginaChange}
+          isCollapsed={sidebarCollapsed}
+          onCollapseChange={setSidebarCollapsed}
+          filtros={filtros}
+          onFiltrosChange={setFiltros}
+          origens={origens}
+        />
+
+        <Header sidebarCollapsed={sidebarCollapsed} />
+
+        {/* Conteúdo principal */}
+        <main
+          className="transition-all duration-300 px-4 pb-8"
+          style={{ marginLeft: sidebarCollapsed ? '60px' : '300px' }}
+        >
+          {/* Subtítulo da página */}
+          <div className="py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2
+                  className="text-lg font-semibold"
+                  style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif' }}
+                >
+                  Dashboard Estratégico {new Date().getFullYear()}
+                </h2>
+                <p className="text-xs" style={{ color: '#6c757d' }}>
+                  Funil Expansão - {PAGES.find(p => p.id === paginaAtiva)?.label || 'Indicadores'}
+                </p>
+              </div>
+              {lastUpdate && (
+                <span className="text-xs" style={{ color: '#6c757d' }}>
+                  Última atualização: {lastUpdate}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Loading / Error */}
+          {loading && <Loading mensagem="Carregando dados do funil..." />}
+          {error && (
+            <div className="flex items-center gap-3 p-4 rounded-lg" style={{ backgroundColor: '#dc354520', border: '1px solid #dc3545' }}>
+              <AlertTriangle size={20} color="#dc3545" />
+              <p className="text-sm" style={{ color: '#dc3545' }}>Erro: {error}</p>
+            </div>
+          )}
+
+          {!loading && !error && (
+            <>
+              {/* ===================== INDICADORES PRINCIPAIS ===================== */}
+              {paginaAtiva === 'indicadores' && (
+                <div className="space-y-6">
+                  {/* KPI Cards */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <KPICard
+                      titulo="Total de Leads"
+                      valor={kpis.totalLeads}
+                      icone={<Users size={20} />}
+                      corDestaque="#FF6600"
+                    />
+                    <KPICard
+                      titulo="MQL (Qualificado)"
+                      valor={kpis.mqls}
+                      subtitulo={`Taxa conversão: ${formatPercent(kpis.taxaMql)} do total`}
+                      icone={<TrendingUp size={20} />}
+                      corDestaque="#60a5fa"
+                      detalhes={`Hoje: ${dadosFiltrados.filter(l => {
+                        return (l.status.includes('DIAGNÓSTICO REALIZADO') || l.status.includes('MODELO NEGÓCIO')) && !l.motivoPerda;
+                      }).length} ativos`}
+                    />
+                    <KPICard
+                      titulo="SQL (Avançado)"
+                      valor={kpis.sqls}
+                      subtitulo={`Taxa conversão: ${formatPercent(kpis.taxaSql)} do total`}
+                      icone={<Target size={20} />}
+                      corDestaque="#a78bfa"
+                      detalhes={`Hoje: ${dadosFiltrados.filter(l => {
+                        return (l.status.includes('FIT') || l.status.includes('COF') || l.status.includes('AGUARDANDO') || l.status.includes('CANDIDATO')) && !l.motivoPerda;
+                      }).length} ativos`}
+                    />
+                    <KPICard
+                      titulo="Candidatos Aprovados"
+                      valor={kpis.candidatosAprovados}
+                      subtitulo={`Taxa geral ${formatPercent(kpis.taxaAprovacao)}`}
+                      icone={<Award size={20} />}
+                      corDestaque="#28a745"
+                      detalhes={`${vendasInvestidor.ganhas} inv. · ${vendasOperador.ganhas} op.`}
+                    />
+                    <KPICard
+                      titulo="Franquias"
+                      valor={kpis.franquias}
+                      icone={<MapPin size={20} />}
+                      corDestaque="#ffc107"
+                      detalhes={`${vendasInvestidor.franquias} inv. · ${vendasOperador.franquias} op.`}
+                    />
+                  </div>
+
+                  {/* KPIs secundários */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <KPICard
+                      titulo="Assert. Território"
+                      valor={kpis.assertividadeTerritorio}
+                      formato="percentual"
+                      corDestaque="#17a2b8"
+                    />
+                    <KPICard
+                      titulo="Assert. Persona"
+                      valor={kpis.assertividadePersona}
+                      formato="percentual"
+                      corDestaque="#17a2b8"
+                    />
+                    <KPICard
+                      titulo="Aguard. Composição"
+                      valor={kpis.aguardandoComposicao}
+                      corDestaque="#ffc107"
+                    />
+                    <KPICard
+                      titulo="Em Recuperação"
+                      valor={kpis.emRecuperacao}
+                      icone={<RefreshCw size={20} />}
+                      corDestaque="#ffc107"
+                    />
+                    <KPICard
+                      titulo="Perdidos"
+                      valor={kpis.perdidos}
+                      corDestaque="#dc3545"
+                    />
+                  </div>
+
+                  {/* Split Investidor/Operador */}
+                  {totalQualificados > 0 && (
+                    <div
+                      className="rounded-xl p-4"
+                      style={{ backgroundColor: '#343A40', border: '1px solid #495057' }}
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>
+                        Split Investidor / Operador
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="w-full rounded-full overflow-hidden flex" style={{ height: '20px' }}>
+                            <div
+                              style={{ width: `${splitInvestidor}%`, backgroundColor: COLORS.FUNIL_INVESTIDOR }}
+                              className="flex items-center justify-center"
+                            >
+                              <span className="text-[10px] font-bold text-white">{formatPercent(splitInvestidor, 1)}</span>
+                            </div>
+                            <div
+                              style={{ width: `${splitOperador}%`, backgroundColor: COLORS.FUNIL_OPERADOR }}
+                              className="flex items-center justify-center"
+                            >
+                              <span className="text-[10px] font-bold text-white">{formatPercent(splitOperador, 1)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-4">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_INVESTIDOR }} />
+                            <span className="text-xs" style={{ color: '#adb5bd' }}>Investidor</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_OPERADOR }} />
+                            <span className="text-xs" style={{ color: '#adb5bd' }}>Operador</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Funil de Conversão */}
+                  <div>
+                    <h2
+                      className="text-base font-semibold mb-4"
+                      style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif' }}
+                    >
+                      Funil Expansão - Conversão
+                    </h2>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <FunilVisual
+                        titulo="Funil Tratamento"
+                        etapas={funil.tratamento}
+                        cor={COLORS.FUNIL_TRATAMENTO}
+                        vendas={vendasTratamento}
+                      />
+                      <FunilVisual
+                        titulo="Funil Investidor"
+                        etapas={funil.investidor}
+                        cor={COLORS.FUNIL_INVESTIDOR}
+                        vendas={vendasInvestidor}
+                      />
+                      <FunilVisual
+                        titulo="Funil Operador"
+                        etapas={funil.operador}
+                        cor={COLORS.FUNIL_OPERADOR}
+                        vendas={vendasOperador}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Funil de Ativos */}
+                  <div>
+                    <h2
+                      className="text-base font-semibold mb-4"
+                      style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif' }}
+                    >
+                      Funil Expansão - Ativos
+                    </h2>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                      <FunilVisual
+                        titulo="Funil Tratamento (Ativos)"
+                        etapas={funil.tratamento.map(e => ({
+                          ...e,
+                          quantidade: dadosFiltrados.filter(l => {
+                            return l.status.includes(e.nome) && !l.motivoPerda;
+                          }).length,
+                        }))}
+                        cor={COLORS.FUNIL_TRATAMENTO}
+                      />
+                      <FunilVisual
+                        titulo="Funil Investidor (Ativos)"
+                        etapas={funil.investidor.map(e => ({
+                          ...e,
+                          quantidade: dadosFiltrados.filter(l => {
+                            return l.tipoFunil === 'INVESTIDOR' && l.status.includes(e.nome) && !l.motivoPerda;
+                          }).length,
+                        }))}
+                        cor={COLORS.FUNIL_INVESTIDOR}
+                      />
+                      <FunilVisual
+                        titulo="Funil Operador (Ativos)"
+                        etapas={funil.operador.map(e => ({
+                          ...e,
+                          quantidade: dadosFiltrados.filter(l => {
+                            return l.tipoFunil === 'OPERADOR' && l.status.includes(e.nome) && !l.motivoPerda;
+                          }).length,
+                        }))}
+                        cor={COLORS.FUNIL_OPERADOR}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ===================== INDICADORES OPERACIONAIS ===================== */}
+              {paginaAtiva === 'operacionais' && (
+                <div className="space-y-6">
+                  {/* Leads por Origem */}
+                  <HorizontalBarTable
+                    titulo="Leads por Origem (Canais)"
+                    dados={dadosOrigem.map(d => ({ label: d.origem, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                  />
+
+                  {/* Assertividade */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <AssertividadeCard
+                      titulo="Assertividade Território"
+                      dados={assertTerritorio}
+                    />
+                    <AssertividadeCard
+                      titulo="Assertividade Persona"
+                      dados={assertPersona}
+                    />
+                  </div>
+
+                  {/* Distribuição por Persona */}
+                  <HorizontalBarTable
+                    titulo="Distribuição por Persona"
+                    dados={dadosPersona.map(d => ({ label: d.persona, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                  />
+
+                  {/* Distribuição por Perfil */}
+                  <HorizontalBarTable
+                    titulo="Distribuição por Perfil"
+                    dados={dadosPerfil.map(d => ({ label: d.perfil, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                  />
+
+                  {/* Motivos de Qualificação */}
+                  <HorizontalBarTable
+                    titulo="Motivos de Qualificação"
+                    dados={motivosQualificacao.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                  />
+
+                  {/* Motivos de Perda */}
+                  <HorizontalBarTable
+                    titulo="Motivos de Perda"
+                    dados={motivosPerda.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                  />
+                </div>
+              )}
+
+              {/* ===================== INDICADORES COMPOSIÇÃO ===================== */}
+              {paginaAtiva === 'composicao' && (
+                <div className="space-y-6">
+                  {/* Candidatos por Cidade */}
+                  <DataTableExpansao
+                    titulo={`Candidatos por Cidade — Percentual relativo ao total (${formatNumber(cidadesData.reduce((s, c) => s + c.total, 0))})`}
+                    colunas={[
+                      { key: 'cidade', header: 'Cidade', align: 'left' },
+                      { key: 'investidor', header: 'Investidor', align: 'center', format: 'number' },
+                      { key: 'operador', header: 'Operador', align: 'center', format: 'number' },
+                      { key: 'total', header: 'Total', align: 'center', format: 'number' },
+                      { key: 'percentual', header: '%', align: 'right', format: 'percent' },
+                    ]}
+                    dados={cidadesData}
+                  />
+                </div>
+              )}
+
+              {/* ===================== INDICADORES DE CAMPANHAS ===================== */}
+              {paginaAtiva === 'campanhas' && (
+                <div className="space-y-6">
+                  {/* Campanhas */}
+                  <DataTableExpansao
+                    titulo="Campanhas"
+                    colunas={[
+                      { key: 'nome', header: 'Campanha', align: 'left' },
+                      { key: 'leads', header: 'Leads', align: 'center', format: 'number' },
+                      { key: 'mqls', header: 'MQLs', align: 'center', format: 'number' },
+                      { key: 'sqls', header: 'SQLs', align: 'center', format: 'number' },
+                      { key: 'conversoes', header: 'Conversões', align: 'center', format: 'number' },
+                    ]}
+                    dados={campanhas}
+                  />
+
+                  {/* Conjuntos */}
+                  <DataTableExpansao
+                    titulo="Conjuntos"
+                    colunas={[
+                      { key: 'nome', header: 'Conjunto', align: 'left' },
+                      { key: 'leads', header: 'Leads', align: 'center', format: 'number' },
+                      { key: 'mqls', header: 'MQLs', align: 'center', format: 'number' },
+                      { key: 'sqls', header: 'SQLs', align: 'center', format: 'number' },
+                      { key: 'conversoes', header: 'Conversões', align: 'center', format: 'number' },
+                    ]}
+                    dados={conjuntos}
+                  />
+
+                  {/* Anúncios */}
+                  <DataTableExpansao
+                    titulo="Anúncios"
+                    colunas={[
+                      { key: 'nome', header: 'Anúncio', align: 'left' },
+                      { key: 'leads', header: 'Leads', align: 'center', format: 'number' },
+                      { key: 'mqls', header: 'MQLs', align: 'center', format: 'number' },
+                      { key: 'sqls', header: 'SQLs', align: 'center', format: 'number' },
+                      { key: 'conversoes', header: 'Conversões', align: 'center', format: 'number' },
+                    ]}
+                    dados={anuncios}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          <Footer />
+        </main>
+      </div>
+    </>
+  );
+}
