@@ -1,0 +1,1 @@
+export { useFunilExpansaoData } from './useFunilExpansaoData';
