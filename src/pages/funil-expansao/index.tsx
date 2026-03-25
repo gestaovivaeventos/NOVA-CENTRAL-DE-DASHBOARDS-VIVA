@@ -23,6 +23,9 @@ import {
   filtrarLeads,
   calcularKPIs,
   calcularFunil,
+  calcularFunilAtivos,
+  calcularRegiaoMaiorAcerto,
+  calcularAssertividadePersonaExtremos,
   agruparPorOrigem,
   calcularAssertividadeTerritorio,
   calcularAssertividadePersona,
@@ -30,10 +33,12 @@ import {
   agruparPorPerfil,
   agruparMotivosPerda,
   agruparMotivosQualificacao,
+  agruparFasesPerda,
   agruparCampanhas,
   agruparConjuntos,
   agruparAnuncios,
   agruparPorCidade,
+  agruparTempoComposicaoPorCidade,
   extrairOrigens,
 } from '@/modules/funil-expansao/utils/calculos';
 import { formatNumber, formatPercent } from '@/modules/funil-expansao/utils/formatacao';
@@ -47,6 +52,7 @@ const INITIAL_FILTROS: FiltrosExpansao = {
   origem: 'Todas',
   periodoInicio: `${new Date().getFullYear()}-01-01`,
   periodoFim: new Date().toISOString().split('T')[0],
+  periodoSelecionado: 'esteano',
 };
 
 export default function FunilExpansaoDashboard() {
@@ -119,6 +125,7 @@ export default function FunilExpansaoDashboard() {
   const dadosPerfil = useMemo(() => agruparPorPerfil(dadosFiltrados), [dadosFiltrados]);
   const motivosQualificacao = useMemo(() => agruparMotivosQualificacao(dadosFiltrados), [dadosFiltrados]);
   const motivosPerda = useMemo(() => agruparMotivosPerda(dadosFiltrados), [dadosFiltrados]);
+  const fasesPerda = useMemo(() => agruparFasesPerda(dadosFiltrados), [dadosFiltrados]);
 
   // Dados de campanhas
   const campanhas = useMemo(() => agruparCampanhas(dadosFiltrados), [dadosFiltrados]);
@@ -127,6 +134,18 @@ export default function FunilExpansaoDashboard() {
 
   // Dados de composição
   const cidadesData = useMemo(() => agruparPorCidade(dadosFiltrados), [dadosFiltrados]);
+
+  // Funil de ativos (sem perdidos, sem percentuais)
+  const funilAtivos = useMemo(() => calcularFunilAtivos(dadosFiltrados), [dadosFiltrados]);
+
+  // Região com maior acerto
+  const regiaoAcerto = useMemo(() => calcularRegiaoMaiorAcerto(dadosFiltrados), [dadosFiltrados]);
+
+  // Persona assertividade extremos
+  const personaExtremos = useMemo(() => calcularAssertividadePersonaExtremos(dadosFiltrados), [dadosFiltrados]);
+
+  // Tempo composição por cidade
+  const tempoComposicao = useMemo(() => agruparTempoComposicaoPorCidade(dadosFiltrados), [dadosFiltrados]);
 
   // Auth check
   if (authLoading || !isClient) {
@@ -199,24 +218,9 @@ export default function FunilExpansaoDashboard() {
         >
           {/* Subtítulo da página */}
           <div className="py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2
-                  className="text-lg font-semibold"
-                  style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif' }}
-                >
-                  Dashboard Estratégico {new Date().getFullYear()}
-                </h2>
-                <p className="text-xs" style={{ color: '#6c757d' }}>
-                  Funil Expansão - {PAGES.find(p => p.id === paginaAtiva)?.label || 'Indicadores'}
-                </p>
-              </div>
-              {lastUpdate && (
-                <span className="text-xs" style={{ color: '#6c757d' }}>
-                  Última atualização: {lastUpdate}
-                </span>
-              )}
-            </div>
+            <p className="text-xs" style={{ color: '#6c757d' }}>
+              Funil Expansão - {PAGES.find(p => p.id === paginaAtiva)?.label || 'Indicadores'}
+            </p>
           </div>
 
           {/* Loading / Error */}
@@ -244,37 +248,26 @@ export default function FunilExpansaoDashboard() {
                     <KPICard
                       titulo="MQL (Qualificado)"
                       valor={kpis.mqls}
-                      subtitulo={`Taxa conversão: ${formatPercent(kpis.taxaMql)} do total`}
                       icone={<TrendingUp size={20} />}
                       corDestaque="#60a5fa"
-                      detalhes={`Hoje: ${dadosFiltrados.filter(l => {
-                        return (l.status.includes('DIAGNÓSTICO REALIZADO') || l.status.includes('MODELO NEGÓCIO')) && !l.motivoPerda;
-                      }).length} ativos`}
                     />
                     <KPICard
                       titulo="SQL (Avançado)"
                       valor={kpis.sqls}
-                      subtitulo={`Taxa conversão: ${formatPercent(kpis.taxaSql)} do total`}
                       icone={<Target size={20} />}
                       corDestaque="#a78bfa"
-                      detalhes={`Hoje: ${dadosFiltrados.filter(l => {
-                        return (l.status.includes('FIT') || l.status.includes('COF') || l.status.includes('AGUARDANDO') || l.status.includes('CANDIDATO')) && !l.motivoPerda;
-                      }).length} ativos`}
                     />
                     <KPICard
                       titulo="Candidatos Aprovados"
                       valor={kpis.candidatosAprovados}
-                      subtitulo={`Taxa geral ${formatPercent(kpis.taxaAprovacao)}`}
                       icone={<Award size={20} />}
                       corDestaque="#28a745"
-                      detalhes={`${vendasInvestidor.ganhas} inv. · ${vendasOperador.ganhas} op.`}
                     />
                     <KPICard
                       titulo="Franquias"
                       valor={kpis.franquias}
                       icone={<MapPin size={20} />}
                       corDestaque="#ffc107"
-                      detalhes={`${vendasInvestidor.franquias} inv. · ${vendasOperador.franquias} op.`}
                     />
                   </div>
 
@@ -352,11 +345,8 @@ export default function FunilExpansaoDashboard() {
 
                   {/* Funil de Conversão */}
                   <div>
-                    <h2
-                      className="text-base font-semibold mb-4"
-                      style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif' }}
-                    >
-                      Funil Expansão - Conversão
+                    <h2 className="section-title">
+                      Funil Expansão - <span className="section-title-highlight">Conversão</span>
                     </h2>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -383,41 +373,23 @@ export default function FunilExpansaoDashboard() {
 
                   {/* Funil de Ativos */}
                   <div>
-                    <h2
-                      className="text-base font-semibold mb-4"
-                      style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif' }}
-                    >
-                      Funil Expansão - Ativos
+                    <h2 className="section-title">
+                      Funil Expansão - <span className="section-title-highlight">Ativos</span>
                     </h2>
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                       <FunilVisual
-                        titulo="Funil Tratamento (Ativos)"
-                        etapas={funil.tratamento.map(e => ({
-                          ...e,
-                          quantidade: dadosFiltrados.filter(l => {
-                            return l.status.includes(e.nome) && !l.motivoPerda;
-                          }).length,
-                        }))}
+                        titulo="Funil Tratamento"
+                        etapas={funilAtivos.tratamento}
                         cor={COLORS.FUNIL_TRATAMENTO}
                       />
                       <FunilVisual
-                        titulo="Funil Investidor (Ativos)"
-                        etapas={funil.investidor.map(e => ({
-                          ...e,
-                          quantidade: dadosFiltrados.filter(l => {
-                            return l.tipoFunil === 'INVESTIDOR' && l.status.includes(e.nome) && !l.motivoPerda;
-                          }).length,
-                        }))}
+                        titulo="Funil Investidor"
+                        etapas={funilAtivos.investidor}
                         cor={COLORS.FUNIL_INVESTIDOR}
                       />
                       <FunilVisual
-                        titulo="Funil Operador (Ativos)"
-                        etapas={funil.operador.map(e => ({
-                          ...e,
-                          quantidade: dadosFiltrados.filter(l => {
-                            return l.tipoFunil === 'OPERADOR' && l.status.includes(e.nome) && !l.motivoPerda;
-                          }).length,
-                        }))}
+                        titulo="Funil Operador"
+                        etapas={funilAtivos.operador}
                         cor={COLORS.FUNIL_OPERADOR}
                       />
                     </div>
@@ -439,10 +411,14 @@ export default function FunilExpansaoDashboard() {
                     <AssertividadeCard
                       titulo="Assertividade Território"
                       dados={assertTerritorio}
+                      regiaoInfo={regiaoAcerto.focoRegiao ? { regiao: regiaoAcerto.focoRegiao, qtd: regiaoAcerto.focoQtd, label: 'Região com maior Foco' } : undefined}
+                      menorInfo={regiaoAcerto.menorRegiao ? { nome: regiaoAcerto.menorRegiao, qtd: regiaoAcerto.menorQtd, label: 'Região com menor Assertividade' } : undefined}
                     />
                     <AssertividadeCard
                       titulo="Assertividade Persona"
                       dados={assertPersona}
+                      regiaoInfo={personaExtremos.maiorPersona ? { regiao: personaExtremos.maiorPersona, qtd: personaExtremos.maiorQtd, label: 'Persona com maior Foco' } : undefined}
+                      menorInfo={personaExtremos.menorPersona ? { nome: personaExtremos.menorPersona, qtd: personaExtremos.menorQtd, label: 'Persona com menor Assertividade' } : undefined}
                     />
                   </div>
 
@@ -462,12 +438,21 @@ export default function FunilExpansaoDashboard() {
                   <HorizontalBarTable
                     titulo="Motivos de Qualificação"
                     dados={motivosQualificacao.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    hideTabs
                   />
 
                   {/* Motivos de Perda */}
                   <HorizontalBarTable
                     titulo="Motivos de Perda"
                     dados={motivosPerda.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    hideTabs
+                  />
+
+                  {/* Fases de Perda */}
+                  <HorizontalBarTable
+                    titulo="Fases de Perda"
+                    dados={fasesPerda.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    hideTabs
                   />
                 </div>
               )}
@@ -479,13 +464,47 @@ export default function FunilExpansaoDashboard() {
                   <DataTableExpansao
                     titulo={`Candidatos por Cidade — Percentual relativo ao total (${formatNumber(cidadesData.reduce((s, c) => s + c.total, 0))})`}
                     colunas={[
-                      { key: 'cidade', header: 'Cidade', align: 'left' },
-                      { key: 'investidor', header: 'Investidor', align: 'center', format: 'number' },
-                      { key: 'operador', header: 'Operador', align: 'center', format: 'number' },
-                      { key: 'total', header: 'Total', align: 'center', format: 'number' },
-                      { key: 'percentual', header: '%', align: 'right', format: 'percent' },
+                      { key: 'cidade', header: 'Cidade', align: 'left', sortable: true },
+                      { key: 'investidorTotal', header: 'Inv. Total', align: 'center', format: 'number', sortable: true },
+                      { key: 'investidorParcial', header: 'Inv. Parcial', align: 'center', format: 'number', sortable: true },
+                      { key: 'opVendaParcial', header: 'Op. Venda Parc.', align: 'center', format: 'number', sortable: true },
+                      { key: 'opVendaSem', header: 'Op. Venda S/', align: 'center', format: 'number', sortable: true },
+                      { key: 'opPosVendaParcial', header: 'Op. Pós-Venda', align: 'center', format: 'number', sortable: true },
+                      { key: 'total', header: 'Total', align: 'center', format: 'number', sortable: true },
+                      { key: 'percentual', header: '%', align: 'right', format: 'percent', sortable: true },
                     ]}
                     dados={cidadesData}
+                    pageSize={10}
+                    showSummary
+                    highlightKey="temOportunidade"
+                    exportFilename="candidatos-por-cidade"
+                  />
+
+                  {/* Tempo em Composição por Cidade */}
+                  <DataTableExpansao
+                    titulo="Tempo em Composição por Cidade (Aguardando Composição)"
+                    headerGroups={[
+                      { label: '', colSpan: 1 },
+                      { label: 'INVESTIDORES', colSpan: 4, color: COLORS.FUNIL_INVESTIDOR },
+                      { label: 'OPERADORES', colSpan: 4, color: COLORS.FUNIL_OPERADOR },
+                      { label: '', colSpan: 1 },
+                    ]}
+                    colunas={[
+                      { key: 'cidade', header: 'Cidade', align: 'left', sortable: true },
+                      { key: 'invAte1m', header: '≤1M', align: 'center', format: 'number', sortable: true },
+                      { key: 'inv1a3m', header: '1-3M', align: 'center', format: 'number', sortable: true },
+                      { key: 'inv3a6m', header: '3-6M', align: 'center', format: 'number', sortable: true },
+                      { key: 'invMais6m', header: '+6M', align: 'center', format: 'number', sortable: true },
+                      { key: 'opAte1m', header: '≤1M', align: 'center', format: 'number', sortable: true },
+                      { key: 'op1a3m', header: '1-3M', align: 'center', format: 'number', sortable: true },
+                      { key: 'op3a6m', header: '3-6M', align: 'center', format: 'number', sortable: true },
+                      { key: 'opMais6m', header: '+6M', align: 'center', format: 'number', sortable: true },
+                      { key: 'total', header: 'Total', align: 'center', format: 'number', sortable: true },
+                    ]}
+                    dados={tempoComposicao}
+                    pageSize={10}
+                    showSummary
+                    exportFilename="tempo-composicao-por-cidade"
                   />
                 </div>
               )}
@@ -497,39 +516,42 @@ export default function FunilExpansaoDashboard() {
                   <DataTableExpansao
                     titulo="Campanhas"
                     colunas={[
-                      { key: 'nome', header: 'Campanha', align: 'left' },
-                      { key: 'leads', header: 'Leads', align: 'center', format: 'number' },
-                      { key: 'mqls', header: 'MQLs', align: 'center', format: 'number' },
-                      { key: 'sqls', header: 'SQLs', align: 'center', format: 'number' },
-                      { key: 'conversoes', header: 'Conversões', align: 'center', format: 'number' },
+                      { key: 'nome', header: 'Nome', align: 'left' },
+                      { key: 'tratamento', header: 'Tratamento', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_TRATAMENTO },
+                      { key: 'investidores', header: 'Investidores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
+                      { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'recupPerdidos', header: 'Recup. + Perdidos', align: 'center', format: 'number', sortable: true },
                     ]}
                     dados={campanhas}
+                    pageSize={10}
                   />
 
                   {/* Conjuntos */}
                   <DataTableExpansao
                     titulo="Conjuntos"
                     colunas={[
-                      { key: 'nome', header: 'Conjunto', align: 'left' },
-                      { key: 'leads', header: 'Leads', align: 'center', format: 'number' },
-                      { key: 'mqls', header: 'MQLs', align: 'center', format: 'number' },
-                      { key: 'sqls', header: 'SQLs', align: 'center', format: 'number' },
-                      { key: 'conversoes', header: 'Conversões', align: 'center', format: 'number' },
+                      { key: 'nome', header: 'Nome', align: 'left' },
+                      { key: 'tratamento', header: 'Tratamento', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_TRATAMENTO },
+                      { key: 'investidores', header: 'Investidores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
+                      { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'recupPerdidos', header: 'Recup. + Perdidos', align: 'center', format: 'number', sortable: true },
                     ]}
                     dados={conjuntos}
+                    pageSize={10}
                   />
 
                   {/* Anúncios */}
                   <DataTableExpansao
                     titulo="Anúncios"
                     colunas={[
-                      { key: 'nome', header: 'Anúncio', align: 'left' },
-                      { key: 'leads', header: 'Leads', align: 'center', format: 'number' },
-                      { key: 'mqls', header: 'MQLs', align: 'center', format: 'number' },
-                      { key: 'sqls', header: 'SQLs', align: 'center', format: 'number' },
-                      { key: 'conversoes', header: 'Conversões', align: 'center', format: 'number' },
+                      { key: 'nome', header: 'Nome', align: 'left' },
+                      { key: 'tratamento', header: 'Tratamento', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_TRATAMENTO },
+                      { key: 'investidores', header: 'Investidores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
+                      { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'recupPerdidos', header: 'Recup. + Perdidos', align: 'center', format: 'number', sortable: true },
                     ]}
                     dados={anuncios}
+                    pageSize={10}
                   />
                 </div>
               )}

@@ -33,6 +33,7 @@ export interface LeadExpansao {
   origem: string;
   cidade: string;
   uf: string;
+  regiao: string;
   persona: string;
   perfil: string;
   motivoPerda: string;
@@ -43,6 +44,7 @@ export interface LeadExpansao {
   assertividadeTerritorio: string;
   assertividadePersona: string;
   tempoComposicao: string;
+  faseQuePerdeu: string;
 }
 
 /** KPIs consolidados do funil */
@@ -118,19 +120,37 @@ export interface MotivoPerda {
 /** Dados de campanha */
 export interface DadosCampanha {
   nome: string;
-  leads: number;
-  mqls: number;
-  sqls: number;
-  conversoes: number;
+  tratamento: number;
+  investidores: number;
+  operadores: number;
+  recupPerdidos: number;
 }
 
-/** Dados de candidatos por cidade (composição) */
+/** Dados de candidatos por cidade (composição) - quebra por perfil */
 export interface CandidatoCidade {
   cidade: string;
-  investidor: number;
-  operador: number;
+  investidorTotal: number;
+  investidorParcial: number;
+  opVendaParcial: number;
+  opVendaSem: number;
+  opPosVendaParcial: number;
   total: number;
   percentual: number;
+  temOportunidade: boolean; // tem ao menos 1 investidor E 1 operador
+}
+
+/** Dados de tempo em composição por cidade (buckets de tempo) */
+export interface TempoComposicaoCidade {
+  cidade: string;
+  invAte1m: number;
+  inv1a3m: number;
+  inv3a6m: number;
+  invMais6m: number;
+  opAte1m: number;
+  op1a3m: number;
+  op3a6m: number;
+  opMais6m: number;
+  total: number;
 }
 
 /** Estado dos filtros do funil de expansão */
@@ -139,6 +159,7 @@ export interface FiltrosExpansao {
   origem: string;
   periodoInicio: string;
   periodoFim: string;
+  periodoSelecionado: string;
 }
 
 /** Página ativa do módulo */
