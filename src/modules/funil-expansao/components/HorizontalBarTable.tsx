@@ -18,11 +18,12 @@ interface HorizontalBarTableProps {
   titulo: string;
   dados: DataItem[];
   maxItems?: number;
+  hideTabs?: boolean;
 }
 
 type TabType = 'GERAL' | 'MQL' | 'SQL';
 
-export default function HorizontalBarTable({ titulo, dados, maxItems = 15 }: HorizontalBarTableProps) {
+export default function HorizontalBarTable({ titulo, dados, maxItems = 15, hideTabs = false }: HorizontalBarTableProps) {
   const [tab, setTab] = useState<TabType>('GERAL');
 
   const getValue = (item: DataItem) => {
@@ -46,30 +47,32 @@ export default function HorizontalBarTable({ titulo, dados, maxItems = 15 }: Hor
       }}
     >
       <h3
-        className="text-sm font-bold uppercase tracking-wider mb-3"
-        style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif' }}
+        className="text-sm font-semibold uppercase tracking-wider pb-3 mb-3"
+        style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', borderBottom: '1px solid #495057' }}
       >
         {titulo}
       </h3>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-4">
-        {(['GERAL', 'MQL', 'SQL'] as TabType[]).map(t => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
-              tab === t ? 'text-white' : 'text-gray-400 hover:text-gray-200'
-            }`}
-            style={{
-              backgroundColor: tab === t ? '#FF6600' : '#495057',
-              fontFamily: 'Poppins, sans-serif',
-            }}
-          >
-            {t}
-          </button>
-        ))}
-      </div>
+      {!hideTabs && (
+        <div className="flex gap-2 mb-4">
+          {(['GERAL', 'MQL', 'SQL'] as TabType[]).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-all ${
+                tab === t ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+              }`}
+              style={{
+                backgroundColor: tab === t ? '#FF6600' : '#495057',
+                fontFamily: 'Poppins, sans-serif',
+              }}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Barras */}
       <div className="space-y-2">

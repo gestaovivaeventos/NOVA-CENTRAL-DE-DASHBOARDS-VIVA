@@ -61,20 +61,33 @@ function parseRows(rows: string[][]): LeadExpansao[] {
   /** Extrai etapa limpa de "3 | DIAGNÓSTICO AGENDADO [LEAD]" → "DIAGNÓSTICO AGENDADO" */
   const extractEtapa = (raw: string): string => {
     if (!raw) return '';
-    // Remove prefixo numérico "3 | " e sufixo "[LEAD]" / "[PROSPECTS]"
-    let clean = raw.replace(/^\d+\s*\|\s*/, '').replace(/\s*\[.*?\]\s*$/g, '').trim();
+    // Remove prefixo numérico "3 | ", sufixo "[LEAD]" / "[PROSPECTS]" e parênteses "(motivo)"
+    let clean = raw.replace(/^\d+\s*\|\s*/, '').replace(/\s*\[.*?\]\s*/g, '').replace(/\s*\([^)]*\)\s*$/, '').trim();
     return clean.toUpperCase();
   };
 
-  /** Extrai tags de persona/perfil do "Lead tags" */
+  /** Extrai tags de persona/perfil do "Lead tags" (separadas por vírgula) */
+  /** Personas = tags que começam com número, Perfil = tags que começam com OPERADOR ou INVESTIDOR */
   const extractFromTags = (tags: string): { persona: string; perfil: string } => {
     if (!tags) return { persona: '', perfil: '' };
-    const parts = tags.split('|').map(t => t.trim()).filter(Boolean);
-    // Primeira tag geralmente é o tipo (INVESTIDOR/OPERADOR), segunda é persona
-    return {
-      persona: parts[0] || '',
-      perfil: parts.length > 1 ? parts.slice(1).join(' | ') : '',
-    };
+    const parts = tags.split(',').map(t => t.trim()).filter(Boolean);
+    
+    let persona = '';
+    let perfil = '';
+    
+    for (const part of parts) {
+      // Persona: começa com número
+      if (/^\d/.test(part)) {
+        persona = persona ? `${persona}, ${part}` : part;
+      }
+      // Perfil: começa com OPERADOR, OPERAÇÕES ou INVESTIDOR
+      const upper = part.toUpperCase();
+      if (upper.startsWith('OPERADOR') || upper.startsWith('OPERAÇÕES') || upper.startsWith('OPERACOES') || upper.startsWith('INVESTIDOR')) {
+        perfil = perfil ? `${perfil}, ${part}` : part;
+      }
+    }
+    
+    return { persona, perfil };
   };
 
   const leads: LeadExpansao[] = [];
@@ -93,10 +106,34 @@ function parseRows(rows: string[][]): LeadExpansao[] {
     const { persona, perfil } = extractFromTags(tags);
 
     // Dados de UTM para campanhas
+    // utm_campaign = campanhas, utm_source = anúncios, utm_medium = conjuntos
     const utmCampaign = get(row, 'utm_campaign');
     const utmSource = get(row, 'utm_source');
     const utmMedium = get(row, 'utm_medium');
-    const utmContent = get(row, 'utm_content');
+
+    // Extrair motivo de perda: da etapa "Venda perdida (Parceria)" ou da coluna [fase_que_perdeu]
+    const etapaLimpa = extractEtapa(etapaRaw);
+    const faseQuePerdeu = get(row, '[fase_que_perdeu]', 'fase_que_perdeu') || '';
+    let motivoPerda = '';
+
+    // Primeiro: checar se a própria etapa é "Venda perdida (motivo)"
+    if (etapaRaw.toUpperCase().includes('VENDA PERDIDA') || etapaRaw.toUpperCase().includes('VENDA GANHA')) {
+      const matchParens = etapaRaw.match(/\(([^)]+)\)/);
+      if (matchParens && etapaRaw.toUpperCase().includes('VENDA PERDIDA')) {
+        motivoPerda = matchParens[1].trim();
+      } else if (etapaRaw.toUpperCase().includes('VENDA PERDIDA')) {
+        motivoPerda = 'Sem motivo especificado';
+      }
+    }
+    // Fallback: coluna [fase_que_perdeu]
+    if (!motivoPerda && faseQuePerdeu) {
+      const matchParens = faseQuePerdeu.match(/\(([^)]+)\)/);
+      if (matchParens) {
+        motivoPerda = matchParens[1].trim();
+      } else if (faseQuePerdeu.toUpperCase().includes('VENDA PERDIDA') || faseQuePerdeu.toUpperCase().includes('PERDID')) {
+        motivoPerda = 'Sem motivo especificado';
+      }
+    }
 
     leads.push({
       id,
@@ -104,20 +141,22 @@ function parseRows(rows: string[][]): LeadExpansao[] {
       dataEntrada: get(row, 'data_criacao', 'data_criação', 'data_criada'),
       dataUltimaAtualizacao: get(row, 'ultima_modificacao', 'última_modificação') || '',
       tipoFunil: extractTipoFunil(funilRaw),
-      status: extractEtapa(etapaRaw),
+      status: etapaLimpa,
       origem: get(row, 'origem_do_lead', 'origem'),
       cidade: get(row, 'cidade') || '',
       uf: get(row, 'estado') || '',
+      regiao: get(row, 'regiao', 'região') || '',
       persona,
       perfil,
-      motivoPerda: get(row, '[fase_que_perdeu]', 'fase_que_perdeu') || '',
+      motivoPerda,
       motivoQualificacao: get(row, 'motivo_qualificacao', 'motivo_qualificação') || '',
       campanha: utmCampaign || '',
-      conjunto: utmSource || '',
-      anuncio: utmContent || utmMedium || '',
+      conjunto: utmMedium || '',     // utm_medium = conjuntos
+      anuncio: utmSource || '',      // utm_source = anúncios
       assertividadeTerritorio: get(row, 'assertividade_territorio', 'assertividade_território') || '',
       assertividadePersona: get(row, 'assertividade_persona') || '',
       tempoComposicao: '',
+      faseQuePerdeu: faseQuePerdeu || '',
     });
   }
 

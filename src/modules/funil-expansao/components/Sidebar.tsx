@@ -8,6 +8,7 @@ import { useRouter } from 'next/router';
 import { ChevronRight, ChevronLeft, BarChart3, PieChart, Map, Megaphone, Home, LogOut } from 'lucide-react';
 import { PAGES } from '@/modules/funil-expansao/config/app.config';
 import { useAuth } from '@/context/AuthContext';
+import DateRangePicker from './DateRangePicker';
 import type { FiltrosExpansao } from '../types';
 
 interface SidebarProps {
@@ -219,37 +220,14 @@ export default function Sidebar({
               </div>
 
               {/* Filtro Período */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>
-                  Período
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={filtros.periodoInicio}
-                    onChange={e => onFiltrosChange({ ...filtros, periodoInicio: e.target.value })}
-                    className="flex-1 rounded-lg px-2 py-2 text-xs"
-                    style={{
-                      backgroundColor: '#343A40',
-                      color: '#F8F9FA',
-                      border: '1px solid #495057',
-                      fontFamily: 'Poppins, sans-serif',
-                    }}
-                  />
-                  <input
-                    type="date"
-                    value={filtros.periodoFim}
-                    onChange={e => onFiltrosChange({ ...filtros, periodoFim: e.target.value })}
-                    className="flex-1 rounded-lg px-2 py-2 text-xs"
-                    style={{
-                      backgroundColor: '#343A40',
-                      color: '#F8F9FA',
-                      border: '1px solid #495057',
-                      fontFamily: 'Poppins, sans-serif',
-                    }}
-                  />
-                </div>
-              </div>
+              <DateRangePicker
+                periodoSelecionado={filtros.periodoSelecionado || 'esteano'}
+                dataInicio={filtros.periodoInicio}
+                dataFim={filtros.periodoFim}
+                onPeriodoChange={(p) => onFiltrosChange({ ...filtros, periodoSelecionado: p })}
+                onDataInicioChange={(d) => onFiltrosChange({ ...filtros, periodoInicio: d })}
+                onDataFimChange={(d) => onFiltrosChange({ ...filtros, periodoFim: d })}
+              />
             </div>
           </>
         )}

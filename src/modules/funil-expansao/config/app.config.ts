@@ -64,6 +64,13 @@ export const ETAPAS_QUALIFICADO = [
   'CANDIDATO APROVADO',
 ];
 
+// Etapas que definem MQL (somente fases 5 e 6)
+export const ETAPAS_MQL = [
+  'DIAGNÓSTICO REALIZADO',
+  'MODELO NEGÓCIO AGENDADO',
+  'MODELO NEGÓCIO REALIZADO',
+];
+
 // ========== DISPLAY ==========
 export const DISPLAY_CONFIG = {
   CURRENCY_LOCALE: 'pt-BR',

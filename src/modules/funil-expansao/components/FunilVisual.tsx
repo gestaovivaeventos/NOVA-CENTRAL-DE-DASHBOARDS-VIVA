@@ -22,11 +22,20 @@ export default function FunilVisual({ titulo, etapas, cor, vendas }: FunilVisual
 
   const maxVal = Math.max(...etapas.map(e => e.quantidade), 1);
 
-  // Determinar label da etapa (MQL/SQL/LEADS)
+  // Cores fixas por classificação (consistentes entre funis)
+  const LABEL_COLORS: Record<string, string> = {
+    'PROSPECT': '#6c757d',
+    'LEADS': '#FF6600',
+    'MQL': '#60a5fa',
+    'SQL': '#a78bfa',
+  };
+
+  // Determinar label da etapa (PROSPECT/LEADS/MQL/SQL)
   const getLabel = (nome: string): string => {
     const n = nome.toUpperCase();
-    if (n.includes('NOVO') || n.includes('QUALIFICAÇÃO') || n.includes('DIAGNÓSTICO AGENDADO')) return 'LEADS';
-    if (n.includes('DIAGNÓSTICO REALIZADO') || n.includes('MOD. NEGÓCIO')) return 'MQL';
+    if (n.includes('POTENCIAIS')) return 'PROSPECT';
+    if (n.includes('NOVO') || n.includes('QUALIFICAÇÃO') || n.includes('DIAGNÓSTICO AGENDADO') || n.includes('DIAGNÓSTICO REALIZADO')) return 'LEADS';
+    if (n.includes('MODELO NEGÓCIO')) return 'MQL';
     return 'SQL';
   };
 
@@ -40,8 +49,8 @@ export default function FunilVisual({ titulo, etapas, cor, vendas }: FunilVisual
       }}
     >
       <h3
-        className="text-sm font-bold uppercase tracking-wider mb-4"
-        style={{ color: cor, fontFamily: 'Poppins, sans-serif' }}
+        className="text-sm font-semibold uppercase tracking-wider pb-3 mb-4"
+        style={{ color: cor, fontFamily: 'Poppins, sans-serif', borderBottom: '1px solid #495057' }}
       >
         {titulo}
       </h3>
@@ -61,7 +70,7 @@ export default function FunilVisual({ titulo, etapas, cor, vendas }: FunilVisual
                   </span>
                   <span
                     className="text-[10px] font-bold px-1.5 py-0.5 rounded"
-                    style={{ backgroundColor: `${cor}20`, color: cor }}
+                    style={{ backgroundColor: `${LABEL_COLORS[label] || cor}20`, color: LABEL_COLORS[label] || cor }}
                   >
                     {label}
                   </span>
