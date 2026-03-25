@@ -84,13 +84,13 @@ export const COLORS = {
 
 // ========== CONFIGURAÇÃO DE METAS ==========
 export const META_CONFIG = {
-  // Multiplicador para Meta Interna (84,11%)
-  META_INTERNA_MULTIPLICADOR: 0.841087130295763,
+  // Multiplicador para Meta Interna (81,76%)
+  META_INTERNA_MULTIPLICADOR: 0.817560217560218,
   
   // Labels
   LABELS: {
     SUPER_META: 'Super Meta (100%)',
-    META_INTERNA: 'Meta Interna (84,11%)',
+    META_INTERNA: 'Meta Interna (81,76%)',
   },
 };
 
