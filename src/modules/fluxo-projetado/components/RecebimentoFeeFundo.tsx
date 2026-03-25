@@ -28,6 +28,7 @@ export interface FundoFee {
   feeInicialV?: number;       // FEE INICIAL (Coluna V)
   feeReplanejado?: number;    // FEE REPLANEJADO (Coluna W)
   pretendeAbrirCP?: boolean;  // PRETENDE ABRIR CP (Coluna X)
+  fundoCorrelatos?: string;   // FUNDO CORRELATOS (Coluna Y)
   // Legado - manter para compatibilidade
   feeRecebido?: number;        
   feeDisponivelAntecipacao?: number;
@@ -285,12 +286,15 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
   const fundosFiltrados = useMemo(() => {
     let resultado = [...fundos];
     
-    // Aplica busca
+    // Aplica busca (suporta múltiplos termos separados por vírgula)
     if (busca.trim()) {
-      const termoBusca = busca.toLowerCase().trim();
+      const termos = busca.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
       resultado = resultado.filter(f => 
-        f.nome.toLowerCase().includes(termoBusca) || 
-        f.unidade.toLowerCase().includes(termoBusca)
+        termos.some(termo =>
+          f.nome.toLowerCase().includes(termo) || 
+          f.id.toLowerCase().includes(termo) ||
+          f.unidade.toLowerCase().includes(termo)
+        )
       );
     }
     
@@ -386,38 +390,39 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
     return resultado;
   }, [fundos, busca, filtroStatus, filtroSituacao, ordenacao, filtroBaileDe, filtroBalieAte, diasBaileAntecipar]);
 
-  // Calcula totais
-  const totalFeeContrato = fundos.reduce((acc, f) => acc + f.feeTotal, 0);
-  const totalFeeAntecipacao = fundos.reduce((acc, f) => acc + f.feeAntecipacaoTotal, 0);
-  const totalAntecipacaoRecebido = fundos.reduce((acc, f) => acc + f.feeAntecipacaoRecebido, 0);
-  const totalFaltaReceber = fundos.reduce((acc, f) => acc + calcularFaltaReceber(f), 0);
-  const totalFundos = fundos.length;
+  // Calcula totais baseado nos fundos filtrados (dinâmico)
+  const dadosBase = fundosFiltrados;
+  const totalFeeContrato = dadosBase.reduce((acc, f) => acc + f.feeTotal, 0);
+  const totalFeeAntecipacao = dadosBase.reduce((acc, f) => acc + f.feeAntecipacaoTotal, 0);
+  const totalAntecipacaoRecebido = dadosBase.reduce((acc, f) => acc + f.feeAntecipacaoRecebido, 0);
+  const totalFaltaReceber = dadosBase.reduce((acc, f) => acc + calcularFaltaReceber(f), 0);
+  const totalFundos = dadosBase.length;
 
   // Totais calculados para antecipação
-  const totalVlrAntecipacao = fundos.reduce((acc, f) => {
+  const totalVlrAntecipacao = dadosBase.reduce((acc, f) => {
     return acc + (percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0);
   }, 0);
-  const totalAntecRecebida = fundos.reduce((acc, f) => {
+  const totalAntecRecebida = dadosBase.reduce((acc, f) => {
     const vlr = percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0;
     return acc + Math.min(f.feeAntecipacaoRecebido, vlr);
   }, 0);
-  const totalFaltaRecAntec = fundos.reduce((acc, f) => {
+  const totalFaltaRecAntec = dadosBase.reduce((acc, f) => {
     const vlr = percentualAntecipacao > 0 ? f.feeTotal * (percentualAntecipacao / 100) : 0;
     const recLim = Math.min(f.feeAntecipacaoRecebido, vlr);
     return acc + Math.max(0, vlr - recLim);
   }, 0);
-  const totalSaqueDisponivel = fundos.reduce((acc, f) => {
+  const totalSaqueDisponivel = dadosBase.reduce((acc, f) => {
     return acc + calcularSaqueDisponivel(f, percentualAntecipacao, diasBaileAntecipar);
   }, 0);
 
   // Contagem por status
   const contagemStatus = useMemo(() => ({
-    'saque-disponivel': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saque-disponivel').length,
-    'saldo-parcial': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saldo-parcial').length,
-    'saldo-insuficiente': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saldo-insuficiente').length,
-    'antecipacao-concluida': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'antecipacao-concluida').length,
-    'finalizado': fundos.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'finalizado').length,
-  }), [fundos, percentualAntecipacao, diasBaileAntecipar]);
+    'saque-disponivel': dadosBase.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saque-disponivel').length,
+    'saldo-parcial': dadosBase.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saldo-parcial').length,
+    'saldo-insuficiente': dadosBase.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'saldo-insuficiente').length,
+    'antecipacao-concluida': dadosBase.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'antecipacao-concluida').length,
+    'finalizado': dadosBase.filter(f => calcularStatus(f, percentualAntecipacao, diasBaileAntecipar) === 'finalizado').length,
+  }), [dadosBase, percentualAntecipacao, diasBaileAntecipar]);
 
   const getSituacaoDot = (situacao?: string) => {
     const val = (situacao || '').trim().toLowerCase();
@@ -557,7 +562,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                 Recebimento FEE por Fundo
               </h3>
               <p className="text-xs text-gray-400">
-                {totalFundos} fundos • {contagemStatus['saque-disponivel']} com saque disponível
+                {totalFundos}{totalFundos !== fundos.length ? ` de ${fundos.length}` : ''} fundos • {contagemStatus['saque-disponivel']} com saque disponível
               </p>
               <p className="text-xs text-cyan-400 mt-0.5 font-medium">
                 ⚠️ Dados apenas de fundos SPDX
@@ -565,10 +570,6 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-xs text-orange-400">Falta Receber</p>
-              <p className="text-lg font-bold text-orange-400">{formatarMoeda(totalFaltaReceber)}</p>
-            </div>
             {expandido ? (
               <ChevronUp className="w-5 h-5 text-gray-400" />
             ) : (
@@ -628,7 +629,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <input
                     type="text"
-                    placeholder="Buscar por nome ou código do fundo..."
+                    placeholder="Buscar por nome ou código (use vírgula para múltiplos: 6534, 7720)..."
                     value={busca}
                     onChange={(e) => setBusca(e.target.value)}
                     className="w-full pl-10 pr-10 py-2 bg-gray-800/50 border border-gray-700/50 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50"
@@ -660,6 +661,16 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                   })()}
                 </button>
               </div>
+              {busca && busca.includes(',') && (
+                <p className="text-[11px] text-gray-500 -mt-1">
+                  Filtrando múltiplos fundos. Os cards acima refletem os totais dos fundos filtrados.
+                </p>
+              )}
+              {!busca && (
+                <p className="text-[11px] text-gray-500 -mt-1">
+                  💡 Para filtrar mais de um fundo, separe os nomes ou códigos por vírgula. Ex: 6534, 7720
+                </p>
+              )}
 
               {/* Painel de Filtros Expandido */}
               {mostrarFiltros && (
@@ -779,7 +790,7 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
               {(busca || filtroStatus !== 'todos' || filtroBaileDe || filtroBalieAte || filtroSituacao !== 'todos') && (
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-500">
-                    Mostrando {fundosFiltrados.length} de {totalFundos} fundos
+                    Mostrando {fundosFiltrados.length} de {fundos.length} fundos
                     {busca && <span> para "{busca}"</span>}
                     {filtroStatus !== 'todos' && <span> com status "{filtroStatus.replace('-', ' ')}"</span>}
                   </div>
@@ -959,12 +970,12 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = bgColor}
                           >
                             {/* FUNDO */}
-                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'left', minWidth: '180px' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'left', minWidth: '180px', maxWidth: '250px' }}>
+                              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                                 {getSituacaoDot(fundo.situacao)}
-                                <div>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span className="text-sm font-medium text-white block truncate" style={{ maxWidth: '200px' }} title={fundo.nome}>{fundo.nome}</span>
+                                <div style={{ minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <span className="text-sm font-medium text-white" style={{ wordBreak: 'break-word', lineHeight: '1.3' }} title={fundo.nome}>{fundo.nome}</span>
                                     {fundo.pretendeAbrirCP && (
                                       <span
                                         style={{
@@ -986,6 +997,35 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                                         CP
                                       </span>
                                     )}
+                                    {fundo.fundoCorrelatos && (
+                                      <span
+                                        style={{
+                                          display: 'inline-flex',
+                                          alignItems: 'center',
+                                          padding: '1px 6px',
+                                          borderRadius: '4px',
+                                          fontSize: '0.6rem',
+                                          fontWeight: 700,
+                                          letterSpacing: '0.05em',
+                                          background: 'rgba(139, 92, 246, 0.15)',
+                                          color: '#a78bfa',
+                                          border: '1px solid rgba(139, 92, 246, 0.3)',
+                                          whiteSpace: 'nowrap',
+                                          lineHeight: '1.4',
+                                          cursor: 'pointer',
+                                        }}
+                                        title={`Fundos correlatos: ${fundo.fundoCorrelatos} (clique para filtrar)`}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          // Extrai todos os códigos numéricos (robusto para formatos: "8344,7423,7720" ou "8344.7423" etc)
+                                          const codigos = fundo.fundoCorrelatos!.match(/\d+/g) || [];
+                                          const todos = new Set([fundo.id, ...codigos]);
+                                          setBusca(Array.from(todos).join(', '));
+                                        }}
+                                      >
+                                        FC
+                                      </span>
+                                    )}
                                   </div>
                                   <span className="text-xs text-gray-500 block">Cód: {fundo.id}</span>
                                 </div>
@@ -995,9 +1035,9 @@ export default function RecebimentoFeeFundo({ fundos, loading = false, percentua
                             <td style={{ padding: '10px 8px', borderBottom: '1px solid #444', textAlign: 'center', whiteSpace: 'nowrap' }}>
                               <div>
                                 <span className="text-[10px] text-gray-500 uppercase block">Cadastro</span>
-                                <span className="text-xs text-gray-300 block">{fundo.dataContrato || '-'}</span>
+                                <span className="text-xs text-gray-300 block">{fundo.dataContrato ? fundo.dataContrato.replace(/^(\d{4})-(\d{2})-(\d{2}).*/, '$3/$2/$1') : '-'}</span>
                                 <span className="text-[10px] text-gray-500 uppercase block mt-0.5">Baile</span>
-                                <span className="text-xs text-gray-300 block">{fundo.dataBaile || '-'}</span>
+                                <span className="text-xs text-gray-300 block">{fundo.dataBaile ? fundo.dataBaile.replace(/^(\d{4})-(\d{2})-(\d{2}).*/, '$3/$2/$1') : '-'}</span>
                               </div>
                             </td>
                             {/* % ATING. MAC */}
