@@ -59,6 +59,7 @@ const COLUNAS = {
   FEE_INICIAL_V: 21,           // V - FEE INICIAL
   FEE_REPLANEJADO: 22,         // W - FEE REPLANEJADO
   PRETENDE_ABRIR_CP: 23,       // X - PRETENDE ABRIR CP
+  FUNDO_CORRELATOS: 24,        // Y - FUNDO CORRELATOS
 };
 
 // Linha onde começa o cabeçalho (0-indexed): linha 1 da planilha = índice 0
@@ -80,6 +81,7 @@ interface FundoRealizado {
   feeInicialV?: number;   // Coluna V - FEE INICIAL
   feeReplanejado?: number; // Coluna W - FEE REPLANEJADO
   pretendeAbrirCP?: boolean; // Coluna X - PRETENDE ABRIR CP
+  fundoCorrelatos?: string; // Coluna Y - FUNDO CORRELATOS
 }
 
 // Função para obter cliente autenticado
@@ -231,6 +233,15 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
     const feeInicialV = parseNumber(row[COLUNAS.FEE_INICIAL_V]); // Coluna V
     const feeReplanejado = parseNumber(row[COLUNAS.FEE_REPLANEJADO]); // Coluna W
     const pretendeAbrirCP = (row[COLUNAS.PRETENDE_ABRIR_CP] || '').toString().trim().toUpperCase() === 'SIM'; // Coluna X
+    // Coluna Y - FUNDO CORRELATOS: pode vir como texto "8344,7423,7720" ou como número se Sheets interpretou vírgula como decimal
+    const rawCorrelatos = row[COLUNAS.FUNDO_CORRELATOS];
+    let fundoCorrelatos = '';
+    if (rawCorrelatos !== undefined && rawCorrelatos !== null && rawCorrelatos !== '') {
+      const strVal = rawCorrelatos.toString().trim();
+      // Extrai todos os códigos numéricos (funciona para "8344,7423,7720", "8344.7423" etc)
+      const codigos = strVal.match(/\d+/g);
+      fundoCorrelatos = codigos ? codigos.join(',') : '';
+    }
     // Coluna T: % Atingimento MAC (pode vir como decimal 0.75 ou percentual 75)
     const rawAtingMac = row[COLUNAS.PERCENTUAL_ATING_MAC];
     let percentualAtingMac = 0;
@@ -266,6 +277,7 @@ async function getFundosRealizado(franquia: string, skipCache: boolean = false):
       feeInicialV: feeInicialV, // Coluna V
       feeReplanejado: feeReplanejado, // Coluna W
       pretendeAbrirCP: pretendeAbrirCP, // Coluna X
+      fundoCorrelatos: fundoCorrelatos || undefined, // Coluna Y
     };
     
     fundos.push(fundo);
