@@ -40,6 +40,8 @@ import {
   agruparPorCidade,
   agruparTempoComposicaoPorCidade,
   extrairOrigens,
+  listarCidadesFranquias,
+  listarCidadesAguardandoComposicao,
 } from '@/modules/funil-expansao/utils/calculos';
 import { formatNumber, formatPercent } from '@/modules/funil-expansao/utils/formatacao';
 import { PAGES, COLORS } from '@/modules/funil-expansao/config/app.config';
@@ -113,6 +115,10 @@ export default function FunilExpansaoDashboard() {
 
   // KPIs
   const kpis = useMemo(() => calcularKPIs(dadosFiltrados), [dadosFiltrados]);
+
+  // Dados para cards expandíveis
+  const cidadesFranquias = useMemo(() => listarCidadesFranquias(dadosFiltrados), [dadosFiltrados]);
+  const cidadesAguardando = useMemo(() => listarCidadesAguardandoComposicao(dadosFiltrados), [dadosFiltrados]);
 
   // Funil completo
   const funil = useMemo(() => calcularFunil(dadosFiltrados), [dadosFiltrados]);
@@ -250,24 +256,46 @@ export default function FunilExpansaoDashboard() {
                       valor={kpis.mqls}
                       icone={<TrendingUp size={20} />}
                       corDestaque="#60a5fa"
+                      subtitulo={`Taxa conversão: ${formatPercent(kpis.taxaMql, 1)} do total`}
+                      detalhes={`Hoje: ${formatNumber(kpis.mqlAtivos)} ativos`}
                     />
                     <KPICard
                       titulo="SQL (Avançado)"
                       valor={kpis.sqls}
                       icone={<Target size={20} />}
                       corDestaque="#a78bfa"
+                      subtitulo={`Taxa conversão: ${formatPercent(kpis.taxaSql, 1)} do total`}
+                      detalhes={`Hoje: ${formatNumber(kpis.sqlAtivos)} ativos`}
                     />
                     <KPICard
                       titulo="Candidatos Aprovados"
                       valor={kpis.candidatosAprovados}
                       icone={<Award size={20} />}
                       corDestaque="#28a745"
+                      subtitulo={`Taxa geral ${formatPercent(kpis.taxaAprovacao, 2)}`}
+                      detalhes={`${formatNumber(kpis.candidatosAprovadosInv)} inv. · ${formatNumber(kpis.candidatosAprovadosOp)} op.`}
                     />
                     <KPICard
                       titulo="Franquias"
                       valor={kpis.franquias}
                       icone={<MapPin size={20} />}
                       corDestaque="#ffc107"
+                      expandivel={
+                        cidadesFranquias.length > 0 ? (
+                          <div>
+                            <p className="text-[10px] uppercase font-semibold mb-2" style={{ color: '#adb5bd' }}>Cidades vendidas</p>
+                            <ul className="space-y-1">
+                              {cidadesFranquias.map(c => (
+                                <li key={c} className="text-xs flex items-center gap-1.5" style={{ color: '#F8F9FA' }}>
+                                  <span style={{ color: '#ffc107' }}>●</span> {c}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <p className="text-xs" style={{ color: '#6c757d' }}>Nenhuma franquia vendida</p>
+                        )
+                      }
                     />
                   </div>
 
@@ -289,17 +317,39 @@ export default function FunilExpansaoDashboard() {
                       titulo="Aguard. Composição"
                       valor={kpis.aguardandoComposicao}
                       corDestaque="#ffc107"
+                      detalhes={`${formatNumber(kpis.aguardandoComposicaoInv)} inv. · ${formatNumber(kpis.aguardandoComposicaoOp)} op.`}
+                      expandivel={
+                        cidadesAguardando.length > 0 ? (
+                          <div>
+                            <p className="text-[10px] uppercase font-semibold mb-2" style={{ color: '#adb5bd' }}>Cidades aguardando</p>
+                            <ul className="space-y-1">
+                              {cidadesAguardando.map(c => (
+                                <li key={c.cidade} className="text-xs flex items-center justify-between" style={{ color: '#F8F9FA' }}>
+                                  <span className="flex items-center gap-1.5">
+                                    <span style={{ color: '#ffc107' }}>●</span> {c.cidade}
+                                  </span>
+                                  <span className="text-[10px]" style={{ color: '#adb5bd' }}>{c.inv} inv. · {c.op} op.</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <p className="text-xs" style={{ color: '#6c757d' }}>Nenhuma cidade aguardando</p>
+                        )
+                      }
                     />
                     <KPICard
                       titulo="Em Recuperação"
                       valor={kpis.emRecuperacao}
                       icone={<RefreshCw size={20} />}
                       corDestaque="#ffc107"
+                      detalhes={`${formatNumber(kpis.emRecuperacaoTrat)} trat. · ${formatNumber(kpis.emRecuperacaoInv)} inv. · ${formatNumber(kpis.emRecuperacaoOp)} op.`}
                     />
                     <KPICard
                       titulo="Perdidos"
                       valor={kpis.perdidos}
                       corDestaque="#dc3545"
+                      detalhes={`${formatNumber(kpis.perdidosTrat)} trat. · ${formatNumber(kpis.perdidosInv)} inv. · ${formatNumber(kpis.perdidosOp)} op.`}
                     />
                   </div>
 
@@ -471,7 +521,7 @@ export default function FunilExpansaoDashboard() {
                       { key: 'opVendaSem', header: 'Op. Venda S/', align: 'center', format: 'number', sortable: true },
                       { key: 'opPosVendaParcial', header: 'Op. Pós-Venda', align: 'center', format: 'number', sortable: true },
                       { key: 'total', header: 'Total', align: 'center', format: 'number', sortable: true },
-                      { key: 'percentual', header: '%', align: 'right', format: 'percent', sortable: true },
+                      { key: 'percentual', header: '%', align: 'center', format: 'percent', sortable: true },
                     ]}
                     dados={cidadesData}
                     pageSize={10}

@@ -200,7 +200,10 @@ export function useFunilExpansaoData() {
         const json = await res.json();
         const parsed = parseRows(json.values || []);
 
-        cache = { data: parsed, timestamp: Date.now() };
+        // Excluir leads de teste (Lead título contém "teste" em qualquer variação)
+        const filtered = parsed.filter(lead => !/teste/i.test(lead.nome));
+
+        cache = { data: filtered, timestamp: Date.now() };
         return parsed;
       })
       .finally(() => { pendingRequest = null; });

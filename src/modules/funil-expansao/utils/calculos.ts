@@ -2,6 +2,7 @@
  * Utilitarios de calculos do Funil de Expansao
  */
 
+import { siglaEstado } from './formatacao';
 import type {
   LeadExpansao,
   KPIsExpansao,
@@ -36,20 +37,43 @@ function isPerdido(lead: LeadExpansao): boolean {
   return lead.motivoPerda !== '';
 }
 
-/** Verifica se lead e MQL (somente fases DIAGNOSTICO REALIZADO e MODELO NEGOCIO *) */
-function isMQL(lead: LeadExpansao): boolean {
+/** Verifica se lead esta ATUALMENTE na fase MQL (somente fases DIAGNOSTICO REALIZADO e MODELO NEGOCIO *) */
+function isMQLAtivo(lead: LeadExpansao): boolean {
   const s = lead.status.toUpperCase();
   return ETAPAS_MQL.some(e => s.includes(e));
 }
 
-/** Verifica se lead e SQL (FIT FRANQUEADO em diante) */
-function isSQL(lead: LeadExpansao): boolean {
+/** Verifica se lead esta ATUALMENTE na fase SQL (FIT FRANQUEADO ate CANDIDATO APROVADO) */
+function isSQLAtivo(lead: LeadExpansao): boolean {
   const s = lead.status.toUpperCase();
   return (
     s.includes('FIT FRANQUEADO') ||
     s.includes('COF E VALIDA') ||
     s.includes('AGUARDANDO COMPOSI') ||
     s.includes('CANDIDATO APROVADO')
+  );
+}
+
+/** Funil cheio: MQL inclui leads na fase MQL ou qualquer fase adiante (SQL, VENDA GANHA) */
+function isMQL(lead: LeadExpansao): boolean {
+  const s = lead.status.toUpperCase();
+  return ETAPAS_MQL.some(e => s.includes(e)) ||
+    s.includes('FIT FRANQUEADO') ||
+    s.includes('COF E VALIDA') ||
+    s.includes('AGUARDANDO COMPOSI') ||
+    s.includes('CANDIDATO APROVADO') ||
+    s.includes('VENDA GANHA');
+}
+
+/** Funil cheio: SQL inclui leads na fase SQL ou adiante (VENDA GANHA) */
+function isSQL(lead: LeadExpansao): boolean {
+  const s = lead.status.toUpperCase();
+  return (
+    s.includes('FIT FRANQUEADO') ||
+    s.includes('COF E VALIDA') ||
+    s.includes('AGUARDANDO COMPOSI') ||
+    s.includes('CANDIDATO APROVADO') ||
+    s.includes('VENDA GANHA')
   );
 }
 
@@ -99,11 +123,37 @@ export function calcularKPIs(leads: LeadExpansao[]): KPIsExpansao {
   const totalLeads = leads.length;
   const mqls = leads.filter(isMQL).length;
   const sqls = leads.filter(isSQL).length;
+  const mqlAtivos = leads.filter(isMQLAtivo).length;
+  const sqlAtivos = leads.filter(isSQLAtivo).length;
   const candidatosAprovados = leads.filter(l => l.status.includes('CANDIDATO APROVADO')).length;
-  const franquias = candidatosAprovados;
   const aguardandoComposicao = leads.filter(l => l.status.toUpperCase().includes('AGUARDANDO COMPOSI')).length;
   const emRecuperacao = leads.filter(l => l.status.toUpperCase().includes('RECUPERA')).length;
   const perdidos = leads.filter(isPerdido).length;
+
+  // Franquias: cidades com pelo menos 1 investidor E 1 operador com VENDA GANHA
+  const cidadesInvGanha = new Set<string>();
+  const cidadesOpGanha = new Set<string>();
+  for (const lead of leads) {
+    if (lead.status.toUpperCase().includes('VENDA GANHA') && lead.cidade) {
+      const cidade = lead.cidade.toUpperCase().trim();
+      if (lead.tipoFunil === 'INVESTIDOR') cidadesInvGanha.add(cidade);
+      if (lead.tipoFunil === 'OPERADOR') cidadesOpGanha.add(cidade);
+    }
+  }
+  let franquias = 0;
+  cidadesInvGanha.forEach(cidade => { if (cidadesOpGanha.has(cidade)) franquias++; });
+
+  // Breakdowns por tipo de funil
+  const candidatosAprovadosInv = leads.filter(l => l.status.includes('CANDIDATO APROVADO') && l.tipoFunil === 'INVESTIDOR').length;
+  const candidatosAprovadosOp = leads.filter(l => l.status.includes('CANDIDATO APROVADO') && l.tipoFunil === 'OPERADOR').length;
+  const aguardandoComposicaoInv = leads.filter(l => l.status.toUpperCase().includes('AGUARDANDO COMPOSI') && l.tipoFunil === 'INVESTIDOR').length;
+  const aguardandoComposicaoOp = leads.filter(l => l.status.toUpperCase().includes('AGUARDANDO COMPOSI') && l.tipoFunil === 'OPERADOR').length;
+  const emRecuperacaoTrat = leads.filter(l => l.status.toUpperCase().includes('RECUPERA') && l.tipoFunil === 'TRATAMENTO').length;
+  const emRecuperacaoInv = leads.filter(l => l.status.toUpperCase().includes('RECUPERA') && l.tipoFunil === 'INVESTIDOR').length;
+  const emRecuperacaoOp = leads.filter(l => l.status.toUpperCase().includes('RECUPERA') && l.tipoFunil === 'OPERADOR').length;
+  const perdidosTrat = leads.filter(l => isPerdido(l) && l.tipoFunil === 'TRATAMENTO').length;
+  const perdidosInv = leads.filter(l => isPerdido(l) && l.tipoFunil === 'INVESTIDOR').length;
+  const perdidosOp = leads.filter(l => isPerdido(l) && l.tipoFunil === 'OPERADOR').length;
 
   const assertTerr = leads.filter(l => l.assertividadeTerritorio.toUpperCase() === 'FOCO').length;
   const assertPers = leads.filter(l => l.assertividadePersona.toUpperCase() === 'FOCO').length;
@@ -124,6 +174,18 @@ export function calcularKPIs(leads: LeadExpansao[]): KPIsExpansao {
     perdidos,
     assertividadeTerritorio: comTerritorio > 0 ? (assertTerr / comTerritorio) * 100 : 0,
     assertividadePersona: comPersona > 0 ? (assertPers / comPersona) * 100 : 0,
+    candidatosAprovadosInv,
+    candidatosAprovadosOp,
+    aguardandoComposicaoInv,
+    aguardandoComposicaoOp,
+    emRecuperacaoTrat,
+    emRecuperacaoInv,
+    emRecuperacaoOp,
+    perdidosTrat,
+    perdidosInv,
+    perdidosOp,
+    mqlAtivos,
+    sqlAtivos,
   };
 }
 
@@ -467,7 +529,7 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
   const map = new Map<string, { investidorTotal: number; investidorParcial: number; opVendaParcial: number; opVendaSem: number; opPosVendaParcial: number }>();
 
   for (const lead of leads) {
-    const cidade = lead.cidade && lead.uf ? `${lead.cidade} - ${lead.uf}` : lead.cidade || 'Nao informado';
+    const cidade = lead.cidade && lead.uf ? `${lead.cidade} - ${siglaEstado(lead.uf)}` : lead.cidade || 'Nao informado';
     if (!map.has(cidade)) {
       map.set(cidade, {
         investidorTotal: 0,
@@ -514,7 +576,7 @@ export function agruparTempoComposicaoPorCidade(leads: LeadExpansao[]): TempoCom
   const map = new Map<string, { invAte1m: number; inv1a3m: number; inv3a6m: number; invMais6m: number; opAte1m: number; op1a3m: number; op3a6m: number; opMais6m: number }>();
 
   for (const lead of aguardando) {
-    const cidade = lead.cidade && lead.uf ? `${lead.cidade} - ${lead.uf}` : lead.cidade || 'Nao informado';
+    const cidade = lead.cidade && lead.uf ? `${lead.cidade} - ${siglaEstado(lead.uf)}` : lead.cidade || 'Nao informado';
     if (!map.has(cidade)) {
       map.set(cidade, { invAte1m: 0, inv1a3m: 0, inv3a6m: 0, invMais6m: 0, opAte1m: 0, op1a3m: 0, op3a6m: 0, opMais6m: 0 });
     }
@@ -551,4 +613,43 @@ export function extrairOrigens(leads: LeadExpansao[]): string[] {
     if (lead.origem) set.add(lead.origem);
   }
   return Array.from(set).sort();
+}
+
+/** Retorna cidades onde franquia foi vendida (investidor + operador com VENDA GANHA na mesma cidade) */
+export function listarCidadesFranquias(leads: LeadExpansao[]): string[] {
+  const cidadesInvGanha = new Map<string, string>(); // upper -> original
+  const cidadesOpGanha = new Set<string>();
+
+  for (const lead of leads) {
+    if (lead.status.toUpperCase().includes('VENDA GANHA') && lead.cidade) {
+      const upper = lead.cidade.toUpperCase().trim();
+      if (lead.tipoFunil === 'INVESTIDOR') {
+        cidadesInvGanha.set(upper, lead.cidade.trim() + (lead.uf ? ` - ${siglaEstado(lead.uf)}` : ''));
+      }
+      if (lead.tipoFunil === 'OPERADOR') cidadesOpGanha.add(upper);
+    }
+  }
+
+  const result: string[] = [];
+  cidadesInvGanha.forEach((label, upper) => {
+    if (cidadesOpGanha.has(upper)) result.push(label);
+  });
+  return result.sort();
+}
+
+/** Retorna cidades com leads aguardando composição (com contagem inv/op) */
+export function listarCidadesAguardandoComposicao(leads: LeadExpansao[]): { cidade: string; inv: number; op: number }[] {
+  const aguardando = leads.filter(l => l.status.toUpperCase().includes('AGUARDANDO COMPOSI'));
+  const map = new Map<string, { cidade: string; inv: number; op: number }>();
+
+  for (const lead of aguardando) {
+    const cidadeLabel = lead.cidade && lead.uf ? `${lead.cidade} - ${siglaEstado(lead.uf)}` : lead.cidade || 'Não informado';
+    const key = cidadeLabel.toUpperCase();
+    if (!map.has(key)) map.set(key, { cidade: cidadeLabel, inv: 0, op: 0 });
+    const entry = map.get(key)!;
+    if (lead.tipoFunil === 'INVESTIDOR') entry.inv++;
+    else entry.op++;
+  }
+
+  return Array.from(map.values()).sort((a, b) => (b.inv + b.op) - (a.inv + a.op));
 }
