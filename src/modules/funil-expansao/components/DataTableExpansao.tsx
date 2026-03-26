@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { formatNumber, formatPercent } from '../utils/formatacao';
-import { Download } from 'lucide-react';
+import { Download, Check } from 'lucide-react';
 
 interface Column {
   key: string;
@@ -188,66 +188,69 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
 
       {/* Tabela */}
       <div style={{ borderRadius: '8px', border: '1px solid #444', overflow: 'hidden' }}>
-        {/* Cabeçalho */}
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', tableLayout: 'auto' }}>
-          <thead>
-            {headerGroups && (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', tableLayout: 'fixed', minWidth: `${colunas.length * 110}px` }}>
+            <colgroup>
+              {colunas.map((col, i) => (
+                <col key={col.key} style={{ width: i === 0 ? '220px' : undefined }} />
+              ))}
+            </colgroup>
+            <thead>
+              {headerGroups && (
+                <tr style={{ backgroundColor: '#2a2f36' }}>
+                  {headerGroups.map((group, idx) => (
+                    <th
+                      key={idx}
+                      colSpan={group.colSpan}
+                      style={{
+                        padding: '8px 16px',
+                        textAlign: 'center',
+                        color: group.color || '#FF6600',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.05em',
+                        fontFamily: 'Poppins, sans-serif',
+                        borderBottom: '1px solid #495057',
+                      }}
+                    >
+                      {group.label}
+                    </th>
+                  ))}
+                </tr>
+              )}
               <tr style={{ backgroundColor: '#2a2f36' }}>
-                {headerGroups.map((group, idx) => (
+                {colunas.map(col => (
                   <th
-                    key={idx}
-                    colSpan={group.colSpan}
+                    key={col.key}
+                    onClick={col.sortable ? () => handleSort(col.key) : undefined}
                     style={{
-                      padding: '8px 16px',
-                      textAlign: 'center',
-                      color: group.color || '#FF6600',
-                      fontWeight: 700,
+                      padding: '12px 16px',
+                      textAlign: col.align || 'center',
+                      borderBottom: '2px solid #FF6600',
+                      color: col.color || '#adb5bd',
+                      fontWeight: 600,
                       textTransform: 'uppercase',
                       fontSize: '0.75rem',
                       letterSpacing: '0.05em',
                       fontFamily: 'Poppins, sans-serif',
-                      borderBottom: '1px solid #495057',
+                      cursor: col.sortable ? 'pointer' : 'default',
+                      userSelect: col.sortable ? 'none' : undefined,
+                      transition: 'background-color 0.2s ease',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                     }}
+                    onMouseEnter={col.sortable ? e => { e.currentTarget.style.backgroundColor = '#3d4349'; } : undefined}
+                    onMouseLeave={col.sortable ? e => { e.currentTarget.style.backgroundColor = '#2a2f36'; } : undefined}
                   >
-                    {group.label}
+                    {col.header}
+                    {col.sortable && renderSortIcon(col.key)}
                   </th>
                 ))}
               </tr>
-            )}
-            <tr style={{ backgroundColor: '#2a2f36' }}>
-              {colunas.map(col => (
-                <th
-                  key={col.key}
-                  onClick={col.sortable ? () => handleSort(col.key) : undefined}
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: col.align || 'center',
-                    borderBottom: '2px solid #FF6600',
-                    color: col.color || '#adb5bd',
-                    fontWeight: 600,
-                    textTransform: 'uppercase',
-                    fontSize: '0.75rem',
-                    letterSpacing: '0.05em',
-                    fontFamily: 'Poppins, sans-serif',
-                    cursor: col.sortable ? 'pointer' : 'default',
-                    userSelect: col.sortable ? 'none' : undefined,
-                    transition: 'background-color 0.2s ease',
-                    whiteSpace: 'nowrap',
-                  }}
-                  onMouseEnter={col.sortable ? e => { e.currentTarget.style.backgroundColor = '#3d4349'; } : undefined}
-                  onMouseLeave={col.sortable ? e => { e.currentTarget.style.backgroundColor = '#2a2f36'; } : undefined}
-                >
-                  {col.header}
-                  {col.sortable && renderSortIcon(col.key)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-        </table>
+            </thead>
 
-        {/* Corpo com scroll */}
-        <div style={{ maxHeight: pageSize ? undefined : '400px', overflowY: pageSize ? undefined : 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', tableLayout: 'auto' }}>
             <tbody>
               {visibleData.length === 0 ? (
                 <tr>
@@ -259,19 +262,18 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
                 visibleData.map((row, idx) => {
                   const isHighlighted = highlightKey && row[highlightKey];
                   const bgBase = idx % 2 === 0 ? '#343A40' : '#2c3136';
-                  const bgColor = isHighlighted ? 'rgba(40, 167, 69, 0.15)' : bgBase;
                   return (
                     <tr
                       key={idx}
                       style={{
-                        backgroundColor: bgColor,
+                        backgroundColor: bgBase,
                         borderBottom: '1px solid #444',
                         transition: 'background-color 0.2s ease',
                       }}
                       onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#3d4349'; }}
-                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = bgColor; }}
+                      onMouseLeave={e => { e.currentTarget.style.backgroundColor = bgBase; }}
                     >
-                      {colunas.map(col => (
+                      {colunas.map((col, colIdx) => (
                         <td
                           key={col.key}
                           style={{
@@ -281,9 +283,31 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
                             fontFamily: 'Poppins, sans-serif',
                             fontWeight: col.key === colunas[0].key ? 500 : 400,
                             fontSize: '0.8rem',
+                            overflow: col.key === colunas[0].key ? undefined : 'hidden',
+                            textOverflow: col.key === colunas[0].key ? undefined : 'ellipsis',
+                            whiteSpace: col.key === colunas[0].key ? 'normal' : 'nowrap',
+                            wordBreak: col.key === colunas[0].key ? 'break-word' : undefined,
                           }}
                         >
-                          {formatValue(row[col.key], col.format)}
+                          {col.key === colunas[0].key && isHighlighted ? (
+                            <span className="flex items-center gap-2">
+                              {formatValue(row[col.key], col.format)}
+                              <span
+                                className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase"
+                                style={{
+                                  backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                                  color: '#28a745',
+                                  border: '1px solid rgba(40, 167, 69, 0.4)',
+                                  lineHeight: 1,
+                                  flexShrink: 0,
+                                }}
+                              >
+                                <Check size={10} strokeWidth={3} /> MATCH
+                              </span>
+                            </span>
+                          ) : (
+                            formatValue(row[col.key], col.format)
+                          )}
                         </td>
                       ))}
                     </tr>
@@ -291,33 +315,31 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
                 })
               )}
             </tbody>
+
+            {/* Linha resumo (TOTAL) */}
+            {summaryRow && visibleData.length > 0 && (
+              <tfoot>
+                <tr style={{ backgroundColor: '#2a2f36', borderTop: '2px solid #FF6600' }}>
+                  {colunas.map(col => (
+                    <td
+                      key={col.key}
+                      style={{
+                        padding: '12px 16px',
+                        textAlign: col.align || 'center',
+                        fontWeight: 700,
+                        color: '#FF6600',
+                        fontFamily: 'Poppins, sans-serif',
+                        fontSize: '0.8rem',
+                      }}
+                    >
+                      {formatValue(summaryRow[col.key], col.format)}
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
-
-        {/* Linha resumo (TOTAL) - fora do scroll */}
-        {summaryRow && visibleData.length > 0 && (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', tableLayout: 'auto' }}>
-            <tfoot>
-              <tr style={{ backgroundColor: '#2a2f36', borderTop: '2px solid #FF6600' }}>
-                {colunas.map(col => (
-                  <td
-                    key={col.key}
-                    style={{
-                      padding: '12px 16px',
-                      textAlign: col.align || 'center',
-                      fontWeight: 700,
-                      color: '#FF6600',
-                      fontFamily: 'Poppins, sans-serif',
-                      fontSize: '0.8rem',
-                    }}
-                  >
-                    {formatValue(summaryRow[col.key], col.format)}
-                  </td>
-                ))}
-              </tr>
-            </tfoot>
-          </table>
-        )}
       </div>
 
       {/* Paginação estilo vendas */}

@@ -62,6 +62,20 @@ export interface KPIsExpansao {
   perdidos: number;
   assertividadeTerritorio: number;
   assertividadePersona: number;
+  // Breakdowns por tipo de funil
+  candidatosAprovadosInv: number;
+  candidatosAprovadosOp: number;
+  aguardandoComposicaoInv: number;
+  aguardandoComposicaoOp: number;
+  emRecuperacaoTrat: number;
+  emRecuperacaoInv: number;
+  emRecuperacaoOp: number;
+  perdidosTrat: number;
+  perdidosInv: number;
+  perdidosOp: number;
+  // Ativos (leads atualmente na fase)
+  mqlAtivos: number;
+  sqlAtivos: number;
 }
 
 /** Dados do funil para exibição de conversão (etapas) */
