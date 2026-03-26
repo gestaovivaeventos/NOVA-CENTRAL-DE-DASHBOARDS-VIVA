@@ -195,6 +195,21 @@ export default function AnaliseMercadoLayout({
                   };
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {/* 0. Franquia */}
+                      <div>
+                        <label style={sidebarLabelStyle}>Franquia</label>
+                        <select
+                          style={sidebarSelectStyle}
+                          value={franquiaSelecionada ?? ''}
+                          onChange={e => onFranquiaChange(e.target.value || null)}
+                        >
+                          <option value="">Todas (Brasil)</option>
+                          {franquias.map(f => (
+                            <option key={f.id} value={f.id}>{f.nome}</option>
+                          ))}
+                        </select>
+                      </div>
+
                       {/* 1. Ano */}
                       <div>
                         <label style={sidebarLabelStyle}>Ano</label>
@@ -280,9 +295,10 @@ export default function AnaliseMercadoLayout({
                       />
 
                       {/* Limpar todos os filtros */}
-                      {(filtros.tipoInstituicao !== 'todos' || filtros.modalidade !== 'todos' || filtros.estado || filtros.municipio || filtros.instituicaoId || filtros.curso) && (
+                      {(franquiaSelecionada || filtros.tipoInstituicao !== 'todos' || filtros.modalidade !== 'todos' || filtros.estado || filtros.municipio || filtros.instituicaoId || filtros.curso) && (
                         <button
                           onClick={() => {
+                            onFranquiaChange(null);
                             onFiltrosChange({
                               tipoInstituicao: 'todos',
                               modalidade: 'todos',
@@ -290,6 +306,7 @@ export default function AnaliseMercadoLayout({
                               municipio: null,
                               instituicaoId: null,
                               curso: null,
+                              franquiaId: null,
                             });
                           }}
                           style={{

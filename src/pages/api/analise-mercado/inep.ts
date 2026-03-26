@@ -204,7 +204,7 @@ function regioesParaConsultar(uf: string | null): string[] {
 async function loadRows(
   ano: number,
   regioes: string[],
-  filters: { uf?: string | null; rede?: number | null; municipio?: string | null; ies?: number | null; curso?: string | null; modalidade?: number | null },
+  filters: { uf?: string | null; rede?: number | null; municipio?: string | null; municipios?: string[] | null; ies?: number | null; curso?: string | null; modalidade?: number | null },
 ): Promise<InepRow[]> {
   const results = await Promise.allSettled(regioes.map(r => fetchRegiao(r, ano)));
   let rows: InepRow[] = [];
@@ -213,7 +213,13 @@ async function loadRows(
   }
   if (filters.uf) rows = rows.filter(r => r.SG_UF === filters.uf);
   if (filters.rede) rows = rows.filter(r => r.TP_REDE === filters.rede);
-  if (filters.municipio) rows = rows.filter(r => r.NO_MUNICIPIO.toUpperCase() === filters.municipio!.toUpperCase());
+  // Filtro múltiplo de municípios (franquia) tem prioridade sobre município único
+  if (filters.municipios && filters.municipios.length > 0) {
+    const munSet = new Set(filters.municipios.map(m => m.toUpperCase()));
+    rows = rows.filter(r => munSet.has(r.NO_MUNICIPIO.toUpperCase()));
+  } else if (filters.municipio) {
+    rows = rows.filter(r => r.NO_MUNICIPIO.toUpperCase() === filters.municipio!.toUpperCase());
+  }
   if (filters.ies) rows = rows.filter(r => r.CO_IES === filters.ies);
   if (filters.curso) rows = rows.filter(r => r.NO_CURSO.toUpperCase() === filters.curso!.toUpperCase());
   if (filters.modalidade) rows = rows.filter(r => r.TP_MODALIDADE_ENSINO === filters.modalidade);
@@ -264,17 +270,21 @@ const UF_NOMES: Record<string, string> = {
 
 // ─── action=dashboard — Só ano selecionado + anterior em PARALELO ─
 async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
-  const { uf, ano, rede, municipio, ies, curso, modalidade } = req.query;
+  const { uf, ano, rede, municipio, municipios, ies, curso, modalidade } = req.query;
   const ufStr = uf ? String(uf).toUpperCase() : null;
   const anoNum = ano ? Number(ano) : 2024;
   const redeNum = rede ? Number(rede) : null;
   const municipioStr = municipio ? String(municipio) : null;
+  const municipiosArr = municipios ? String(municipios).split(',').map(m => m.trim()).filter(Boolean) : null;
   const iesNum = ies ? Number(ies) : null;
   const cursoStr = curso ? String(curso) : null;
   const modalidadeNum = modalidade ? Number(modalidade) : null;
 
-  const regioes = regioesParaConsultar(ufStr);
-  const filters = { uf: ufStr, rede: redeNum, municipio: municipioStr, ies: iesNum, curso: cursoStr, modalidade: modalidadeNum };
+  // Se municipios (franquia) especificado, precisamos buscar todas as regiões necessárias
+  const regioes = municipiosArr && municipiosArr.length > 0
+    ? REGIOES  // busca todas as regiões pois municípios podem estar em várias
+    : regioesParaConsultar(ufStr);
+  const filters = { uf: ufStr, rede: redeNum, municipio: municipioStr, municipios: municipiosArr, ies: iesNum, curso: cursoStr, modalidade: modalidadeNum };
 
   // Carrega ano selecionado + ano anterior em paralelo para calcular variação
   const anoAnt = anoNum - 1;
@@ -344,18 +354,18 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
     instituicoes: e.ies.size, percentual: totalMatEst > 0 ? Number(((e.mat / totalMatEst) * 100).toFixed(1)) : 0,
   }));
 
-  // ── 4. Cidades (se UF filtrado) ──
+  // ── 4. Cidades (se UF filtrado ou franquia com múltiplos municípios) ──
   const cidades: unknown[] = [];
-  if (ufStr) {
-    const porMun = new Map<string, { mat: number; conc: number; ing: number; ies: Set<number> }>();
+  if (ufStr || (municipiosArr && municipiosArr.length > 0)) {
+    const porMun = new Map<string, { mat: number; conc: number; ing: number; uf: string; ies: Set<number> }>();
     for (const r of rowsAtual) {
       if (!r.NO_MUNICIPIO) continue;
       let e = porMun.get(r.NO_MUNICIPIO);
-      if (!e) { e = { mat: 0, conc: 0, ing: 0, ies: new Set() }; porMun.set(r.NO_MUNICIPIO, e); }
+      if (!e) { e = { mat: 0, conc: 0, ing: 0, uf: r.SG_UF, ies: new Set() }; porMun.set(r.NO_MUNICIPIO, e); }
       e.mat += r.QT_MAT; e.conc += r.QT_CONC; e.ing += r.QT_ING; e.ies.add(r.CO_IES);
     }
     for (const [mun, e] of porMun.entries()) {
-      cidades.push({ nome: mun, uf: ufStr, lat: 0, lng: 0, matriculas: e.mat, concluintes: e.conc, ingressantes: e.ing, turmas: 0, instituicoes: e.ies.size });
+      cidades.push({ nome: mun, uf: e.uf, lat: 0, lng: 0, matriculas: e.mat, concluintes: e.conc, ingressantes: e.ing, turmas: 0, instituicoes: e.ies.size });
     }
   }
 
@@ -410,17 +420,21 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
 
 // ─── action=evolucao — Lazy: todos os anos, apenas agregação temporal ─
 async function handleEvolucao(req: NextApiRequest, res: NextApiResponse) {
-  const { uf, rede, municipio, ies, curso, modalidade } = req.query;
+  const { uf, rede, municipio, municipios, ies, curso, modalidade } = req.query;
   const ufStr = uf ? String(uf).toUpperCase() : null;
+  const municipiosArr = municipios ? String(municipios).split(',').map(m => m.trim()).filter(Boolean) : null;
   const filters = {
     uf: ufStr,
     rede: rede ? Number(rede) : null,
     municipio: municipio ? String(municipio) : null,
+    municipios: municipiosArr,
     ies: ies ? Number(ies) : null,
     curso: curso ? String(curso) : null,
     modalidade: modalidade ? Number(modalidade) : null,
   };
-  const regioes = regioesParaConsultar(ufStr);
+  const regioes = municipiosArr && municipiosArr.length > 0
+    ? REGIOES
+    : regioesParaConsultar(ufStr);
 
   const evolucao: unknown[] = [];
   // Sequencial para não estourar memória — cada ano já pode estar em cache

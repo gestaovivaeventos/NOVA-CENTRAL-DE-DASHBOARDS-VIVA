@@ -9,7 +9,6 @@ import type {
   DadosAnaliseMercado,
   FiltrosAnaliseMercado,
   VisaoAtiva,
-  DadosFranquia,
   DadosInstituicao,
   TipoInstituicao,
   TipoModalidade,
@@ -21,7 +20,10 @@ import {
   fetchAreasDisponiveis,
   invalidarCacheAnaliseMercado,
   UF_NOMES,
+  fetchFranquiasMunicipios,
+  getMunicipiosFranquia,
 } from '../utils/sheets-queries';
+import type { FranquiaMunicipios } from '../utils/sheets-queries';
 
 /** Converter tipoInstituicao (string) → tp_rede (number) para filtro */
 function redeToNumber(tipo: TipoInstituicao): number | null {
@@ -93,7 +95,13 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
   const [visaoAtiva, setVisaoAtiva] = useState<VisaoAtiva>('alunos');
   const [anosDisp, setAnosDisp] = useState<number[]>([]);
   const [areasDisp, setAreasDisp] = useState<string[]>([]);
+  const [franquiasData, setFranquiasData] = useState<FranquiaMunicipios[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Carregar dados de franquias uma vez
+  useEffect(() => {
+    fetchFranquiasMunicipios().then(setFranquiasData).catch(() => {});
+  }, []);
 
   // Forçar re-fetch (limpa cache localStorage e re-busca)
   const forceRefresh = useCallback(() => {
@@ -120,12 +128,17 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
 
       const rede = redeToNumber(filtros.tipoInstituicao);
       const modalidade = modalidadeToNumber(filtros.modalidade);
-      const { ano, estado, municipio, instituicaoId, curso } = filtros;
+      const { ano, estado, municipio, instituicaoId, curso, franquiaId } = filtros;
+
+      // Resolver municípios da franquia selecionada
+      const municipiosFranquia = franquiaId
+        ? getMunicipiosFranquia(franquiaId, franquiasData)
+        : null;
 
       async function carregarDados() {
         try {
           const [dados, anos, areas] = await Promise.all([
-            fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId, curso, modalidade),
+            fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId, curso, modalidade, municipiosFranquia && municipiosFranquia.length > 0 ? municipiosFranquia : null),
             anosDisp.length > 0 ? Promise.resolve(anosDisp) : fetchAnosDisponiveis(),
             areasDisp.length > 0 ? Promise.resolve(areasDisp) : fetchAreasDisponiveis(),
           ]);
@@ -147,7 +160,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
         if (!thisCancelled.current) {
           setLoadingEvolucao(true);
           try {
-            const evolucao = await fetchEvolucaoLazy(rede, estado, municipio, instituicaoId, curso, modalidade);
+            const evolucao = await fetchEvolucaoLazy(rede, estado, municipio, instituicaoId, curso, modalidade, municipiosFranquia && municipiosFranquia.length > 0 ? municipiosFranquia : null);
             if (!thisCancelled.current && evolucao.length > 0) {
               setDadosBase(prev => ({
                 ...prev,
@@ -169,16 +182,24 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
       cancelledRef.current = true;
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
-  }, [filtros.ano, filtros.tipoInstituicao, filtros.modalidade, filtros.estado, filtros.municipio, filtros.instituicaoId, filtros.curso, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filtros.ano, filtros.tipoInstituicao, filtros.modalidade, filtros.estado, filtros.municipio, filtros.instituicaoId, filtros.curso, filtros.franquiaId, franquiasData, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ──── Cascading resets na hierarquia ────
   const setFiltros = useCallback((patch: Partial<FiltrosAnaliseMercado>) => {
     setFiltrosState(prev => {
       const next = { ...prev, ...patch };
 
-      // Hierarquia: Ano → Estado → Município → Rede → Modalidade → Instituição → Curso
+      // Hierarquia: Franquia → Ano → Estado → Município → Rede → Modalidade → Instituição → Curso
       // Mudar um nível reseta todos os níveis abaixo
-      if ('ano' in patch && patch.ano !== prev.ano) {
+      if ('franquiaId' in patch && patch.franquiaId !== prev.franquiaId) {
+        // Franquia muda → limpa filtros geográficos subordinados
+        next.estado = null;
+        next.municipio = null;
+        next.tipoInstituicao = 'todos';
+        next.modalidade = 'todos';
+        next.instituicaoId = null;
+        next.curso = null;
+      } else if ('ano' in patch && patch.ano !== prev.ano) {
         next.estado = null;
         next.municipio = null;
         next.tipoInstituicao = 'todos';
@@ -276,40 +297,6 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     if (filtros.instituicaoId) {
       const instFiltrada = dadosBase.instituicoes.filter(i => i.codIes === filtros.instituicaoId);
       resultado = { ...resultado, instituicoes: instFiltrada };
-    }
-
-    // Gerar dados da franquia
-    if (filtros.franquiaId) {
-      const franquia = dadosBase.franquias.find(f => f.id === filtros.franquiaId);
-      if (franquia) {
-        const totalBrasilMat = dadosBase.distribuicaoEstados.reduce((sum, e) => sum + e.matriculas, 0);
-        const totalBrasilConc = dadosBase.distribuicaoEstados.reduce((sum, e) => sum + e.concluintes, 0);
-        const totalBrasilTurmas = dadosBase.distribuicaoEstados.reduce((sum, e) => sum + e.turmas, 0);
-
-        const fatorFranquia = 0.35;
-        const turmasLocal = Math.round(totalBrasilTurmas * fatorFranquia / dadosBase.franquias.length);
-        const matriculasLocal = Math.round(totalBrasilMat * fatorFranquia / dadosBase.franquias.length);
-        const concluintesLocal = Math.round(totalBrasilConc * fatorFranquia / dadosBase.franquias.length);
-        const carteiraAtual = Math.round(turmasLocal * 0.12);
-
-        const dadosFranquia: DadosFranquia = {
-          franquia,
-          matriculasLocal,
-          concluintesLocal,
-          turmasLocal,
-          participacaoTerritorio: ((carteiraAtual / turmasLocal) * 100),
-          gapOportunidade: turmasLocal - carteiraAtual,
-          carteiraAtual,
-          comparativoBrasil: {
-            matriculasBrasil: totalBrasilMat,
-            concluintesBrasil: totalBrasilConc,
-            turmasBrasil: totalBrasilTurmas,
-            percentualDoTotal: (turmasLocal / totalBrasilTurmas) * 100,
-          },
-        };
-
-        resultado = { ...resultado, dadosFranquia };
-      }
     }
 
     return resultado;

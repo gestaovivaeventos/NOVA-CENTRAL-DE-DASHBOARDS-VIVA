@@ -173,23 +173,46 @@ const COORDS_CAPITAIS: Record<string, { lat: number; lng: number }> = {
   RR: { lat: 2.82, lng: -60.67 },
 };
 
-// ─── Franquias ────────────────────────────────────────────────────
-const NOMES_FRANQUIAS = [
-  'Barbacena', 'Belo Horizonte', 'Cacoal', 'Campo Grande', 'Campos',
-  'Cascavel', 'Contagem', 'Cuiaba', 'Curitiba', 'Divinópolis',
-  'Florianópolis', 'Fortaleza', 'Governador Valadares', 'Ipatinga',
-  'Itaperuna Muriae', 'João Pessoa', 'Juiz de Fora', 'Lavras', 'Linhares',
-  'Londrina', 'Montes Claros', 'Palmas', 'Passos', 'Petropolis',
-  'Pocos de Caldas', 'Porto Alegre', 'Porto Velho', 'Pouso Alegre',
-  'Recife', 'Região dos Lagos', 'Rio Branco', 'Rio de Janeiro', 'Salvador',
-  'São Luís', 'Sao Paulo', 'Uba', 'Uberlândia', 'Vitória',
-  'Volta Redonda - VivaMixx',
-];
+// ─── Franquias (carregadas da planilha via API) ──────────────────
+export interface FranquiaMunicipios {
+  nome: string;
+  municipios: string[];
+}
 
-const FRANQUIAS: Franquia[] = NOMES_FRANQUIAS.map(nome => ({
-  id: nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-  nome,
-}));
+let _franquiasCache: FranquiaMunicipios[] | null = null;
+let _franquiasCacheExpires = 0;
+
+/** Busca mapeamento franquia→municípios da API */
+export async function fetchFranquiasMunicipios(): Promise<FranquiaMunicipios[]> {
+  if (_franquiasCache && Date.now() < _franquiasCacheExpires) return _franquiasCache;
+
+  try {
+    const res = await fetch('/api/analise-mercado/franquias');
+    if (!res.ok) return _franquiasCache || [];
+    const data = await res.json();
+    _franquiasCache = (data.franquias || []) as FranquiaMunicipios[];
+    _franquiasCacheExpires = Date.now() + 60 * 60 * 1000; // 1h
+    return _franquiasCache;
+  } catch {
+    return _franquiasCache || [];
+  }
+}
+
+/** Converter lista de franquias para o formato Franquia[] do módulo */
+function franquiasParaLista(fms: FranquiaMunicipios[]): Franquia[] {
+  return fms.map(f => ({
+    id: f.nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+    nome: f.nome,
+  }));
+}
+
+/** Obter municípios de uma franquia pelo id */
+export function getMunicipiosFranquia(franquiaId: string, fms: FranquiaMunicipios[]): string[] {
+  const franquia = fms.find(
+    f => f.nome.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') === franquiaId
+  );
+  return franquia ? franquia.municipios : [];
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────
 function variacao(atual: number, anterior: number): number {
@@ -717,11 +740,13 @@ export async function fetchDadosAnaliseMercado(
   ies: number | null = null,
   curso: string | null = null,
   modalidade: number | null = null,
+  municipios: string[] | null = null,
 ): Promise<DadosAnaliseMercado> {
   const parts = [`dash_${ano}`];
   if (rede) parts.push(`r${rede}`);
   if (uf) parts.push(`uf${uf}`);
   if (municipio) parts.push(`m${municipio}`);
+  if (municipios && municipios.length > 0) parts.push(`muns${municipios.join('|')}`);
   if (ies) parts.push(`ies${ies}`);
   if (curso) parts.push(`c${curso}`);
   if (modalidade) parts.push(`mod${modalidade}`);
@@ -734,6 +759,7 @@ export async function fetchDadosAnaliseMercado(
     if (uf) query.set('uf', uf);
     if (rede) query.set('rede', String(rede));
     if (municipio) query.set('municipio', municipio);
+    if (municipios && municipios.length > 0) query.set('municipios', municipios.join(','));
     if (ies) query.set('ies', String(ies));
     if (curso) query.set('curso', curso);
     if (modalidade) query.set('modalidade', String(modalidade));
@@ -761,10 +787,24 @@ export async function fetchDadosAnaliseMercado(
       return { ...c, nome, lat: coord.lat, lng: coord.lng };
     });
 
-    const cidadesPorEstado: Record<string, DadosCidade[]> = {};
-    if (uf && cidades.length > 0) cidadesPorEstado[uf] = cidades;
-
     const anosDisp: number[] = data.anos || [];
+
+    // Carregar lista de franquias da planilha
+    const franquiasMun = await fetchFranquiasMunicipios();
+
+    // Cidades por estado: quando franquia ativa, agrupar por UF
+    const cidadesPorEstado: Record<string, DadosCidade[]> = {};
+    if (municipios && municipios.length > 0 && cidades.length > 0) {
+      // Agrupar cidades por UF para o mapa
+      for (const c of cidades) {
+        const cidUf = String(c.uf || '');
+        if (!cidUf) continue;
+        if (!cidadesPorEstado[cidUf]) cidadesPorEstado[cidUf] = [];
+        cidadesPorEstado[cidUf].push(c);
+      }
+    } else if (uf && cidades.length > 0) {
+      cidadesPorEstado[uf] = cidades;
+    }
 
     return {
       indicadores,
@@ -776,7 +816,7 @@ export async function fetchDadosAnaliseMercado(
       demografia: derivarDemografia(evolucao, ano),
       evolucaoTurmas: derivarEvolucaoTurmas(evolucao),
       gruposEducacionais: derivarGruposEducacionais(instituicoes),
-      franquias: FRANQUIAS,
+      franquias: franquiasParaLista(franquiasMun),
       ultimaAtualizacao: new Date().toISOString(),
       fonte: `Censo da Educação Superior — INEP (${anosDisp.length > 0 ? `${anosDisp[0]}–${anosDisp[anosDisp.length - 1]}` : 'N/A'})`,
     };
@@ -791,11 +831,13 @@ export async function fetchEvolucaoLazy(
   ies: number | null = null,
   curso: string | null = null,
   modalidade: number | null = null,
+  municipios: string[] | null = null,
 ): Promise<DadosEvolucaoAnual[]> {
   const parts = ['evol_lazy'];
   if (rede) parts.push(`r${rede}`);
   if (uf) parts.push(`uf${uf}`);
   if (municipio) parts.push(`m${municipio}`);
+  if (municipios && municipios.length > 0) parts.push(`muns${municipios.join('|')}`);
   if (ies) parts.push(`ies${ies}`);
   if (curso) parts.push(`c${curso}`);
   if (modalidade) parts.push(`mod${modalidade}`);
@@ -807,6 +849,7 @@ export async function fetchEvolucaoLazy(
     if (uf) query.set('uf', uf);
     if (rede) query.set('rede', String(rede));
     if (municipio) query.set('municipio', municipio);
+    if (municipios && municipios.length > 0) query.set('municipios', municipios.join(','));
     if (ies) query.set('ies', String(ies));
     if (curso) query.set('curso', curso);
     if (modalidade) query.set('modalidade', String(modalidade));
