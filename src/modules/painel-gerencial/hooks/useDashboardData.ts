@@ -151,7 +151,8 @@ function processOkrsData(rows: any[][]): OkrData[] {
     indicator: headers.indexOf('INDICADORES'),
     meta: headers.indexOf('META'),
     realizado: headers.indexOf('REALIZADO'),
-    atingimento: headers.indexOf('ATINGIMENTO')
+    atingimento: headers.indexOf('ATINGIMENTO'),
+    tendencia: headers.indexOf('TENDENCIA')
   };
 
   const processedData: OkrData[] = [];
@@ -173,7 +174,8 @@ function processOkrsData(rows: any[][]): OkrData[] {
         meta: row[colIndices.meta] || '',
         realizado: row[colIndices.realizado] || '',
         atingimento: atingimentoValue,
-        data: row[colIndices.data] || ''
+        data: row[colIndices.data] || '',
+        tendencia: (colIndices.tendencia >= 0 ? row[colIndices.tendencia] : '') || ''
       });
     }
   });

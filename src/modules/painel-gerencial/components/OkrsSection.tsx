@@ -158,9 +158,18 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
   const calcAtingimentoAno = (kr: OkrData): number => {
     const realizadoVal = parseMetaValue(kr.realizado);
     const metaAnual = findLatestMeta(kr.indicator);
+    const isMenorMelhor = (kr.tendencia || '').toUpperCase().includes('MENOR');
     
     if (metaAnual === 0) return 0;
-    const percent = (realizadoVal / metaAnual) * 100;
+    
+    let percent: number;
+    if (isMenorMelhor) {
+      // Para "MENOR, MELHOR": quanto menor o realizado em relação à meta, melhor
+      percent = realizadoVal > 0 ? (metaAnual / realizadoVal) * 100 : 100;
+    } else {
+      percent = (realizadoVal / metaAnual) * 100;
+    }
+    
     return Math.max(0, Math.min(percent, 100));
   };
 

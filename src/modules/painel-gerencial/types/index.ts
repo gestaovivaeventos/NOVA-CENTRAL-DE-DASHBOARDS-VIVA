@@ -10,6 +10,7 @@ export interface OkrData {
   realizado: string;
   atingimento: number;
   data: string;
+  tendencia: string;
 }
 
 // Tipo simplificado para processamento de OKRs
