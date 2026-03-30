@@ -1,0 +1,225 @@
+/**
+ * TabelaRanking — Tabela de ranking com dados ordenáveis
+ * Usada para ranking de estados, cursos, grupos educacionais etc.
+ */
+
+import React, { useState, useMemo } from 'react';
+import { ChevronUp, ChevronDown, Search, X } from 'lucide-react';
+import { fmtNum, fmtInteiro, fmtPct } from '../utils/formatters';
+
+interface Coluna<T> {
+  key: keyof T & string;
+  label: string;
+  tipo: 'texto' | 'numero' | 'percentual';
+  largura?: string;
+}
+
+interface TabelaRankingProps<T extends Record<string, any>> {
+  titulo: string;
+  dados: T[];
+  colunas: Coluna<T>[];
+  linhasVisiveis?: number;
+  destaqueCor?: string;
+  fillHeight?: boolean;
+}
+
+export default function TabelaRanking<T extends Record<string, any>>({
+  titulo,
+  dados,
+  colunas,
+  linhasVisiveis = 10,
+  destaqueCor = '#FF6600',
+  fillHeight = false,
+}: TabelaRankingProps<T>) {
+  const [sortKey, setSortKey] = useState<string>(colunas[1]?.key || colunas[0]?.key || '');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [busca, setBusca] = useState('');
+
+  const normalizar = (str: string) =>
+    str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  const colunasTexto = useMemo(() => colunas.filter(c => c.tipo === 'texto').map(c => c.key), [colunas]);
+
+  const dadosFiltrados = useMemo(() => {
+    if (!busca.trim()) return dados;
+    const termo = normalizar(busca.trim());
+    return dados.filter(row =>
+      colunasTexto.some(key => normalizar(String(row[key] ?? '')).includes(termo))
+    );
+  }, [dados, busca, colunasTexto]);
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir(d => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
+
+  const dadosOrdenados = [...dadosFiltrados].sort((a, b) => {
+    const va = a[sortKey];
+    const vb = b[sortKey];
+    if (typeof va === 'number' && typeof vb === 'number') {
+      return sortDir === 'asc' ? va - vb : vb - va;
+    }
+    return sortDir === 'asc'
+      ? String(va).localeCompare(String(vb))
+      : String(vb).localeCompare(String(va));
+  });
+
+  const formatarValor = (valor: any, tipo: string) => {
+    if (tipo === 'percentual') return fmtPct(valor);
+    if (tipo === 'numero') return typeof valor === 'number' && valor >= 1000 ? fmtInteiro(valor) : String(valor);
+    return String(valor);
+  };
+
+  // Altura máxima do corpo da tabela (linhasVisiveis * ~40px por linha)
+  const maxBodyHeight = linhasVisiveis * 40;
+
+  return (
+    <div style={{ backgroundColor: '#343A40', borderRadius: 12, border: '1px solid #495057', overflow: 'hidden', ...(fillHeight ? { height: '100%', display: 'flex', flexDirection: 'column' as const } : {}) }}>
+      {titulo && (
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #495057' }}>
+          <h3 style={{
+            color: '#F8F9FA', fontSize: '1rem', fontWeight: 600, margin: 0,
+            fontFamily: "'Poppins', sans-serif",
+          }}>
+            {titulo}
+          </h3>
+        </div>
+      )}
+
+      {/* Buscador */}
+      <div style={{ padding: '10px 16px 6px', position: 'relative' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          backgroundColor: '#2D3238', borderRadius: 8,
+          border: `1px solid ${busca ? '#FF6600' : '#495057'}`,
+          padding: '6px 12px', transition: 'border-color 0.2s',
+        }}>
+          <Search size={14} color={busca ? '#FF6600' : '#6C757D'} />
+          <input
+            type="text"
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar..."
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: '#F8F9FA', fontSize: '0.78rem',
+              fontFamily: "'Poppins', sans-serif",
+            }}
+          />
+          {busca && (
+            <button
+              onClick={() => setBusca('')}
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                padding: 2, display: 'flex', alignItems: 'center',
+              }}
+            >
+              <X size={14} color="#6C757D" />
+            </button>
+          )}
+        </div>
+        {busca && (
+          <span style={{ fontSize: '0.65rem', color: '#6C757D', marginTop: 2, display: 'block' }}>
+            {dadosFiltrados.length} resultado{dadosFiltrados.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
+      <div style={{ overflowX: 'auto', ...(fillHeight ? { flex: 1, overflowY: 'auto' } : { maxHeight: maxBodyHeight + 42, overflowY: dadosOrdenados.length > linhasVisiveis ? 'auto' : 'hidden' }) }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
+            <tr style={{ backgroundColor: '#2D3238' }}>
+              <th style={{
+                color: '#6C757D', fontWeight: 600, padding: '10px 12px', textAlign: 'center',
+                fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em',
+                borderBottom: '2px solid #495057', width: '40px',
+              }}>
+                #
+              </th>
+              {colunas.map(col => (
+                <th
+                  key={col.key}
+                  onClick={() => handleSort(col.key)}
+                  style={{
+                    color: sortKey === col.key ? '#FF6600' : '#6C757D',
+                    fontWeight: 600, padding: '10px 12px',
+                    textAlign: col.tipo === 'texto' ? 'left' : 'center',
+                    fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em',
+                    borderBottom: '2px solid #495057', cursor: 'pointer',
+                    whiteSpace: 'nowrap', width: col.largura,
+                    transition: 'color 0.15s',
+                    backgroundColor: '#2D3238',
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    {col.label}
+                    {sortKey === col.key && (sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />)}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {dadosOrdenados.map((row, i) => (
+              <tr
+                key={i}
+                style={{
+                  borderBottom: '1px solid #3D4349',
+                  backgroundColor: i % 2 ? 'rgba(255,255,255,0.02)' : 'transparent',
+                  transition: 'background-color 0.15s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,102,0,0.05)'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = i % 2 ? 'rgba(255,255,255,0.02)' : 'transparent'; }}
+              >
+                <td style={{
+                  padding: '10px 12px', textAlign: 'center',
+                  color: i < 3 ? destaqueCor : '#6C757D', fontWeight: i < 3 ? 700 : 400,
+                  fontSize: '0.8rem', width: '40px',
+                }}>
+                  {i + 1}
+                </td>
+                {colunas.map(col => (
+                  <td
+                    key={col.key}
+                    style={{
+                      padding: '10px 12px',
+                      textAlign: col.tipo === 'texto' ? 'left' : 'center',
+                      color: col.tipo === 'texto' ? '#F8F9FA' : '#ADB5BD',
+                      fontWeight: col.tipo === 'texto' ? 500 : 400,
+                      width: col.largura,
+                    }}
+                  >
+                    {col.tipo === 'percentual' ? (() => {
+                      const val = Number(row[col.key]) || 0;
+                      const barColor = val >= 8 ? '#10B981' : val >= 4 ? '#F59E0B' : '#EF4444';
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ minWidth: 44, textAlign: 'right', fontFamily: "'Orbitron', monospace", fontSize: '0.75rem', fontWeight: 600, color: barColor }}>
+                            {fmtPct(val)}
+                          </span>
+                            <div style={{ flex: 1, height: 8, backgroundColor: '#2D3238', borderRadius: 5, overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${Math.min(val * 5, 100)}%`,
+                              height: '100%',
+                              backgroundColor: barColor,
+                              borderRadius: 5,
+                              transition: 'width 0.4s ease',
+                            }} />
+                          </div>
+                        </div>
+                      );
+                    })() : formatarValor(row[col.key], col.tipo)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

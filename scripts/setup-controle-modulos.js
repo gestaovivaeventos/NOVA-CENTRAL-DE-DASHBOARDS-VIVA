@@ -78,7 +78,10 @@ async function setup() {
     ['okr', 'Dashboard OKRs', '/okr', '1', '', 'TRUE', 'Direcionamento Estratégico', '2', 'target', 'interno', '', ''],
     ['gerencial', 'Painel Gerencial', '/gerencial', '1', '', 'TRUE', 'Direcionamento Estratégico', '3', 'trophy', 'interno', '', ''],
 
-    // ═══ 💰 SAÚDE FINANCEIRA & TESOURARIA ═══
+    // ═══ 📊 ANÁLISE DE MERCADO (Gestão Franqueadora) ═══
+    ['analise-mercado', 'Análise de Mercado', '/analise-mercado', '1', '', 'TRUE', 'Gestão Franqueadora', '5', 'search', 'interno', '', ''],
+
+    // ═══ �💰 SAÚDE FINANCEIRA & TESOURARIA ═══
     ['fluxo-projetado', 'Gestão de Caixa', '/fluxo-projetado', '1', '', 'TRUE', 'Saúde Financeira & Tesouraria', '1', 'fluxo', 'interno', '', ''],
     ['markup-cielo', 'Acompanhamento Markup - CIELO', '/ext/markup-cielo', '1', USERS_PREVIEW, 'TRUE', 'Saúde Financeira & Tesouraria', '2', 'creditcard', 'externo', 'https://lookerstudio.google.com/u/0/reporting/c89edab0-20ae-492a-8c73-d39281df3dd9/page/muWWE', ''],
     ['transacoes-cartao', 'Transações Cartão', '/ext/transacoes-cartao', '1', USERS_PREVIEW, 'TRUE', 'Saúde Financeira & Tesouraria', '3', 'wallet', 'externo', 'https://lookerstudio.google.com/u/0/reporting/2b6c3dbd-0d07-4b29-832b-7b8dbe42a4e9/page/p_vtmknmd0bd', ''],
