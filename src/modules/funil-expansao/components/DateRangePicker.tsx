@@ -53,6 +53,8 @@ interface DateRangePickerProps {
   onPeriodoChange: (periodo: string) => void;
   onDataInicioChange: (data: string) => void;
   onDataFimChange: (data: string) => void;
+  /** Callback único para atualizar período + datas de uma vez (evita race condition com closures) */
+  onRangeChange?: (periodo: string, dataInicio: string, dataFim: string) => void;
 }
 
 function getPredefinedPeriod(period: string): { start: Date; end: Date } | null {
@@ -99,7 +101,7 @@ function formatDateForInput(date: Date): string {
 
 export default function DateRangePicker({
   periodoSelecionado, dataInicio, dataFim,
-  onPeriodoChange, onDataInicioChange, onDataFimChange,
+  onPeriodoChange, onDataInicioChange, onDataFimChange, onRangeChange,
 }: DateRangePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
@@ -150,9 +152,15 @@ export default function DateRangePicker({
   const handleQuickPeriod = (period: string) => {
     const dates = getPredefinedPeriod(period);
     if (dates) {
-      onPeriodoChange(period);
-      onDataInicioChange(formatDateForInput(dates.start));
-      onDataFimChange(formatDateForInput(dates.end));
+      const inicio = formatDateForInput(dates.start);
+      const fim = formatDateForInput(dates.end);
+      if (onRangeChange) {
+        onRangeChange(period, inicio, fim);
+      } else {
+        onPeriodoChange(period);
+        onDataInicioChange(inicio);
+        onDataFimChange(fim);
+      }
     }
     setIsOpen(false);
   };
