@@ -25,7 +25,7 @@ import type {
 } from '../types';
 
 // ─── Cache localStorage (30 dias TTL) ─────────────────────────────
-const CACHE_VERSION = 18;
+const CACHE_VERSION = 19;
 const CACHE_PREFIX = `am_cache_v${CACHE_VERSION}_`;
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 
@@ -72,6 +72,41 @@ try {
     console.log(`[Análise de Mercado] Cache antigo removido (${oldKeys.length} entradas)`);
   }
 } catch { /* ignore */ }
+
+/** Fetch com timeout (AbortController) — evita travar no Vercel se a API demorar */
+async function fetchWithTimeout(url: string, timeoutMs = 55000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    return res;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Fetch com retry automático (até 2 tentativas) + timeout */
+async function fetchWithRetry(url: string, retries = 1, timeoutMs = 55000): Promise<Response> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, timeoutMs);
+      if (res.ok) return res;
+      // Se o server retornou erro 5xx, tenta de novo
+      if (res.status >= 500 && attempt < retries) {
+        console.warn(`[Fetch] Retry ${attempt + 1}/${retries} para ${url} (status ${res.status})`);
+        continue;
+      }
+      return res;
+    } catch (err) {
+      if (attempt < retries) {
+        console.warn(`[Fetch] Retry ${attempt + 1}/${retries} para ${url}:`, err);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error(`Fetch falhou após ${retries + 1} tentativas: ${url}`);
+}
 
 /** Busca com cache: tenta localStorage primeiro, senão chama fetcher */
 async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
@@ -135,7 +170,7 @@ async function fetchInepRows(params: {
   if (params.curso) query.set('curso', params.curso);
   if (params.modalidade) query.set('modalidade', String(params.modalidade));
 
-  const res = await fetch(`/api/analise-mercado/inep?${query.toString()}`);
+  const res = await fetchWithTimeout(`/api/analise-mercado/inep?${query.toString()}`, 55000);
   if (!res.ok) {
     console.error('[INEP] Erro na API:', res.status, res.statusText);
     return [];
@@ -187,7 +222,7 @@ export async function fetchFranquiasMunicipios(): Promise<FranquiaMunicipios[]> 
   if (_franquiasCache && Date.now() < _franquiasCacheExpires) return _franquiasCache;
 
   try {
-    const res = await fetch('/api/analise-mercado/franquias');
+    const res = await fetchWithTimeout('/api/analise-mercado/franquias', 20000);
     if (!res.ok) return _franquiasCache || [];
     const data = await res.json();
     _franquiasCache = (data.franquias || []) as FranquiaMunicipios[];
@@ -264,7 +299,7 @@ function addToBreakdown(
 export async function fetchAnosDisponiveis(): Promise<number[]> {
   return cachedFetch('anos_sheets_v3', async () => {
     try {
-      const res = await fetch('/api/analise-mercado/inep?action=anos');
+      const res = await fetchWithTimeout('/api/analise-mercado/inep?action=anos', 15000);
       if (!res.ok) return [2022, 2023, 2024];
       const json = await res.json();
       const anos = (json.anos || []) as number[];
@@ -275,17 +310,18 @@ export async function fetchAnosDisponiveis(): Promise<number[]> {
   });
 }
 
-// ─── Áreas Disponíveis (usa apenas ano mais recente) ─────────────────
+// ─── Áreas Disponíveis (endpoint leve — não carrega raw rows) ─────────────────
 export async function fetchAreasDisponiveis(): Promise<string[]> {
-  return cachedFetch('areas_sheets_v2', async () => {
-    const anos = await fetchAnosDisponiveis();
-    const anoRecente = anos.length > 0 ? anos[anos.length - 1] : 2024;
-    const rows = await fetchInepRows({ ano: anoRecente });
-    const areas = new Set<string>();
-    for (const r of rows) {
-      if (r.NO_CINE_AREA_GERAL) areas.add(fixText(r.NO_CINE_AREA_GERAL));
+  return cachedFetch('areas_sheets_v4', async () => {
+    try {
+      const res = await fetchWithTimeout('/api/analise-mercado/inep?action=areas', 20000);
+      if (!res.ok) return [];
+      const json = await res.json();
+      const areas = (json.areas || []) as string[];
+      return areas.length > 0 ? areas : [];
+    } catch {
+      return [];
     }
-    return Array.from(areas).sort();
   });
 }
 
@@ -756,6 +792,7 @@ export async function fetchDadosAnaliseMercado(
     const query = new URLSearchParams();
     query.set('action', 'dashboard');
     query.set('ano', String(ano));
+    query.set('skipVariation', '1'); // Pular ano anterior para acelerar no Vercel
     if (uf) query.set('uf', uf);
     if (rede) query.set('rede', String(rede));
     if (municipio) query.set('municipio', municipio);
@@ -764,7 +801,7 @@ export async function fetchDadosAnaliseMercado(
     if (curso) query.set('curso', curso);
     if (modalidade) query.set('modalidade', String(modalidade));
 
-    const res = await fetch(`/api/analise-mercado/inep?${query.toString()}`);
+    const res = await fetchWithRetry(`/api/analise-mercado/inep?${query.toString()}`, 1, 55000);
     if (!res.ok) {
       console.error('[Dashboard] Erro:', res.status, res.statusText);
       throw new Error(`Dashboard API error: ${res.status}`);
@@ -854,7 +891,7 @@ export async function fetchEvolucaoLazy(
     if (curso) query.set('curso', curso);
     if (modalidade) query.set('modalidade', String(modalidade));
 
-    const res = await fetch(`/api/analise-mercado/inep?${query.toString()}`);
+    const res = await fetchWithRetry(`/api/analise-mercado/inep?${query.toString()}`, 1, 55000);
     if (!res.ok) return [];
     const data = await res.json();
     return (data.evolucao || []) as DadosEvolucaoAnual[];

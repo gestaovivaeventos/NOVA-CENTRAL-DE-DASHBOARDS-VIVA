@@ -10,6 +10,10 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 import cache from '@/lib/cache';
 
+export const config = {
+  maxDuration: 60,
+};
+
 const CACHE_TTL = 60 * 60 * 1000; // 1 hora
 const CACHE_KEY = 'franquias_municipios';
 

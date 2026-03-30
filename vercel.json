@@ -3,5 +3,14 @@
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "functions": {
+    "src/pages/api/analise-mercado/inep.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/pages/api/analise-mercado/franquias.ts": {
+      "maxDuration": 30
+    }
+  }
 }

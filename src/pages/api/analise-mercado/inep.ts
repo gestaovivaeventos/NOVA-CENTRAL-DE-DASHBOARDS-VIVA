@@ -17,6 +17,11 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { google } from 'googleapis';
 import cache from '@/lib/cache';
 
+// Vercel serverless: aumentar timeout para 60s (Pro) ou 10s (Hobby)
+export const config = {
+  maxDuration: 60,
+};
+
 // ─── Planilhas regionais por ano (IDs lidos de variáveis de ambiente) ─────
 const REGIOES = ['SUL', 'SUDESTE', 'NORTE', 'CENTRO_OESTE', 'NORDESTE'];
 const INEP_ANOS = [2022, 2023, 2024]; // anos configurados
@@ -270,6 +275,7 @@ const UF_NOMES: Record<string, string> = {
 
 // ─── action=dashboard — Só ano selecionado + anterior em PARALELO ─
 async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
+  const startTime = Date.now();
   const { uf, ano, rede, municipio, municipios, ies, curso, modalidade } = req.query;
   const ufStr = uf ? String(uf).toUpperCase() : null;
   const anoNum = ano ? Number(ano) : 2024;
@@ -287,12 +293,28 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
   const filters = { uf: ufStr, rede: redeNum, municipio: municipioStr, municipios: municipiosArr, ies: iesNum, curso: cursoStr, modalidade: modalidadeNum };
 
   // Carrega ano selecionado + ano anterior em paralelo para calcular variação
+  // No Vercel, o ano anterior pode ser skippado se skipVariation=1 (para economizar tempo)
+  const skipVariation = req.query.skipVariation === '1';
   const anoAnt = anoNum - 1;
-  const temAnoAnterior = ANOS_DISPONIVEIS.includes(anoAnt);
-  const [rowsAtual, rowsAnterior] = await Promise.all([
-    loadRows(anoNum, regioes, filters),
-    temAnoAnterior ? loadRows(anoAnt, regioes, filters) : Promise.resolve([]),
-  ]);
+  const temAnoAnterior = !skipVariation && ANOS_DISPONIVEIS.includes(anoAnt);
+  
+  let rowsAtual: InepRow[];
+  let rowsAnterior: InepRow[] = [];
+  
+  try {
+    const results = await Promise.all([
+      loadRows(anoNum, regioes, filters),
+      temAnoAnterior ? loadRows(anoAnt, regioes, filters).catch(() => [] as InepRow[]) : Promise.resolve([] as InepRow[]),
+    ]);
+    rowsAtual = results[0];
+    rowsAnterior = results[1];
+  } catch (err) {
+    console.error('[Dashboard] Erro ao carregar planilhas:', err);
+    // Fallback: tentar sem ano anterior
+    rowsAtual = await loadRows(anoNum, regioes, filters);
+  }
+
+  console.log(`[Dashboard] Dados carregados em ${Date.now() - startTime}ms — ${rowsAtual.length} linhas (ano ${anoNum}), ${rowsAnterior.length} linhas (anterior)`);
 
   // ── 1. Indicadores (cards KPI) — variação calculada server-side (atual/anterior - 1) ──
   let mat = 0, conc = 0, ing = 0;
@@ -473,10 +495,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const action = req.query.action ? String(req.query.action) : null;
 
+    // Log de diagnóstico: verificar se env vars estão disponíveis
+    if (ANOS_DISPONIVEIS.length === 0) {
+      console.error('[INEP] NENHUMA planilha INEP configurada! Verifique env vars INEP_YYYY_REGIAO.');
+      return res.status(500).json({
+        error: 'Planilhas INEP não configuradas. Verifique variáveis de ambiente.',
+        envCheck: REGIOES.map(r => `INEP_2024_${r}: ${process.env[`INEP_2024_${r}`] ? 'OK' : 'MISSING'}`),
+      });
+    }
+
     // Endpoint leve: anos disponíveis
     if (action === 'anos') {
       res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=86400');
       return res.status(200).json({ anos: ANOS_DISPONIVEIS });
+    }
+
+    // Endpoint leve: áreas de conhecimento distintas (sem retornar raw rows)
+    if (action === 'areas') {
+      const anoAreas = req.query.ano ? Number(req.query.ano) : ANOS_DISPONIVEIS[ANOS_DISPONIVEIS.length - 1] || 2024;
+      // Carrega apenas 1 região (SUDESTE - maior) para obter as áreas distintas
+      const regiaoPrincipal = 'SUDESTE';
+      try {
+        const rowsSample = await fetchRegiao(regiaoPrincipal, anoAreas);
+        const areasSet = new Set<string>();
+        for (const r of rowsSample) {
+          if (r.NO_CINE_AREA_GERAL) areasSet.add(r.NO_CINE_AREA_GERAL);
+        }
+        res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=86400');
+        return res.status(200).json({ areas: Array.from(areasSet).sort() });
+      } catch (err) {
+        console.error('[INEP] Erro ao buscar áreas:', err);
+        return res.status(200).json({ areas: [] });
+      }
     }
 
     // Dashboard principal: só ano atual + anterior (rápido)

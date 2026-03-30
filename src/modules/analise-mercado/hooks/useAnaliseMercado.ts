@@ -137,16 +137,29 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
 
       async function carregarDados() {
         try {
-          const [dados, anos, areas] = await Promise.all([
+          // Usar allSettled para não perder tudo se uma chamada falhar/timeout
+          const results = await Promise.allSettled([
             fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId, curso, modalidade, municipiosFranquia && municipiosFranquia.length > 0 ? municipiosFranquia : null),
             anosDisp.length > 0 ? Promise.resolve(anosDisp) : fetchAnosDisponiveis(),
             areasDisp.length > 0 ? Promise.resolve(areasDisp) : fetchAreasDisponiveis(),
           ]);
 
           if (thisCancelled.current) return;
-          setDadosBase(dados);
-          if (anos.length > 0) setAnosDisp(anos);
-          if (areas.length > 0) setAreasDisp(areas);
+
+          // Dashboard data
+          if (results[0].status === 'fulfilled') {
+            setDadosBase(results[0].value);
+          } else {
+            console.error('[Análise de Mercado] Erro ao buscar dashboard:', results[0].reason);
+          }
+          // Anos
+          if (results[1].status === 'fulfilled' && results[1].value.length > 0) {
+            setAnosDisp(results[1].value);
+          }
+          // Áreas
+          if (results[2].status === 'fulfilled' && results[2].value.length > 0) {
+            setAreasDisp(results[2].value);
+          }
         } catch (err) {
           console.error('[Análise de Mercado] Erro ao buscar dados:', err);
         } finally {
