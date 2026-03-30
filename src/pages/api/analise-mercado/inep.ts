@@ -486,6 +486,140 @@ async function handleEvolucao(req: NextApiRequest, res: NextApiResponse) {
   return res.status(200).json({ evolucao });
 }
 
+// ─── action=regiao-agg — 1 região + 1 ano (cabe nos 10s do plano Hobby) ─
+async function handleRegiaoAgg(req: NextApiRequest, res: NextApiResponse) {
+  const startTime = Date.now();
+  const regiao = req.query.regiao ? String(req.query.regiao).toUpperCase() : null;
+  const anoNum = req.query.ano ? Number(req.query.ano) : 2024;
+
+  if (!regiao || !REGIOES.includes(regiao)) {
+    return res.status(400).json({ error: `Região inválida. Use: ${REGIOES.join(', ')}` });
+  }
+
+  if (!SHEETS_POR_ANO[anoNum]?.[regiao]) {
+    res.setHeader('Cache-Control', 's-maxage=3600');
+    return res.status(200).json({ regiao, ano: anoNum, empty: true });
+  }
+
+  const ufStr = req.query.uf ? String(req.query.uf).toUpperCase() : null;
+  const redeNum = req.query.rede ? Number(req.query.rede) : null;
+  const municipioStr = req.query.municipio ? String(req.query.municipio) : null;
+  const municipiosArr = req.query.municipios ? String(req.query.municipios).split(',').map(m => m.trim()).filter(Boolean) : null;
+  const iesNum = req.query.ies ? Number(req.query.ies) : null;
+  const cursoStr = req.query.curso ? String(req.query.curso) : null;
+  const modalidadeNum = req.query.modalidade ? Number(req.query.modalidade) : null;
+
+  let rows: InepRow[];
+  try {
+    rows = await fetchRegiao(regiao, anoNum);
+  } catch (err) {
+    console.error(`[RegiaoAgg] Erro ao carregar ${regiao}/${anoNum}:`, err);
+    return res.status(200).json({ regiao, ano: anoNum, empty: true });
+  }
+
+  // Filtros
+  if (ufStr) rows = rows.filter(r => r.SG_UF === ufStr);
+  if (redeNum) rows = rows.filter(r => r.TP_REDE === redeNum);
+  if (municipiosArr && municipiosArr.length > 0) {
+    const munSet = new Set(municipiosArr.map(m => m.toUpperCase()));
+    rows = rows.filter(r => munSet.has(r.NO_MUNICIPIO.toUpperCase()));
+  } else if (municipioStr) {
+    rows = rows.filter(r => r.NO_MUNICIPIO.toUpperCase() === municipioStr.toUpperCase());
+  }
+  if (iesNum) rows = rows.filter(r => r.CO_IES === iesNum);
+  if (cursoStr) rows = rows.filter(r => r.NO_CURSO.toUpperCase() === cursoStr.toUpperCase());
+  if (modalidadeNum) rows = rows.filter(r => r.TP_MODALIDADE_ENSINO === modalidadeNum);
+
+  // Totais + breakdowns
+  let mat = 0, conc = 0, ing = 0;
+  const iesSet = new Set<number>(), cursoSet = new Set<number>();
+  const bdMat = mkBd(), bdConc = mkBd(), bdIng = mkBd();
+  for (const r of rows) {
+    mat += r.QT_MAT; conc += r.QT_CONC; ing += r.QT_ING;
+    iesSet.add(r.CO_IES); cursoSet.add(r.CO_CURSO);
+    addBd(bdMat, r, r.QT_MAT, r.QT_MAT_FEM, r.QT_MAT_MASC);
+    addBd(bdConc, r, r.QT_CONC, r.QT_CONC_FEM, r.QT_CONC_MASC);
+    addBd(bdIng, r, r.QT_ING, r.QT_ING_FEM, r.QT_ING_MASC);
+  }
+
+  // Per-UF
+  const porUfMap = new Map<string, { mat: number; conc: number; ing: number; ies: Set<number> }>();
+  for (const r of rows) {
+    if (!r.SG_UF) continue;
+    let e = porUfMap.get(r.SG_UF);
+    if (!e) { e = { mat: 0, conc: 0, ing: 0, ies: new Set() }; porUfMap.set(r.SG_UF, e); }
+    e.mat += r.QT_MAT; e.conc += r.QT_CONC; e.ing += r.QT_ING; e.ies.add(r.CO_IES);
+  }
+  const estados = Array.from(porUfMap.entries()).map(([u, e]) => ({
+    uf: u, nome: UF_NOMES[u] || u, mat: e.mat, conc: e.conc, ing: e.ing, ies: e.ies.size,
+  }));
+
+  // Per-course
+  const porCursoMap = new Map<string, {
+    area: string; mat: number; conc: number; ing: number; iesSet: Set<number>;
+    bdM: Breakdown; bdC: Breakdown; bdI: Breakdown; genF: number; genM: number;
+  }>();
+  for (const r of rows) {
+    if (!r.NO_CURSO) continue;
+    let e = porCursoMap.get(r.NO_CURSO);
+    if (!e) {
+      e = { area: r.NO_CINE_AREA_GERAL || '', mat: 0, conc: 0, ing: 0, iesSet: new Set(),
+        bdM: mkBd(), bdC: mkBd(), bdI: mkBd(), genF: 0, genM: 0 };
+      porCursoMap.set(r.NO_CURSO, e);
+    }
+    e.mat += r.QT_MAT; e.conc += r.QT_CONC; e.ing += r.QT_ING; e.iesSet.add(r.CO_IES);
+    e.genF += r.QT_MAT_FEM; e.genM += r.QT_MAT_MASC;
+    addBd(e.bdM, r, r.QT_MAT, r.QT_MAT_FEM, r.QT_MAT_MASC);
+    addBd(e.bdC, r, r.QT_CONC, r.QT_CONC_FEM, r.QT_CONC_MASC);
+    addBd(e.bdI, r, r.QT_ING, r.QT_ING_FEM, r.QT_ING_MASC);
+  }
+  const cursos = Array.from(porCursoMap.entries()).map(([nome, e]) => ({
+    nome, area: e.area, mat: e.mat, conc: e.conc, ing: e.ing, ies: e.iesSet.size,
+    bdM: e.bdM, bdC: e.bdC, bdI: e.bdI, genF: e.genF, genM: e.genM,
+  }));
+
+  // Per-institution
+  const porIesMap = new Map<number, { nome: string; tipo: number; uf: string; cursos: Set<number>; mat: number; conc: number; ing: number }>();
+  for (const r of rows) {
+    let e = porIesMap.get(r.CO_IES);
+    if (!e) { e = { nome: r.NO_IES, tipo: r.TP_REDE, uf: r.SG_UF, cursos: new Set(), mat: 0, conc: 0, ing: 0 }; porIesMap.set(r.CO_IES, e); }
+    e.cursos.add(r.CO_CURSO); e.mat += r.QT_MAT; e.conc += r.QT_CONC; e.ing += r.QT_ING;
+  }
+  const instituicoes = Array.from(porIesMap.entries()).map(([cod, e]) => ({
+    codIes: cod, nome: e.nome, tipo: e.tipo, uf: e.uf, cursos: e.cursos.size, mat: e.mat, conc: e.conc, ing: e.ing,
+  }));
+
+  // Areas
+  const areasSet = new Set<string>();
+  for (const r of rows) { if (r.NO_CINE_AREA_GERAL) areasSet.add(r.NO_CINE_AREA_GERAL); }
+
+  // Cidades (se UF filtrado ou franquia)
+  const cidades: Array<{ nome: string; uf: string; mat: number; conc: number; ing: number; ies: number }> = [];
+  if (ufStr || (municipiosArr && municipiosArr.length > 0)) {
+    const porMun = new Map<string, { uf: string; mat: number; conc: number; ing: number; ies: Set<number> }>();
+    for (const r of rows) {
+      if (!r.NO_MUNICIPIO) continue;
+      let e = porMun.get(r.NO_MUNICIPIO);
+      if (!e) { e = { uf: r.SG_UF, mat: 0, conc: 0, ing: 0, ies: new Set() }; porMun.set(r.NO_MUNICIPIO, e); }
+      e.mat += r.QT_MAT; e.conc += r.QT_CONC; e.ing += r.QT_ING; e.ies.add(r.CO_IES);
+    }
+    for (const [mun, e] of porMun.entries()) {
+      cidades.push({ nome: mun, uf: e.uf, mat: e.mat, conc: e.conc, ing: e.ing, ies: e.ies.size });
+    }
+  }
+
+  console.log(`[RegiaoAgg] ${regiao}/${anoNum}: ${rows.length} rows → ${Date.now() - startTime}ms`);
+
+  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=7200');
+  return res.status(200).json({
+    regiao, ano: anoNum,
+    totais: { mat, conc, ing, ies: iesSet.size, cursos: cursoSet.size },
+    bdMat, bdConc, bdIng,
+    estados, cursos, instituicoes, cidades,
+    areas: Array.from(areasSet).sort(),
+  });
+}
+
 // ─── Handler ──────────────────────────────────────────────────────
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -537,6 +671,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Evolução histórica (lazy): todos os anos, chamado em segundo plano
     if (action === 'evolucao') {
       return handleEvolucao(req, res);
+    }
+
+    // Agregação por região: 1 região + 1 ano (cabe no plano Hobby 10s)
+    if (action === 'regiao-agg') {
+      return handleRegiaoAgg(req, res);
     }
 
     // Fallback raw rows (para uso específico, ex: cidades drill-down)

@@ -38,6 +38,7 @@ export default function AnaliseMercadoPage() {
     estadosDisponiveis,
     municipiosDisponiveis,
     forceRefresh,
+    progressMessage,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
 
@@ -63,7 +64,9 @@ export default function AnaliseMercadoPage() {
             borderRadius: '50%', animation: 'spin 1s linear infinite',
             margin: '0 auto',
           }} />
-          <p style={{ marginTop: 16, color: '#adb5bd' }}>Carregando Análise de Mercado...</p>
+          <p style={{ marginTop: 16, color: '#adb5bd' }}>
+            {progressMessage || 'Carregando Análise de Mercado...'}
+          </p>
         </div>
         <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -104,12 +107,22 @@ export default function AnaliseMercadoPage() {
         {loading && !initialLoading && (
           <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-            height: 3, backgroundColor: 'rgba(255,102,0,0.2)', overflow: 'hidden',
           }}>
-            <div style={{
-              height: '100%', width: '40%', backgroundColor: '#FF6600',
-              animation: 'loadbar 1s ease-in-out infinite',
-            }} />
+            <div style={{ height: 3, backgroundColor: 'rgba(255,102,0,0.2)', overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', width: '40%', backgroundColor: '#FF6600',
+                animation: 'loadbar 1s ease-in-out infinite',
+              }} />
+            </div>
+            {progressMessage && (
+              <div style={{
+                textAlign: 'center', padding: '4px 8px',
+                backgroundColor: 'rgba(33,37,41,0.9)', color: '#adb5bd',
+                fontSize: 12, borderBottom: '1px solid #343a40',
+              }}>
+                {progressMessage}
+              </div>
+            )}
             <style jsx>{`@keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }`}</style>
           </div>
         )}

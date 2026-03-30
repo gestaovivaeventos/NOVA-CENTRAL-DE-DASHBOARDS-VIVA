@@ -73,6 +73,7 @@ interface UseAnaliseMercadoReturn {
   loading: boolean;
   loadingEvolucao: boolean;
   initialLoading: boolean;
+  progressMessage: string;
   filtros: FiltrosAnaliseMercado;
   setFiltros: (patch: Partial<FiltrosAnaliseMercado>) => void;
   visaoAtiva: VisaoAtiva;
@@ -97,6 +98,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
   const [areasDisp, setAreasDisp] = useState<string[]>([]);
   const [franquiasData, setFranquiasData] = useState<FranquiaMunicipios[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [progressMessage, setProgressMessage] = useState('');
 
   // Carregar dados de franquias uma vez
   useEffect(() => {
@@ -139,7 +141,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
         try {
           // Usar allSettled para não perder tudo se uma chamada falhar/timeout
           const results = await Promise.allSettled([
-            fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId, curso, modalidade, municipiosFranquia && municipiosFranquia.length > 0 ? municipiosFranquia : null),
+            fetchDadosAnaliseMercado(ano, rede, estado, municipio, instituicaoId, curso, modalidade, municipiosFranquia && municipiosFranquia.length > 0 ? municipiosFranquia : null, (msg) => { if (!thisCancelled.current) setProgressMessage(msg); }),
             anosDisp.length > 0 ? Promise.resolve(anosDisp) : fetchAnosDisponiveis(),
             areasDisp.length > 0 ? Promise.resolve(areasDisp) : fetchAreasDisponiveis(),
           ]);
@@ -173,7 +175,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
         if (!thisCancelled.current) {
           setLoadingEvolucao(true);
           try {
-            const evolucao = await fetchEvolucaoLazy(rede, estado, municipio, instituicaoId, curso, modalidade, municipiosFranquia && municipiosFranquia.length > 0 ? municipiosFranquia : null);
+            const evolucao = await fetchEvolucaoLazy(rede, estado, municipio, instituicaoId, curso, modalidade, municipiosFranquia && municipiosFranquia.length > 0 ? municipiosFranquia : null, (msg) => { if (!thisCancelled.current) setProgressMessage(msg); });
             if (!thisCancelled.current && evolucao.length > 0) {
               setDadosBase(prev => ({
                 ...prev,
@@ -320,6 +322,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     loading,
     loadingEvolucao,
     initialLoading,
+    progressMessage,
     filtros,
     setFiltros,
     visaoAtiva,

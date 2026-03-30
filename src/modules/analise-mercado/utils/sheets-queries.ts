@@ -25,7 +25,7 @@ import type {
 } from '../types';
 
 // ─── Cache localStorage (30 dias TTL) ─────────────────────────────
-const CACHE_VERSION = 19;
+const CACHE_VERSION = 20;
 const CACHE_PREFIX = `am_cache_v${CACHE_VERSION}_`;
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000;
 
@@ -293,6 +293,237 @@ function addToBreakdown(
   else if (isPub && !isPres) bd.publicaEad += val;
   else if (!isPub && isPres) bd.privadaPresencial += val;
   else bd.privadaEad += val;
+}
+
+// ─── Constantes de região (espelho do servidor) ─────────────────────
+const TODAS_REGIOES = ['SUL', 'SUDESTE', 'NORTE', 'CENTRO_OESTE', 'NORDESTE'];
+const UF_PARA_REGIAO: Record<string, string> = {
+  PR: 'SUL', SC: 'SUL', RS: 'SUL',
+  SP: 'SUDESTE', RJ: 'SUDESTE', MG: 'SUDESTE', ES: 'SUDESTE',
+  AM: 'NORTE', PA: 'NORTE', AC: 'NORTE', RO: 'NORTE', RR: 'NORTE', AP: 'NORTE', TO: 'NORTE',
+  MT: 'CENTRO_OESTE', MS: 'CENTRO_OESTE', GO: 'CENTRO_OESTE', DF: 'CENTRO_OESTE',
+  BA: 'NORDESTE', SE: 'NORDESTE', AL: 'NORDESTE', PE: 'NORDESTE',
+  PB: 'NORDESTE', RN: 'NORDESTE', CE: 'NORDESTE', PI: 'NORDESTE', MA: 'NORDESTE',
+};
+
+function regioesParaCarregar(uf: string | null, municipios: string[] | null): string[] {
+  if (municipios && municipios.length > 0) return TODAS_REGIOES;
+  if (uf) {
+    const regiao = UF_PARA_REGIAO[uf.toUpperCase()];
+    return regiao ? [regiao] : TODAS_REGIOES;
+  }
+  return TODAS_REGIOES;
+}
+
+// ─── Tipo da resposta do endpoint regiao-agg ────────────────────────
+interface RegiaoSummary {
+  regiao: string;
+  ano: number;
+  empty?: boolean;
+  totais: { mat: number; conc: number; ing: number; ies: number; cursos: number };
+  bdMat: BreakdownMetrica;
+  bdConc: BreakdownMetrica;
+  bdIng: BreakdownMetrica;
+  estados: Array<{ uf: string; nome: string; mat: number; conc: number; ing: number; ies: number }>;
+  cursos: Array<{
+    nome: string; area: string; mat: number; conc: number; ing: number; ies: number;
+    bdM: BreakdownMetrica; bdC: BreakdownMetrica; bdI: BreakdownMetrica;
+    genF: number; genM: number;
+  }>;
+  instituicoes: Array<{ codIes: number; nome: string; tipo: number; uf: string; cursos: number; mat: number; conc: number; ing: number }>;
+  cidades: Array<{ nome: string; uf: string; mat: number; conc: number; ing: number; ies: number }>;
+  areas: string[];
+}
+
+// ─── Fetch 1 região + 1 ano (cabe nos 10s do plano Hobby) ──────────
+interface FiltrosRegiao {
+  uf?: string | null; rede?: number | null; municipio?: string | null;
+  municipios?: string[] | null; ies?: number | null; curso?: string | null; modalidade?: number | null;
+}
+
+async function fetchRegiaoSummary(ano: number, regiao: string, filters: FiltrosRegiao): Promise<RegiaoSummary> {
+  const parts = [`ragg_${ano}_${regiao}`];
+  if (filters.rede) parts.push(`r${filters.rede}`);
+  if (filters.uf) parts.push(`uf${filters.uf}`);
+  if (filters.municipio) parts.push(`m${filters.municipio}`);
+  if (filters.municipios && filters.municipios.length > 0) parts.push(`muns${filters.municipios.join('|')}`);
+  if (filters.ies) parts.push(`ies${filters.ies}`);
+  if (filters.curso) parts.push(`c${filters.curso}`);
+  if (filters.modalidade) parts.push(`mod${filters.modalidade}`);
+  const cacheKey = parts.join('_');
+
+  return cachedFetch(cacheKey, async () => {
+    const query = new URLSearchParams();
+    query.set('action', 'regiao-agg');
+    query.set('ano', String(ano));
+    query.set('regiao', regiao);
+    if (filters.uf) query.set('uf', filters.uf);
+    if (filters.rede) query.set('rede', String(filters.rede));
+    if (filters.municipio) query.set('municipio', filters.municipio);
+    if (filters.municipios && filters.municipios.length > 0) query.set('municipios', filters.municipios.join(','));
+    if (filters.ies) query.set('ies', String(filters.ies));
+    if (filters.curso) query.set('curso', filters.curso);
+    if (filters.modalidade) query.set('modalidade', String(filters.modalidade));
+
+    const res = await fetchWithTimeout(`/api/analise-mercado/inep?${query.toString()}`, 12000);
+    if (!res.ok) throw new Error(`API error: ${res.status}`);
+    return await res.json() as RegiaoSummary;
+  });
+}
+
+// ─── Merge de BreakdownMetrica ──────────────────────────────────────
+function mergeBd(target: BreakdownMetrica, source: BreakdownMetrica): void {
+  target.presencial += source.presencial;
+  target.ead += source.ead;
+  target.publica += source.publica;
+  target.privada += source.privada;
+  target.feminino += source.feminino;
+  target.masculino += source.masculino;
+  target.publicaPresencial += source.publicaPresencial;
+  target.publicaEad += source.publicaEad;
+  target.privadaPresencial += source.privadaPresencial;
+  target.privadaEad += source.privadaEad;
+}
+
+// ─── Merge de N regiões → DadosAnaliseMercado ───────────────────────
+function mergeRegiaoSummaries(
+  summaries: RegiaoSummary[],
+  ano: number,
+  summariesAnoAnterior?: RegiaoSummary[],
+): DadosAnaliseMercado {
+  const valid = summaries.filter(s => !s.empty);
+  if (valid.length === 0) {
+    return {
+      indicadores: [], evolucaoAlunos: [], distribuicaoEstados: [],
+      cidadesPorEstado: {}, rankingCursos: [], instituicoes: [],
+      demografia: { genero: [] }, evolucaoTurmas: [], gruposEducacionais: [],
+      franquias: [], ultimaAtualizacao: '', fonte: '',
+    };
+  }
+
+  // ── KPI Totals ──
+  let mat = 0, conc = 0, ing = 0, iesT = 0, cursosT = 0;
+  const gBdMat = mkBreakdown(), gBdConc = mkBreakdown(), gBdIng = mkBreakdown();
+  for (const s of valid) {
+    mat += s.totais.mat; conc += s.totais.conc; ing += s.totais.ing;
+    iesT += s.totais.ies; cursosT += s.totais.cursos;
+    mergeBd(gBdMat, s.bdMat); mergeBd(gBdConc, s.bdConc); mergeBd(gBdIng, s.bdIng);
+  }
+
+  // ── Variation from previous year ──
+  let matA = 0, concA = 0, ingA = 0, iesA = 0, cursosA = 0;
+  const validAnt = (summariesAnoAnterior || []).filter(s => !s.empty);
+  const hasVar = validAnt.length > 0;
+  for (const s of validAnt) {
+    matA += s.totais.mat; concA += s.totais.conc; ingA += s.totais.ing;
+    iesA += s.totais.ies; cursosA += s.totais.cursos;
+  }
+  const vc = (a: number, b: number) => b === 0 ? 0 : Number((((a / b) - 1) * 100).toFixed(1));
+  const td = (v: number): 'up' | 'down' | 'stable' => v > 0.5 ? 'up' : v < -0.5 ? 'down' : 'stable';
+
+  const indicadores: IndicadorCard[] = mat === 0 && conc === 0 && ing === 0 ? [] : [
+    { id: 'mat', titulo: 'Matrículas Ativas', valor: mat, variacao: hasVar ? vc(mat, matA) : 0, tendencia: td(hasVar ? vc(mat, matA) : 0), cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
+    { id: 'ing', titulo: 'Ingressantes/Ano', valor: ing, variacao: hasVar ? vc(ing, ingA) : 0, tendencia: td(hasVar ? vc(ing, ingA) : 0), cor: '#8B5CF6', subtitulo: 'Novos alunos' },
+    { id: 'conc', titulo: 'Concluintes/Ano', valor: conc, variacao: hasVar ? vc(conc, concA) : 0, tendencia: td(hasVar ? vc(conc, concA) : 0), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
+    { id: 'ies', titulo: 'Ensino Superior', valor: iesT, variacao: hasVar ? vc(iesT, iesA) : 0, tendencia: td(hasVar ? vc(iesT, iesA) : 0), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
+    { id: 'cursos', titulo: 'Cursos Ativos', valor: cursosT, variacao: hasVar ? vc(cursosT, cursosA) : 0, tendencia: td(hasVar ? vc(cursosT, cursosA) : 0), cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
+  ];
+
+  // ── Evolução (current year only — lazy carrega os demais) ──
+  const evolucaoAlunos: DadosEvolucaoAnual[] = mat > 0 ? [{
+    ano, matriculas: mat, concluintes: conc, ingressantes: ing,
+    ies: iesT, cursos: cursosT,
+    presencial: gBdMat.presencial, ead: gBdMat.ead,
+    publica: gBdMat.publica, privada: gBdMat.privada,
+    genero: { feminino: gBdMat.feminino, masculino: gBdMat.masculino },
+    porMetrica: { matriculas: gBdMat, concluintes: gBdConc, ingressantes: gBdIng },
+  }] : [];
+
+  // ── Estados (concatenar de todas as regiões) ──
+  const todosEstados = valid.flatMap(s => s.estados);
+  const totalMatEst = todosEstados.reduce((s, e) => s + e.mat, 0);
+  const distribuicaoEstados: DadosEstado[] = todosEstados.map(e => ({
+    uf: e.uf, nome: e.nome, matriculas: e.mat, concluintes: e.conc, turmas: 0,
+    instituicoes: e.ies, percentual: totalMatEst > 0 ? Number(((e.mat / totalMatEst) * 100).toFixed(1)) : 0,
+  }));
+
+  // ── Cidades ──
+  const cidadesPorEstado: Record<string, DadosCidade[]> = {};
+  for (const s of valid) {
+    for (const c of s.cidades) {
+      const coord = getCoordenadaMunicipio(fixText(c.nome), c.uf, COORDS_CAPITAIS);
+      const obj: DadosCidade = {
+        nome: fixText(c.nome), uf: c.uf, lat: coord.lat, lng: coord.lng,
+        matriculas: c.mat, concluintes: c.conc, ingressantes: c.ing, turmas: 0, instituicoes: c.ies,
+      };
+      if (!cidadesPorEstado[c.uf]) cidadesPorEstado[c.uf] = [];
+      cidadesPorEstado[c.uf].push(obj);
+    }
+  }
+
+  // ── Cursos (merge por nome entre regiões) ──
+  const cursoMap = new Map<string, {
+    area: string; mat: number; conc: number; ing: number; ies: number;
+    bdM: BreakdownMetrica; bdC: BreakdownMetrica; bdI: BreakdownMetrica;
+    genF: number; genM: number;
+  }>();
+  for (const s of valid) {
+    for (const c of s.cursos) {
+      const ex = cursoMap.get(c.nome);
+      if (!ex) {
+        cursoMap.set(c.nome, {
+          area: c.area, mat: c.mat, conc: c.conc, ing: c.ing, ies: c.ies,
+          bdM: { ...c.bdM }, bdC: { ...c.bdC }, bdI: { ...c.bdI },
+          genF: c.genF, genM: c.genM,
+        });
+      } else {
+        ex.mat += c.mat; ex.conc += c.conc; ex.ing += c.ing; ex.ies += c.ies;
+        ex.genF += c.genF; ex.genM += c.genM;
+        mergeBd(ex.bdM, c.bdM); mergeBd(ex.bdC, c.bdC); mergeBd(ex.bdI, c.bdI);
+      }
+    }
+  }
+  const cursoEntries = Array.from(cursoMap.entries()).sort((a, b) => b[1].mat - a[1].mat).slice(0, 500);
+  const totalMatCur = cursoEntries.reduce((s, [, e]) => s + e.mat, 0);
+  const rankingCursos: DadosCurso[] = cursoEntries.map(([nome, e]) => ({
+    nome: fixText(nome), area: fixText(e.area),
+    matriculas: e.mat, concluintes: e.conc, ingressantes: e.ing,
+    turmas: 0, mediaPorTurma: 0, instituicoes: e.ies,
+    percentual: totalMatCur > 0 ? Number(((e.mat / totalMatCur) * 100).toFixed(1)) : 0,
+    presencial: e.bdM.presencial, ead: e.bdM.ead, publica: e.bdM.publica, privada: e.bdM.privada,
+    publicaPresencial: e.bdM.publicaPresencial, publicaEad: e.bdM.publicaEad,
+    privadaPresencial: e.bdM.privadaPresencial, privadaEad: e.bdM.privadaEad,
+    publicaConc: e.bdC.publica, privadaConc: e.bdC.privada,
+    publicaIng: e.bdI.publica, privadaIng: e.bdI.privada,
+    publicaPresencialConc: e.bdC.publicaPresencial, publicaEadConc: e.bdC.publicaEad,
+    privadaPresencialConc: e.bdC.privadaPresencial, privadaEadConc: e.bdC.privadaEad,
+    publicaPresencialIng: e.bdI.publicaPresencial, publicaEadIng: e.bdI.publicaEad,
+    privadaPresencialIng: e.bdI.privadaPresencial, privadaEadIng: e.bdI.privadaEad,
+    genero: { feminino: e.genF, masculino: e.genM },
+  }));
+
+  // ── Instituições (concatenar de todas as regiões) ──
+  const todasInst = valid.flatMap(s => s.instituicoes);
+  const instituicoes: DadosInstituicao[] = todasInst.map(i => ({
+    codIes: i.codIes, nome: fixText(i.nome),
+    tipo: i.tipo === 1 ? 'publica' as const : 'privada' as const,
+    modalidade: 'ambas' as const,
+    cursos: i.cursos, matriculas: i.mat, concluintes: i.conc, ingressantes: i.ing, turmas: 0, uf: i.uf,
+  }));
+
+  // ── Áreas ──
+  const areasSet = new Set<string>();
+  for (const s of valid) { for (const a of s.areas) areasSet.add(a); }
+
+  return {
+    indicadores, evolucaoAlunos, distribuicaoEstados, cidadesPorEstado, rankingCursos, instituicoes,
+    demografia: derivarDemografia(evolucaoAlunos, ano),
+    evolucaoTurmas: derivarEvolucaoTurmas(evolucaoAlunos),
+    gruposEducacionais: derivarGruposEducacionais(instituicoes),
+    franquias: [], // Preenchido pelo chamador
+    ultimaAtualizacao: new Date().toISOString(),
+    fonte: 'Censo da Educação Superior — INEP',
+  };
 }
 
 // ─── Anos Disponíveis (endpoint leve, sem carregar planilhas) ───────
@@ -767,7 +998,7 @@ function derivarGruposEducacionais(instituicoes: DadosInstituicao[]): GrupoEduca
   return grupos;
 }
 
-// ─── Fetch completo (usa action=dashboard — só ano atual + anterior) ─
+// ─── Fetch completo (carregamento progressivo por região — cabe nos 10s do Hobby) ─
 export async function fetchDadosAnaliseMercado(
   ano: number,
   rede: number | null = null,
@@ -777,90 +1008,43 @@ export async function fetchDadosAnaliseMercado(
   curso: string | null = null,
   modalidade: number | null = null,
   municipios: string[] | null = null,
+  onProgress?: (msg: string) => void,
 ): Promise<DadosAnaliseMercado> {
-  const parts = [`dash_${ano}`];
-  if (rede) parts.push(`r${rede}`);
-  if (uf) parts.push(`uf${uf}`);
-  if (municipio) parts.push(`m${municipio}`);
-  if (municipios && municipios.length > 0) parts.push(`muns${municipios.join('|')}`);
-  if (ies) parts.push(`ies${ies}`);
-  if (curso) parts.push(`c${curso}`);
-  if (modalidade) parts.push(`mod${modalidade}`);
-  const cacheKey = parts.join('_');
+  const filters: FiltrosRegiao = { uf, rede, municipio, municipios, ies, curso, modalidade };
+  const regioes = regioesParaCarregar(uf, municipios);
 
-  return cachedFetch(cacheKey, async () => {
-    const query = new URLSearchParams();
-    query.set('action', 'dashboard');
-    query.set('ano', String(ano));
-    query.set('skipVariation', '1'); // Pular ano anterior para acelerar no Vercel
-    if (uf) query.set('uf', uf);
-    if (rede) query.set('rede', String(rede));
-    if (municipio) query.set('municipio', municipio);
-    if (municipios && municipios.length > 0) query.set('municipios', municipios.join(','));
-    if (ies) query.set('ies', String(ies));
-    if (curso) query.set('curso', curso);
-    if (modalidade) query.set('modalidade', String(modalidade));
+  if (onProgress) onProgress(`Carregando ${regioes.length} região(ões)...`);
 
-    const res = await fetchWithRetry(`/api/analise-mercado/inep?${query.toString()}`, 1, 55000);
-    if (!res.ok) {
-      console.error('[Dashboard] Erro:', res.status, res.statusText);
-      throw new Error(`Dashboard API error: ${res.status}`);
-    }
-    const data = await res.json();
+  // Carrega todas as regiões do ano atual em paralelo (cada uma é uma serverless function separada)
+  const [currentResults, prevResults] = await Promise.all([
+    Promise.allSettled(regioes.map(r => fetchRegiaoSummary(ano, r, filters))),
+    Promise.allSettled(regioes.map(r => fetchRegiaoSummary(ano - 1, r, filters))),
+  ]);
 
-    const indicadores: IndicadorCard[] = data.indicadores || [];
-    const evolucao: DadosEvolucaoAnual[] = data.evolucao || [];
-    const estados: DadosEstado[] = data.estados || [];
-    const cursos: DadosCurso[] = (data.cursos || []).map((c: Record<string, unknown>) => ({
-      ...c, nome: fixText(String(c.nome || '')), area: fixText(String(c.area || '')),
-    }));
-    const instituicoes: DadosInstituicao[] = (data.instituicoes || []).map((i: Record<string, unknown>) => ({
-      ...i, nome: fixText(String(i.nome || '')),
-    }));
-    const cidades: DadosCidade[] = (data.cidades || []).map((c: Record<string, unknown>) => {
-      const nome = fixText(String(c.nome || ''));
-      const cidUf = String(c.uf || '');
-      const coord = getCoordenadaMunicipio(nome, cidUf, COORDS_CAPITAIS);
-      return { ...c, nome, lat: coord.lat, lng: coord.lng };
-    });
+  const summaries = currentResults
+    .filter((r): r is PromiseFulfilledResult<RegiaoSummary> => r.status === 'fulfilled')
+    .map(r => r.value);
+  const summariesAnt = prevResults
+    .filter((r): r is PromiseFulfilledResult<RegiaoSummary> => r.status === 'fulfilled')
+    .map(r => r.value);
 
-    const anosDisp: number[] = data.anos || [];
+  if (onProgress) onProgress('');
 
-    // Carregar lista de franquias da planilha
-    const franquiasMun = await fetchFranquiasMunicipios();
+  // Merge das regiões + variação ano anterior
+  const dados = mergeRegiaoSummaries(summaries, ano, summariesAnt.length > 0 ? summariesAnt : undefined);
 
-    // Cidades por estado: quando franquia ativa, agrupar por UF
-    const cidadesPorEstado: Record<string, DadosCidade[]> = {};
-    if (municipios && municipios.length > 0 && cidades.length > 0) {
-      // Agrupar cidades por UF para o mapa
-      for (const c of cidades) {
-        const cidUf = String(c.uf || '');
-        if (!cidUf) continue;
-        if (!cidadesPorEstado[cidUf]) cidadesPorEstado[cidUf] = [];
-        cidadesPorEstado[cidUf].push(c);
-      }
-    } else if (uf && cidades.length > 0) {
-      cidadesPorEstado[uf] = cidades;
-    }
+  // Franquias
+  const franquiasMun = await fetchFranquiasMunicipios();
+  dados.franquias = franquiasParaLista(franquiasMun);
 
-    return {
-      indicadores,
-      evolucaoAlunos: evolucao,
-      distribuicaoEstados: estados,
-      cidadesPorEstado,
-      rankingCursos: cursos,
-      instituicoes,
-      demografia: derivarDemografia(evolucao, ano),
-      evolucaoTurmas: derivarEvolucaoTurmas(evolucao),
-      gruposEducacionais: derivarGruposEducacionais(instituicoes),
-      franquias: franquiasParaLista(franquiasMun),
-      ultimaAtualizacao: new Date().toISOString(),
-      fonte: `Censo da Educação Superior — INEP (${anosDisp.length > 0 ? `${anosDisp[0]}–${anosDisp[anosDisp.length - 1]}` : 'N/A'})`,
-    };
-  });
+  // Anos disponíveis na fonte
+  const anosDisp = await fetchAnosDisponiveis();
+  dados.fonte = `Censo da Educação Superior — INEP (${anosDisp.length > 0 ? `${anosDisp[0]}–${anosDisp[anosDisp.length - 1]}` : 'N/A'})`;
+
+  return dados;
 }
 
-// ─── Fetch evolução histórica (lazy) — chama action=evolucao ─────
+// ─── Fetch evolução histórica (all years, per-region progressivo) ────
 export async function fetchEvolucaoLazy(
   rede: number | null = null,
   uf: string | null = null,
@@ -869,31 +1053,48 @@ export async function fetchEvolucaoLazy(
   curso: string | null = null,
   modalidade: number | null = null,
   municipios: string[] | null = null,
+  onProgress?: (msg: string) => void,
 ): Promise<DadosEvolucaoAnual[]> {
-  const parts = ['evol_lazy'];
-  if (rede) parts.push(`r${rede}`);
-  if (uf) parts.push(`uf${uf}`);
-  if (municipio) parts.push(`m${municipio}`);
-  if (municipios && municipios.length > 0) parts.push(`muns${municipios.join('|')}`);
-  if (ies) parts.push(`ies${ies}`);
-  if (curso) parts.push(`c${curso}`);
-  if (modalidade) parts.push(`mod${modalidade}`);
-  const cacheKey = parts.join('_');
+  const filters: FiltrosRegiao = { uf, rede, municipio, municipios, ies, curso, modalidade };
+  const regioes = regioesParaCarregar(uf, municipios);
+  const anos = await fetchAnosDisponiveis();
 
-  return cachedFetch(cacheKey, async () => {
-    const query = new URLSearchParams();
-    query.set('action', 'evolucao');
-    if (uf) query.set('uf', uf);
-    if (rede) query.set('rede', String(rede));
-    if (municipio) query.set('municipio', municipio);
-    if (municipios && municipios.length > 0) query.set('municipios', municipios.join(','));
-    if (ies) query.set('ies', String(ies));
-    if (curso) query.set('curso', curso);
-    if (modalidade) query.set('modalidade', String(modalidade));
+  const evolucao: DadosEvolucaoAnual[] = [];
 
-    const res = await fetchWithRetry(`/api/analise-mercado/inep?${query.toString()}`, 1, 55000);
-    if (!res.ok) return [];
-    const data = await res.json();
-    return (data.evolucao || []) as DadosEvolucaoAnual[];
-  });
+  for (const ano of anos) {
+    if (onProgress) onProgress(`Evolução ${ano}...`);
+
+    // Carrega todas as regiões deste ano em paralelo
+    const results = await Promise.allSettled(
+      regioes.map(r => fetchRegiaoSummary(ano, r, filters))
+    );
+
+    const summaries = results
+      .filter((r): r is PromiseFulfilledResult<RegiaoSummary> => r.status === 'fulfilled')
+      .map(r => r.value)
+      .filter(s => !s.empty);
+
+    if (summaries.length === 0) continue;
+
+    // Merge totais desta ano
+    let totalMat = 0, totalConc = 0, totalIng = 0, totalIes = 0, totalCursos = 0;
+    const bdMat = mkBreakdown(), bdConc = mkBreakdown(), bdIng = mkBreakdown();
+    for (const s of summaries) {
+      totalMat += s.totais.mat; totalConc += s.totais.conc; totalIng += s.totais.ing;
+      totalIes += s.totais.ies; totalCursos += s.totais.cursos;
+      mergeBd(bdMat, s.bdMat); mergeBd(bdConc, s.bdConc); mergeBd(bdIng, s.bdIng);
+    }
+
+    evolucao.push({
+      ano, matriculas: totalMat, concluintes: totalConc, ingressantes: totalIng,
+      ies: totalIes, cursos: totalCursos,
+      presencial: bdMat.presencial, ead: bdMat.ead,
+      publica: bdMat.publica, privada: bdMat.privada,
+      genero: { feminino: bdMat.feminino, masculino: bdMat.masculino },
+      porMetrica: { matriculas: bdMat, concluintes: bdConc, ingressantes: bdIng },
+    });
+  }
+
+  if (onProgress) onProgress('');
+  return evolucao;
 }
