@@ -80,8 +80,9 @@ function isSQL(lead: LeadExpansao): boolean {
 /** Filtra leads pelo filtro ativo */
 export function filtrarLeads(leads: LeadExpansao[], filtros: FiltrosExpansao): LeadExpansao[] {
   return leads.filter(lead => {
-    if (filtros.tipoFunil !== 'TODOS') {
-      if (lead.tipoFunil !== filtros.tipoFunil) return false;
+    // Multi-select de funil: array vazio ou contendo 'TODOS' = sem filtro
+    if (filtros.tipoFunil.length > 0 && !filtros.tipoFunil.includes('TODOS')) {
+      if (!filtros.tipoFunil.includes(lead.tipoFunil)) return false;
     }
     if (filtros.origem && filtros.origem !== 'Todas') {
       if (lead.origem !== filtros.origem) return false;
@@ -407,7 +408,7 @@ export function agruparPorPersona(leads: LeadExpansao[]): DadosPorPersona[] {
 
   return Array.from(map.entries())
     .map(([persona, vals]) => ({ persona, ...vals }))
-    .sort((a, b) => b.geral - a.geral);
+    .sort((a, b) => a.persona.localeCompare(b.persona, 'pt-BR', { numeric: true }));
 }
 
 /** Agrupa leads por perfil */
@@ -524,11 +525,15 @@ export function agruparAnuncios(leads: LeadExpansao[]): DadosCampanha[] {
   return agruparPorFunil(leads, l => l.anuncio);
 }
 
-/** Agrupa candidatos por cidade com quebra por perfil completo */
+/** Agrupa candidatos por cidade com quebra por perfil completo — somente leads em AGUARDANDO COMPOSIÇÃO de Investidor e Operador */
 export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
+  const aguardando = leads.filter(l =>
+    l.status.toUpperCase().includes('AGUARDANDO COMPOSI') &&
+    (l.tipoFunil === 'INVESTIDOR' || l.tipoFunil === 'OPERADOR')
+  );
   const map = new Map<string, { investidorTotal: number; investidorParcial: number; opVendaParcial: number; opVendaSem: number; opPosVendaParcial: number }>();
 
-  for (const lead of leads) {
+  for (const lead of aguardando) {
     const cidade = lead.cidade && lead.uf ? `${lead.cidade} - ${siglaEstado(lead.uf)}` : lead.cidade || 'Nao informado';
     if (!map.has(cidade)) {
       map.set(cidade, {
@@ -551,7 +556,7 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
     else entry.opVendaSem++;
   }
 
-  const total = leads.length;
+  const total = aguardando.length;
   return Array.from(map.entries())
     .map(([cidade, vals]) => {
       const t = vals.investidorTotal + vals.investidorParcial + vals.opVendaParcial + vals.opVendaSem + vals.opPosVendaParcial;
@@ -652,4 +657,16 @@ export function listarCidadesAguardandoComposicao(leads: LeadExpansao[]): { cida
   }
 
   return Array.from(map.values()).sort((a, b) => (b.inv + b.op) - (a.inv + a.op));
+}
+
+/** Retorna contagem de leads por região */
+export function listarLeadsPorRegiao(leads: LeadExpansao[]): { regiao: string; quantidade: number }[] {
+  const map = new Map<string, number>();
+  for (const lead of leads) {
+    const regiao = lead.regiao || 'Sem Região';
+    map.set(regiao, (map.get(regiao) || 0) + 1);
+  }
+  return Array.from(map.entries())
+    .map(([regiao, quantidade]) => ({ regiao, quantidade }))
+    .sort((a, b) => b.quantidade - a.quantidade);
 }

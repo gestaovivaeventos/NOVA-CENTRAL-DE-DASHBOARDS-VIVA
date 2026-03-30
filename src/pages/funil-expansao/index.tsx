@@ -42,6 +42,7 @@ import {
   extrairOrigens,
   listarCidadesFranquias,
   listarCidadesAguardandoComposicao,
+  listarLeadsPorRegiao,
 } from '@/modules/funil-expansao/utils/calculos';
 import { formatNumber, formatPercent } from '@/modules/funil-expansao/utils/formatacao';
 import { PAGES, COLORS } from '@/modules/funil-expansao/config/app.config';
@@ -50,7 +51,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Users, TrendingUp, Target, Award, MapPin, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const INITIAL_FILTROS: FiltrosExpansao = {
-  tipoFunil: 'TODOS',
+  tipoFunil: ['TODOS'],
   origem: 'Todas',
   periodoInicio: `${new Date().getFullYear()}-01-01`,
   periodoFim: new Date().toISOString().split('T')[0],
@@ -119,6 +120,7 @@ export default function FunilExpansaoDashboard() {
   // Dados para cards expandíveis
   const cidadesFranquias = useMemo(() => listarCidadesFranquias(dadosFiltrados), [dadosFiltrados]);
   const cidadesAguardando = useMemo(() => listarCidadesAguardandoComposicao(dadosFiltrados), [dadosFiltrados]);
+  const leadsPorRegiao = useMemo(() => listarLeadsPorRegiao(dadosFiltrados), [dadosFiltrados]);
 
   // Funil completo
   const funil = useMemo(() => calcularFunil(dadosFiltrados), [dadosFiltrados]);
@@ -250,6 +252,28 @@ export default function FunilExpansaoDashboard() {
                       valor={kpis.totalLeads}
                       icone={<Users size={20} />}
                       corDestaque="#FF6600"
+                      expandivel={
+                        leadsPorRegiao.length > 0 ? (
+                          <div>
+                            <p className="text-[10px] uppercase font-semibold mb-2" style={{ color: '#adb5bd' }}>Leads por Região</p>
+                            <ul className="space-y-1">
+                              {leadsPorRegiao.map(r => (
+                                <li key={r.regiao} className="text-xs flex items-center justify-between" style={{ color: '#F8F9FA' }}>
+                                  <span className="flex items-center gap-1.5">
+                                    <span style={{ color: '#FF6600' }}>●</span> {r.regiao}
+                                  </span>
+                                  <span className="flex items-center gap-2">
+                                    <span className="text-[10px]" style={{ color: '#adb5bd' }}>{kpis.totalLeads > 0 ? formatPercent((r.quantidade / kpis.totalLeads) * 100, 1) : '0%'}</span>
+                                    <span className="text-[10px] font-bold" style={{ color: '#FF6600' }}>{r.quantidade}</span>
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <p className="text-xs" style={{ color: '#6c757d' }}>Nenhum lead encontrado</p>
+                        )
+                      }
                     />
                     <KPICard
                       titulo="MQL (Qualificado)"
@@ -512,14 +536,14 @@ export default function FunilExpansaoDashboard() {
                 <div className="space-y-6">
                   {/* Candidatos por Cidade */}
                   <DataTableExpansao
-                    titulo={`Candidatos por Cidade — Percentual relativo ao total (${formatNumber(cidadesData.reduce((s, c) => s + c.total, 0))})`}
+                    titulo={`Candidatos por Cidade — Aguardando Composição (${formatNumber(cidadesData.reduce((s, c) => s + c.total, 0))})`}
                     colunas={[
                       { key: 'cidade', header: 'Cidade', align: 'left', sortable: true },
-                      { key: 'investidorTotal', header: 'Inv. Total', align: 'center', format: 'number', sortable: true },
-                      { key: 'investidorParcial', header: 'Inv. Parcial', align: 'center', format: 'number', sortable: true },
-                      { key: 'opVendaParcial', header: 'Op. Venda Parc.', align: 'center', format: 'number', sortable: true },
-                      { key: 'opVendaSem', header: 'Op. Venda S/', align: 'center', format: 'number', sortable: true },
-                      { key: 'opPosVendaParcial', header: 'Op. Pós-Venda', align: 'center', format: 'number', sortable: true },
+                      { key: 'investidorTotal', header: 'Inv. Total', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
+                      { key: 'investidorParcial', header: 'Inv. Parcial', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
+                      { key: 'opVendaParcial', header: 'Op. Venda Parc.', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'opVendaSem', header: 'Op. Venda S/', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'opPosVendaParcial', header: 'Op. Pós-Venda', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
                       { key: 'total', header: 'Total', align: 'center', format: 'number', sortable: true },
                       { key: 'percentual', header: '%', align: 'center', format: 'percent', sortable: true },
                     ]}

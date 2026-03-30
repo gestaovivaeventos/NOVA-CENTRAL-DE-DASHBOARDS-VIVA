@@ -40,7 +40,7 @@ const getAtingimentoAnoExplanation = (tipo: string, tendencia: string): string =
   }
 };
 
-const ProgressBar: React.FC<{ value: number | null; isBold?: boolean }> = ({ value, isBold }) => {
+const ProgressBar: React.FC<{ value: number | null; isBold?: boolean; muted?: boolean }> = ({ value, isBold, muted }) => {
   if (value === null) {
     return <span className="text-slate-500">-</span>;
   }
@@ -49,7 +49,7 @@ const ProgressBar: React.FC<{ value: number | null; isBold?: boolean }> = ({ val
   const width = Math.min(value, 100);
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className={`flex flex-col gap-1 transition-opacity duration-300 ${muted ? 'opacity-40' : ''}`}>
       <span 
         className={`text-sm ${isBold ? 'font-bold' : 'font-medium'}`}
         style={{ color }}
@@ -655,23 +655,23 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
           
           {/* Toggle Anual/Mensal - apenas em dezembro */}
           {isDezembro && (
-            <div className="flex items-center gap-2 bg-slate-700/50 rounded-lg p-1">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setModoVisualizacao('mensal')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   modoVisualizacao === 'mensal'
-                    ? 'bg-orange-500 text-white'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-600'
+                    ? 'bg-orange-500/10 border-orange-500 text-orange-500'
+                    : 'text-gray-400 border-transparent bg-[#495057] hover:bg-white/5'
                 }`}
               >
                 Mensal
               </button>
               <button
                 onClick={() => setModoVisualizacao('anual')}
-                className={`px-3 py-1.5 rounded text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 border ${
                   modoVisualizacao === 'anual'
-                    ? 'bg-orange-500 text-white'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-600'
+                    ? 'bg-orange-500/10 border-orange-500 text-orange-500'
+                    : 'text-gray-400 border-transparent bg-[#495057] hover:bg-white/5'
                 }`}
               >
                 Anual
@@ -689,10 +689,10 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                 <th className="text-center py-3 px-4">
                   <button
                     onClick={() => setSelectionMode('projeto')}
-                    className={`font-medium px-4 py-2 rounded-lg transition-all border ${
+                    className={`font-medium px-4 py-2 rounded-lg text-sm transition-all duration-200 border ${
                       selectionMode === 'projeto' 
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/30' 
-                        : 'text-slate-300 border-slate-500 hover:text-orange-400 hover:border-orange-400 hover:bg-slate-700/50'
+                        ? 'bg-orange-500/10 border-orange-500 text-orange-500' 
+                        : 'text-gray-400 border-transparent bg-[#495057] hover:bg-white/5'
                     }`}
                   >
                     PROJETOS
@@ -701,10 +701,10 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                 <th className="text-center py-3 px-4">
                   <button
                     onClick={() => setSelectionMode('kpi')}
-                    className={`font-medium px-4 py-2 rounded-lg transition-all border ${
+                    className={`font-medium px-4 py-2 rounded-lg text-sm transition-all duration-200 border ${
                       selectionMode === 'kpi' 
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/30' 
-                        : 'text-slate-300 border-slate-500 hover:text-orange-400 hover:border-orange-400 hover:bg-slate-700/50'
+                        ? 'bg-orange-500/10 border-orange-500 text-orange-500' 
+                        : 'text-gray-400 border-transparent bg-[#495057] hover:bg-white/5'
                     }`}
                   >
                     MÉDIA KPIS
@@ -713,10 +713,10 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                 <th className="text-center py-3 px-4">
                   <button
                     onClick={() => setSelectionMode('okr')}
-                    className={`font-medium px-4 py-2 rounded-lg transition-all border ${
+                    className={`font-medium px-4 py-2 rounded-lg text-sm transition-all duration-200 border ${
                       selectionMode === 'okr' 
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/30' 
-                        : 'text-slate-300 border-slate-500 hover:text-orange-400 hover:border-orange-400 hover:bg-slate-700/50'
+                        ? 'bg-orange-500/10 border-orange-500 text-orange-500' 
+                        : 'text-gray-400 border-transparent bg-[#495057] hover:bg-white/5'
                     }`}
                   >
                     MÉDIA OKRS
@@ -769,13 +769,13 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <ProgressBar value={mediaProjetos} />
+                        <ProgressBar value={mediaProjetos} muted={selectionMode !== 'projeto'} />
                       </td>
                       <td className="py-3 px-4">
-                        <ProgressBar value={mediaKpisAtual} />
+                        <ProgressBar value={mediaKpisAtual} muted={selectionMode !== 'kpi'} />
                       </td>
                       <td className="py-3 px-4">
-                        <ProgressBar value={mediaOkrsAtual} />
+                        <ProgressBar value={mediaOkrsAtual} muted={selectionMode !== 'okr'} />
                       </td>
                       <td className="py-3 px-4">
                         <ProgressBar value={mediaGeralAtual} isBold />
