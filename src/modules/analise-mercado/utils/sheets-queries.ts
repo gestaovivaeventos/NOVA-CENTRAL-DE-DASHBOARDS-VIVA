@@ -365,13 +365,56 @@ async function fetchRegiaoSummary(ano: number, regiao: string, filters: FiltrosR
     if (filters.curso) query.set('curso', filters.curso);
     if (filters.modalidade) query.set('modalidade', String(filters.modalidade));
 
-    const res = await fetchWithTimeout(`/api/analise-mercado/inep?${query.toString()}`, 12000);
+    const res = await fetchWithTimeout(`/api/analise-mercado/inep?${query.toString()}`, 15000);
     if (!res.ok) throw new Error(`API error: ${res.status}`);
     return await res.json() as RegiaoSummary;
   });
 }
 
-// ─── Merge de BreakdownMetrica ──────────────────────────────────────
+// ─── Fetch ALL regiões de 1 ano com retry (garante 100% dos dados) ──
+async function fetchAllRegionsWithRetry(
+  ano: number,
+  regioes: string[],
+  filters: FiltrosRegiao,
+  maxRetries = 3,
+  onProgress?: (msg: string) => void,
+): Promise<RegiaoSummary[]> {
+  const results = new Map<string, RegiaoSummary>();
+  let pending = [...regioes];
+
+  for (let attempt = 0; attempt <= maxRetries && pending.length > 0; attempt++) {
+    if (attempt > 0) {
+      if (onProgress) onProgress(`Retentando ${pending.length} região(ões) de ${ano}... (tentativa ${attempt + 1})`);
+      // Esperar antes do retry (2s, 4s, 6s) para dar tempo do Vercel aquecer
+      await new Promise(resolve => setTimeout(resolve, 2000 * attempt));
+    }
+
+    const settled = await Promise.allSettled(
+      pending.map(r => fetchRegiaoSummary(ano, r, filters))
+    );
+
+    const stillFailed: string[] = [];
+    for (let i = 0; i < settled.length; i++) {
+      if (settled[i].status === 'fulfilled') {
+        results.set(pending[i], (settled[i] as PromiseFulfilledResult<RegiaoSummary>).value);
+      } else {
+        console.warn(`[Region] ${pending[i]}/${ano} falhou (tentativa ${attempt + 1}):`, (settled[i] as PromiseRejectedResult).reason);
+        stillFailed.push(pending[i]);
+      }
+    }
+    pending = stillFailed;
+
+    if (pending.length === 0) break;
+  }
+
+  if (pending.length > 0) {
+    console.error(`[Region] Regiões que falharam após ${maxRetries + 1} tentativas para ${ano}:`, pending.join(', '));
+  }
+
+  return Array.from(results.values());
+}
+
+// ─── Merge de BreakdownMetrica (campos) ─────────────────────────────
 function mergeBd(target: BreakdownMetrica, source: BreakdownMetrica): void {
   target.presencial += source.presencial;
   target.ead += source.ead;
@@ -1013,22 +1056,17 @@ export async function fetchDadosAnaliseMercado(
   const filters: FiltrosRegiao = { uf, rede, municipio, municipios, ies, curso, modalidade };
   const regioes = regioesParaCarregar(uf, municipios);
 
-  if (onProgress) onProgress(`Carregando ${regioes.length} região(ões)...`);
+  if (onProgress) onProgress(`Carregando ${regioes.length} região(ões) de ${ano}...`);
 
-  // Carrega todas as regiões do ano atual em paralelo (cada uma é uma serverless function separada)
-  const [currentResults, prevResults] = await Promise.all([
-    Promise.allSettled(regioes.map(r => fetchRegiaoSummary(ano, r, filters))),
-    Promise.allSettled(regioes.map(r => fetchRegiaoSummary(ano - 1, r, filters))),
+  // Carrega TODAS as regiões do ano atual E anterior em paralelo
+  // Cada request = 1 região × 1 ano (cabe nos 10s do Vercel Hobby)
+  // Retry automático nas que falharem — SÓ mostra dados quando 100% carregados
+  const [summaries, summariesAnt] = await Promise.all([
+    fetchAllRegionsWithRetry(ano, regioes, filters, 3, onProgress),
+    fetchAllRegionsWithRetry(ano - 1, regioes, filters, 3),
   ]);
 
-  const summaries = currentResults
-    .filter((r): r is PromiseFulfilledResult<RegiaoSummary> => r.status === 'fulfilled')
-    .map(r => r.value);
-  const summariesAnt = prevResults
-    .filter((r): r is PromiseFulfilledResult<RegiaoSummary> => r.status === 'fulfilled')
-    .map(r => r.value);
-
-  if (onProgress) onProgress('');
+  if (onProgress) onProgress('Processando dados...');
 
   // Merge das regiões + variação ano anterior
   const dados = mergeRegiaoSummaries(summaries, ano, summariesAnt.length > 0 ? summariesAnt : undefined);
@@ -1041,10 +1079,11 @@ export async function fetchDadosAnaliseMercado(
   const anosDisp = await fetchAnosDisponiveis();
   dados.fonte = `Censo da Educação Superior — INEP (${anosDisp.length > 0 ? `${anosDisp[0]}–${anosDisp[anosDisp.length - 1]}` : 'N/A'})`;
 
+  if (onProgress) onProgress('');
   return dados;
 }
 
-// ─── Fetch evolução histórica (all years, per-region progressivo) ────
+// ─── Fetch evolução histórica (all years, per-region com retry) ──────
 export async function fetchEvolucaoLazy(
   rede: number | null = null,
   uf: string | null = null,
@@ -1062,24 +1101,18 @@ export async function fetchEvolucaoLazy(
   const evolucao: DadosEvolucaoAnual[] = [];
 
   for (const ano of anos) {
-    if (onProgress) onProgress(`Evolução ${ano}...`);
+    if (onProgress) onProgress(`Evolução ${ano} — carregando ${regioes.length} região(ões)...`);
 
-    // Carrega todas as regiões deste ano em paralelo
-    const results = await Promise.allSettled(
-      regioes.map(r => fetchRegiaoSummary(ano, r, filters))
-    );
+    // Carrega TODAS as regiões deste ano com retry (garante 100% dos dados)
+    const summaries = await fetchAllRegionsWithRetry(ano, regioes, filters, 3, onProgress);
+    const valid = summaries.filter(s => !s.empty);
 
-    const summaries = results
-      .filter((r): r is PromiseFulfilledResult<RegiaoSummary> => r.status === 'fulfilled')
-      .map(r => r.value)
-      .filter(s => !s.empty);
+    if (valid.length === 0) continue;
 
-    if (summaries.length === 0) continue;
-
-    // Merge totais desta ano
+    // Merge totais deste ano
     let totalMat = 0, totalConc = 0, totalIng = 0, totalIes = 0, totalCursos = 0;
     const bdMat = mkBreakdown(), bdConc = mkBreakdown(), bdIng = mkBreakdown();
-    for (const s of summaries) {
+    for (const s of valid) {
       totalMat += s.totais.mat; totalConc += s.totais.conc; totalIng += s.totais.ing;
       totalIes += s.totais.ies; totalCursos += s.totais.cursos;
       mergeBd(bdMat, s.bdMat); mergeBd(bdConc, s.bdConc); mergeBd(bdIng, s.bdIng);
