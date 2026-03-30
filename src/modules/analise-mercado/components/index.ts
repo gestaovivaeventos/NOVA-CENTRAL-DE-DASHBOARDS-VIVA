@@ -14,3 +14,4 @@ export { default as TabelaComparativa } from './TabelaComparativa';
 export { default as TabelaCursos } from './TabelaCursos';
 export { default as SecaoGenero } from './SecaoGenero';
 export { default as CardInsight } from './CardInsight';
+export { default as SecaoMarketShare } from './SecaoMarketShare';

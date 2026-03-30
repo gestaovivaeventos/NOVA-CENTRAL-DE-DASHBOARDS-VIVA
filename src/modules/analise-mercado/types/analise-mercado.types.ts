@@ -206,3 +206,81 @@ export interface DadosAnaliseMercado {
 
 // ─── Legado (compatibilidade) ───────────────
 export type NivelEnsino = 'superior' | 'medio' | 'medicina';
+
+// ─── Market Share & Clientes ────────────────
+
+/** Resumo geral de participação de mercado */
+export interface MarketShareResumo {
+  mercadoTotalAlunos: number;
+  alunosClientes: number;
+  participacaoAlunos: number;
+  mercadoTotalTurmas: number;
+  turmasClientes: number;
+  participacaoTurmas: number;
+  totalInstituicoes: number;
+  instituicoesClientes: number;
+  receitaPotencial: number;
+  receitaAtual: number;
+  gapReceita: number;
+  ticketMedio: number;
+}
+
+/** Evolução anual do market share */
+export interface MarketShareEvolucao {
+  ano: number;
+  mercadoTotal: number;
+  clientesAlunos: number;
+  participacao: number;
+}
+
+/** Market share por curso/área */
+export interface MarketShareCurso {
+  nome: string;
+  area: string;
+  mercadoTotal: number;
+  clientesViva: number;
+  participacao: number;
+  oportunidade: number;
+}
+
+/** Market share por município */
+export interface MarketShareMunicipio {
+  nome: string;
+  uf: string;
+  mercadoTotal: number;
+  clientesViva: number;
+  participacao: number;
+  oportunidade: number;
+  instituicoes: number;
+}
+
+/** Market share por instituição */
+export interface MarketShareInstituicao {
+  nome: string;
+  tipo: 'publica' | 'privada';
+  municipio: string;
+  uf: string;
+  totalAlunos: number;
+  alunosClientes: number;
+  participacao: number;
+  cursos: number;
+}
+
+/** Comparativo do território vs média nacional */
+export interface ComparativoNacional {
+  metrica: string;
+  valorTerritorio: number;
+  valorNacional: number;
+  razao: number;
+}
+
+/** Dados consolidados da página Market Share */
+export interface DadosMarketShare {
+  resumo: MarketShareResumo;
+  evolucao: MarketShareEvolucao[];
+  porCurso: MarketShareCurso[];
+  porMunicipio: MarketShareMunicipio[];
+  porInstituicao: MarketShareInstituicao[];
+  comparativoNacional: ComparativoNacional[];
+  topOportunidades: MarketShareCurso[];
+}

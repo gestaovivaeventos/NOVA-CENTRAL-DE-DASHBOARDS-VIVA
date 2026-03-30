@@ -13,6 +13,8 @@ import {
   Filter,
   Home,
   LogOut,
+  BarChart3,
+  PieChart,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { Franquia, FiltrosAnaliseMercado, DadosInstituicao } from '../types';
@@ -347,6 +349,81 @@ export default function AnaliseMercadoLayout({
           )}
 
           </div>{/* fim área rolável */}
+
+          {/* Navegação entre páginas do módulo */}
+          <div style={{ flexShrink: 0, paddingTop: 8, borderTop: '1px solid rgba(107,114,128,0.3)', marginBottom: 8 }}>
+            {!isCollapsed ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{
+                  color: '#6C757D', fontSize: '0.6rem', fontWeight: 700,
+                  textTransform: 'uppercase', letterSpacing: '0.05em',
+                  padding: '0 4px', marginBottom: 2,
+                  fontFamily: "'Poppins', sans-serif",
+                }}>Módulos</span>
+                <a
+                  href="/analise-mercado"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 12px', borderRadius: 8,
+                    backgroundColor: router.pathname === '/analise-mercado' ? 'rgba(255,102,0,0.12)' : 'transparent',
+                    border: router.pathname === '/analise-mercado' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
+                    color: router.pathname === '/analise-mercado' ? '#FF6600' : '#ADB5BD',
+                    textDecoration: 'none', fontSize: '0.78rem', fontWeight: 500,
+                    fontFamily: "'Poppins', sans-serif",
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <BarChart3 size={16} />
+                  <span>Análise de Mercado</span>
+                </a>
+                <a
+                  href="/analise-mercado/market-share"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '8px 12px', borderRadius: 8,
+                    backgroundColor: router.pathname === '/analise-mercado/market-share' ? 'rgba(255,102,0,0.12)' : 'transparent',
+                    border: router.pathname === '/analise-mercado/market-share' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
+                    color: router.pathname === '/analise-mercado/market-share' ? '#FF6600' : '#ADB5BD',
+                    textDecoration: 'none', fontSize: '0.78rem', fontWeight: 500,
+                    fontFamily: "'Poppins', sans-serif",
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <PieChart size={16} />
+                  <span>Clientes & Market Share</span>
+                </a>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                <a
+                  href="/analise-mercado"
+                  title="Análise de Mercado"
+                  style={{
+                    padding: 8, borderRadius: 8,
+                    backgroundColor: router.pathname === '/analise-mercado' ? 'rgba(255,102,0,0.15)' : 'transparent',
+                    color: router.pathname === '/analise-mercado' ? '#FF6600' : '#6C757D',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <BarChart3 size={18} />
+                </a>
+                <a
+                  href="/analise-mercado/market-share"
+                  title="Clientes & Market Share"
+                  style={{
+                    padding: 8, borderRadius: 8,
+                    backgroundColor: router.pathname === '/analise-mercado/market-share' ? 'rgba(255,102,0,0.15)' : 'transparent',
+                    color: router.pathname === '/analise-mercado/market-share' ? '#FF6600' : '#6C757D',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <PieChart size={18} />
+                </a>
+              </div>
+            )}
+          </div>
 
           {/* Área inferior fixa: Central + Sair */}
           <div className={`${isCollapsed ? 'pb-4' : 'pb-4'}`} style={{ flexShrink: 0, paddingTop: 8, borderTop: '1px solid rgba(107,114,128,0.3)' }}>

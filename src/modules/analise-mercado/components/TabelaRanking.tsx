@@ -3,8 +3,8 @@
  * Usada para ranking de estados, cursos, grupos educacionais etc.
  */
 
-import React, { useState } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { ChevronUp, ChevronDown, Search, X } from 'lucide-react';
 import { fmtNum, fmtInteiro, fmtPct } from '../utils/formatters';
 
 interface Coluna<T> {
@@ -33,6 +33,20 @@ export default function TabelaRanking<T extends Record<string, any>>({
 }: TabelaRankingProps<T>) {
   const [sortKey, setSortKey] = useState<string>(colunas[1]?.key || colunas[0]?.key || '');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [busca, setBusca] = useState('');
+
+  const normalizar = (str: string) =>
+    str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  const colunasTexto = useMemo(() => colunas.filter(c => c.tipo === 'texto').map(c => c.key), [colunas]);
+
+  const dadosFiltrados = useMemo(() => {
+    if (!busca.trim()) return dados;
+    const termo = normalizar(busca.trim());
+    return dados.filter(row =>
+      colunasTexto.some(key => normalizar(String(row[key] ?? '')).includes(termo))
+    );
+  }, [dados, busca, colunasTexto]);
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -43,7 +57,7 @@ export default function TabelaRanking<T extends Record<string, any>>({
     }
   };
 
-  const dadosOrdenados = [...dados].sort((a, b) => {
+  const dadosOrdenados = [...dadosFiltrados].sort((a, b) => {
     const va = a[sortKey];
     const vb = b[sortKey];
     if (typeof va === 'number' && typeof vb === 'number') {
@@ -76,6 +90,45 @@ export default function TabelaRanking<T extends Record<string, any>>({
         </div>
       )}
 
+      {/* Buscador */}
+      <div style={{ padding: '10px 16px 6px', position: 'relative' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          backgroundColor: '#2D3238', borderRadius: 8,
+          border: `1px solid ${busca ? '#FF6600' : '#495057'}`,
+          padding: '6px 12px', transition: 'border-color 0.2s',
+        }}>
+          <Search size={14} color={busca ? '#FF6600' : '#6C757D'} />
+          <input
+            type="text"
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            placeholder="Buscar..."
+            style={{
+              flex: 1, background: 'transparent', border: 'none', outline: 'none',
+              color: '#F8F9FA', fontSize: '0.78rem',
+              fontFamily: "'Poppins', sans-serif",
+            }}
+          />
+          {busca && (
+            <button
+              onClick={() => setBusca('')}
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                padding: 2, display: 'flex', alignItems: 'center',
+              }}
+            >
+              <X size={14} color="#6C757D" />
+            </button>
+          )}
+        </div>
+        {busca && (
+          <span style={{ fontSize: '0.65rem', color: '#6C757D', marginTop: 2, display: 'block' }}>
+            {dadosFiltrados.length} resultado{dadosFiltrados.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
       <div style={{ overflowX: 'auto', ...(fillHeight ? { flex: 1, overflowY: 'auto' } : { maxHeight: maxBodyHeight + 42, overflowY: dadosOrdenados.length > linhasVisiveis ? 'auto' : 'hidden' }) }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
           <thead style={{ position: 'sticky', top: 0, zIndex: 1 }}>
@@ -94,7 +147,7 @@ export default function TabelaRanking<T extends Record<string, any>>({
                   style={{
                     color: sortKey === col.key ? '#FF6600' : '#6C757D',
                     fontWeight: 600, padding: '10px 12px',
-                    textAlign: col.tipo === 'texto' ? 'left' : 'right',
+                    textAlign: col.tipo === 'texto' ? 'left' : 'center',
                     fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.04em',
                     borderBottom: '2px solid #495057', cursor: 'pointer',
                     whiteSpace: 'nowrap', width: col.largura,
@@ -134,13 +187,32 @@ export default function TabelaRanking<T extends Record<string, any>>({
                     key={col.key}
                     style={{
                       padding: '10px 12px',
-                      textAlign: col.tipo === 'texto' ? 'left' : 'right',
+                      textAlign: col.tipo === 'texto' ? 'left' : 'center',
                       color: col.tipo === 'texto' ? '#F8F9FA' : '#ADB5BD',
                       fontWeight: col.tipo === 'texto' ? 500 : 400,
                       width: col.largura,
                     }}
                   >
-                    {formatarValor(row[col.key], col.tipo)}
+                    {col.tipo === 'percentual' ? (() => {
+                      const val = Number(row[col.key]) || 0;
+                      const barColor = val >= 8 ? '#10B981' : val >= 4 ? '#F59E0B' : '#EF4444';
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ minWidth: 44, textAlign: 'right', fontFamily: "'Orbitron', monospace", fontSize: '0.75rem', fontWeight: 600, color: barColor }}>
+                            {fmtPct(val)}
+                          </span>
+                            <div style={{ flex: 1, height: 8, backgroundColor: '#2D3238', borderRadius: 5, overflow: 'hidden' }}>
+                            <div style={{
+                              width: `${Math.min(val * 5, 100)}%`,
+                              height: '100%',
+                              backgroundColor: barColor,
+                              borderRadius: 5,
+                              transition: 'width 0.4s ease',
+                            }} />
+                          </div>
+                        </div>
+                      );
+                    })() : formatarValor(row[col.key], col.tipo)}
                   </td>
                 ))}
               </tr>
