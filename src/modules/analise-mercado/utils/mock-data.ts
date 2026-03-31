@@ -22,7 +22,7 @@ const indicadores: IndicadorCard[] = [
   { id: 'mat', titulo: 'Matrículas Ativas', valor: 9_750_000, variacao: 1.8, tendencia: 'up', cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
   { id: 'conc', titulo: 'Concluintes/Ano', valor: 1_480_000, variacao: 3.5, tendencia: 'up', cor: '#10B981', subtitulo: 'Potenciais Formandos' },
   { id: 'ing', titulo: 'Ingressantes/Ano', valor: 3_690_000, variacao: 1.1, tendencia: 'up', cor: '#8B5CF6', subtitulo: 'Novos alunos' },
-  { id: 'ies', titulo: 'Ensino Superior', valor: 2_574, variacao: -0.8, tendencia: 'down', cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
+  { id: 'ies', titulo: 'Instituições Ativas', valor: 2_574, variacao: -0.8, tendencia: 'down', cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
   { id: 'cursos', titulo: 'Cursos Ativos', valor: 44_580, variacao: 1.9, tendencia: 'up', cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
   { id: 'turmas', titulo: 'Turmas Estimadas', valor: 0, variacao: 0, tendencia: 'stable', cor: '#FF6600', subtitulo: 'TAM — Contratos potenciais' },
 ];

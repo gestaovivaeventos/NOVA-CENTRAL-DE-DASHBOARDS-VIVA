@@ -1,7 +1,6 @@
 /**
- * Análise de Mercado — Dashboard Reestruturado
- * Visão Brasil (Overview) com filtro de franquias na sidebar
- * Dois pilares: Análise de Alunos + Análise de Turmas
+ * Análise de Mercado — Análise Comparativa
+ * Tendências e Tempo: Evolução histórica, detalhamento anual, taxas de crescimento
  */
 
 import { useEffect, useState } from 'react';
@@ -9,15 +8,10 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMercado';
-import {
-  AnaliseMercadoLayout,
-  CardIndicador,
-  SecaoAlunos,
-} from '@/modules/analise-mercado/components';
+import { AnaliseMercadoLayout } from '@/modules/analise-mercado/components';
+import SecaoComparativa from '@/modules/analise-mercado/components/SecaoComparativa';
 
-
-
-export default function AnaliseMercadoPage() {
+export default function ComparativaPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const {
@@ -33,7 +27,6 @@ export default function AnaliseMercadoPage() {
     instituicoesDisponiveis,
     estadosDisponiveis,
     municipiosDisponiveis,
-    forceRefresh,
     progressMessage,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
@@ -61,7 +54,7 @@ export default function AnaliseMercadoPage() {
             margin: '0 auto',
           }} />
           <p style={{ marginTop: 16, color: '#adb5bd' }}>
-            {progressMessage || 'Carregando Análise de Mercado...'}
+            {progressMessage || 'Carregando Análise Comparativa...'}
           </p>
         </div>
         <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -71,16 +64,12 @@ export default function AnaliseMercadoPage() {
 
   if (user && user.accessLevel !== 1) return null;
 
-  const handleEstadoClick = (uf: string) => {
-    setFiltros({ estado: filtros.estado === uf ? null : (uf || null) });
-  };
-
   return (
     <>
-      <Head><title>Análise de Mercado | Viva Eventos</title></Head>
+      <Head><title>Análise Comparativa | Viva Eventos</title></Head>
 
       <AnaliseMercadoLayout
-        titulo="ANÁLISE DE MERCADO"
+        titulo="ANÁLISE COMPARATIVA"
         franquias={dados.franquias}
         franquiaSelecionada={filtros.franquiaId}
         onFranquiaChange={(id) => setFiltros({ franquiaId: id })}
@@ -92,8 +81,9 @@ export default function AnaliseMercadoPage() {
         instituicoesDisponiveis={instituicoesDisponiveis}
         estadosDisponiveis={estadosDisponiveis}
         municipiosDisponiveis={municipiosDisponiveis}
+        hideFiltros
       >
-        {/* Indicador de refetch (loading sutil) */}
+        {/* Loading overlay sutil */}
         {loading && !initialLoading && (
           <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
@@ -104,15 +94,6 @@ export default function AnaliseMercadoPage() {
                 animation: 'loadbar 1s ease-in-out infinite',
               }} />
             </div>
-            {progressMessage && (
-              <div style={{
-                textAlign: 'center', padding: '4px 8px',
-                backgroundColor: 'rgba(33,37,41,0.9)', color: '#adb5bd',
-                fontSize: 12, borderBottom: '1px solid #343a40',
-              }}>
-                {progressMessage}
-              </div>
-            )}
             <style jsx>{`@keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }`}</style>
           </div>
         )}
@@ -125,49 +106,13 @@ export default function AnaliseMercadoPage() {
         }}>
           <span>📊</span>
           <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, flex: 1 }}>
-            <strong>Dados INEP</strong> — Censo da Educação Superior via Google Sheets
-            {dados.ultimaAtualizacao && (
-              <span style={{ color: '#6B7280', marginLeft: 8 }}>
-                (cache: {new Date(dados.ultimaAtualizacao).toLocaleString('pt-BR')})
-              </span>
-            )}
+            <strong>Dados INEP</strong> — Evolução histórica do Censo da Educação Superior
           </p>
-          <button
-            onClick={forceRefresh}
-            title="Atualizar dados (limpar cache)"
-            style={{
-              background: 'none', border: '1px solid rgba(16,185,129,0.4)',
-              borderRadius: 4, padding: '4px 10px', cursor: 'pointer',
-              color: '#10B981', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            🔄 Atualizar
-          </button>
         </div>
 
-        {/* Cards Indicadores Principais */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-          gap: 14,
-          marginBottom: 20,
-        }}>
-          {dados.indicadores.map(ind => (
-            <CardIndicador
-              key={ind.id}
-              indicador={ind}
-              compacto={dados.indicadores.length > 4}
-              ano={filtros.ano}
-            />
-          ))}
-        </div>
-
-        {/* Conteúdo */}
-        <SecaoAlunos
-          dados={dados}
-          filtros={filtros}
-          onEstadoClick={handleEstadoClick}
-          onMetricaChange={(key) => setFiltros({ metricasAtivas: [key] })}
+        <SecaoComparativa
+          evolucaoAlunos={dados.evolucaoAlunos}
+          ano={filtros.ano}
           loadingEvolucao={loadingEvolucao}
         />
 

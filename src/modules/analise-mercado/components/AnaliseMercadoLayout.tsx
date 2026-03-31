@@ -15,6 +15,7 @@ import {
   LogOut,
   BarChart3,
   PieChart,
+  GitCompare,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { Franquia, FiltrosAnaliseMercado, DadosInstituicao } from '../types';
@@ -34,6 +35,10 @@ interface AnaliseMercadoLayoutProps {
   instituicoesDisponiveis: DadosInstituicao[];
   estadosDisponiveis: { uf: string; nome: string }[];
   municipiosDisponiveis: string[];
+  /** Renderiza filtros customizados da página. Se omitido, usa os filtros padrão (Análise de Mercado). */
+  renderFiltros?: () => React.ReactNode;
+  /** Se true, esconde completamente a seção de filtros */
+  hideFiltros?: boolean;
 }
 
 const SIDEBAR_WIDTH_EXPANDED = 280;
@@ -53,15 +58,17 @@ export default function AnaliseMercadoLayout({
   instituicoesDisponiveis,
   estadosDisponiveis,
   municipiosDisponiveis,
+  renderFiltros,
+  hideFiltros = false,
 }: AnaliseMercadoLayoutProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('analise_mercado_sidebar_collapsed');
-      return saved === 'true';
+      return saved === null ? true : saved === 'true';
     }
-    return false;
+    return true;
   });
   const [dataAtual, setDataAtual] = useState('');
 
@@ -150,12 +157,79 @@ export default function AnaliseMercadoLayout({
           className={`${isCollapsed ? 'px-2 pt-4' : 'p-4 pt-4'}`}
           style={{ height: 'calc(100% - 90px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}
         >
+          {/* ── Navegação de Páginas (TOPO) ── */}
+          <div style={{ flexShrink: 0, marginBottom: isCollapsed ? 8 : 12 }}>
+            {!isCollapsed ? (
+              <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {[
+                  { href: '/analise-mercado', label: 'Análise de Mercado', icon: <BarChart3 size={16} />, match: '/analise-mercado' },
+                  { href: '/analise-mercado/comparativa', label: 'Análise Comparativa', icon: <GitCompare size={16} />, match: '/analise-mercado/comparativa' },
+                  { href: '/analise-mercado/market-share', label: 'Clientes & Market Share', icon: <PieChart size={16} />, match: '/analise-mercado/market-share' },
+                ].map(page => {
+                  const isActive = router.pathname === page.match;
+                  return (
+                    <a
+                      key={page.href}
+                      href={page.href}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 10,
+                        padding: '9px 14px', borderRadius: 8,
+                        backgroundColor: isActive ? 'rgba(255,102,0,0.1)' : '#252830',
+                        border: `1px solid ${isActive ? 'rgba(255,102,0,0.5)' : '#3a3f47'}`,
+                        color: isActive ? '#FF6600' : '#ADB5BD',
+                        textDecoration: 'none', fontSize: '0.8rem',
+                        fontWeight: isActive ? 600 : 500,
+                        fontFamily: "'Poppins', sans-serif",
+                        transition: 'all 0.2s',
+                        boxShadow: !isActive ? '0 2px 6px rgba(0,0,0,0.25)' : 'none',
+                      }}
+                    >
+                      {React.cloneElement(page.icon as React.ReactElement, { strokeWidth: isActive ? 2.5 : 2 })}
+                      <span>{page.label}</span>
+                    </a>
+                  );
+                })}
+              </nav>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                {[
+                  { href: '/analise-mercado', title: 'Análise de Mercado', icon: <BarChart3 size={18} />, match: '/analise-mercado' },
+                  { href: '/analise-mercado/comparativa', title: 'Análise Comparativa', icon: <GitCompare size={18} />, match: '/analise-mercado/comparativa' },
+                  { href: '/analise-mercado/market-share', title: 'Clientes & Market Share', icon: <PieChart size={18} />, match: '/analise-mercado/market-share' },
+                ].map(page => {
+                  const isActive = router.pathname === page.match;
+                  return (
+                    <a
+                      key={page.href}
+                      href={page.href}
+                      title={page.title}
+                      style={{
+                        padding: 8, borderRadius: 8,
+                        backgroundColor: isActive ? 'rgba(255,102,0,0.15)' : 'transparent',
+                        color: isActive ? '#FF6600' : '#6C757D',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        textDecoration: 'none',
+                      }}
+                    >
+                      {page.icon}
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Separador entre nav e filtros */}
+          {!hideFiltros && (
+            <div style={{ height: 1, backgroundColor: 'rgba(107,114,128,0.3)', flexShrink: 0, marginBottom: isCollapsed ? 8 : 12 }} />
+          )}
+
           {/* Área rolável: filtros */}
           <div style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', minHeight: 0 }}>
           {/* ── Seção: Filtros de Dados ── */}
-          {!isCollapsed ? (
+          {!hideFiltros && !isCollapsed ? (
             <div style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-              {/* Filtros (Ano, Instituição, Área) */}
+              {renderFiltros ? renderFiltros() : (
               <div style={{ marginBottom: 16 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
                   <Filter size={14} color="#FF6600" />
@@ -189,11 +263,6 @@ export default function AnaliseMercadoLayout({
                     letterSpacing: '0.04em',
                     marginBottom: 3,
                     display: 'block',
-                  };
-                  const disabledSelectStyle: React.CSSProperties = {
-                    ...sidebarSelectStyle,
-                    opacity: 0.4,
-                    cursor: 'not-allowed',
                   };
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -329,9 +398,9 @@ export default function AnaliseMercadoLayout({
                   );
                 })()}
               </div>
-
+              )}
             </div>
-          ) : (
+          ) : !hideFiltros ? (
             /* Ícones quando recolhido */
             <div className="flex flex-col items-center gap-3">
               <button
@@ -346,84 +415,9 @@ export default function AnaliseMercadoLayout({
                 <Filter size={20} />
               </button>
             </div>
-          )}
+          ) : null}
 
           </div>{/* fim área rolável */}
-
-          {/* Navegação entre páginas do módulo */}
-          <div style={{ flexShrink: 0, paddingTop: 8, borderTop: '1px solid rgba(107,114,128,0.3)', marginBottom: 8 }}>
-            {!isCollapsed ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{
-                  color: '#6C757D', fontSize: '0.6rem', fontWeight: 700,
-                  textTransform: 'uppercase', letterSpacing: '0.05em',
-                  padding: '0 4px', marginBottom: 2,
-                  fontFamily: "'Poppins', sans-serif",
-                }}>Módulos</span>
-                <a
-                  href="/analise-mercado"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 12px', borderRadius: 8,
-                    backgroundColor: router.pathname === '/analise-mercado' ? 'rgba(255,102,0,0.12)' : 'transparent',
-                    border: router.pathname === '/analise-mercado' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
-                    color: router.pathname === '/analise-mercado' ? '#FF6600' : '#ADB5BD',
-                    textDecoration: 'none', fontSize: '0.78rem', fontWeight: 500,
-                    fontFamily: "'Poppins', sans-serif",
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <BarChart3 size={16} />
-                  <span>Análise de Mercado</span>
-                </a>
-                <a
-                  href="/analise-mercado/market-share"
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 12px', borderRadius: 8,
-                    backgroundColor: router.pathname === '/analise-mercado/market-share' ? 'rgba(255,102,0,0.12)' : 'transparent',
-                    border: router.pathname === '/analise-mercado/market-share' ? '1px solid rgba(255,102,0,0.3)' : '1px solid transparent',
-                    color: router.pathname === '/analise-mercado/market-share' ? '#FF6600' : '#ADB5BD',
-                    textDecoration: 'none', fontSize: '0.78rem', fontWeight: 500,
-                    fontFamily: "'Poppins', sans-serif",
-                    transition: 'all 0.2s',
-                  }}
-                >
-                  <PieChart size={16} />
-                  <span>Clientes & Market Share</span>
-                </a>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <a
-                  href="/analise-mercado"
-                  title="Análise de Mercado"
-                  style={{
-                    padding: 8, borderRadius: 8,
-                    backgroundColor: router.pathname === '/analise-mercado' ? 'rgba(255,102,0,0.15)' : 'transparent',
-                    color: router.pathname === '/analise-mercado' ? '#FF6600' : '#6C757D',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <BarChart3 size={18} />
-                </a>
-                <a
-                  href="/analise-mercado/market-share"
-                  title="Clientes & Market Share"
-                  style={{
-                    padding: 8, borderRadius: 8,
-                    backgroundColor: router.pathname === '/analise-mercado/market-share' ? 'rgba(255,102,0,0.15)' : 'transparent',
-                    color: router.pathname === '/analise-mercado/market-share' ? '#FF6600' : '#6C757D',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <PieChart size={18} />
-                </a>
-              </div>
-            )}
-          </div>
 
           {/* Área inferior fixa: Central + Sair */}
           <div className={`${isCollapsed ? 'pb-4' : 'pb-4'}`} style={{ flexShrink: 0, paddingTop: 8, borderTop: '1px solid rgba(107,114,128,0.3)' }}>
@@ -458,12 +452,13 @@ export default function AnaliseMercadoLayout({
 
       {/* ━━━ Conteúdo Principal ━━━ */}
       <main
-        className="min-h-screen transition-all duration-300 flex flex-col"
+        className="min-h-screen transition-all duration-300 flex flex-col overflow-x-hidden"
         style={{
           marginLeft: isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
           width: isCollapsed
             ? `calc(100% - ${SIDEBAR_WIDTH_COLLAPSED}px)`
             : `calc(100% - ${SIDEBAR_WIDTH_EXPANDED}px)`,
+          minWidth: 0,
         }}
       >
         {/* Header */}

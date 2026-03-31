@@ -468,7 +468,7 @@ function mergeRegiaoSummaries(
     { id: 'mat', titulo: 'Matrículas Ativas', valor: mat, variacao: hasVar ? vc(mat, matA) : 0, tendencia: td(hasVar ? vc(mat, matA) : 0), cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
     { id: 'ing', titulo: 'Ingressantes/Ano', valor: ing, variacao: hasVar ? vc(ing, ingA) : 0, tendencia: td(hasVar ? vc(ing, ingA) : 0), cor: '#8B5CF6', subtitulo: 'Novos alunos' },
     { id: 'conc', titulo: 'Concluintes/Ano', valor: conc, variacao: hasVar ? vc(conc, concA) : 0, tendencia: td(hasVar ? vc(conc, concA) : 0), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
-    { id: 'ies', titulo: 'Ensino Superior', valor: iesT, variacao: hasVar ? vc(iesT, iesA) : 0, tendencia: td(hasVar ? vc(iesT, iesA) : 0), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
+    { id: 'ies', titulo: 'Instituições Ativas', valor: iesT, variacao: hasVar ? vc(iesT, iesA) : 0, tendencia: td(hasVar ? vc(iesT, iesA) : 0), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
     { id: 'cursos', titulo: 'Cursos Ativos', valor: cursosT, variacao: hasVar ? vc(cursosT, cursosA) : 0, tendencia: td(hasVar ? vc(cursosT, cursosA) : 0), cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
   ];
 
@@ -653,7 +653,7 @@ export async function fetchIndicadores(
       { id: 'mat', titulo: 'Matrículas Ativas', valor: atual.mat, variacao: varMat, tendencia: tendencia(varMat), cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
       { id: 'ing', titulo: 'Ingressantes/Ano', valor: atual.ing, variacao: varIng, tendencia: tendencia(varIng), cor: '#8B5CF6', subtitulo: 'Novos alunos' },
       { id: 'conc', titulo: 'Concluintes/Ano', valor: atual.conc, variacao: varConc, tendencia: tendencia(varConc), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
-      { id: 'ies', titulo: 'Ensino Superior', valor: atual.ies, variacao: varIes, tendencia: tendencia(varIes), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
+      { id: 'ies', titulo: 'Instituições Ativas', valor: atual.ies, variacao: varIes, tendencia: tendencia(varIes), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
       { id: 'cursos', titulo: 'Cursos Ativos', valor: atual.cursos, variacao: varCursos, tendencia: tendencia(varCursos), cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
     ];
   });
