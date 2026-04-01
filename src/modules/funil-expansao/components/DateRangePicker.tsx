@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 const QUICK_PERIODS = [
+  { value: 'todos', label: 'Todo o período' },
   { value: 'hoje', label: 'Hoje' },
   { value: 'ontem', label: 'Ontem' },
   { value: 'ultimos7dias', label: 'Últimos 7 dias' },
@@ -150,6 +151,17 @@ export default function DateRangePicker({
   const handleOpen = () => { if (!isOpen) calcPos(); setIsOpen(!isOpen); };
 
   const handleQuickPeriod = (period: string) => {
+    if (period === 'todos') {
+      if (onRangeChange) {
+        onRangeChange('todos', '', '');
+      } else {
+        onPeriodoChange('todos');
+        onDataInicioChange('');
+        onDataFimChange('');
+      }
+      setIsOpen(false);
+      return;
+    }
     const dates = getPredefinedPeriod(period);
     if (dates) {
       const inicio = formatDateForInput(dates.start);
@@ -171,9 +183,11 @@ export default function DateRangePicker({
     return `${d}/${m}/${y}`;
   };
 
-  const displayText = dataInicio && dataFim
-    ? `${fmtDisplay(dataInicio)} - ${fmtDisplay(dataFim)}`
-    : 'Selecione o período';
+  const displayText = periodoSelecionado === 'todos'
+    ? 'Todo o período'
+    : dataInicio && dataFim
+      ? `${fmtDisplay(dataInicio)} - ${fmtDisplay(dataFim)}`
+      : 'Selecione o período';
 
   const inputStyle: React.CSSProperties = {
     flex: 1, padding: '8px 10px', backgroundColor: '#1f2329', color: 'white',
@@ -202,7 +216,15 @@ export default function DateRangePicker({
               <span style={{ color: '#888', fontSize: '0.7rem', width: 30 }}>De:</span>
               <input type="date" value={dataInicio} style={inputStyle}
                 onClick={e => e.stopPropagation()}
-                onChange={e => { onDataInicioChange(e.target.value); onPeriodoChange('personalizado'); }}
+                onChange={e => {
+                  const newInicio = e.target.value;
+                  if (onRangeChange) {
+                    onRangeChange('personalizado', newInicio, dataFim);
+                  } else {
+                    onDataInicioChange(newInicio);
+                    onPeriodoChange('personalizado');
+                  }
+                }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#FF6600'; }}
                 onBlur={e => { e.currentTarget.style.borderColor = '#3a3f46'; }}
               />
@@ -211,7 +233,15 @@ export default function DateRangePicker({
               <span style={{ color: '#888', fontSize: '0.7rem', width: 30 }}>Até:</span>
               <input type="date" value={dataFim} style={inputStyle}
                 onClick={e => e.stopPropagation()}
-                onChange={e => { onDataFimChange(e.target.value); onPeriodoChange('personalizado'); }}
+                onChange={e => {
+                  const newFim = e.target.value;
+                  if (onRangeChange) {
+                    onRangeChange('personalizado', dataInicio, newFim);
+                  } else {
+                    onDataFimChange(newFim);
+                    onPeriodoChange('personalizado');
+                  }
+                }}
                 onFocus={e => { e.currentTarget.style.borderColor = '#FF6600'; }}
                 onBlur={e => { e.currentTarget.style.borderColor = '#3a3f46'; }}
               />

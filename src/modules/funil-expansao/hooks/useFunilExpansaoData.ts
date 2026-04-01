@@ -201,10 +201,17 @@ export function useFunilExpansaoData() {
         const parsed = parseRows(json.values || []);
 
         // Excluir leads de teste (Lead título contém "teste" em qualquer variação)
-        const filtered = parsed.filter(lead => !/teste/i.test(lead.nome));
+        const semTeste = parsed.filter(lead => !/teste/i.test(lead.nome));
+
+        // Deduplicar por ID único (manter último registro de cada ID)
+        const porId = new Map<string, typeof semTeste[0]>();
+        for (const lead of semTeste) {
+          porId.set(lead.id, lead);
+        }
+        const filtered = Array.from(porId.values());
 
         cache = { data: filtered, timestamp: Date.now() };
-        return parsed;
+        return filtered;
       })
       .finally(() => { pendingRequest = null; });
 

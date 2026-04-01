@@ -108,12 +108,9 @@ export default function AssertividadeCard({ titulo, dados, regiaoInfo, menorInfo
       }}
     >
       {/* Titulo padronizado */}
-      <h3
-        className="text-sm font-semibold uppercase tracking-wider pb-3 mb-4"
-        style={{ color: '#F8F9FA', fontFamily: 'Poppins, sans-serif', borderBottom: '1px solid #495057' }}
-      >
+      <h2 className="section-title text-left">
         {titulo}
-      </h3>
+      </h2>
 
       <div className="flex flex-col md:flex-row items-center gap-6">
         {/* Donut chart */}

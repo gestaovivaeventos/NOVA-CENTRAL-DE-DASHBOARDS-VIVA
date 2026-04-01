@@ -228,6 +228,204 @@ function FunilMultiSelect({ selectedValues, onChange }: { selectedValues: string
   );
 }
 
+function OrigemMultiSelect({ selectedValues, onChange, origens }: { selectedValues: string[]; onChange: (vals: string[]) => void; origens: string[] }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isPositioned, setIsPositioned] = useState(false);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const allOptions = [{ value: 'Todas', label: 'Todas as Origens' }, ...origens.map(o => ({ value: o, label: o }))];
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        containerRef.current && !containerRef.current.contains(e.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  useEffect(() => {
+    const update = () => {
+      if (isOpen && isPositioned && triggerRef.current && dropdownRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect();
+        const actualH = dropdownRef.current.offsetHeight;
+        const below = window.innerHeight - rect.bottom;
+        const openUp = below < actualH && rect.top > actualH;
+        setDropdownPos({ top: openUp ? rect.top - actualH - 4 : rect.bottom + 4, left: rect.left, width: rect.width });
+      }
+    };
+    if (isOpen) {
+      window.addEventListener('resize', update);
+      window.addEventListener('scroll', update, true);
+    }
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', update, true);
+    };
+  }, [isOpen, isPositioned]);
+
+  useEffect(() => {
+    if (isOpen && !isPositioned && dropdownRef.current && triggerRef.current) {
+      requestAnimationFrame(() => {
+        if (dropdownRef.current && triggerRef.current) {
+          const rect = triggerRef.current.getBoundingClientRect();
+          const actualH = dropdownRef.current.offsetHeight;
+          const below = window.innerHeight - rect.bottom;
+          const openUp = below < actualH && rect.top > actualH;
+          setDropdownPos({ top: openUp ? rect.top - actualH - 4 : rect.bottom + 4, left: rect.left, width: rect.width });
+          setIsPositioned(true);
+        }
+      });
+    }
+  }, [isOpen, isPositioned]);
+
+  useEffect(() => { if (!isOpen) setIsPositioned(false); }, [isOpen]);
+
+  const handleOpen = () => {
+    if (!isOpen && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPos({ top: -9999, left: rect.left, width: rect.width });
+    }
+    setIsOpen(!isOpen);
+  };
+
+  const handleToggle = (val: string) => {
+    if (val === 'Todas') {
+      onChange(['Todas']);
+      return;
+    }
+    let next = selectedValues.filter(v => v !== 'Todas');
+    if (next.includes(val)) {
+      next = next.filter(v => v !== val);
+    } else {
+      next = [...next, val];
+    }
+    if (next.length === 0 || next.length === origens.length) {
+      onChange(['Todas']);
+    } else {
+      onChange(next);
+    }
+  };
+
+  const handleSelectOnly = (val: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (val === 'Todas') {
+      onChange(['Todas']);
+    } else {
+      onChange([val]);
+    }
+  };
+
+  const getDisplayText = () => {
+    if (selectedValues.length === 0 || selectedValues.includes('Todas')) return 'Todas as Origens';
+    if (selectedValues.length === 1) return selectedValues[0];
+    return `${selectedValues.length} origens selecionadas`;
+  };
+
+  const isSelected = (val: string) => {
+    if (val === 'Todas') return selectedValues.includes('Todas') || selectedValues.length === 0;
+    return selectedValues.includes(val);
+  };
+
+  const renderDropdown = () => {
+    if (!isOpen || typeof document === 'undefined') return null;
+    return createPortal(
+      <div
+        ref={dropdownRef}
+        style={{
+          position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width,
+          backgroundColor: '#2a2f36', border: '1px solid #444', borderRadius: '8px',
+          zIndex: 9999, maxHeight: 300, overflow: 'auto',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          opacity: isPositioned ? 1 : 0,
+          pointerEvents: isPositioned ? 'auto' : 'none',
+        }}
+      >
+        {allOptions.map(opt => {
+          const sel = isSelected(opt.value);
+          return (
+            <div
+              key={opt.value}
+              style={{
+                padding: '10px 12px', cursor: 'pointer', fontSize: '0.9rem', fontFamily: 'Poppins, sans-serif',
+                color: sel ? '#FF6600' : '#ccc', fontWeight: sel ? 600 : 400,
+                backgroundColor: sel ? '#1f2329' : 'transparent', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', gap: 8,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#1f2329'; }}
+              onMouseLeave={e => { if (!sel) e.currentTarget.style.backgroundColor = 'transparent'; }}
+            >
+              <div
+                onClick={() => handleToggle(opt.value)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, cursor: 'pointer' }}
+              >
+                <div style={{
+                  width: 16, height: 16, borderRadius: '3px',
+                  border: sel ? '2px solid #FF6600' : '2px solid #555',
+                  backgroundColor: sel ? '#FF6600' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                }}>
+                  {sel && <span style={{ color: 'white', fontSize: '10px', fontWeight: 'bold' }}>✓</span>}
+                </div>
+                <span>{opt.label}</span>
+              </div>
+              {opt.value !== 'Todas' && (
+                <button
+                  onClick={(e) => handleSelectOnly(opt.value, e)}
+                  style={{
+                    padding: '2px 5px', background: 'transparent', color: '#6c757d',
+                    border: '1px solid #444', borderRadius: '50%', fontSize: '0.7rem',
+                    fontFamily: 'Poppins, sans-serif', fontWeight: 600, cursor: 'pointer',
+                    transition: 'all 0.2s', flexShrink: 0, opacity: 0.6,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: 20, height: 20, lineHeight: 1,
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#FF6600'; e.currentTarget.style.borderColor = '#FF6600'; e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(255,102,0,0.1)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#6c757d'; e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; }}
+                  title={`Selecionar somente "${opt.label}"`}
+                >✓</button>
+              )}
+            </div>
+          );
+        })}
+      </div>,
+      document.body,
+    );
+  };
+
+  return (
+    <div style={{ marginBottom: 0, position: 'relative' }} ref={containerRef}>
+      <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>
+        Origem
+      </label>
+      <div ref={triggerRef}>
+        <div
+          onClick={handleOpen}
+          style={{
+            width: '100%', padding: '12px 16px', backgroundColor: '#2a2f36', color: '#F8F9FA',
+            border: `1px solid ${isOpen ? '#FF6600' : '#444'}`, borderRadius: '8px',
+            fontSize: '0.875rem', fontWeight: 500, fontFamily: 'Poppins, sans-serif',
+            cursor: 'pointer', transition: 'all 0.2s', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = '#FF6600'; e.currentTarget.style.backgroundColor = '#343A40'; }}
+          onMouseLeave={e => { if (!isOpen) e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.backgroundColor = '#2a2f36'; }}
+        >
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{getDisplayText()}</span>
+          <span style={{ fontSize: '0.6rem', marginLeft: 8, color: '#adb5bd', transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+        </div>
+      </div>
+      {renderDropdown()}
+    </div>
+  );
+}
+
 export default function Sidebar({
   paginaAtiva,
   onPaginaChange,
@@ -377,44 +575,28 @@ export default function Sidebar({
           <>
             <hr className="border-dark-tertiary my-4" />
             <div className="space-y-4">
-              {/* Filtro Funil - Multi-select */}
-              <FunilMultiSelect
-                selectedValues={filtros.tipoFunil}
-                onChange={(vals) => onFiltrosChange({ ...filtros, tipoFunil: vals })}
-              />
-
-              {/* Filtro Origem */}
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>
-                  Origem
-                </label>
-                <select
-                  value={filtros.origem}
-                  onChange={e => onFiltrosChange({ ...filtros, origem: e.target.value })}
-                  className="w-full rounded-lg px-3 py-2 text-sm"
-                  style={{
-                    backgroundColor: '#343A40',
-                    color: '#F8F9FA',
-                    border: '1px solid #495057',
-                    fontFamily: 'Poppins, sans-serif',
-                  }}
-                >
-                  <option value="Todas">Todas</option>
-                  {origens.map(o => (
-                    <option key={o} value={o}>{o}</option>
-                  ))}
-                </select>
-              </div>
-
               {/* Filtro Período */}
               <DateRangePicker
-                periodoSelecionado={filtros.periodoSelecionado || 'esteano'}
+                periodoSelecionado={filtros.periodoSelecionado || 'todos'}
                 dataInicio={filtros.periodoInicio}
                 dataFim={filtros.periodoFim}
                 onPeriodoChange={(p) => onFiltrosChange({ ...filtros, periodoSelecionado: p })}
                 onDataInicioChange={(d) => onFiltrosChange({ ...filtros, periodoInicio: d })}
                 onDataFimChange={(d) => onFiltrosChange({ ...filtros, periodoFim: d })}
                 onRangeChange={(p, inicio, fim) => onFiltrosChange({ ...filtros, periodoSelecionado: p, periodoInicio: inicio, periodoFim: fim })}
+              />
+
+              {/* Filtro Funil - Multi-select */}
+              <FunilMultiSelect
+                selectedValues={filtros.tipoFunil}
+                onChange={(vals) => onFiltrosChange({ ...filtros, tipoFunil: vals })}
+              />
+
+              {/* Filtro Origem - Multi-select */}
+              <OrigemMultiSelect
+                selectedValues={filtros.origem}
+                onChange={(vals) => onFiltrosChange({ ...filtros, origem: vals })}
+                origens={origens}
               />
             </div>
           </>
