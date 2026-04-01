@@ -17,6 +17,7 @@ interface GroupedBarChartProps {
   titulo: string;
   dados: DataItem[];
   maxItems?: number;
+  hideToggles?: boolean;
 }
 
 type SeriesKey = 'geral' | 'mql' | 'sql';
@@ -29,8 +30,8 @@ const SERIES_CONFIG: { key: SeriesKey; label: string; color: string }[] = [
 
 const CHART_HEIGHT = 260;
 
-export default function GroupedBarChart({ titulo, dados, maxItems = 15 }: GroupedBarChartProps) {
-  const [activeSeries, setActiveSeries] = useState<Set<SeriesKey>>(new Set(['geral', 'mql', 'sql']));
+export default function GroupedBarChart({ titulo, dados, maxItems = 15, hideToggles = false }: GroupedBarChartProps) {
+  const [activeSeries, setActiveSeries] = useState<Set<SeriesKey>>(new Set(hideToggles ? ['geral'] : ['geral', 'mql', 'sql']));
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
 
   const toggleSeries = (key: SeriesKey) => {
@@ -71,6 +72,7 @@ export default function GroupedBarChart({ titulo, dados, maxItems = 15 }: Groupe
       </h2>
 
       {/* Toggles de séries */}
+      {!hideToggles && (
       <div className="flex flex-wrap gap-2 mb-4">
         {SERIES_CONFIG.map(s => {
           const active = activeSeries.has(s.key);
@@ -104,6 +106,7 @@ export default function GroupedBarChart({ titulo, dados, maxItems = 15 }: Groupe
           );
         })}
       </div>
+      )}
 
       {/* Área do gráfico */}
       <div className="flex">

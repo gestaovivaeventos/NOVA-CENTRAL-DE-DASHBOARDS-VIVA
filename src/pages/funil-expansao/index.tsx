@@ -568,6 +568,7 @@ export default function FunilExpansaoDashboard() {
                   <GroupedBarChart
                     titulo="Fases de Perda"
                     dados={fasesPerda.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    hideToggles
                   />
                 </div>
               )}

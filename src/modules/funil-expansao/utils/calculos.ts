@@ -269,7 +269,7 @@ export function calcularFunilAtivos(leads: LeadExpansao[]): FunilCompleto {
   };
 }
 
-/** Agrupa leads por origem */
+/** Agrupa leads por origem (funil cheio: SQL conta como MQL) */
 export function agruparPorOrigem(leads: LeadExpansao[]): DadosPorOrigem[] {
   const map = new Map<string, { geral: number; mql: number; sql: number }>();
 
@@ -278,8 +278,8 @@ export function agruparPorOrigem(leads: LeadExpansao[]): DadosPorOrigem[] {
     if (!map.has(origem)) map.set(origem, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(origem)!;
     entry.geral++;
-    if (isMQLAtivo(lead)) entry.mql++;
-    if (isSQLAtivo(lead)) entry.sql++;
+    if (isMQL(lead)) entry.mql++;
+    if (isSQL(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -411,7 +411,7 @@ export function calcularAssertividadePersonaExtremos(leads: LeadExpansao[]): {
   return { maiorPersona, maiorQtd, menorPersona, menorQtd };
 }
 
-/** Agrupa leads por persona */
+/** Agrupa leads por persona (funil cheio: SQL conta como MQL) */
 export function agruparPorPersona(leads: LeadExpansao[]): DadosPorPersona[] {
   const map = new Map<string, { geral: number; mql: number; sql: number }>();
 
@@ -420,8 +420,8 @@ export function agruparPorPersona(leads: LeadExpansao[]): DadosPorPersona[] {
     if (!map.has(persona)) map.set(persona, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(persona)!;
     entry.geral++;
-    if (isMQLAtivo(lead)) entry.mql++;
-    if (isSQLAtivo(lead)) entry.sql++;
+    if (isMQL(lead)) entry.mql++;
+    if (isSQL(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -429,7 +429,7 @@ export function agruparPorPersona(leads: LeadExpansao[]): DadosPorPersona[] {
     .sort((a, b) => a.persona.localeCompare(b.persona, 'pt-BR', { numeric: true }));
 }
 
-/** Agrupa leads por perfil */
+/** Agrupa leads por perfil (funil cheio: SQL conta como MQL) */
 export function agruparPorPerfil(leads: LeadExpansao[]): DadosPorPerfil[] {
   const map = new Map<string, { geral: number; mql: number; sql: number }>();
 
@@ -438,8 +438,8 @@ export function agruparPorPerfil(leads: LeadExpansao[]): DadosPorPerfil[] {
     if (!map.has(perfil)) map.set(perfil, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(perfil)!;
     entry.geral++;
-    if (isMQLAtivo(lead)) entry.mql++;
-    if (isSQLAtivo(lead)) entry.sql++;
+    if (isMQL(lead)) entry.mql++;
+    if (isSQL(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -447,7 +447,7 @@ export function agruparPorPerfil(leads: LeadExpansao[]): DadosPorPerfil[] {
     .sort((a, b) => b.geral - a.geral);
 }
 
-/** Agrupa motivos de perda - motivo extraido do texto entre parenteses */
+/** Agrupa motivos de perda (funil cheio: perdido em SQL tambem conta como MQL) */
 export function agruparMotivosPerda(leads: LeadExpansao[]): MotivoPerda[] {
   const perdidos = leads.filter(isPerdido);
   const map = new Map<string, { geral: number; mql: number; sql: number }>();
@@ -457,7 +457,7 @@ export function agruparMotivosPerda(leads: LeadExpansao[]): MotivoPerda[] {
     if (!map.has(motivo)) map.set(motivo, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(motivo)!;
     entry.geral++;
-    if (isMQLPorFasePerda(lead)) entry.mql++;
+    if (isMQLPorFasePerda(lead) || isSQLPorFasePerda(lead)) entry.mql++;
     if (isSQLPorFasePerda(lead)) entry.sql++;
   }
 
@@ -466,9 +466,9 @@ export function agruparMotivosPerda(leads: LeadExpansao[]): MotivoPerda[] {
     .sort((a, b) => b.geral - a.geral);
 }
 
-/** Agrupa motivos de qualificacao */
+/** Agrupa motivos de qualificacao (funil cheio: SQL conta como MQL) */
 export function agruparMotivosQualificacao(leads: LeadExpansao[]): MotivoPerda[] {
-  const qualificados = leads.filter(l => (isMQLAtivo(l) || isSQLAtivo(l)) && l.motivoQualificacao);
+  const qualificados = leads.filter(l => isMQL(l) && l.motivoQualificacao);
   const map = new Map<string, { geral: number; mql: number; sql: number }>();
 
   for (const lead of qualificados) {
@@ -476,8 +476,8 @@ export function agruparMotivosQualificacao(leads: LeadExpansao[]): MotivoPerda[]
     if (!map.has(motivo)) map.set(motivo, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(motivo)!;
     entry.geral++;
-    if (isMQLAtivo(lead)) entry.mql++;
-    if (isSQLAtivo(lead)) entry.sql++;
+    if (isMQL(lead)) entry.mql++;
+    if (isSQL(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
