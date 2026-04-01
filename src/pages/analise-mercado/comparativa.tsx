@@ -3,13 +3,15 @@
  * Tendências e Tempo: Evolução histórica, detalhamento anual, taxas de crescimento
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMercado';
 import { AnaliseMercadoLayout } from '@/modules/analise-mercado/components';
+import FiltroComBusca from '@/modules/analise-mercado/components/FiltroComBusca';
 import SecaoComparativa from '@/modules/analise-mercado/components/SecaoComparativa';
+import { Filter } from 'lucide-react';
 
 export default function ComparativaPage() {
   const router = useRouter();
@@ -64,6 +66,162 @@ export default function ComparativaPage() {
 
   if (user && user.accessLevel !== 1) return null;
 
+  const sidebarSelectStyle: React.CSSProperties = {
+    width: '100%',
+    backgroundColor: '#2D3238',
+    color: '#F8F9FA',
+    border: '1px solid #495057',
+    borderRadius: 6,
+    padding: '6px 10px',
+    fontSize: '0.75rem',
+    fontFamily: "'Poppins', sans-serif",
+    cursor: 'pointer',
+    outline: 'none',
+  };
+  const sidebarLabelStyle: React.CSSProperties = {
+    color: '#6C757D',
+    fontSize: '0.62rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    marginBottom: 3,
+    display: 'block',
+  };
+
+  const optionsMunicipios = municipiosDisponiveis.map(m => ({ value: m, label: m }));
+  const optionsInstituicoes = instituicoesDisponiveis.map(i => ({ value: String(i.codIes), label: i.nome }));
+  const optionsCursos = cursosDisponiveis.map(c => ({ value: c, label: c }));
+
+  const renderFiltros = () => (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+        <Filter size={14} color="#FF6600" />
+        <span style={{
+          color: '#FF6600', fontSize: '0.72rem', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: '0.05em',
+          fontFamily: "'Poppins', sans-serif",
+        }}>
+          Filtros
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Franquia */}
+        <div>
+          <label style={sidebarLabelStyle}>Franquia</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.franquiaId ?? ''}
+            onChange={e => setFiltros({ franquiaId: e.target.value || null })}
+          >
+            <option value="">Todas (Brasil)</option>
+            {dados.franquias.map(f => (
+              <option key={f.id} value={f.id}>{f.nome}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Estado (UF) */}
+        <div>
+          <label style={sidebarLabelStyle}>Estado (UF)</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.estado ?? ''}
+            onChange={e => setFiltros({ estado: e.target.value || null })}
+          >
+            <option value="">Todos</option>
+            {estadosDisponiveis.map(e => (
+              <option key={e.uf} value={e.uf}>{e.uf} — {e.nome}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Município */}
+        <FiltroComBusca
+          label="Município"
+          value={filtros.municipio ?? ''}
+          placeholder="Todos"
+          options={optionsMunicipios}
+          onChange={v => setFiltros({ municipio: v || null })}
+        />
+
+        {/* Rede */}
+        <div>
+          <label style={sidebarLabelStyle}>Rede</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.tipoInstituicao}
+            onChange={e => setFiltros({ tipoInstituicao: e.target.value as 'todos' | 'publica' | 'privada' })}
+          >
+            <option value="todos">Todas</option>
+            <option value="publica">Pública</option>
+            <option value="privada">Privada</option>
+          </select>
+        </div>
+
+        {/* Modalidade */}
+        <div>
+          <label style={sidebarLabelStyle}>Modalidade</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.modalidade}
+            onChange={e => setFiltros({ modalidade: e.target.value as 'todos' | 'presencial' | 'ead' })}
+          >
+            <option value="todos">Todas</option>
+            <option value="presencial">Presencial</option>
+            <option value="ead">EAD</option>
+          </select>
+        </div>
+
+        {/* Instituição */}
+        <FiltroComBusca
+          label="Instituição"
+          value={filtros.instituicaoId ? String(filtros.instituicaoId) : ''}
+          placeholder="Todas"
+          options={optionsInstituicoes}
+          onChange={v => setFiltros({ instituicaoId: v ? Number(v) : null })}
+        />
+
+        {/* Curso */}
+        <FiltroComBusca
+          label="Curso"
+          value={filtros.curso ?? ''}
+          placeholder="Todos"
+          options={optionsCursos}
+          onChange={v => setFiltros({ curso: v || null })}
+        />
+
+        {/* Limpar filtros */}
+        {(filtros.franquiaId || filtros.tipoInstituicao !== 'todos' || filtros.modalidade !== 'todos' || filtros.estado || filtros.municipio || filtros.instituicaoId || filtros.curso) && (
+          <button
+            onClick={() => {
+              setFiltros({
+                franquiaId: null,
+                tipoInstituicao: 'todos',
+                modalidade: 'todos',
+                estado: null,
+                municipio: null,
+                instituicaoId: null,
+                curso: null,
+              });
+            }}
+            style={{
+              width: '100%', padding: '6px 10px',
+              backgroundColor: 'rgba(255,102,0,0.1)',
+              border: '1px solid rgba(255,102,0,0.3)',
+              borderRadius: 6, color: '#FF6600',
+              fontSize: '0.7rem', fontWeight: 600,
+              fontFamily: "'Poppins', sans-serif",
+              cursor: 'pointer', textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Limpar Filtros
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <>
       <Head><title>Análise Comparativa | Viva Eventos</title></Head>
@@ -81,7 +239,7 @@ export default function ComparativaPage() {
         instituicoesDisponiveis={instituicoesDisponiveis}
         estadosDisponiveis={estadosDisponiveis}
         municipiosDisponiveis={municipiosDisponiveis}
-        hideFiltros
+        renderFiltros={renderFiltros}
       >
         {/* Loading overlay sutil */}
         {loading && !initialLoading && (

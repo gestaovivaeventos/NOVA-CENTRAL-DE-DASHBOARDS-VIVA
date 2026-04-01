@@ -15,4 +15,5 @@ export { default as TabelaCursos } from './TabelaCursos';
 export { default as SecaoGenero } from './SecaoGenero';
 export { default as CardInsight } from './CardInsight';
 export { default as SecaoMarketShare } from './SecaoMarketShare';
+export { default as SecaoMarketShareV2 } from './SecaoMarketShareV2';
 export { default as SecaoComparativa } from './SecaoComparativa';
