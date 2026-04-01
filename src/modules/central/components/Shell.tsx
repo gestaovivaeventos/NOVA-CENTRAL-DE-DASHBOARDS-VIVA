@@ -16,7 +16,7 @@ function getModuleId(pathname: string): string | null {
   const moduleRoutes = [
     'pex', 'vendas', 'kpi', 'okr', 'gerencial', 'carteira',
     'gestao-rede', 'fluxo-projetado', 'projetos', 'branches', 'controle-modulos', 'funil-expansao',
-    'analise-mercado',
+    'analise-mercado', 'controle-usuarios',
   ];
   for (const mod of moduleRoutes) {
     if (pathname === `/${mod}` || pathname.startsWith(`/${mod}/`)) {
@@ -163,6 +163,11 @@ export function Shell({ children }: ShellProps) {
 
   // Páginas de Análise de Mercado são independentes (layout próprio)
   if (router.pathname.startsWith('/analise-mercado')) {
+    return <>{children}</>;
+  }
+
+  // Páginas de Controle de Usuários são independentes (layout próprio)
+  if (router.pathname.startsWith('/controle-usuarios')) {
     return <>{children}</>;
   }
 

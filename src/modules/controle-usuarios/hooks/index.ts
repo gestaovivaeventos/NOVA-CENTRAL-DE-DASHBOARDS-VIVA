@@ -1,0 +1,1 @@
+export { useUsuariosData } from './useUsuariosData';
