@@ -37,6 +37,23 @@ function isPerdido(lead: LeadExpansao): boolean {
   return lead.motivoPerda !== '';
 }
 
+/** Classifica lead perdido como MQL pela fase em que perdeu */
+function isMQLPorFasePerda(lead: LeadExpansao): boolean {
+  const fase = (lead.faseQuePerdeu || '').toUpperCase();
+  return ETAPAS_MQL.some(e => fase.includes(e));
+}
+
+/** Classifica lead perdido como SQL pela fase em que perdeu */
+function isSQLPorFasePerda(lead: LeadExpansao): boolean {
+  const fase = (lead.faseQuePerdeu || '').toUpperCase();
+  return (
+    fase.includes('FIT FRANQUEADO') ||
+    fase.includes('COF E VALIDA') ||
+    fase.includes('AGUARDANDO COMPOSI') ||
+    fase.includes('CANDIDATO APROVADO')
+  );
+}
+
 /** Verifica se lead esta ATUALMENTE na fase MQL (somente fases DIAGNOSTICO REALIZADO e MODELO NEGOCIO *) */
 function isMQLAtivo(lead: LeadExpansao): boolean {
   const s = lead.status.toUpperCase();
@@ -84,8 +101,8 @@ export function filtrarLeads(leads: LeadExpansao[], filtros: FiltrosExpansao): L
     if (filtros.tipoFunil.length > 0 && !filtros.tipoFunil.includes('TODOS')) {
       if (!filtros.tipoFunil.includes(lead.tipoFunil)) return false;
     }
-    if (filtros.origem && filtros.origem !== 'Todas') {
-      if (lead.origem !== filtros.origem) return false;
+    if (filtros.origem.length > 0 && !filtros.origem.includes('Todas')) {
+      if (!filtros.origem.includes(lead.origem)) return false;
     }
     if (filtros.periodoInicio) {
       const dataLead = parseDate(lead.dataEntrada);
@@ -114,7 +131,8 @@ function parseDate(str: string): Date | null {
     return new Date(y, m - 1, d);
   }
   if (str.includes('-')) {
-    return new Date(str);
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
   }
   return null;
 }
@@ -260,8 +278,8 @@ export function agruparPorOrigem(leads: LeadExpansao[]): DadosPorOrigem[] {
     if (!map.has(origem)) map.set(origem, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(origem)!;
     entry.geral++;
-    if (isMQL(lead)) entry.mql++;
-    if (isSQL(lead)) entry.sql++;
+    if (isMQLAtivo(lead)) entry.mql++;
+    if (isSQLAtivo(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -402,8 +420,8 @@ export function agruparPorPersona(leads: LeadExpansao[]): DadosPorPersona[] {
     if (!map.has(persona)) map.set(persona, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(persona)!;
     entry.geral++;
-    if (isMQL(lead)) entry.mql++;
-    if (isSQL(lead)) entry.sql++;
+    if (isMQLAtivo(lead)) entry.mql++;
+    if (isSQLAtivo(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -420,8 +438,8 @@ export function agruparPorPerfil(leads: LeadExpansao[]): DadosPorPerfil[] {
     if (!map.has(perfil)) map.set(perfil, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(perfil)!;
     entry.geral++;
-    if (isMQL(lead)) entry.mql++;
-    if (isSQL(lead)) entry.sql++;
+    if (isMQLAtivo(lead)) entry.mql++;
+    if (isSQLAtivo(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -439,8 +457,8 @@ export function agruparMotivosPerda(leads: LeadExpansao[]): MotivoPerda[] {
     if (!map.has(motivo)) map.set(motivo, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(motivo)!;
     entry.geral++;
-    if (isMQL(lead)) entry.mql++;
-    if (isSQL(lead)) entry.sql++;
+    if (isMQLPorFasePerda(lead)) entry.mql++;
+    if (isSQLPorFasePerda(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -450,7 +468,7 @@ export function agruparMotivosPerda(leads: LeadExpansao[]): MotivoPerda[] {
 
 /** Agrupa motivos de qualificacao */
 export function agruparMotivosQualificacao(leads: LeadExpansao[]): MotivoPerda[] {
-  const qualificados = leads.filter(l => isMQL(l) && l.motivoQualificacao);
+  const qualificados = leads.filter(l => (isMQLAtivo(l) || isSQLAtivo(l)) && l.motivoQualificacao);
   const map = new Map<string, { geral: number; mql: number; sql: number }>();
 
   for (const lead of qualificados) {
@@ -458,8 +476,8 @@ export function agruparMotivosQualificacao(leads: LeadExpansao[]): MotivoPerda[]
     if (!map.has(motivo)) map.set(motivo, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(motivo)!;
     entry.geral++;
-    if (isMQL(lead)) entry.mql++;
-    if (isSQL(lead)) entry.sql++;
+    if (isMQLAtivo(lead)) entry.mql++;
+    if (isSQLAtivo(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
@@ -477,13 +495,13 @@ export function agruparFasesPerda(leads: LeadExpansao[]): MotivoPerda[] {
     if (!map.has(fase)) map.set(fase, { geral: 0, mql: 0, sql: 0 });
     const entry = map.get(fase)!;
     entry.geral++;
-    if (isMQL(lead)) entry.mql++;
-    if (isSQL(lead)) entry.sql++;
+    if (isMQLPorFasePerda(lead)) entry.mql++;
+    if (isSQLPorFasePerda(lead)) entry.sql++;
   }
 
   return Array.from(map.entries())
     .map(([motivo, vals]) => ({ motivo, ...vals }))
-    .sort((a, b) => b.geral - a.geral);
+    .sort((a, b) => a.motivo.localeCompare(b.motivo, 'pt-BR', { numeric: true }));
 }
 
 /** Helper: agrupa leads por chave com colunas por tipo de funil */
