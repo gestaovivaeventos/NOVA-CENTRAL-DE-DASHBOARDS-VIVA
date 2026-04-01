@@ -15,6 +15,7 @@ import {
   KPICard,
   FunilVisual,
   HorizontalBarTable,
+  GroupedBarChart,
   AssertividadeCard,
   DataTableExpansao,
 } from '@/modules/funil-expansao/components';
@@ -52,10 +53,10 @@ import { Users, TrendingUp, Target, Award, MapPin, RefreshCw, AlertTriangle } fr
 
 const INITIAL_FILTROS: FiltrosExpansao = {
   tipoFunil: ['TODOS'],
-  origem: 'Todas',
+  origem: ['Todas'],
   periodoInicio: `${new Date().getFullYear()}-01-01`,
   periodoFim: new Date().toISOString().split('T')[0],
-  periodoSelecionado: 'esteano',
+  periodoSelecionado: 'esteanoateagora',
 };
 
 export default function FunilExpansaoDashboard() {
@@ -169,6 +170,11 @@ export default function FunilExpansaoDashboard() {
     return null;
   }
 
+  // Contagem por funil (todos os leads, independente de status)
+  const totalTratamento = dadosFiltrados.filter(l => l.tipoFunil === 'TRATAMENTO').length;
+  const totalInvestidor = dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR').length;
+  const totalOperador = dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR').length;
+
   // Contagem de ativos por funil para o painel (ativo = motivoPerda vazio)
   const ativosInvestidor = dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && !l.motivoPerda).length;
   const ativosOperador = dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && !l.motivoPerda).length;
@@ -194,10 +200,11 @@ export default function FunilExpansaoDashboard() {
     recuperacao: dadosFiltrados.filter(l => l.status.includes('RECUPERA') && l.tipoFunil === 'TRATAMENTO').length,
   };
 
-  // Split investidor/operador
-  const totalQualificados = ativosInvestidor + ativosOperador;
-  const splitInvestidor = totalQualificados > 0 ? (ativosInvestidor / totalQualificados) * 100 : 0;
-  const splitOperador = totalQualificados > 0 ? (ativosOperador / totalQualificados) * 100 : 0;
+  // Split por funil (todos os leads)
+  const totalSplit = totalTratamento + totalInvestidor + totalOperador;
+  const splitTratamento = totalSplit > 0 ? (totalTratamento / totalSplit) * 100 : 0;
+  const splitInvestidor = totalSplit > 0 ? (totalInvestidor / totalSplit) * 100 : 0;
+  const splitOperador = totalSplit > 0 ? (totalOperador / totalSplit) * 100 : 0;
 
   return (
     <>
@@ -377,40 +384,77 @@ export default function FunilExpansaoDashboard() {
                     />
                   </div>
 
-                  {/* Split Investidor/Operador */}
-                  {totalQualificados > 0 && (
+                  {/* Split Tratamento / Investidor / Operador */}
+                  {totalSplit > 0 && (
                     <div
                       className="rounded-xl p-4"
                       style={{ backgroundColor: '#343A40', border: '1px solid #495057' }}
                     >
-                      <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>
-                        Split Investidor / Operador
+                      <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>
+                        Split por Funil (Tratamento / Investidor / Operador)
                       </p>
                       <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                          <div className="w-full rounded-full overflow-hidden flex" style={{ height: '20px' }}>
-                            <div
-                              style={{ width: `${splitInvestidor}%`, backgroundColor: COLORS.FUNIL_INVESTIDOR }}
-                              className="flex items-center justify-center"
-                            >
-                              <span className="text-[10px] font-bold text-white">{formatPercent(splitInvestidor, 1)}</span>
-                            </div>
-                            <div
-                              style={{ width: `${splitOperador}%`, backgroundColor: COLORS.FUNIL_OPERADOR }}
-                              className="flex items-center justify-center"
-                            >
-                              <span className="text-[10px] font-bold text-white">{formatPercent(splitOperador, 1)}</span>
+                        <div className="flex-1 relative group cursor-default">
+                          <div className="w-full rounded-full flex" style={{ height: '28px' }}>
+                            {splitTratamento > 0 && (
+                              <div
+                                style={{ width: `${splitTratamento}%`, backgroundColor: COLORS.FUNIL_TRATAMENTO, borderRadius: splitInvestidor === 0 && splitOperador === 0 ? '9999px' : '9999px 0 0 9999px' }}
+                                className="flex items-center justify-center"
+                              >
+                                <span className="text-xs font-semibold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>{formatPercent(splitTratamento, 1)}</span>
+                              </div>
+                            )}
+                            {splitInvestidor > 0 && (
+                              <div
+                                style={{ width: `${splitInvestidor}%`, backgroundColor: COLORS.FUNIL_INVESTIDOR, borderRadius: splitTratamento === 0 && splitOperador === 0 ? '9999px' : splitTratamento === 0 ? '9999px 0 0 9999px' : splitOperador === 0 ? '0 9999px 9999px 0' : '0' }}
+                                className="flex items-center justify-center"
+                              >
+                                <span className="text-xs font-semibold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>{formatPercent(splitInvestidor, 1)}</span>
+                              </div>
+                            )}
+                            {splitOperador > 0 && (
+                              <div
+                                style={{ width: `${splitOperador}%`, backgroundColor: COLORS.FUNIL_OPERADOR, borderRadius: splitTratamento === 0 && splitInvestidor === 0 ? '9999px' : '0 9999px 9999px 0' }}
+                                className="flex items-center justify-center"
+                              >
+                                <span className="text-xs font-semibold text-white" style={{ fontFamily: 'Poppins, sans-serif' }}>{formatPercent(splitOperador, 1)}</span>
+                              </div>
+                            )}
+                          </div>
+                          {/* Tooltip único para toda a barra */}
+                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-4 py-3 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 shadow-lg"
+                            style={{ backgroundColor: '#1a1d21', border: '1px solid #495057' }}>
+                            <div className="space-y-1.5" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                              <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_TRATAMENTO }} />
+                                <span className="text-sm" style={{ color: '#F8F9FA' }}>Tratamento: <strong>{totalTratamento}</strong> ({formatPercent(splitTratamento, 1)})</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_INVESTIDOR }} />
+                                <span className="text-sm" style={{ color: '#F8F9FA' }}>Investidor: <strong>{totalInvestidor}</strong> ({formatPercent(splitInvestidor, 1)})</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_OPERADOR }} />
+                                <span className="text-sm" style={{ color: '#F8F9FA' }}>Operador: <strong>{totalOperador}</strong> ({formatPercent(splitOperador, 1)})</span>
+                              </div>
+                              <div className="border-t pt-1.5 mt-1" style={{ borderColor: '#495057' }}>
+                                <span className="text-sm font-semibold" style={{ color: '#FF6600' }}>Total: {totalSplit} leads</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                         <div className="flex gap-4">
                           <div className="flex items-center gap-1.5">
+                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_TRATAMENTO }} />
+                            <span className="text-xs font-medium" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>Tratamento</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
                             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_INVESTIDOR }} />
-                            <span className="text-xs" style={{ color: '#adb5bd' }}>Investidor</span>
+                            <span className="text-xs font-medium" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>Investidor</span>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: COLORS.FUNIL_OPERADOR }} />
-                            <span className="text-xs" style={{ color: '#adb5bd' }}>Operador</span>
+                            <span className="text-xs font-medium" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>Operador</span>
                           </div>
                         </div>
                       </div>
@@ -475,7 +519,7 @@ export default function FunilExpansaoDashboard() {
               {paginaAtiva === 'operacionais' && (
                 <div className="space-y-6">
                   {/* Leads por Origem */}
-                  <HorizontalBarTable
+                  <GroupedBarChart
                     titulo="Leads por Origem (Canais)"
                     dados={dadosOrigem.map(d => ({ label: d.origem, geral: d.geral, mql: d.mql, sql: d.sql }))}
                   />
@@ -497,36 +541,33 @@ export default function FunilExpansaoDashboard() {
                   </div>
 
                   {/* Distribuição por Persona */}
-                  <HorizontalBarTable
+                  <GroupedBarChart
                     titulo="Distribuição por Persona"
                     dados={dadosPersona.map(d => ({ label: d.persona, geral: d.geral, mql: d.mql, sql: d.sql }))}
                   />
 
                   {/* Distribuição por Perfil */}
-                  <HorizontalBarTable
+                  <GroupedBarChart
                     titulo="Distribuição por Perfil"
                     dados={dadosPerfil.map(d => ({ label: d.perfil, geral: d.geral, mql: d.mql, sql: d.sql }))}
                   />
 
                   {/* Motivos de Qualificação */}
-                  <HorizontalBarTable
+                  <GroupedBarChart
                     titulo="Motivos de Qualificação"
                     dados={motivosQualificacao.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
-                    hideTabs
                   />
 
                   {/* Motivos de Perda */}
-                  <HorizontalBarTable
+                  <GroupedBarChart
                     titulo="Motivos de Perda"
                     dados={motivosPerda.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
-                    hideTabs
                   />
 
                   {/* Fases de Perda */}
-                  <HorizontalBarTable
+                  <GroupedBarChart
                     titulo="Fases de Perda"
                     dados={fasesPerda.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
-                    hideTabs
                   />
                 </div>
               )}

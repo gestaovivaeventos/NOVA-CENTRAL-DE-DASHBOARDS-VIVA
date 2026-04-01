@@ -170,7 +170,7 @@ export interface TempoComposicaoCidade {
 /** Estado dos filtros do funil de expansão */
 export interface FiltrosExpansao {
   tipoFunil: (TipoFunil | 'TODOS')[];
-  origem: string;
+  origem: string[];
   periodoInicio: string;
   periodoFim: string;
   periodoSelecionado: string;

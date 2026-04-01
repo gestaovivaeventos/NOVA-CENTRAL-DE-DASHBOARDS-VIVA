@@ -7,5 +7,6 @@ export { default as KPICard } from './KPICard';
 export { default as Loading } from './Loading';
 export { default as FunilVisual } from './FunilVisual';
 export { default as HorizontalBarTable } from './HorizontalBarTable';
+export { default as GroupedBarChart } from './GroupedBarChart';
 export { default as AssertividadeCard } from './AssertividadeCard';
 export { default as DataTableExpansao } from './DataTableExpansao';
