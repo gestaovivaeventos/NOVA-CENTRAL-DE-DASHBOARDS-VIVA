@@ -284,3 +284,97 @@ export interface DadosMarketShare {
   comparativoNacional: ComparativoNacional[];
   topOportunidades: MarketShareCurso[];
 }
+
+// ─── Market Share Reestruturado (3 Blocos) ──
+
+/** Comparativo anual: matriculados x mercado total */
+export interface ComparativoAnual {
+  ano: number;
+  matriculados: number;
+  mercadoTotal: number;
+}
+
+/** Ranking de franquia por market share */
+export interface RankingFranquia {
+  franquia: string;
+  matriculados: number;
+  marketShare: number;
+}
+
+/** Bloco 1 — Matriculados (carteira ativa) */
+export interface BlocoMatriculados {
+  totalMatriculados: number;
+  totalCarteiraAtiva: number;
+  participacao: number;
+  comparativoAnual: ComparativoAnual[];
+  rankingFranquias: RankingFranquia[];
+}
+
+/** Bloco 2 — Turmas (mesma estrutura, sem dados por enquanto) */
+export interface BlocoTurmas {
+  totalTurmas: number | null;
+  totalTurmasCarteira: number | null;
+  participacao: number | null;
+  comparativoAnual: ComparativoAnual[];
+  rankingFranquias: RankingFranquia[];
+  semDados: boolean;
+}
+
+/** Ranking de instituição no bloco Target */
+export interface RankingInstituicaoTarget {
+  instituicao: string;
+  matriculados: number;
+  alunosViva: number;
+  participacao: number;
+}
+
+/** Ranking franquia no bloco Target */
+export interface RankingFranquiaTarget {
+  franquia: string;
+  alunosTarget: number;
+  alunosViva: number;
+  participacao: number;
+  matriculadosInep?: number;
+}
+
+/** Dados de uma visão (aluno ou turma) dentro do bloco Target */
+export interface TargetVisao {
+  totalMercado: number;
+  totalTarget: number;
+  totalViva: number;
+  participacaoDoTotal: number;
+  participacaoDoTarget: number;
+  rankingFranquias: RankingFranquiaTarget[];
+  rankingInstituicoes: RankingInstituicaoTarget[];
+  semDados?: boolean;
+}
+
+/** Bloco 3 — Target (somente Medicina) */
+export interface BlocoTarget {
+  curso: string;
+  /** @deprecated Use alunos.totalMercado */
+  totalAlunos: number;
+  /** @deprecated Use alunos.totalTarget */
+  totalAlunosTarget: number;
+  /** @deprecated Use alunos.totalViva */
+  totalAlunosViva: number;
+  /** @deprecated Use alunos.participacaoDoTotal */
+  participacaoDoTotal: number;
+  /** @deprecated Use alunos.participacaoDoTarget */
+  participacaoDoTarget: number;
+  /** @deprecated Use alunos.rankingFranquias */
+  rankingFranquias: RankingFranquiaTarget[];
+  /** @deprecated Use alunos.rankingInstituicoes */
+  rankingInstituicoes: RankingInstituicaoTarget[];
+  /** Visão por alunos */
+  alunos: TargetVisao;
+  /** Visão por turmas */
+  turmas: TargetVisao;
+}
+
+/** Dados consolidados da página Market Share reestruturada */
+export interface DadosMarketShareV2 {
+  matriculados: BlocoMatriculados;
+  turmas: BlocoTurmas;
+  target: BlocoTarget;
+}

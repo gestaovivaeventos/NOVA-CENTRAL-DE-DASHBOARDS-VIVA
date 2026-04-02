@@ -8,6 +8,15 @@ export function fmtNum(n: number | null | undefined): string {
   return n.toLocaleString('pt-BR');
 }
 
+/** Formata número compacto: 10.224.686 → "10.2Mi", 312.450 → "312.4K" */
+export function fmtCompacto(n: number | null | undefined): string {
+  if (n == null || n === 0) return '-';
+  const abs = Math.abs(n);
+  if (abs >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}Mi`;
+  if (abs >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString('pt-BR');
+}
+
 /** Formata número com separador de milhares completo */
 export function fmtInteiro(n: number | null | undefined): string {
   if (n == null) return '-';

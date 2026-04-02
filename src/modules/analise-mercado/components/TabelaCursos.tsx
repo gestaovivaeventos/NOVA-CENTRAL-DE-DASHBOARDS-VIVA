@@ -117,39 +117,6 @@ function TabelaCursos({ dados, areaFiltro, metricasAtivas = ['matriculas'], ano 
   return (
     <div style={{ backgroundColor: '#343A40', borderRadius: 12, border: '1px solid #495057', overflow: 'hidden' }}>
 
-      {/* ═══ KPI Cards (resumo) ═══ */}
-      <div style={{
-        display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-        borderBottom: '1px solid #495057',
-      }}>
-        {[
-          { label: 'MATRICULADOS', valor: fmtNum(totais.matriculas), cor: CORES.azul, destaque: metricasAtivas.includes('matriculas') },
-          { label: 'CONCLUINTES', valor: fmtNum(totais.concluintes), cor: CORES.verde, destaque: metricasAtivas.includes('concluintes') },
-          { label: 'INGRESSANTES', valor: fmtNum(totais.ingressantes), cor: CORES.roxo, destaque: metricasAtivas.includes('ingressantes') },
-        ].map((card, i) => (
-          <div key={i} style={{
-            padding: '14px 16px', textAlign: 'center',
-            borderRight: i < 2 ? '1px solid #495057' : 'none',
-            backgroundColor: card.destaque ? `${card.cor}08` : 'transparent',
-          }}>
-            <p style={{
-              color: '#6C757D', fontSize: '0.6rem', fontWeight: 600,
-              textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 4px',
-              fontFamily: "'Poppins', sans-serif",
-            }}>
-              {card.label}{ano ? ` (${ano})` : ''}
-            </p>
-            <p style={{
-              color: card.cor, fontWeight: 700, margin: 0,
-              fontSize: '0.95rem',
-              fontFamily: "'Poppins', sans-serif",
-            }}>
-              {card.valor}
-            </p>
-          </div>
-        ))}
-      </div>
-
       {/* ═══ Barra de Busca + Filtros ═══ */}
       <div style={{
         padding: '12px 20px', borderBottom: '1px solid #495057',

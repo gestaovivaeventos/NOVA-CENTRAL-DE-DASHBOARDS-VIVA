@@ -1,25 +1,22 @@
 /**
- * Mercado Potencial - Aluno
+ * Mercado Potencial - Turma
  * Duas abas: "Visão do Ano" (análise do ano selecionado) + "Comparativo Anual" (evolução histórica)
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { BarChart3, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMercado';
-import {
-  AnaliseMercadoLayout,
-  CardIndicador,
-  SecaoAlunos,
-} from '@/modules/analise-mercado/components';
-import SecaoComparativa from '@/modules/analise-mercado/components/SecaoComparativa';
+import { AnaliseMercadoLayout, CardIndicador, SecaoTurmasMock } from '@/modules/analise-mercado/components';
+import FiltroComBusca from '@/modules/analise-mercado/components/FiltroComBusca';
+import SecaoComparativaTurmas from '@/modules/analise-mercado/components/SecaoComparativaTurmas';
+import { Filter, BarChart3, TrendingUp } from 'lucide-react';
 import { CORES } from '@/modules/analise-mercado/utils/formatters';
 
 type AbaAtiva = 'visao-ano' | 'comparativo-anual';
 
-export default function AnaliseMercadoPage() {
+export default function ComparativaPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const {
@@ -35,7 +32,6 @@ export default function AnaliseMercadoPage() {
     instituicoesDisponiveis,
     estadosDisponiveis,
     municipiosDisponiveis,
-    forceRefresh,
     progressMessage,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
@@ -64,7 +60,7 @@ export default function AnaliseMercadoPage() {
             margin: '0 auto',
           }} />
           <p style={{ marginTop: 16, color: '#adb5bd' }}>
-            {progressMessage || 'Carregando Mercado Potencial - Aluno...'}
+            {progressMessage || 'Carregando Mercado Potencial - Turma...'}
           </p>
         </div>
         <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -74,16 +70,168 @@ export default function AnaliseMercadoPage() {
 
   if (user && user.accessLevel !== 1) return null;
 
-  const handleEstadoClick = (uf: string) => {
-    setFiltros({ estado: filtros.estado === uf ? null : (uf || null) });
+  const sidebarSelectStyle: React.CSSProperties = {
+    width: '100%',
+    backgroundColor: '#2D3238',
+    color: '#F8F9FA',
+    border: '1px solid #495057',
+    borderRadius: 6,
+    padding: '6px 10px',
+    fontSize: '0.75rem',
+    fontFamily: "'Poppins', sans-serif",
+    cursor: 'pointer',
+    outline: 'none',
   };
+  const sidebarLabelStyle: React.CSSProperties = {
+    color: '#6C757D',
+    fontSize: '0.62rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    marginBottom: 3,
+    display: 'block',
+  };
+
+  const optionsMunicipios = municipiosDisponiveis.map(m => ({ value: m, label: m }));
+  const optionsInstituicoes = instituicoesDisponiveis.map(i => ({ value: String(i.codIes), label: i.nome }));
+  const optionsCursos = cursosDisponiveis.map(c => ({ value: c, label: c }));
+
+  const renderFiltros = () => (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+        <Filter size={14} color="#FF6600" />
+        <span style={{
+          color: '#FF6600', fontSize: '0.72rem', fontWeight: 700,
+          textTransform: 'uppercase', letterSpacing: '0.05em',
+          fontFamily: "'Poppins', sans-serif",
+        }}>
+          Filtros
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* Franquia */}
+        <div>
+          <label style={sidebarLabelStyle}>Franquia</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.franquiaId ?? ''}
+            onChange={e => setFiltros({ franquiaId: e.target.value || null })}
+          >
+            <option value="">Todas (Brasil)</option>
+            {dados.franquias.map(f => (
+              <option key={f.id} value={f.id}>{f.nome}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Estado (UF) */}
+        <div>
+          <label style={sidebarLabelStyle}>Estado (UF)</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.estado ?? ''}
+            onChange={e => setFiltros({ estado: e.target.value || null })}
+          >
+            <option value="">Todos</option>
+            {estadosDisponiveis.map(e => (
+              <option key={e.uf} value={e.uf}>{e.uf} — {e.nome}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Município */}
+        <FiltroComBusca
+          label="Município"
+          value={filtros.municipio ?? ''}
+          placeholder="Todos"
+          options={optionsMunicipios}
+          onChange={v => setFiltros({ municipio: v || null })}
+        />
+
+        {/* Rede */}
+        <div>
+          <label style={sidebarLabelStyle}>Rede</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.tipoInstituicao}
+            onChange={e => setFiltros({ tipoInstituicao: e.target.value as 'todos' | 'publica' | 'privada' })}
+          >
+            <option value="todos">Todas</option>
+            <option value="publica">Pública</option>
+            <option value="privada">Privada</option>
+          </select>
+        </div>
+
+        {/* Modalidade */}
+        <div>
+          <label style={sidebarLabelStyle}>Modalidade</label>
+          <select
+            style={sidebarSelectStyle}
+            value={filtros.modalidade}
+            onChange={e => setFiltros({ modalidade: e.target.value as 'todos' | 'presencial' | 'ead' })}
+          >
+            <option value="todos">Todas</option>
+            <option value="presencial">Presencial</option>
+            <option value="ead">EAD</option>
+          </select>
+        </div>
+
+        {/* Instituição */}
+        <FiltroComBusca
+          label="Instituição"
+          value={filtros.instituicaoId ? String(filtros.instituicaoId) : ''}
+          placeholder="Todas"
+          options={optionsInstituicoes}
+          onChange={v => setFiltros({ instituicaoId: v ? Number(v) : null })}
+        />
+
+        {/* Curso */}
+        <FiltroComBusca
+          label="Curso"
+          value={filtros.curso ?? ''}
+          placeholder="Todos"
+          options={optionsCursos}
+          onChange={v => setFiltros({ curso: v || null })}
+        />
+
+        {/* Limpar filtros */}
+        {(filtros.franquiaId || filtros.tipoInstituicao !== 'todos' || filtros.modalidade !== 'todos' || filtros.estado || filtros.municipio || filtros.instituicaoId || filtros.curso) && (
+          <button
+            onClick={() => {
+              setFiltros({
+                franquiaId: null,
+                tipoInstituicao: 'todos',
+                modalidade: 'todos',
+                estado: null,
+                municipio: null,
+                instituicaoId: null,
+                curso: null,
+              });
+            }}
+            style={{
+              width: '100%', padding: '6px 10px',
+              backgroundColor: 'rgba(255,102,0,0.1)',
+              border: '1px solid rgba(255,102,0,0.3)',
+              borderRadius: 6, color: '#FF6600',
+              fontSize: '0.7rem', fontWeight: 600,
+              fontFamily: "'Poppins', sans-serif",
+              cursor: 'pointer', textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Limpar Filtros
+          </button>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <>
-      <Head><title>Mercado Potencial - Aluno | Viva Eventos</title></Head>
+      <Head><title>Mercado Potencial - Turma | Viva Eventos</title></Head>
 
       <AnaliseMercadoLayout
-        titulo="MERCADO POTENCIAL - ALUNO"
+        titulo="MERCADO POTENCIAL - TURMA"
         franquias={dados.franquias}
         franquiaSelecionada={filtros.franquiaId}
         onFranquiaChange={(id) => setFiltros({ franquiaId: id })}
@@ -95,9 +243,9 @@ export default function AnaliseMercadoPage() {
         instituicoesDisponiveis={instituicoesDisponiveis}
         estadosDisponiveis={estadosDisponiveis}
         municipiosDisponiveis={municipiosDisponiveis}
-        hideAnoFilter={abaAtiva === 'comparativo-anual'}
+        renderFiltros={renderFiltros}
       >
-        {/* Indicador de refetch (loading sutil) */}
+        {/* Loading overlay sutil */}
         {loading && !initialLoading && (
           <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
@@ -108,15 +256,6 @@ export default function AnaliseMercadoPage() {
                 animation: 'loadbar 1s ease-in-out infinite',
               }} />
             </div>
-            {progressMessage && (
-              <div style={{
-                textAlign: 'center', padding: '4px 8px',
-                backgroundColor: 'rgba(33,37,41,0.9)', color: '#adb5bd',
-                fontSize: 12, borderBottom: '1px solid #343a40',
-              }}>
-                {progressMessage}
-              </div>
-            )}
             <style jsx>{`@keyframes loadbar { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }`}</style>
           </div>
         )}
@@ -191,7 +330,19 @@ export default function AnaliseMercadoPage() {
           })}
         </div>
 
-        {/* Cards Indicadores Principais — apenas Visão do Ano */}
+        {/* Alerta mock */}
+        <div style={{
+          backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
+          borderRadius: 6, padding: '8px 16px', marginBottom: 16,
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <span>⚠️</span>
+          <p style={{ color: '#F59E0B', fontSize: '0.75rem', margin: 0 }}>
+            <strong>Dados Mockados</strong> — Os dados de turmas exibidos são estimativas para fins de layout. Serão substituídos por dados reais quando disponíveis.
+          </p>
+        </div>
+
+        {/* KPI Cards — apenas Visão do Ano */}
         {abaAtiva === 'visao-ano' && (
           <div style={{
             display: 'grid',
@@ -199,11 +350,16 @@ export default function AnaliseMercadoPage() {
             gap: 14,
             marginBottom: 20,
           }}>
-            {dados.indicadores.map(ind => (
+            {[
+              { id: 'turmas-total', titulo: 'Total de Turmas', valor: 799680, variacao: 3.2, tendencia: 'up' as const, cor: '#FF6600', subtitulo: 'Graduação + Tecnólogo' },
+              { id: 'turmas-pres', titulo: 'Turmas Presencial', valor: 312450, variacao: -1.4, tendencia: 'down' as const, cor: '#10B981', subtitulo: 'Turmas presenciais ativas' },
+              { id: 'turmas-ead', titulo: 'Turmas EAD', valor: 487230, variacao: 6.8, tendencia: 'up' as const, cor: '#8B5CF6', subtitulo: 'Turmas a distância' },
+              ...(dados.indicadores.filter(i => i.id === 'ies' || i.id === 'cursos')),
+            ].map(ind => (
               <CardIndicador
                 key={ind.id}
                 indicador={ind}
-                compacto={dados.indicadores.length > 4}
+                compacto
                 ano={filtros.ano}
               />
             ))}
@@ -212,18 +368,13 @@ export default function AnaliseMercadoPage() {
 
         {/* Conteúdo por aba */}
         {abaAtiva === 'visao-ano' ? (
-          <SecaoAlunos
-            dados={dados}
+          <SecaoTurmasMock
             filtros={filtros}
-            onEstadoClick={handleEstadoClick}
-            onMetricaChange={(key) => setFiltros({ metricasAtivas: [key] })}
-            loadingEvolucao={loadingEvolucao}
+            onEstadoClick={(uf: string) => setFiltros({ estado: filtros.estado === uf ? null : (uf || null) })}
           />
         ) : (
-          <SecaoComparativa
-            evolucaoAlunos={dados.evolucaoAlunos}
+          <SecaoComparativaTurmas
             ano={filtros.ano}
-            loadingEvolucao={loadingEvolucao}
           />
         )}
 
