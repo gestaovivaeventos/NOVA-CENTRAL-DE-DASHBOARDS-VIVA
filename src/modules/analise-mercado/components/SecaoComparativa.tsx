@@ -197,24 +197,33 @@ export default function SecaoComparativa({ evolucaoAlunos, ano, loadingEvolucao 
                 {m.label}
               </p>
               {/* All years */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, marginBottom: 14 }}>
                 {evolucaoAlunos.map((e, idx) => {
                   const isLast = idx === evolucaoAlunos.length - 1;
                   const isFirst = idx === 0;
+                  const prevVal = idx > 0 ? evolucaoAlunos[idx - 1][m.key] : 0;
+                  const yoy = idx > 0 && prevVal ? ((e[m.key] - prevVal) / prevVal) * 100 : null;
                   return (
                     <React.Fragment key={e.ano}>
                       <div style={{ flex: 1, textAlign: isFirst ? 'left' : isLast ? 'right' : 'center' }}>
                         <p style={{ color: '#6C757D', fontSize: '0.58rem', margin: '0 0 2px', textTransform: 'uppercase' }}>{e.ano}</p>
                         <span style={{
                           color: isLast ? '#F8F9FA' : '#ADB5BD',
-                          fontSize: isLast ? '0.95rem' : '0.82rem',
+                          fontSize: '0.95rem',
                           fontWeight: isLast ? 700 : 500,
                           fontFamily: "'Orbitron', monospace",
                         }}>
                           {fmtNum(e[m.key])}
                         </span>
+                        {yoy !== null ? (
+                          <p style={{ color: yoy >= 0 ? CORES.verde : '#EF4444', fontSize: '0.72rem', margin: '4px 0 0', fontWeight: 700 }}>
+                            {yoy >= 0 ? '+' : ''}{yoy.toFixed(1)}%
+                          </p>
+                        ) : (
+                          <p style={{ fontSize: '0.72rem', margin: '4px 0 0', visibility: 'hidden' as const }}>&nbsp;</p>
+                        )}
                       </div>
-                      {!isLast && <span style={{ color: '#3D4349', fontSize: '0.7rem', flexShrink: 0 }}>→</span>}
+                      {!isLast && <span style={{ color: '#3D4349', fontSize: '0.7rem', flexShrink: 0, marginBottom: 10 }}>→</span>}
                     </React.Fragment>
                   );
                 })}
@@ -245,152 +254,28 @@ export default function SecaoComparativa({ evolucaoAlunos, ano, loadingEvolucao 
         })}
       </div>
 
-      {/* ━━━ 2. Taxa de Crescimento — 1 card por métrica ━━━ */}
-      <SectionLabel num="2" label="Taxa de Crescimento Anual" cor={CORES.verde} />
-      <div style={{
-        display: 'flex', alignItems: 'flex-start', gap: 8,
-        backgroundColor: '#2D323820', border: '1px solid #495057',
-        borderRadius: 8, padding: '10px 14px', marginBottom: 14,
-      }}>
-        <Info size={14} color={CORES.verde} style={{ flexShrink: 0, marginTop: 1 }} />
-        <p style={{ color: '#ADB5BD', fontSize: '0.7rem', margin: 0, lineHeight: 1.5 }}>
-          A <strong style={{ color: '#F8F9FA' }}>taxa de crescimento</strong> mostra a variação percentual ano a ano (YoY) de cada métrica.
-          A <strong style={{ color: '#F8F9FA' }}>taxa de crescimento anual</strong> representa o crescimento médio anual ao longo de todo o período,
-          indicando a tendência geral independente de oscilações pontuais.
-          <span style={{ color: CORES.verde }}> Valores positivos</span> indicam crescimento e
-          <span style={{ color: '#EF4444' }}> valores negativos</span> indicam queda.
-        </p>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14, marginBottom: 24 }}>
-        {METRICAS_OPTIONS.map(m => {
-          const cagr = calcCAGR(m.key);
-          const metricGrowth = growthData.map(g => g[m.key]);
-          const lastGrowth = metricGrowth[metricGrowth.length - 1] || 0;
-          return (
-            <div key={m.key} style={{
-              backgroundColor: '#343A40', borderRadius: 12, padding: 16,
-              border: '1px solid #495057', minWidth: 0, overflow: 'hidden',
+      {/* ━━━ 2. Detalhamento Anual ━━━ */}
+      <SectionLabel num="2" label="Detalhamento Anual" cor={CORES.roxo} />
+      <div style={{ marginBottom: 24, position: 'relative' }}>
+          <TabelaComparativa dados={evolucaoAlunos} metricasAtivas={['matriculas', 'concluintes', 'ingressantes']} ano={ano} />
+          {loadingEvolucao && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              backgroundColor: 'rgba(33,37,41,0.75)', borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             }}>
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                <div>
-                  <p style={{
-                    color: m.cor, fontSize: '0.68rem', fontWeight: 600,
-                    textTransform: 'uppercase', letterSpacing: '0.04em', margin: 0,
-                    fontFamily: "'Poppins', sans-serif",
-                  }}>
-                    {m.label}
-                  </p>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
-                    <span style={{
-                      color: '#F8F9FA', fontSize: '0.9rem', fontWeight: 700,
-                      fontFamily: "'Orbitron', sans-serif",
-                    }}>
-                      Taxa de crescimento anual {cagr >= 0 ? '+' : ''}{cagr.toFixed(1)}%
-                    </span>
-                    <span style={{ color: '#6C757D', fontSize: '0.52rem' }}>a.a.</span>
-                  </div>
-                </div>
-                <TrendBadge value={lastGrowth} />
-              </div>
-              {/* Line chart */}
-              <div style={{ height: 180 }}>
-                <Line
-                  data={{
-                    labels: growthData.map(g => String(g.ano)),
-                    datasets: [{
-                      data: metricGrowth,
-                      borderColor: m.cor,
-                      backgroundColor: `${m.cor}18`,
-                      tension: 0.3,
-                      fill: true,
-                      borderWidth: 2,
-                      pointBackgroundColor: metricGrowth.map(v => v >= 0 ? CORES.verde : '#EF4444'),
-                      pointBorderColor: metricGrowth.map(v => v >= 0 ? CORES.verde : '#EF4444'),
-                      pointRadius: 5,
-                      pointHoverRadius: 7,
-                    }],
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: { padding: { top: 22 } },
-                    plugins: {
-                      legend: { display: false },
-                      datalabels: {
-                        color: (ctx: any) => {
-                          const val = ctx.dataset.data[ctx.dataIndex];
-                          return val >= 0 ? CORES.verde : '#EF4444';
-                        },
-                        font: { size: 10, weight: 'bold' as const },
-                        anchor: 'end' as const,
-                        align: 'top' as const,
-                        offset: 4,
-                        formatter: (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`,
-                        clamp: true,
-                        clip: false,
-                      },
-                      tooltip: {
-                        backgroundColor: '#1a1d21', borderColor: '#495057', borderWidth: 1,
-                        titleColor: '#F8F9FA', bodyColor: '#ADB5BD', padding: 10,
-                        callbacks: { label: (ctx: any) => `${ctx.raw >= 0 ? '+' : ''}${ctx.raw.toFixed(1)}%` },
-                      },
-                    },
-                    scales: {
-                      x: { ticks: { color: '#6C757D', font: { size: 10 } }, grid: { display: false } },
-                      y: {
-                        beginAtZero: true,
-                        ticks: { color: '#6C757D', font: { size: 9 }, callback: (v: any) => `${v}%` },
-                        grid: { color: '#3D434920' },
-                      },
-                    },
-                    elements: { point: { radius: 5, hoverRadius: 7 } },
-                  } as any}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ━━━ 3. Detalhamento Anual ━━━ */}
-      <SectionLabel num="3" label="Detalhamento Anual" cor={CORES.roxo} />
-      <div style={{ marginBottom: 24 }}>
-        <CardInsight
-          titulo="Tabela Comparativa — Evolução Anual"
-          cor={CORES.roxo}
-          icone={<Calendar size={16} />}
-          iniciaExpandido
-          expandido
-          semToggle
-          resumo={METRICAS_OPTIONS.map(m => ({
-            label: m.label,
-            valor: fmtNum(ultimoAno?.[m.key] || 0),
-            cor: METRICA_COR[m.key],
-          }))}
-        >
-          <div style={{ marginTop: 14, position: 'relative' }}>
-            <TabelaComparativa dados={evolucaoAlunos} metricasAtivas={['matriculas', 'concluintes', 'ingressantes']} ano={ano} />
-            {loadingEvolucao && (
               <div style={{
-                position: 'absolute', inset: 0,
-                backgroundColor: 'rgba(33,37,41,0.75)', borderRadius: 8,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              }}>
-                <div style={{
-                  width: 16, height: 16,
-                  border: '2px solid #FF6600', borderTopColor: 'transparent',
-                  borderRadius: '50%', animation: 'spin 0.8s linear infinite',
-                }} />
-                <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Completando dados históricos...</span>
-              </div>
-            )}
-          </div>
-        </CardInsight>
+                width: 16, height: 16,
+                border: '2px solid #FF6600', borderTopColor: 'transparent',
+                borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+              }} />
+              <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Completando dados históricos...</span>
+            </div>
+          )}
       </div>
 
-      {/* ━━━ 4. Evolução Histórica — 3 mini gráficos lado a lado ━━━ */}
-      <SectionLabel num="4" label="Evolução Histórica" cor={CORES.azul} />
+      {/* ━━━ 3. Evolução Histórica — 3 mini gráficos lado a lado ━━━ */}
+      <SectionLabel num="3" label="Evolução Histórica" cor={CORES.azul} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 14, marginBottom: 24 }}>
         {METRICAS_OPTIONS.map(m => {
           const current = ultimoAno?.[m.key] || 0;
