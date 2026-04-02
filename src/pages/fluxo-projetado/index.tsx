@@ -15,13 +15,6 @@ export default function FluxoProjetadoDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
-  // Redirecionar para a página "Fluxo Realizado" como padrão
-  useEffect(() => {
-    const query = router.query;
-    const queryString = query.franquia ? `?franquia=${encodeURIComponent(query.franquia as string)}` : '';
-    router.replace(`/fluxo-projetado/realizado${queryString}`);
-  }, []);
-
   // Estado para controle da sidebar
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 

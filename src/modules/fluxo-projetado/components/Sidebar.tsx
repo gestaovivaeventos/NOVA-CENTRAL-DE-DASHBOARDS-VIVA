@@ -201,8 +201,8 @@ export default function Sidebar({
               {/* Divisor */}
               <hr className="border-gray-700/50" />
 
-              {/* Botão de Parâmetros - apenas para franqueadoras (accessLevel >= 1) */}
-              {user?.accessLevel !== 0 && (
+              {/* Botão de Parâmetros - apenas para usuários específicos */}
+              {['marcos.castro', 'theo.diniz', 'gabriel.braz', 'cris', 'vitor'].includes(user?.username ?? '') && (
                 <div>
                   <button 
                     onClick={() => setShowConfig(true)}
@@ -245,8 +245,8 @@ export default function Sidebar({
                 <TrendingUp size={20} />
               </button>
               
-              {/* Botão Parâmetros (ícone) - apenas para franqueadoras (accessLevel >= 1) */}
-              {user?.accessLevel !== 0 && (
+              {/* Botão Parâmetros (ícone) - apenas para usuários específicos */}
+              {['marcos.castro', 'theo.diniz', 'gabriel.braz', 'cris', 'vitor'].includes(user?.username ?? '') && (
                 <button
                   onClick={() => setShowConfig(true)}
                   className="p-2.5 bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 rounded-lg transition-all"
