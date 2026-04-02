@@ -112,49 +112,55 @@ export default function FunilExpansaoDashboard() {
   // Filtrar dados
   const dadosFiltrados = useMemo(() => filtrarLeads(rawData, filtros), [rawData, filtros]);
 
+  // Dados sem fase 0 (POTENCIAIS) — usados em todos os gráficos exceto Conversão e Ativos
+  const dadosSemPotenciais = useMemo(
+    () => dadosFiltrados.filter(l => l.status.toUpperCase() !== 'POTENCIAIS'),
+    [dadosFiltrados]
+  );
+
   // Origens para o filtro
   const origens = useMemo(() => extrairOrigens(rawData), [rawData]);
 
-  // KPIs
-  const kpis = useMemo(() => calcularKPIs(dadosFiltrados), [dadosFiltrados]);
+  // KPIs (sem POTENCIAIS)
+  const kpis = useMemo(() => calcularKPIs(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Dados para cards expandíveis
-  const cidadesFranquias = useMemo(() => listarCidadesFranquias(dadosFiltrados), [dadosFiltrados]);
-  const cidadesAguardando = useMemo(() => listarCidadesAguardandoComposicao(dadosFiltrados), [dadosFiltrados]);
-  const leadsPorRegiao = useMemo(() => listarLeadsPorRegiao(dadosFiltrados), [dadosFiltrados]);
+  // Dados para cards expandíveis (sem POTENCIAIS)
+  const cidadesFranquias = useMemo(() => listarCidadesFranquias(dadosSemPotenciais), [dadosSemPotenciais]);
+  const cidadesAguardando = useMemo(() => listarCidadesAguardandoComposicao(dadosSemPotenciais), [dadosSemPotenciais]);
+  const leadsPorRegiao = useMemo(() => listarLeadsPorRegiao(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Funil completo
+  // Funil completo — Conversão (com POTENCIAIS)
   const funil = useMemo(() => calcularFunil(dadosFiltrados), [dadosFiltrados]);
 
-  // Dados operacionais
-  const dadosOrigem = useMemo(() => agruparPorOrigem(dadosFiltrados), [dadosFiltrados]);
-  const assertTerritorio = useMemo(() => calcularAssertividadeTerritorio(dadosFiltrados), [dadosFiltrados]);
-  const assertPersona = useMemo(() => calcularAssertividadePersona(dadosFiltrados), [dadosFiltrados]);
-  const dadosPersona = useMemo(() => agruparPorPersona(dadosFiltrados), [dadosFiltrados]);
-  const dadosPerfil = useMemo(() => agruparPorPerfil(dadosFiltrados), [dadosFiltrados]);
-  const motivosQualificacao = useMemo(() => agruparMotivosQualificacao(dadosFiltrados), [dadosFiltrados]);
-  const motivosPerda = useMemo(() => agruparMotivosPerda(dadosFiltrados), [dadosFiltrados]);
-  const fasesPerda = useMemo(() => agruparFasesPerda(dadosFiltrados), [dadosFiltrados]);
+  // Dados operacionais (sem POTENCIAIS)
+  const dadosOrigem = useMemo(() => agruparPorOrigem(dadosSemPotenciais), [dadosSemPotenciais]);
+  const assertTerritorio = useMemo(() => calcularAssertividadeTerritorio(dadosSemPotenciais), [dadosSemPotenciais]);
+  const assertPersona = useMemo(() => calcularAssertividadePersona(dadosSemPotenciais), [dadosSemPotenciais]);
+  const dadosPersona = useMemo(() => agruparPorPersona(dadosSemPotenciais), [dadosSemPotenciais]);
+  const dadosPerfil = useMemo(() => agruparPorPerfil(dadosSemPotenciais), [dadosSemPotenciais]);
+  const motivosQualificacao = useMemo(() => agruparMotivosQualificacao(dadosSemPotenciais), [dadosSemPotenciais]);
+  const motivosPerda = useMemo(() => agruparMotivosPerda(dadosSemPotenciais), [dadosSemPotenciais]);
+  const fasesPerda = useMemo(() => agruparFasesPerda(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Dados de campanhas
-  const campanhas = useMemo(() => agruparCampanhas(dadosFiltrados), [dadosFiltrados]);
-  const conjuntos = useMemo(() => agruparConjuntos(dadosFiltrados), [dadosFiltrados]);
-  const anuncios = useMemo(() => agruparAnuncios(dadosFiltrados), [dadosFiltrados]);
+  // Dados de campanhas (sem POTENCIAIS)
+  const campanhas = useMemo(() => agruparCampanhas(dadosSemPotenciais), [dadosSemPotenciais]);
+  const conjuntos = useMemo(() => agruparConjuntos(dadosSemPotenciais), [dadosSemPotenciais]);
+  const anuncios = useMemo(() => agruparAnuncios(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Dados de composição
-  const cidadesData = useMemo(() => agruparPorCidade(dadosFiltrados), [dadosFiltrados]);
+  // Dados de composição (sem POTENCIAIS)
+  const cidadesData = useMemo(() => agruparPorCidade(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Funil de ativos (sem perdidos, sem percentuais)
+  // Funil de ativos — Ativos (com POTENCIAIS)
   const funilAtivos = useMemo(() => calcularFunilAtivos(dadosFiltrados), [dadosFiltrados]);
 
-  // Região com maior acerto
-  const regiaoAcerto = useMemo(() => calcularRegiaoMaiorAcerto(dadosFiltrados), [dadosFiltrados]);
+  // Região com maior acerto (sem POTENCIAIS)
+  const regiaoAcerto = useMemo(() => calcularRegiaoMaiorAcerto(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Persona assertividade extremos
-  const personaExtremos = useMemo(() => calcularAssertividadePersonaExtremos(dadosFiltrados), [dadosFiltrados]);
+  // Persona assertividade extremos (sem POTENCIAIS)
+  const personaExtremos = useMemo(() => calcularAssertividadePersonaExtremos(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Tempo composição por cidade
-  const tempoComposicao = useMemo(() => agruparTempoComposicaoPorCidade(dadosFiltrados), [dadosFiltrados]);
+  // Tempo composição por cidade (sem POTENCIAIS)
+  const tempoComposicao = useMemo(() => agruparTempoComposicaoPorCidade(dadosSemPotenciais), [dadosSemPotenciais]);
 
   // Auth check
   if (authLoading || !isClient) {
@@ -170,34 +176,34 @@ export default function FunilExpansaoDashboard() {
     return null;
   }
 
-  // Contagem por funil (todos os leads, independente de status)
-  const totalTratamento = dadosFiltrados.filter(l => l.tipoFunil === 'TRATAMENTO').length;
-  const totalInvestidor = dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR').length;
-  const totalOperador = dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR').length;
+  // Contagem por funil (sem POTENCIAIS)
+  const totalTratamento = dadosSemPotenciais.filter(l => l.tipoFunil === 'TRATAMENTO').length;
+  const totalInvestidor = dadosSemPotenciais.filter(l => l.tipoFunil === 'INVESTIDOR').length;
+  const totalOperador = dadosSemPotenciais.filter(l => l.tipoFunil === 'OPERADOR').length;
 
-  // Contagem de ativos por funil para o painel (ativo = motivoPerda vazio)
-  const ativosInvestidor = dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && !l.motivoPerda).length;
-  const ativosOperador = dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && !l.motivoPerda).length;
+  // Contagem de ativos por funil para o painel (ativo = motivoPerda vazio, sem POTENCIAIS)
+  const ativosInvestidor = dadosSemPotenciais.filter(l => l.tipoFunil === 'INVESTIDOR' && !l.motivoPerda).length;
+  const ativosOperador = dadosSemPotenciais.filter(l => l.tipoFunil === 'OPERADOR' && !l.motivoPerda).length;
 
-  // Vendas por tipo de funil
+  // Vendas por tipo de funil (sem POTENCIAIS)
   const vendasInvestidor = {
-    ganhas: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('CANDIDATO APROVADO')).length,
-    perdidas: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.motivoPerda !== '').length,
-    recuperacao: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('RECUPERA')).length,
-    franquias: dadosFiltrados.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('CANDIDATO APROVADO')).length,
+    ganhas: dadosSemPotenciais.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('CANDIDATO APROVADO')).length,
+    perdidas: dadosSemPotenciais.filter(l => l.tipoFunil === 'INVESTIDOR' && l.motivoPerda !== '').length,
+    recuperacao: dadosSemPotenciais.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('RECUPERA')).length,
+    franquias: dadosSemPotenciais.filter(l => l.tipoFunil === 'INVESTIDOR' && l.status.includes('CANDIDATO APROVADO')).length,
   };
 
   const vendasOperador = {
-    ganhas: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('CANDIDATO APROVADO')).length,
-    perdidas: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.motivoPerda !== '').length,
-    recuperacao: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('RECUPERA')).length,
-    franquias: dadosFiltrados.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('CANDIDATO APROVADO')).length,
+    ganhas: dadosSemPotenciais.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('CANDIDATO APROVADO')).length,
+    perdidas: dadosSemPotenciais.filter(l => l.tipoFunil === 'OPERADOR' && l.motivoPerda !== '').length,
+    recuperacao: dadosSemPotenciais.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('RECUPERA')).length,
+    franquias: dadosSemPotenciais.filter(l => l.tipoFunil === 'OPERADOR' && l.status.includes('CANDIDATO APROVADO')).length,
   };
 
   const vendasTratamento = {
     ganhas: 0,
-    perdidas: dadosFiltrados.filter(l => l.motivoPerda !== '' && l.tipoFunil === 'TRATAMENTO').length,
-    recuperacao: dadosFiltrados.filter(l => l.status.includes('RECUPERA') && l.tipoFunil === 'TRATAMENTO').length,
+    perdidas: dadosSemPotenciais.filter(l => l.motivoPerda !== '' && l.tipoFunil === 'TRATAMENTO').length,
+    recuperacao: dadosSemPotenciais.filter(l => l.status.includes('RECUPERA') && l.tipoFunil === 'TRATAMENTO').length,
   };
 
   // Split por funil (todos os leads)

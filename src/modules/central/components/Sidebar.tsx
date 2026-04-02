@@ -502,25 +502,28 @@ const CollapsibleGroup = ({
     return all;
   }, [group.dashboards, group.subgrupos]);
 
+  const normalize = (str: string) =>
+    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+
   const filteredDashboards = useMemo(() => {
     if (!searchTerm) return group.dashboards;
-    const search = searchTerm.toLowerCase();
-    return group.dashboards.filter(d => d.label.toLowerCase().includes(search));
+    const search = normalize(searchTerm);
+    return group.dashboards.filter(d => normalize(d.label).includes(search));
   }, [group.dashboards, searchTerm]);
 
   const filteredSubgrupos = useMemo(() => {
     if (!searchTerm) return group.subgrupos;
-    const search = searchTerm.toLowerCase();
+    const search = normalize(searchTerm);
     return group.subgrupos
       .map(sg => {
         // Se o nome do subgrupo bate com a busca, mostra todos os dashboards dele
-        if (sg.nome.toLowerCase().includes(search)) {
+        if (normalize(sg.nome).includes(search)) {
           return sg;
         }
         // Senão, filtra individual os dashboards
         return {
           ...sg,
-          dashboards: sg.dashboards.filter(d => d.label.toLowerCase().includes(search)),
+          dashboards: sg.dashboards.filter(d => normalize(d.label).includes(search)),
         };
       })
       .filter(sg => sg.dashboards.length > 0);
