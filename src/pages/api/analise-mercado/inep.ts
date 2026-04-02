@@ -339,7 +339,7 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
     { id: 'mat', titulo: 'Matrículas Ativas', valor: mat, variacao: matVar, tendencia: tend(matVar), cor: '#3B82F6', subtitulo: 'Graduação + Tecnólogo' },
     { id: 'ing', titulo: 'Ingressantes/Ano', valor: ing, variacao: ingVar, tendencia: tend(ingVar), cor: '#8B5CF6', subtitulo: 'Novos alunos' },
     { id: 'conc', titulo: 'Concluintes/Ano', valor: conc, variacao: concVar, tendencia: tend(concVar), cor: '#10B981', subtitulo: 'Potenciais Formandos' },
-    { id: 'ies', titulo: 'Ensino Superior', valor: iesSet.size, variacao: iesVar, tendencia: tend(iesVar), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
+    { id: 'ies', titulo: 'Instituições Ativas', valor: iesSet.size, variacao: iesVar, tendencia: tend(iesVar), cor: '#F59E0B', subtitulo: 'Instituições Ativas' },
     { id: 'cursos', titulo: 'Cursos Ativos', valor: cursoSet.size, variacao: cursosVar, tendencia: tend(cursosVar), cor: '#EC4899', subtitulo: 'Graduação + Tecnólogo' },
   ];
 
