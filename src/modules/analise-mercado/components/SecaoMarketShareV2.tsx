@@ -34,11 +34,9 @@ import type {
   BlocoMatriculados,
   BlocoTurmas,
   BlocoTarget,
-  RankingInstituicaoTarget,
 } from '../types';
 import { fmtNum, fmtPct, CORES } from '../utils/formatters';
 import CardInsight from './CardInsight';
-import TabelaRanking from './TabelaRanking';
 
 ChartJS.register(
   CategoryScale, LinearScale, BarElement,
@@ -95,7 +93,7 @@ const KpiCard = ({
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
       {icone && <span style={{ color: cor }}>{icone}</span>}
       <p style={{
-        color: '#ADB5BD', fontSize: '0.65rem', fontWeight: 600,
+        color: '#ADB5BD', fontSize: '0.72rem', fontWeight: 600,
         textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0,
         fontFamily: "'Poppins', sans-serif",
       }}>
@@ -103,13 +101,13 @@ const KpiCard = ({
       </p>
     </div>
     <div style={{
-      color: cor, fontSize: '1.8rem', fontWeight: 700,
+      color: cor, fontSize: '2.1rem', fontWeight: 700,
       fontFamily: "'Orbitron', sans-serif", lineHeight: 1.1,
     }}>
       {valorStr ?? (valor != null ? fmtNum(valor) : '—')}
     </div>
     {subtitulo && (
-      <p style={{ color: '#6C757D', fontSize: '0.7rem', margin: '6px 0 0' }}>{subtitulo}</p>
+      <p style={{ color: '#ADB5BD', fontSize: '0.82rem', margin: '8px 0 0' }}>{subtitulo}</p>
     )}
   </div>
 );
@@ -141,23 +139,29 @@ const CHART_TOOLTIP = {
 
 type TabId = 'alunos' | 'turmas' | 'target';
 
-const TABS: { id: TabId; label: string; icone: React.ReactNode; cor: string }[] = [
-  { id: 'alunos', label: 'Alunos - Carteira Viva', icone: <Users size={14} />, cor: CORES.azul },
-  { id: 'turmas', label: 'Turmas Ativas', icone: <GraduationCap size={14} />, cor: CORES.roxo },
-  { id: 'target', label: 'Target', icone: <Target size={14} />, cor: CORES.verde },
+const TABS_ALUNOS: { id: TabId; label: string; icone: React.ReactNode; cor: string }[] = [
+  { id: 'alunos', label: 'Alunos Carteira x Mercado', icone: <Users size={14} />, cor: CORES.azul },
+  { id: 'target', label: 'Target Medicina', icone: <Target size={14} />, cor: CORES.verde },
+];
+
+const TABS_TURMAS: { id: TabId; label: string; icone: React.ReactNode; cor: string }[] = [
+  { id: 'turmas', label: 'Fundos Carteira x Mercado', icone: <GraduationCap size={14} />, cor: CORES.roxo },
+  { id: 'target', label: 'Target Medicina', icone: <Target size={14} />, cor: CORES.verde },
 ];
 
 // ─── Component ──────────────────────────────
 
 interface SecaoMarketShareV2Props {
   dados: DadosMarketShareV2;
+  modo: 'alunos' | 'turmas';
 }
 
-export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
+export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Props) {
   const { matriculados, turmas, target } = dados;
-  const [abaAtiva, setAbaAtiva] = useState<TabId>('alunos');
-  const [targetVisao, setTargetVisao] = useState<'alunos' | 'turmas'>('alunos');
-  const tv = target[targetVisao];
+  const TABS = modo === 'alunos' ? TABS_ALUNOS : TABS_TURMAS;
+  const defaultTab: TabId = modo === 'alunos' ? 'alunos' : 'turmas';
+  const [abaAtiva, setAbaAtiva] = useState<TabId>(defaultTab);
+  const tv = target[modo];
 
   // ━━━ BLOCO 1 — MATRICULADOS ━━━━━━━━━━━━━━━
 
@@ -166,17 +170,17 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
     labels: compAnualLabels,
     datasets: [
       {
-        label: 'Matriculados (Carteira)',
+        label: 'Carteira Viva',
         data: matriculados.comparativoAnual.map(c => c.matriculados),
-        backgroundColor: CORES.azul,
+        backgroundColor: CORES.laranja,
         borderRadius: 4,
         barPercentage: 0.6,
         categoryPercentage: 0.7,
       },
       {
-        label: 'Mercado Total',
+        label: 'Mercado Total (INEP)',
         data: matriculados.comparativoAnual.map(c => c.mercadoTotal),
-        backgroundColor: `${CORES.cinza}80`,
+        backgroundColor: `${CORES.azul}80`,
         borderRadius: 4,
         barPercentage: 0.6,
         categoryPercentage: 0.7,
@@ -216,9 +220,7 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
     datasets: [{
       label: 'Market Share %',
       data: rankingSorted.map(r => r.marketShare),
-      backgroundColor: rankingSorted.map((_, i) =>
-        i === 0 ? CORES.laranja : `${CORES.azul}${i < 3 ? 'CC' : '80'}`
-      ),
+      backgroundColor: `${CORES.azul}CC`,
       borderRadius: 4,
       barPercentage: 0.7,
     }],
@@ -257,17 +259,17 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
     labels: turmasCompLabels,
     datasets: [
       {
-        label: 'Turmas (Carteira)',
+        label: 'Carteira Viva',
         data: turmas.comparativoAnual.map(c => c.matriculados),
-        backgroundColor: CORES.roxo,
+        backgroundColor: CORES.laranja,
         borderRadius: 4,
         barPercentage: 0.6,
         categoryPercentage: 0.7,
       },
       {
-        label: 'Mercado Total',
+        label: 'Mercado Total (INEP)',
         data: turmas.comparativoAnual.map(c => c.mercadoTotal),
-        backgroundColor: `${CORES.cinza}80`,
+        backgroundColor: `${CORES.azul}80`,
         borderRadius: 4,
         barPercentage: 0.6,
         categoryPercentage: 0.7,
@@ -307,9 +309,7 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
     datasets: [{
       label: 'Market Share %',
       data: turmasRankingSorted.map(r => r.marketShare),
-      backgroundColor: turmasRankingSorted.map((_, i) =>
-        i === 0 ? CORES.laranja : `${CORES.roxo}${i < 3 ? 'CC' : '80'}`
-      ),
+      backgroundColor: `${CORES.azul}CC`,
       borderRadius: 4,
       barPercentage: 0.7,
     }],
@@ -344,7 +344,7 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
   // ━━━ BLOCO 3 — TARGET ━━━━━━━━━━━━━━━━━━━━━
 
   const targetRankingSorted = [...tv.rankingFranquias].sort((a, b) => b.alunosTarget - a.alunosTarget);
-  const targetLabel = targetVisao === 'turmas' ? 'Turmas Target' : 'Alunos Target';
+  const targetLabel = modo === 'turmas' ? 'Turmas Target' : 'Alunos Target';
   const targetRankingData = {
     labels: targetRankingSorted.map(r => r.franquia),
     datasets: [{
@@ -383,16 +383,6 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
       },
     },
   };
-
-  const colsInstituicao: { key: keyof RankingInstituicaoTarget & string; label: string; tipo: 'texto' | 'numero' | 'percentual'; largura?: string }[] = [
-    { key: 'instituicao', label: 'Instituição', tipo: 'texto' },
-    { key: 'matriculados', label: 'Matriculados', tipo: 'numero' },
-    { key: 'alunosViva', label: 'Alunos Viva', tipo: 'numero' },
-    { key: 'participacao', label: 'Participação', tipo: 'percentual', largura: '130px' },
-  ];
-
-  // ━━━ Tab active color ━━━━━━━━━━━━━━━━━━━━━
-  const tabAtiva = TABS.find(t => t.id === abaAtiva)!;
 
   return (
     <div style={{ minWidth: 0, overflow: 'hidden' }}>
@@ -500,24 +490,7 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
             />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-            <CardInsight
-              titulo="Comparativo Matriculados × Mercado Total"
-              cor={CORES.azul}
-              icone={<TrendingUp size={16} />}
-              iniciaExpandido
-              resumo={matriculados.comparativoAnual.map(c => ({
-                label: String(c.ano),
-                valor: fmtNum(c.matriculados),
-                cor: CORES.azul,
-              }))}
-            >
-              <div style={{ height: 280, marginTop: 8 }}>
-                <Bar data={compAnualData} options={compAnualOptions} />
-              </div>
-            </CardInsight>
-
-            <CardInsight
+          <CardInsight
               titulo="Ranking Franquias — Market Share"
               cor={CORES.laranja}
               icone={<Award size={16} />}
@@ -526,113 +499,173 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
                 { label: '1º', valor: `${rankingSorted[0]?.franquia} (${rankingSorted[0]?.marketShare.toFixed(1)}%)`, cor: CORES.laranja },
               ]}
             >
-              <div style={{ height: 280, marginTop: 8 }}>
-                <Bar data={rankingData} options={rankingOptions} />
+              <div style={{ overflowX: 'auto', marginTop: 8 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', fontFamily: "'Poppins', sans-serif" }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #495057' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>#</th>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Franquia</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Mercado Total</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Carteira Viva</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Market Share</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rankingSorted.map((r, i) => {
+                      const mercadoTotal = Math.round(r.matriculados / (r.marketShare / 100));
+                      return (
+                        <tr key={r.franquia} style={{ borderBottom: '1px solid #343A40', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                          <td style={{ padding: '6px 8px', color: '#6C757D' }}>{i + 1}</td>
+                          <td style={{ padding: '6px 8px', color: '#F8F9FA', fontWeight: 500 }}>{r.franquia}</td>
+                          <td style={{ padding: '6px 8px', color: '#ADB5BD', textAlign: 'right' }}>{fmtNum(mercadoTotal)}</td>
+                          <td style={{ padding: '6px 8px', color: CORES.laranja, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.matriculados)}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                            <span style={{ backgroundColor: `${CORES.azul}25`, color: CORES.azul, padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem' }}>
+                              {r.marketShare.toFixed(1)}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </CardInsight>
+
+          {/* Placeholders for upcoming analyses */}
+          <SectionLabel num="2" label="Comparativo por Curso" cor={CORES.laranja} icone={<GraduationCap size={14} />} />
+          <div style={{
+            backgroundColor: '#343A40', borderRadius: 12, padding: '40px 24px',
+            border: '1px dashed #495057', textAlign: 'center', marginBottom: 20,
+          }}>
+            <GraduationCap size={32} color="#6C757D" style={{ marginBottom: 12 }} />
+            <p style={{ color: '#6C757D', fontSize: '0.85rem', fontWeight: 500, margin: 0, fontFamily: "'Poppins', sans-serif" }}>
+              Comparativo por Curso — Em desenvolvimento
+            </p>
+            <p style={{ color: '#495057', fontSize: '0.72rem', margin: '8px 0 0' }}>
+              Análise de carteira vs mercado por curso. Será habilitada quando a base estiver estruturada.
+            </p>
+          </div>
+
+          <SectionLabel num="3" label="Comparativo por Instituição" cor={CORES.roxo} icone={<Building2 size={14} />} />
+          <div style={{
+            backgroundColor: '#343A40', borderRadius: 12, padding: '40px 24px',
+            border: '1px dashed #495057', textAlign: 'center',
+          }}>
+            <Building2 size={32} color="#6C757D" style={{ marginBottom: 12 }} />
+            <p style={{ color: '#6C757D', fontSize: '0.85rem', fontWeight: 500, margin: 0, fontFamily: "'Poppins', sans-serif" }}>
+              Comparativo por Instituição — Em desenvolvimento
+            </p>
+            <p style={{ color: '#495057', fontSize: '0.72rem', margin: '8px 0 0' }}>
+              Análise de carteira vs mercado por instituição. Será habilitada quando a base estiver estruturada.
+            </p>
           </div>
         </>
       )}
 
-      {/* ━━━ ABA: TURMAS ATIVAS ━━━━━━━━━━━━━━━━ */}
+      {/* ━━━ ABA: TURMAS — FUNDOS CARTEIRA ━━━━━ */}
       {abaAtiva === 'turmas' && (
         <>
-          <SectionLabel num="1" label="Turmas Ativas" cor={CORES.roxo} icone={<GraduationCap size={14} />} />
+          <SectionLabel num="1" label="Fundos — Carteira Ativa" cor={CORES.roxo} icone={<GraduationCap size={14} />} />
 
-          {turmas.semDados ? (
-            <>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: 14, marginBottom: 16, opacity: 0.4, pointerEvents: 'none',
-              }}>
-                <KpiCard
-                  titulo="TOTAL DE TURMAS (INEP)"
-                  valorStr="—"
-                  cor={CORES.azul}
-                  subtitulo="sem dados disponíveis"
-                  icone={<GraduationCap size={15} />}
-                />
-                <KpiCard
-                  titulo="TURMAS CARTEIRA (MUNDO VIVA)"
-                  valorStr="—"
-                  cor={CORES.laranja}
-                  subtitulo="sem dados disponíveis"
-                  icone={<Briefcase size={15} />}
-                />
-                <KpiCard
-                  titulo="MARKET SHARE"
-                  valorStr="—"
-                  cor={CORES.roxo}
-                  subtitulo="sem dados disponíveis"
-                  icone={<TrendingUp size={15} />}
-                />
-              </div>
-              <SemDadosPlaceholder mensagem="Análise de Turmas — Dados não disponíveis" />
-            </>
-          ) : (
-            <>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: 14, marginBottom: 20,
-              }}>
-                <KpiCard
-                  titulo="TOTAL DE TURMAS (INEP)"
-                  valor={turmas.totalTurmas}
-                  cor={CORES.azul}
-                  subtitulo="turmas no mercado"
-                  icone={<GraduationCap size={15} />}
-                />
-                <KpiCard
-                  titulo="TURMAS CARTEIRA (MUNDO VIVA)"
-                  valor={turmas.totalTurmasCarteira}
-                  cor={CORES.laranja}
-                  subtitulo="turmas da nossa carteira"
-                  icone={<Briefcase size={15} />}
-                />
-                <KpiCard
-                  titulo="MARKET SHARE"
-                  valorStr={turmas.participacao != null ? fmtPct(turmas.participacao) : '—'}
-                  cor={CORES.roxo}
-                  subtitulo="participação no mercado"
-                  icone={<TrendingUp size={15} />}
-                />
-              </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 14, marginBottom: 20,
+          }}>
+            <KpiCard
+              titulo="TOTAL DE TURMAS (INEP)"
+              valor={turmas.totalTurmas}
+              cor={CORES.azul}
+              subtitulo="turmas no mercado"
+              icone={<GraduationCap size={15} />}
+            />
+            <KpiCard
+              titulo="TURMAS CARTEIRA (MUNDO VIVA)"
+              valor={turmas.totalTurmasCarteira}
+              cor={CORES.laranja}
+              subtitulo="turmas da nossa carteira"
+              icone={<Briefcase size={15} />}
+            />
+            <KpiCard
+              titulo="MARKET SHARE"
+              valorStr={turmas.participacao != null ? fmtPct(turmas.participacao) : '—'}
+              cor={CORES.roxo}
+              subtitulo="participação no mercado"
+              icone={<TrendingUp size={15} />}
+            />
+          </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <CardInsight
-                  titulo="Comparativo Turmas × Mercado Total"
-                  cor={CORES.roxo}
-                  icone={<TrendingUp size={16} />}
-                  iniciaExpandido
-                  resumo={turmas.comparativoAnual.map(c => ({
-                    label: String(c.ano),
-                    valor: fmtNum(c.matriculados),
-                    cor: CORES.roxo,
-                  }))}
-                >
-                  <div style={{ height: 280, marginTop: 8 }}>
-                    <Bar data={turmasCompData} options={turmasCompOptions} />
-                  </div>
-                </CardInsight>
-
-                <CardInsight
-                  titulo="Ranking Franquias — Market Share (Turmas)"
-                  cor={CORES.laranja}
-                  icone={<Award size={16} />}
-                  iniciaExpandido
-                  resumo={[
-                    { label: '1º', valor: `${turmasRankingSorted[0]?.franquia} (${turmasRankingSorted[0]?.marketShare.toFixed(1)}%)`, cor: CORES.laranja },
-                  ]}
-                >
-                  <div style={{ height: 280, marginTop: 8 }}>
-                    <Bar data={turmasRankingData} options={turmasRankingOptions} />
-                  </div>
-                </CardInsight>
+          <CardInsight
+              titulo="Ranking Franquias — Market Share (Turmas)"
+              cor={CORES.laranja}
+              icone={<Award size={16} />}
+              iniciaExpandido
+              resumo={[
+                { label: '1º', valor: `${turmasRankingSorted[0]?.franquia} (${turmasRankingSorted[0]?.marketShare.toFixed(1)}%)`, cor: CORES.laranja },
+              ]}
+            >
+              <div style={{ overflowX: 'auto', marginTop: 8 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem', fontFamily: "'Poppins', sans-serif" }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #495057' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>#</th>
+                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Franquia</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Mercado Total</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Carteira Viva</th>
+                      <th style={{ textAlign: 'right', padding: '6px 8px', color: '#6C757D', fontWeight: 600 }}>Market Share</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {turmasRankingSorted.map((r, i) => {
+                      const mercadoTotal = Math.round(r.matriculados / (r.marketShare / 100));
+                      return (
+                        <tr key={r.franquia} style={{ borderBottom: '1px solid #343A40', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                          <td style={{ padding: '6px 8px', color: '#6C757D' }}>{i + 1}</td>
+                          <td style={{ padding: '6px 8px', color: '#F8F9FA', fontWeight: 500 }}>{r.franquia}</td>
+                          <td style={{ padding: '6px 8px', color: '#ADB5BD', textAlign: 'right' }}>{fmtNum(mercadoTotal)}</td>
+                          <td style={{ padding: '6px 8px', color: CORES.roxo, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.matriculados)}</td>
+                          <td style={{ padding: '6px 8px', textAlign: 'right' }}>
+                            <span style={{ backgroundColor: `${CORES.azul}25`, color: CORES.azul, padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem' }}>
+                              {r.marketShare.toFixed(1)}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-            </>
-          )}
+            </CardInsight>
+
+          {/* Placeholders for upcoming analyses */}
+          <SectionLabel num="2" label="Comparativo por Curso" cor={CORES.laranja} icone={<GraduationCap size={14} />} />
+          <div style={{
+            backgroundColor: '#343A40', borderRadius: 12, padding: '40px 24px',
+            border: '1px dashed #495057', textAlign: 'center', marginBottom: 20,
+          }}>
+            <GraduationCap size={32} color="#6C757D" style={{ marginBottom: 12 }} />
+            <p style={{ color: '#6C757D', fontSize: '0.85rem', fontWeight: 500, margin: 0, fontFamily: "'Poppins', sans-serif" }}>
+              Comparativo por Curso — Em desenvolvimento
+            </p>
+            <p style={{ color: '#495057', fontSize: '0.72rem', margin: '8px 0 0' }}>
+              Análise de carteira vs mercado por curso. Será habilitada quando a base estiver estruturada.
+            </p>
+          </div>
+
+          <SectionLabel num="3" label="Comparativo por Instituição" cor={CORES.azul} icone={<Building2 size={14} />} />
+          <div style={{
+            backgroundColor: '#343A40', borderRadius: 12, padding: '40px 24px',
+            border: '1px dashed #495057', textAlign: 'center',
+          }}>
+            <Building2 size={32} color="#6C757D" style={{ marginBottom: 12 }} />
+            <p style={{ color: '#6C757D', fontSize: '0.85rem', fontWeight: 500, margin: 0, fontFamily: "'Poppins', sans-serif" }}>
+              Comparativo por Instituição — Em desenvolvimento
+            </p>
+            <p style={{ color: '#495057', fontSize: '0.72rem', margin: '8px 0 0' }}>
+              Análise de carteira vs mercado por instituição. Será habilitada quando a base estiver estruturada.
+            </p>
+          </div>
         </>
       )}
 
@@ -649,48 +682,8 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
           }}>
             <Target size={14} color={CORES.verde} />
             <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, flex: 1 }}>
-              <strong>Medicina</strong> — Análise target no curso de Medicina. Curso prioritário para mapeamento.
+              <strong>Medicina</strong> — Análise target no curso de Medicina ({modo === 'turmas' ? 'Turmas' : 'Alunos'}). Curso prioritário para mapeamento.
             </p>
-          </div>
-
-          {/* Toggle Alunos / Turmas */}
-          <div style={{
-            display: 'inline-flex', backgroundColor: '#2D3238',
-            borderRadius: 8, padding: 3, marginBottom: 18,
-            border: '1px solid #495057',
-          }}>
-            {(['alunos', 'turmas'] as const).map(v => {
-              const isAct = targetVisao === v;
-              const label = v === 'alunos' ? 'Alunos' : 'Turmas';
-              const ic = v === 'alunos' ? <Users size={13} /> : <GraduationCap size={13} />;
-              return (
-                <button
-                  key={v}
-                  onClick={() => setTargetVisao(v)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '8px 20px', border: 'none', borderRadius: 6,
-                    backgroundColor: isAct ? `${CORES.verde}20` : 'transparent',
-                    color: isAct ? CORES.verde : '#6C757D',
-                    fontSize: '0.76rem', fontWeight: isAct ? 700 : 500,
-                    fontFamily: "'Poppins', sans-serif",
-                    textTransform: 'uppercase', letterSpacing: '0.04em',
-                    cursor: 'pointer', transition: 'all 0.2s',
-                    boxShadow: isAct ? `0 0 8px ${CORES.verde}20` : 'none',
-                  }}
-                >
-                  {ic}
-                  {label}
-                  {isAct && (
-                    <span style={{
-                      width: 6, height: 6, borderRadius: '50%',
-                      backgroundColor: CORES.verde, boxShadow: `0 0 6px ${CORES.verde}`,
-                      marginLeft: 2,
-                    }} />
-                  )}
-                </button>
-              );
-            })}
           </div>
 
           {/* Conteúdo da visão ativa */}
@@ -698,96 +691,89 @@ export default function SecaoMarketShareV2({ dados }: SecaoMarketShareV2Props) {
             <>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                 gap: 14, marginBottom: 16, opacity: 0.4, pointerEvents: 'none',
               }}>
-                <KpiCard titulo={`TOTAL DE ${targetVisao === 'turmas' ? 'TURMAS' : 'ALUNOS'} (INEP)`} valorStr="—" cor={CORES.azul} icone={<Users size={15} />} />
-                <KpiCard titulo={`${targetVisao === 'turmas' ? 'TURMAS' : 'ALUNOS'} TARGET (PIPEFY)`} valorStr="—" cor={CORES.verde} icone={<Target size={15} />} />
-                <KpiCard titulo={`${targetVisao === 'turmas' ? 'TURMAS' : 'ALUNOS'} VIVA (MUNDO VIVA)`} valorStr="—" cor={CORES.laranja} icone={<Stethoscope size={15} />} />
-                <KpiCard titulo="PARTICIPAÇÃO TOTAL" valorStr="—" cor={CORES.amarelo} icone={<TrendingUp size={15} />} />
-                <KpiCard titulo="PARTICIPAÇÃO TARGET" valorStr="—" cor={CORES.rosa} icone={<TrendingUp size={15} />} />
+                <KpiCard titulo={`TOTAL DE ${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} (INEP)`} valorStr="—" cor={CORES.azul} icone={<Users size={15} />} />
+                <KpiCard titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} TARGET (PIPEFY)`} valorStr="—" cor={CORES.verde} icone={<Target size={15} />} />
+                <KpiCard titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} VIVA (MUNDO VIVA)`} valorStr="—" cor={CORES.laranja} icone={<Stethoscope size={15} />} />
               </div>
-              <SemDadosPlaceholder mensagem={`Análise de ${targetVisao === 'turmas' ? 'Turmas' : 'Alunos'} Target — Dados não disponíveis`} />
+              <SemDadosPlaceholder mensagem={`Análise de ${modo === 'turmas' ? 'Turmas' : 'Alunos'} Target — Dados não disponíveis`} />
             </>
           ) : (
             <>
-              {/* KPI Cards — 5 cards */}
+              {/* KPI Cards — 3 cards */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                 gap: 14, marginBottom: 20,
               }}>
                 <KpiCard
-                  titulo={`TOTAL DE ${targetVisao === 'turmas' ? 'TURMAS' : 'ALUNOS'} (INEP)`}
+                  titulo={`TOTAL DE ${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} (INEP)`}
                   valor={tv.totalMercado}
                   cor={CORES.azul}
-                  subtitulo={`${targetVisao === 'turmas' ? 'turmas' : 'matriculados'} em medicina`}
+                  subtitulo={`${modo === 'turmas' ? 'turmas' : 'matriculados'} em medicina`}
                   icone={<Users size={15} />}
                 />
                 <KpiCard
-                  titulo={`${targetVisao === 'turmas' ? 'TURMAS' : 'ALUNOS'} TARGET (PIPEFY)`}
+                  titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} TARGET (PIPEFY)`}
                   valor={tv.totalTarget}
                   cor={CORES.verde}
-                  subtitulo={`${targetVisao === 'turmas' ? 'turmas' : 'alunos'} do perfil target`}
+                  subtitulo={tv.totalMercado ? `${((tv.totalTarget / tv.totalMercado) * 100).toFixed(1)}% do total INEP` : `${modo === 'turmas' ? 'turmas' : 'alunos'} do perfil target`}
                   icone={<Target size={15} />}
                 />
                 <KpiCard
-                  titulo={`${targetVisao === 'turmas' ? 'TURMAS' : 'ALUNOS'} VIVA (MUNDO VIVA)`}
+                  titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} VIVA (MUNDO VIVA)`}
                   valor={tv.totalViva || null}
                   valorStr={tv.totalViva ? fmtNum(tv.totalViva) : '—'}
                   cor={CORES.laranja}
-                  subtitulo={`${targetVisao === 'turmas' ? 'turmas' : 'alunos'} na carteira Viva`}
+                  subtitulo={(() => {
+                    const parts: string[] = [];
+                    if (tv.participacaoDoTotal) parts.push(`${fmtPct(tv.participacaoDoTotal)} do INEP`);
+                    if (tv.participacaoDoTarget) parts.push(`${fmtPct(tv.participacaoDoTarget)} do Target`);
+                    return parts.length > 0 ? parts.join(' · ') : `${modo === 'turmas' ? 'turmas' : 'alunos'} na carteira Viva`;
+                  })()}
                   icone={<Stethoscope size={15} />}
-                />
-                <KpiCard
-                  titulo="PARTICIPAÇÃO TOTAL"
-                  valorStr={tv.participacaoDoTotal ? fmtPct(tv.participacaoDoTotal) : '—'}
-                  cor={CORES.amarelo}
-                  subtitulo={`do total de ${targetVisao === 'turmas' ? 'turmas' : 'matriculados'}`}
-                  icone={<TrendingUp size={15} />}
-                />
-                <KpiCard
-                  titulo="PARTICIPAÇÃO TARGET"
-                  valorStr={tv.participacaoDoTarget ? fmtPct(tv.participacaoDoTarget) : '—'}
-                  cor={CORES.rosa}
-                  subtitulo={`do total de ${targetVisao === 'turmas' ? 'turmas' : 'alunos'} target`}
-                  icone={<TrendingUp size={15} />}
                 />
               </div>
 
-              {/* Ranking Franquias + Tabela Instituições */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                <CardInsight
-                  titulo={`Ranking por Franquia — ${targetVisao === 'turmas' ? 'Turmas' : 'Alunos'} Target`}
-                  cor={CORES.verde}
-                  icone={<Award size={16} />}
-                  iniciaExpandido
-                  resumo={[
-                    { label: '1º', valor: `${targetRankingSorted[0]?.franquia} (${fmtNum(targetRankingSorted[0]?.alunosTarget)})`, cor: CORES.verde },
-                  ]}
-                >
-                  <div style={{ height: 280, marginTop: 8 }}>
-                    <Bar data={targetRankingData} options={targetRankingOptions} />
-                  </div>
-                </CardInsight>
-
-                <CardInsight
-                  titulo="Ranking por Instituição"
-                  valor={`${tv.rankingInstituicoes.length} IES`}
-                  cor={CORES.azul}
-                  icone={<Building2 size={16} />}
-                  iniciaExpandido
-                >
-                  <div style={{ marginTop: 8 }}>
-                    <TabelaRanking<RankingInstituicaoTarget>
-                      titulo=""
-                      dados={tv.rankingInstituicoes}
-                      colunas={colsInstituicao}
-                      linhasVisiveis={8}
-                      destaqueCor={CORES.verde}
-                    />
-                  </div>
-                </CardInsight>
+              {/* Ranking por Franquia — Tabela */}
+              <div style={{ overflowX: 'auto', border: '1px solid #495057', borderRadius: 10 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', fontFamily: "'Poppins', sans-serif" }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#343A40', borderBottom: '2px solid #495057' }}>
+                      <th style={{ textAlign: 'left', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>#</th>
+                      <th style={{ textAlign: 'left', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>Franquia</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>Matric. MED (INEP)</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Target</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.laranja, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Viva</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>% do INEP</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>% do Target</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {targetRankingSorted.map((r, i) => {
+                      const pctInep = r.matriculadosInep ? (r.alunosViva / r.matriculadosInep * 100).toFixed(1) : '—';
+                      return (
+                        <tr key={r.franquia} style={{ borderBottom: '1px solid #343A40', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                          <td style={{ padding: '8px 14px', color: '#6C757D' }}>{i + 1}</td>
+                          <td style={{ padding: '8px 14px', color: '#F8F9FA', fontWeight: 500 }}>{r.franquia}</td>
+                          <td style={{ padding: '8px 14px', color: '#ADB5BD', textAlign: 'right' }}>{r.matriculadosInep ? fmtNum(r.matriculadosInep) : '—'}</td>
+                          <td style={{ padding: '8px 14px', color: CORES.verde, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.alunosTarget)}</td>
+                          <td style={{ padding: '8px 14px', color: CORES.laranja, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.alunosViva)}</td>
+                          <td style={{ padding: '8px 14px', textAlign: 'right' }}>
+                            <span style={{ color: CORES.azul, fontWeight: 700 }}>{pctInep !== '—' ? `${pctInep}%` : '—'}</span>
+                          </td>
+                          <td style={{ padding: '8px 14px', textAlign: 'right' }}>
+                            <span style={{ backgroundColor: `${CORES.verde}25`, color: CORES.verde, padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem' }}>
+                              {r.participacao.toFixed(1)}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </>
           )}

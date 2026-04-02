@@ -1,12 +1,12 @@
 /**
- * Análise de Mercado — Dashboard Reestruturado
- * Visão Brasil (Overview) com filtro de franquias na sidebar
- * Dois pilares: Análise de Alunos + Análise de Turmas
+ * Mercado Potencial - Aluno
+ * Duas abas: "Visão do Ano" (análise do ano selecionado) + "Comparativo Anual" (evolução histórica)
  */
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { BarChart3, TrendingUp } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMercado';
 import {
@@ -14,8 +14,10 @@ import {
   CardIndicador,
   SecaoAlunos,
 } from '@/modules/analise-mercado/components';
+import SecaoComparativa from '@/modules/analise-mercado/components/SecaoComparativa';
+import { CORES } from '@/modules/analise-mercado/utils/formatters';
 
-
+type AbaAtiva = 'visao-ano' | 'comparativo-anual';
 
 export default function AnaliseMercadoPage() {
   const router = useRouter();
@@ -37,6 +39,7 @@ export default function AnaliseMercadoPage() {
     progressMessage,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('visao-ano');
 
   // Auth guard
   useEffect(() => {
@@ -61,7 +64,7 @@ export default function AnaliseMercadoPage() {
             margin: '0 auto',
           }} />
           <p style={{ marginTop: 16, color: '#adb5bd' }}>
-            {progressMessage || 'Carregando Análise de Mercado...'}
+            {progressMessage || 'Carregando Mercado Potencial - Aluno...'}
           </p>
         </div>
         <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -77,10 +80,10 @@ export default function AnaliseMercadoPage() {
 
   return (
     <>
-      <Head><title>Análise de Mercado | Viva Eventos</title></Head>
+      <Head><title>Mercado Potencial - Aluno | Viva Eventos</title></Head>
 
       <AnaliseMercadoLayout
-        titulo="ANÁLISE DE MERCADO"
+        titulo="MERCADO POTENCIAL - ALUNO"
         franquias={dados.franquias}
         franquiaSelecionada={filtros.franquiaId}
         onFranquiaChange={(id) => setFiltros({ franquiaId: id })}
@@ -92,6 +95,7 @@ export default function AnaliseMercadoPage() {
         instituicoesDisponiveis={instituicoesDisponiveis}
         estadosDisponiveis={estadosDisponiveis}
         municipiosDisponiveis={municipiosDisponiveis}
+        hideAnoFilter={abaAtiva === 'comparativo-anual'}
       >
         {/* Indicador de refetch (loading sutil) */}
         {loading && !initialLoading && (
@@ -117,59 +121,111 @@ export default function AnaliseMercadoPage() {
           </div>
         )}
 
-        {/* Fonte de dados */}
+        {/* Tab Switcher: Visão do Ano / Comparativo Anual (pill/segment style) */}
         <div style={{
-          backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
-          borderRadius: 6, padding: '8px 16px', marginBottom: 16,
-          display: 'flex', alignItems: 'center', gap: 10,
+          display: 'flex', gap: 10, marginBottom: 24,
+          backgroundColor: '#2D3238', borderRadius: 12,
+          padding: 6, border: '1px solid #495057',
         }}>
-          <span>📊</span>
-          <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, flex: 1 }}>
-            <strong>Dados INEP</strong> — Censo da Educação Superior via Google Sheets
-            {dados.ultimaAtualizacao && (
-              <span style={{ color: '#6B7280', marginLeft: 8 }}>
-                (cache: {new Date(dados.ultimaAtualizacao).toLocaleString('pt-BR')})
-              </span>
-            )}
-          </p>
-          <button
-            onClick={forceRefresh}
-            title="Atualizar dados (limpar cache)"
-            style={{
-              background: 'none', border: '1px solid rgba(16,185,129,0.4)',
-              borderRadius: 4, padding: '4px 10px', cursor: 'pointer',
-              color: '#10B981', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 4,
-            }}
-          >
-            🔄 Atualizar
-          </button>
+          {[
+            { key: 'visao-ano' as AbaAtiva, label: 'Visão do Ano', icone: <BarChart3 size={14} />, cor: CORES.azul },
+            { key: 'comparativo-anual' as AbaAtiva, label: 'Comparativo Anual', icone: <TrendingUp size={14} />, cor: CORES.verde },
+          ].map(tab => {
+            const isActive = abaAtiva === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setAbaAtiva(tab.key)}
+                style={{
+                  flex: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  padding: '14px 24px',
+                  backgroundColor: isActive ? `${tab.cor}20` : 'transparent',
+                  border: isActive ? `1.5px solid ${tab.cor}` : '1.5px solid transparent',
+                  borderRadius: 8,
+                  color: isActive ? '#F8F9FA' : '#6C757D',
+                  fontSize: '0.82rem', fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  boxShadow: isActive ? `0 0 16px ${tab.cor}30, inset 0 1px 0 ${tab.cor}30` : 'none',
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#ADB5BD';
+                    e.currentTarget.style.backgroundColor = `${tab.cor}10`;
+                    e.currentTarget.style.borderColor = `${tab.cor}40`;
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#6C757D';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.borderColor = 'transparent';
+                  }
+                }}
+              >
+                <span style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  backgroundColor: isActive ? tab.cor : `${tab.cor}20`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: isActive ? '#fff' : tab.cor,
+                  flexShrink: 0, transition: 'all 0.25s ease',
+                }}>
+                  {tab.icone}
+                </span>
+                {tab.label}
+                {isActive && (
+                  <span style={{
+                    width: 7, height: 7, borderRadius: '50%',
+                    backgroundColor: tab.cor,
+                    boxShadow: `0 0 8px ${tab.cor}`,
+                    flexShrink: 0, marginLeft: 2,
+                  }} />
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* Cards Indicadores Principais */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-          gap: 14,
-          marginBottom: 20,
-        }}>
-          {dados.indicadores.map(ind => (
-            <CardIndicador
-              key={ind.id}
-              indicador={ind}
-              compacto={dados.indicadores.length > 4}
-              ano={filtros.ano}
-            />
-          ))}
-        </div>
+        {/* Cards Indicadores Principais — apenas Visão do Ano */}
+        {abaAtiva === 'visao-ano' && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: 14,
+            marginBottom: 20,
+          }}>
+            {dados.indicadores.map(ind => (
+              <CardIndicador
+                key={ind.id}
+                indicador={ind}
+                compacto={dados.indicadores.length > 4}
+                ano={filtros.ano}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Conteúdo */}
-        <SecaoAlunos
-          dados={dados}
-          filtros={filtros}
-          onEstadoClick={handleEstadoClick}
-          onMetricaChange={(key) => setFiltros({ metricasAtivas: [key] })}
-          loadingEvolucao={loadingEvolucao}
-        />
+        {/* Conteúdo por aba */}
+        {abaAtiva === 'visao-ano' ? (
+          <SecaoAlunos
+            dados={dados}
+            filtros={filtros}
+            onEstadoClick={handleEstadoClick}
+            onMetricaChange={(key) => setFiltros({ metricasAtivas: [key] })}
+            loadingEvolucao={loadingEvolucao}
+          />
+        ) : (
+          <SecaoComparativa
+            evolucaoAlunos={dados.evolucaoAlunos}
+            ano={filtros.ano}
+            loadingEvolucao={loadingEvolucao}
+          />
+        )}
 
         {/* Rodapé */}
         <div style={{

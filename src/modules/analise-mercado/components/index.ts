@@ -17,3 +17,5 @@ export { default as CardInsight } from './CardInsight';
 export { default as SecaoMarketShare } from './SecaoMarketShare';
 export { default as SecaoMarketShareV2 } from './SecaoMarketShareV2';
 export { default as SecaoComparativa } from './SecaoComparativa';
+export { default as SecaoTurmasMock } from './SecaoTurmasMock';
+export { default as SecaoComparativaTurmas } from './SecaoComparativaTurmas';

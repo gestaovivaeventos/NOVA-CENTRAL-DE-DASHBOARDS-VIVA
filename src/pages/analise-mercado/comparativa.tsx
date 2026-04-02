@@ -1,6 +1,6 @@
 /**
- * Análise de Mercado — Análise Comparativa
- * Tendências e Tempo: Evolução histórica, detalhamento anual, taxas de crescimento
+ * Mercado Potencial - Turma
+ * Duas abas: "Visão do Ano" (análise do ano selecionado) + "Comparativo Anual" (evolução histórica)
  */
 
 import { useEffect, useState, useMemo } from 'react';
@@ -8,10 +8,13 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMercado';
-import { AnaliseMercadoLayout } from '@/modules/analise-mercado/components';
+import { AnaliseMercadoLayout, CardIndicador, SecaoTurmasMock } from '@/modules/analise-mercado/components';
 import FiltroComBusca from '@/modules/analise-mercado/components/FiltroComBusca';
-import SecaoComparativa from '@/modules/analise-mercado/components/SecaoComparativa';
-import { Filter } from 'lucide-react';
+import SecaoComparativaTurmas from '@/modules/analise-mercado/components/SecaoComparativaTurmas';
+import { Filter, BarChart3, TrendingUp } from 'lucide-react';
+import { CORES } from '@/modules/analise-mercado/utils/formatters';
+
+type AbaAtiva = 'visao-ano' | 'comparativo-anual';
 
 export default function ComparativaPage() {
   const router = useRouter();
@@ -32,6 +35,7 @@ export default function ComparativaPage() {
     progressMessage,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState<AbaAtiva>('visao-ano');
 
   // Auth guard
   useEffect(() => {
@@ -56,7 +60,7 @@ export default function ComparativaPage() {
             margin: '0 auto',
           }} />
           <p style={{ marginTop: 16, color: '#adb5bd' }}>
-            {progressMessage || 'Carregando Análise Comparativa...'}
+            {progressMessage || 'Carregando Mercado Potencial - Turma...'}
           </p>
         </div>
         <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -224,10 +228,10 @@ export default function ComparativaPage() {
 
   return (
     <>
-      <Head><title>Análise Comparativa | Viva Eventos</title></Head>
+      <Head><title>Mercado Potencial - Turma | Viva Eventos</title></Head>
 
       <AnaliseMercadoLayout
-        titulo="ANÁLISE COMPARATIVA"
+        titulo="MERCADO POTENCIAL - TURMA"
         franquias={dados.franquias}
         franquiaSelecionada={filtros.franquiaId}
         onFranquiaChange={(id) => setFiltros({ franquiaId: id })}
@@ -256,23 +260,123 @@ export default function ComparativaPage() {
           </div>
         )}
 
-        {/* Fonte de dados */}
+        {/* Tab Switcher: Visão do Ano / Comparativo Anual (pill/segment style) */}
         <div style={{
-          backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)',
+          display: 'flex', gap: 10, marginBottom: 24,
+          backgroundColor: '#2D3238', borderRadius: 12,
+          padding: 6, border: '1px solid #495057',
+        }}>
+          {[
+            { key: 'visao-ano' as AbaAtiva, label: 'Visão do Ano', icone: <BarChart3 size={14} />, cor: CORES.azul },
+            { key: 'comparativo-anual' as AbaAtiva, label: 'Comparativo Anual', icone: <TrendingUp size={14} />, cor: CORES.verde },
+          ].map(tab => {
+            const isActive = abaAtiva === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setAbaAtiva(tab.key)}
+                style={{
+                  flex: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                  padding: '14px 24px',
+                  backgroundColor: isActive ? `${tab.cor}20` : 'transparent',
+                  border: isActive ? `1.5px solid ${tab.cor}` : '1.5px solid transparent',
+                  borderRadius: 8,
+                  color: isActive ? '#F8F9FA' : '#6C757D',
+                  fontSize: '0.82rem', fontWeight: 700,
+                  fontFamily: "'Poppins', sans-serif",
+                  textTransform: 'uppercase', letterSpacing: '0.06em',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease',
+                  position: 'relative',
+                  overflow: 'hidden',
+                  boxShadow: isActive ? `0 0 16px ${tab.cor}30, inset 0 1px 0 ${tab.cor}30` : 'none',
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#ADB5BD';
+                    e.currentTarget.style.backgroundColor = `${tab.cor}10`;
+                    e.currentTarget.style.borderColor = `${tab.cor}40`;
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = '#6C757D';
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.borderColor = 'transparent';
+                  }
+                }}
+              >
+                <span style={{
+                  width: 28, height: 28, borderRadius: '50%',
+                  backgroundColor: isActive ? tab.cor : `${tab.cor}20`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: isActive ? '#fff' : tab.cor,
+                  flexShrink: 0, transition: 'all 0.25s ease',
+                }}>
+                  {tab.icone}
+                </span>
+                {tab.label}
+                {isActive && (
+                  <span style={{
+                    width: 7, height: 7, borderRadius: '50%',
+                    backgroundColor: tab.cor,
+                    boxShadow: `0 0 8px ${tab.cor}`,
+                    flexShrink: 0, marginLeft: 2,
+                  }} />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Alerta mock */}
+        <div style={{
+          backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
           borderRadius: 6, padding: '8px 16px', marginBottom: 16,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <span>📊</span>
-          <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, flex: 1 }}>
-            <strong>Dados INEP</strong> — Evolução histórica do Censo da Educação Superior
+          <span>⚠️</span>
+          <p style={{ color: '#F59E0B', fontSize: '0.75rem', margin: 0 }}>
+            <strong>Dados Mockados</strong> — Os dados de turmas exibidos são estimativas para fins de layout. Serão substituídos por dados reais quando disponíveis.
           </p>
         </div>
 
-        <SecaoComparativa
-          evolucaoAlunos={dados.evolucaoAlunos}
-          ano={filtros.ano}
-          loadingEvolucao={loadingEvolucao}
-        />
+        {/* KPI Cards — apenas Visão do Ano */}
+        {abaAtiva === 'visao-ano' && (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: 14,
+            marginBottom: 20,
+          }}>
+            {[
+              { id: 'turmas-total', titulo: 'Total de Turmas', valor: 799680, variacao: 3.2, tendencia: 'up' as const, cor: '#FF6600', subtitulo: 'Graduação + Tecnólogo' },
+              { id: 'turmas-pres', titulo: 'Turmas Presencial', valor: 312450, variacao: -1.4, tendencia: 'down' as const, cor: '#10B981', subtitulo: 'Turmas presenciais ativas' },
+              { id: 'turmas-ead', titulo: 'Turmas EAD', valor: 487230, variacao: 6.8, tendencia: 'up' as const, cor: '#8B5CF6', subtitulo: 'Turmas a distância' },
+              ...(dados.indicadores.filter(i => i.id === 'ies' || i.id === 'cursos')),
+            ].map(ind => (
+              <CardIndicador
+                key={ind.id}
+                indicador={ind}
+                compacto
+                ano={filtros.ano}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Conteúdo por aba */}
+        {abaAtiva === 'visao-ano' ? (
+          <SecaoTurmasMock
+            filtros={filtros}
+            onEstadoClick={(uf: string) => setFiltros({ estado: filtros.estado === uf ? null : (uf || null) })}
+          />
+        ) : (
+          <SecaoComparativaTurmas
+            ano={filtros.ano}
+          />
+        )}
 
         {/* Rodapé */}
         <div style={{

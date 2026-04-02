@@ -1,6 +1,6 @@
 /**
- * Análise de Mercado — Clientes & Market Share
- * Reestruturada em 3 Blocos: Matriculados, Turmas, Target (Medicina)
+ * Market Share - Turmas
+ * Duas abas: "Fundos Carteira x Mercado" + "Target Medicina"
  */
 
 import { useEffect, useState } from 'react';
@@ -15,7 +15,7 @@ import {
 } from '@/modules/analise-mercado/components';
 import { MOCK_MARKET_SHARE_V2 } from '@/modules/analise-mercado/utils/mock-market-share-v2';
 
-export default function MarketSharePage() {
+export default function MarketShareTurmasPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const {
@@ -49,7 +49,7 @@ export default function MarketSharePage() {
             borderRadius: '50%', animation: 'spin 1s linear infinite',
             margin: '0 auto',
           }} />
-          <p style={{ marginTop: 16, color: '#adb5bd' }}>Carregando Market Share...</p>
+          <p style={{ marginTop: 16, color: '#adb5bd' }}>Carregando Market Share - Turmas...</p>
         </div>
         <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -60,10 +60,10 @@ export default function MarketSharePage() {
 
   return (
     <>
-      <Head><title>Market Share - Alunos | Viva Eventos</title></Head>
+      <Head><title>Market Share - Turmas | Viva Eventos</title></Head>
 
       <AnaliseMercadoLayout
-        titulo="MARKET SHARE - ALUNOS"
+        titulo="MARKET SHARE - TURMAS"
         franquias={dados.franquias}
         franquiaSelecionada={filtros.franquiaId}
         onFranquiaChange={(id) => setFiltros({ franquiaId: id })}
@@ -173,7 +173,7 @@ export default function MarketSharePage() {
           </p>
         </div>
 
-        <SecaoMarketShareV2 dados={MOCK_MARKET_SHARE_V2} modo="alunos" />
+        <SecaoMarketShareV2 dados={MOCK_MARKET_SHARE_V2} modo="turmas" />
 
         {/* Rodapé */}
         <div style={{

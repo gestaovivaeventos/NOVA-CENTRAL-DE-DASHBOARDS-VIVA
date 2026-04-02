@@ -334,6 +334,7 @@ export interface RankingFranquiaTarget {
   alunosTarget: number;
   alunosViva: number;
   participacao: number;
+  matriculadosInep?: number;
 }
 
 /** Dados de uma visão (aluno ou turma) dentro do bloco Target */

@@ -16,6 +16,7 @@ import {
   BarChart3,
   PieChart,
   GitCompare,
+  Users,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import type { Franquia, FiltrosAnaliseMercado, DadosInstituicao } from '../types';
@@ -39,6 +40,8 @@ interface AnaliseMercadoLayoutProps {
   renderFiltros?: () => React.ReactNode;
   /** Se true, esconde completamente a seção de filtros */
   hideFiltros?: boolean;
+  /** Se true, esconde apenas o filtro de Ano */
+  hideAnoFilter?: boolean;
 }
 
 const SIDEBAR_WIDTH_EXPANDED = 280;
@@ -60,6 +63,7 @@ export default function AnaliseMercadoLayout({
   municipiosDisponiveis,
   renderFiltros,
   hideFiltros = false,
+  hideAnoFilter = false,
 }: AnaliseMercadoLayoutProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -162,9 +166,10 @@ export default function AnaliseMercadoLayout({
             {!isCollapsed ? (
               <nav style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 {[
-                  { href: '/analise-mercado', label: 'Análise de Mercado', icon: <BarChart3 size={16} />, match: '/analise-mercado' },
-                  { href: '/analise-mercado/comparativa', label: 'Análise Comparativa', icon: <GitCompare size={16} />, match: '/analise-mercado/comparativa' },
-                  { href: '/analise-mercado/market-share', label: 'Clientes & Market Share', icon: <PieChart size={16} />, match: '/analise-mercado/market-share' },
+                  { href: '/analise-mercado', label: 'Mercado Potencial - Aluno', icon: <BarChart3 size={16} />, match: '/analise-mercado' },
+                  { href: '/analise-mercado/comparativa', label: 'Mercado Potencial - Turma', icon: <GitCompare size={16} />, match: '/analise-mercado/comparativa' },
+                  { href: '/analise-mercado/market-share', label: 'Market Share - Alunos', icon: <PieChart size={16} />, match: '/analise-mercado/market-share' },
+                  { href: '/analise-mercado/market-share-turmas', label: 'Market Share - Turmas', icon: <Users size={16} />, match: '/analise-mercado/market-share-turmas' },
                 ].map(page => {
                   const isActive = router.pathname === page.match;
                   return (
@@ -193,9 +198,10 @@ export default function AnaliseMercadoLayout({
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                 {[
-                  { href: '/analise-mercado', title: 'Análise de Mercado', icon: <BarChart3 size={18} />, match: '/analise-mercado' },
-                  { href: '/analise-mercado/comparativa', title: 'Análise Comparativa', icon: <GitCompare size={18} />, match: '/analise-mercado/comparativa' },
-                  { href: '/analise-mercado/market-share', title: 'Clientes & Market Share', icon: <PieChart size={18} />, match: '/analise-mercado/market-share' },
+                  { href: '/analise-mercado', title: 'Mercado Potencial - Aluno', icon: <BarChart3 size={18} />, match: '/analise-mercado' },
+                  { href: '/analise-mercado/comparativa', title: 'Mercado Potencial - Turma', icon: <GitCompare size={18} />, match: '/analise-mercado/comparativa' },
+                  { href: '/analise-mercado/market-share', title: 'Market Share - Alunos', icon: <PieChart size={18} />, match: '/analise-mercado/market-share' },
+                  { href: '/analise-mercado/market-share-turmas', title: 'Market Share - Turmas', icon: <Users size={18} />, match: '/analise-mercado/market-share-turmas' },
                 ].map(page => {
                   const isActive = router.pathname === page.match;
                   return (
@@ -282,6 +288,7 @@ export default function AnaliseMercadoLayout({
                       </div>
 
                       {/* 1. Ano */}
+                      {!hideAnoFilter && (
                       <div>
                         <label style={sidebarLabelStyle}>Ano</label>
                         <select
@@ -294,6 +301,7 @@ export default function AnaliseMercadoLayout({
                           ))}
                         </select>
                       </div>
+                      )}
 
                       {/* 2. Estado (UF) */}
                       <div>
