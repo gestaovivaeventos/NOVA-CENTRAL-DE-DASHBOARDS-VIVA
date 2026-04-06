@@ -240,12 +240,10 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     setError(null);
 
     try {
-      const PAGE_SIZE = 10000;
-      const BATCH_SIZE = 5;
-
-      // Fetch first page
       const refreshParam = forceRefresh ? '&refresh=true' : '';
-      const firstResponse = await fetch(`/api/carteira/data?page=0&pageSize=${PAGE_SIZE}${refreshParam}`);
+
+      // Buscar chunk 0 para obter headers e primeira parte dos dados
+      const firstResponse = await fetch(`/api/carteira/data?chunk=0${refreshParam}`);
       
       if (!firstResponse.ok) {
         const errorData = await firstResponse.json().catch(() => ({}));
@@ -253,40 +251,31 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       }
 
       const firstData = await firstResponse.json();
-      let allValues: string[][] = [...firstData.values];
+      let allValues: string[][] = [...(firstData.values || [])];
 
-      // Fetch remaining pages in batches if needed
-      if (firstData.pagination?.hasMore) {
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const batch = Array.from({ length: BATCH_SIZE }, (_, i) => page + i);
-          const results = await Promise.all(
-            batch.map(p =>
-              fetch(`/api/carteira/data?page=${p}&pageSize=${PAGE_SIZE}`)
-                .then(r => r.ok ? r.json() : Promise.reject(new Error(`Erro página ${p}: ${r.status}`)))
-            )
+      // Buscar chunks restantes em paralelo se houver mais dados
+      if (firstData.hasMore) {
+        const chunkPromises = [];
+        for (let c = 1; c <= 3; c++) {
+          chunkPromises.push(
+            fetch(`/api/carteira/data?chunk=${c}`)
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
           );
+        }
 
-          for (const result of results) {
-            if (result.values?.length > 0) {
-              allValues = allValues.concat(result.values);
-            }
-            if (!result.pagination?.hasMore) {
-              hasMore = false;
-              break;
-            }
+        const results = await Promise.all(chunkPromises);
+        for (const result of results) {
+          if (result?.values?.length > 0) {
+            allValues = allValues.concat(result.values);
           }
-          page += BATCH_SIZE;
         }
       }
 
-      // Reconstruct in format expected by processRows: [headers, ...dataRows]
+      // Reconstruct: [headers, ...dataRows]
       const rows = [firstData.headers, ...allValues];
       const processedData = processRows(rows);
       
-      // Salvar no cache
       clientCache.set(CACHE_KEYS.CARTEIRA_DATA, processedData);
       
       setDados(processedData);

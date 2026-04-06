@@ -48,48 +48,30 @@ export function useFunilData(): UseFunilDataReturn {
     setError(null);
 
     try {
-      const PAGE_SIZE = 7000;
-      const BATCH_SIZE = 3;
-
-      // Fetch first page
       const refreshParam = forceRefresh ? '&refresh=true' : '';
-      const firstResponse = await fetch(`/api/vendas/funil?page=0&pageSize=${PAGE_SIZE}${refreshParam}`);
+
+      // Buscar chunk 0 para obter headers e primeira parte dos dados
+      const firstResponse = await fetch(`/api/vendas/funil?chunk=0${refreshParam}`);
       
       if (!firstResponse.ok) {
         throw new Error('Falha ao buscar dados do funil');
       }
 
       const firstData = await firstResponse.json();
-      let allValues: string[][] = [...firstData.values];
+      let allValues: string[][] = [...(firstData.values || [])];
 
-      // Fetch remaining pages in batches if needed
-      if (firstData.pagination?.hasMore) {
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const batch = Array.from({ length: BATCH_SIZE }, (_, i) => page + i);
-          const results = await Promise.all(
-            batch.map(p =>
-              fetch(`/api/vendas/funil?page=${p}&pageSize=${PAGE_SIZE}`)
-                .then(r => r.ok ? r.json() : Promise.reject(new Error(`Erro página ${p}: ${r.status}`)))
-            )
-          );
-
-          for (const result of results) {
-            if (result.values?.length > 0) {
-              allValues = allValues.concat(result.values);
-            }
-            if (!result.pagination?.hasMore) {
-              hasMore = false;
-              break;
-            }
-          }
-          page += BATCH_SIZE;
+      // Buscar chunk 1 se houver mais dados (funil tem ~26K linhas, chunk = 15K)
+      if (firstData.hasMore) {
+        const result = await fetch('/api/vendas/funil?chunk=1')
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null);
+        
+        if (result?.values?.length > 0) {
+          allValues = allValues.concat(result.values);
         }
       }
 
-      // Reconstruct in format expected: [headers, ...dataRows]
+      // Reconstruct: [headers, ...dataRows]
       const rows = [firstData.headers, ...allValues];
       
       if (rows.length < 2) {

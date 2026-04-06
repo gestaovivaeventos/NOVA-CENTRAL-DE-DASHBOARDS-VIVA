@@ -1,13 +1,15 @@
 /**
  * API Route para buscar dados da carteira do Google Sheets
  * Aba: HISTORICO
- * Com paginação para respeitar limites do Vercel (4.5MB body, 10s timeout)
+ * Busca em chunk (30K linhas) para caber no timeout do Vercel Hobby (10s)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { google } from 'googleapis';
+import { getAuthenticatedClient } from '@/lib/sheets-client';
 import cache from '@/lib/cache';
 
-const DEFAULT_PAGE_SIZE = 10000;
+const CHUNK_SIZE = 30000;
 const CACHE_TTL = 5 * 60 * 1000;
 const SHEET_NAME = 'HISTORICO';
 
@@ -16,22 +18,16 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    const page = Math.max(0, parseInt(req.query.page as string) || 0);
-    const pageSize = Math.min(parseInt(req.query.pageSize as string) || DEFAULT_PAGE_SIZE, 15000);
+    const chunk = Math.max(0, parseInt(req.query.chunk as string) || 0);
     const forceRefresh = req.query.refresh === 'true';
 
     const SPREADSHEET_ID = process.env.CARTEIRA_SHEET_ID;
-    const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-
-    if (!API_KEY) {
-      throw new Error('Variável NEXT_PUBLIC_GOOGLE_API_KEY não configurada');
-    }
 
     if (!SPREADSHEET_ID) {
       throw new Error('Variável CARTEIRA_SHEET_ID não configurada no .env.local');
     }
 
-    const cacheKey = `carteira:data:p${page}:s${pageSize}`;
+    const cacheKey = `carteira:data:c${chunk}`;
     if (forceRefresh) {
       cache.invalidateByPrefix('carteira:data:');
     }
@@ -39,26 +35,33 @@ export default async function handler(
     const result = await cache.getOrFetch(
       cacheKey,
       async () => {
-        const startRow = page * pageSize + 2;
-        const endRow = startRow + pageSize - 1;
+        const auth = getAuthenticatedClient();
+        const sheets = google.sheets({ version: 'v4', auth });
 
-        const headerRange = encodeURIComponent(`${SHEET_NAME}!1:1`);
-        const dataRange = encodeURIComponent(`${SHEET_NAME}!${startRow}:${endRow}`);
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?ranges=${headerRange}&ranges=${dataRange}&key=${API_KEY}`;
+        const startRow = chunk * CHUNK_SIZE + 2;
+        const endRow = startRow + CHUNK_SIZE - 1;
 
-        console.log(`[API/carteira] Fetching page ${page} (rows ${startRow}-${endRow})`);
-        const response = await fetch(url);
+        try {
+          const response = await sheets.spreadsheets.values.batchGet({
+            spreadsheetId: SPREADSHEET_ID,
+            ranges: [`${SHEET_NAME}!1:1`, `${SHEET_NAME}!${startRow}:${endRow}`],
+          });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Falha ao buscar dados da carteira: ${errorText}`);
+          const headers = response.data.valueRanges?.[0]?.values?.[0] || [];
+          const rows = response.data.valueRanges?.[1]?.values || [];
+
+          console.log(`[API/carteira] chunk ${chunk}: ${rows.length} rows`);
+          return { headers, rows, count: rows.length };
+        } catch (err: any) {
+          if (err.message?.includes('exceeds grid limits')) {
+            const headerResp = await sheets.spreadsheets.values.get({
+              spreadsheetId: SPREADSHEET_ID,
+              range: `${SHEET_NAME}!1:1`,
+            });
+            return { headers: headerResp.data.values?.[0] || [], rows: [], count: 0 };
+          }
+          throw err;
         }
-
-        const data = await response.json();
-        const headers = data.valueRanges?.[0]?.values?.[0] || [];
-        const rows = data.valueRanges?.[1]?.values || [];
-
-        return { headers, rows };
       },
       CACHE_TTL
     );
@@ -68,12 +71,8 @@ export default async function handler(
     return res.status(200).json({
       headers: result.headers,
       values: result.rows,
-      pagination: {
-        page,
-        pageSize,
-        rowsInPage: result.rows.length,
-        hasMore: result.rows.length === pageSize,
-      },
+      chunk,
+      hasMore: result.count === CHUNK_SIZE,
     });
 
   } catch (error: any) {

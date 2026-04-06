@@ -1,12 +1,14 @@
 /**
  * API Route para buscar dados do funil do Google Sheets
- * Com paginação para respeitar limites do Vercel (4.5MB body, 10s timeout)
+ * Busca em chunk (15K linhas - funil tem mais colunas) para caber no Vercel Hobby (10s)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
+import { google } from 'googleapis';
+import { getAuthenticatedClient } from '@/lib/sheets-client';
 import cache from '@/lib/cache';
 
-const DEFAULT_PAGE_SIZE = 7000;
+const CHUNK_SIZE = 15000;
 const CACHE_TTL = 5 * 60 * 1000;
 
 export default async function handler(
@@ -14,19 +16,17 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    const page = Math.max(0, parseInt(req.query.page as string) || 0);
-    const pageSize = Math.min(parseInt(req.query.pageSize as string) || DEFAULT_PAGE_SIZE, 15000);
+    const chunk = Math.max(0, parseInt(req.query.chunk as string) || 0);
     const forceRefresh = req.query.refresh === 'true';
 
     const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_FUNIL;
     const SHEET_NAME = process.env.NEXT_PUBLIC_SHEET_FUNIL || 'base';
-    const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
-    if (!SPREADSHEET_ID || !API_KEY) {
-      throw new Error('Variáveis de ambiente do Google Sheets não configuradas');
+    if (!SPREADSHEET_ID) {
+      throw new Error('Variável NEXT_PUBLIC_SPREADSHEET_FUNIL não configurada');
     }
 
-    const cacheKey = `vendas:funil:p${page}:s${pageSize}`;
+    const cacheKey = `vendas:funil:c${chunk}`;
     if (forceRefresh) {
       cache.invalidateByPrefix('vendas:funil:');
     }
@@ -34,26 +34,33 @@ export default async function handler(
     const result = await cache.getOrFetch(
       cacheKey,
       async () => {
-        const startRow = page * pageSize + 2;
-        const endRow = startRow + pageSize - 1;
+        const auth = getAuthenticatedClient();
+        const sheets = google.sheets({ version: 'v4', auth });
 
-        const headerRange = encodeURIComponent(`${SHEET_NAME}!1:1`);
-        const dataRange = encodeURIComponent(`${SHEET_NAME}!${startRow}:${endRow}`);
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?ranges=${headerRange}&ranges=${dataRange}&key=${API_KEY}`;
+        const startRow = chunk * CHUNK_SIZE + 2;
+        const endRow = startRow + CHUNK_SIZE - 1;
 
-        console.log(`[API/funil] Fetching page ${page} (rows ${startRow}-${endRow})`);
-        const response = await fetch(url);
+        try {
+          const response = await sheets.spreadsheets.values.batchGet({
+            spreadsheetId: SPREADSHEET_ID,
+            ranges: [`${SHEET_NAME}!1:1`, `${SHEET_NAME}!${startRow}:${endRow}`],
+          });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Falha ao buscar dados: ${errorText}`);
+          const headers = response.data.valueRanges?.[0]?.values?.[0] || [];
+          const rows = response.data.valueRanges?.[1]?.values || [];
+
+          console.log(`[API/funil] chunk ${chunk}: ${rows.length} rows`);
+          return { headers, rows, count: rows.length };
+        } catch (err: any) {
+          if (err.message?.includes('exceeds grid limits')) {
+            const headerResp = await sheets.spreadsheets.values.get({
+              spreadsheetId: SPREADSHEET_ID,
+              range: `${SHEET_NAME}!1:1`,
+            });
+            return { headers: headerResp.data.values?.[0] || [], rows: [], count: 0 };
+          }
+          throw err;
         }
-
-        const data = await response.json();
-        const headers = data.valueRanges?.[0]?.values?.[0] || [];
-        const rows = data.valueRanges?.[1]?.values || [];
-
-        return { headers, rows };
       },
       CACHE_TTL
     );
@@ -63,12 +70,8 @@ export default async function handler(
     return res.status(200).json({
       headers: result.headers,
       values: result.rows,
-      pagination: {
-        page,
-        pageSize,
-        rowsInPage: result.rows.length,
-        hasMore: result.rows.length === pageSize,
-      },
+      chunk,
+      hasMore: result.count === CHUNK_SIZE,
     });
 
   } catch (error: any) {

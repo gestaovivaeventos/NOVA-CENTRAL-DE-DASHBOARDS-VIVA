@@ -112,12 +112,10 @@ export function useSalesData(): UseSalesDataReturn {
     setError(null);
 
     try {
-      const PAGE_SIZE = 10000;
-      const BATCH_SIZE = 5;
-
-      // Fetch first page
       const refreshParam = forceRefresh ? '&refresh=true' : '';
-      const firstResponse = await fetch(`/api/vendas/sales?page=0&pageSize=${PAGE_SIZE}${refreshParam}`);
+
+      // Buscar chunk 0 para obter headers e primeira parte dos dados
+      const firstResponse = await fetch(`/api/vendas/sales?chunk=0${refreshParam}`);
       
       if (!firstResponse.ok) {
         const errorData = await firstResponse.json().catch(() => ({}));
@@ -125,40 +123,32 @@ export function useSalesData(): UseSalesDataReturn {
       }
 
       const firstData = await firstResponse.json();
-      let allValues: string[][] = [...firstData.values];
+      let allValues: string[][] = [...(firstData.values || [])];
 
-      // Fetch remaining pages in batches if needed
-      if (firstData.pagination?.hasMore) {
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-          const batch = Array.from({ length: BATCH_SIZE }, (_, i) => page + i);
-          const results = await Promise.all(
-            batch.map(p =>
-              fetch(`/api/vendas/sales?page=${p}&pageSize=${PAGE_SIZE}`)
-                .then(r => r.ok ? r.json() : Promise.reject(new Error(`Erro página ${p}: ${r.status}`)))
-            )
+      // Buscar chunks restantes em paralelo se houver mais dados
+      if (firstData.hasMore) {
+        // Estimar ~5 chunks para 130K+ linhas (chunk size = 30K)
+        const chunkPromises = [];
+        for (let c = 1; c <= 5; c++) {
+          chunkPromises.push(
+            fetch(`/api/vendas/sales?chunk=${c}`)
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
           );
+        }
 
-          for (const result of results) {
-            if (result.values?.length > 0) {
-              allValues = allValues.concat(result.values);
-            }
-            if (!result.pagination?.hasMore) {
-              hasMore = false;
-              break;
-            }
+        const results = await Promise.all(chunkPromises);
+        for (const result of results) {
+          if (result?.values?.length > 0) {
+            allValues = allValues.concat(result.values);
           }
-          page += BATCH_SIZE;
         }
       }
 
-      // Reconstruct in format expected by processRows: [headers, ...dataRows]
+      // Reconstruct: [headers, ...dataRows]
       const rows = [firstData.headers, ...allValues];
       const processedData = processRows(rows);
       
-      // Salvar no cache com TTL longo (os dados são atualizados via API cache)
       clientCache.set(CACHE_KEYS.SALES_DATA, processedData, CACHE_TTL.LONG);
       
       setDados(processedData);
