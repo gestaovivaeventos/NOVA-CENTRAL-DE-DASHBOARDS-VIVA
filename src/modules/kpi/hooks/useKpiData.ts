@@ -92,7 +92,7 @@ export function useKpiData() {
             grandeza,
             tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
             tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
-            situacao: (row[kpiColumns.SITUACAO_KPI] || 'Ativo').toString().trim(),
+            situacao: (row[kpiColumns.SITUACAO_KPI] || '').toString().trim() || 'Em espera',
           };
         })
         .filter((d: KpiData) => d.time && d.kpi && d.competencia);
@@ -138,7 +138,7 @@ export async function fetchKpiData(): Promise<KpiData[]> {
         grandeza,
         tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
-        situacao: (row[kpiColumns.SITUACAO_KPI] || 'Ativo').toString().trim(),
+        situacao: (row[kpiColumns.SITUACAO_KPI] || '').toString().trim() || 'Em espera',
       };
     })
     .filter((d: KpiData) => d.time && d.kpi && d.competencia);
