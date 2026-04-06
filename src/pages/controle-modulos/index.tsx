@@ -7,7 +7,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
-import { RefreshCw, AlertTriangle, ChevronDown, ChevronRight, Edit2, Plus, Pencil, Settings, BarChart, PieChart, TrendingUp, Database, Folder, Link, ExternalLink, Target, DollarSign, Clipboard, GitBranch, CheckCircle, Users, LayoutDashboard, FileSpreadsheet, Code2, FolderOpen, GripVertical, Search, X } from 'lucide-react';
+import { RefreshCw, AlertTriangle, ChevronDown, ChevronRight, Edit2, Plus, Pencil, Settings, BarChart, PieChart, TrendingUp, Database, Folder, Link, ExternalLink, Target, DollarSign, Clipboard, GitBranch, CheckCircle, Users, LayoutDashboard, FileSpreadsheet, Code2, FolderOpen, GripVertical, Search, X, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal, GerenciarSubgruposModal, EditSubgrupoModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
@@ -599,6 +600,50 @@ export default function ControleModulosPage() {
     } catch { /* silently fail */ }
   }, [modulos, dragOverPosition, refetch]);
 
+  // ====== Exportar para Excel ======
+  const handleExportExcel = useCallback(() => {
+    // Ordenar módulos por grupo > subgrupo > ordem
+    const sorted = [...modulos].sort((a, b) => {
+      const gA = (a.grupo || 'Outros').toLowerCase();
+      const gB = (b.grupo || 'Outros').toLowerCase();
+      if (gA !== gB) return gA.localeCompare(gB);
+      const sA = (a.subgrupo || '').toLowerCase();
+      const sB = (b.subgrupo || '').toLowerCase();
+      if (sA !== sB) return sA.localeCompare(sB);
+      return a.ordem - b.ordem;
+    });
+
+    const rows = sorted.map(m => ({
+      'Grupo': m.grupo || 'Outros',
+      'Subgrupo': m.subgrupo || '',
+      'Módulo': m.moduloNome,
+      'Tipo': m.tipo === 'externo' ? 'Externo' : 'Interno',
+      'Link / Caminho': m.tipo === 'externo' ? m.urlExterna : m.moduloPath,
+      'Ativo': m.ativo ? 'Sim' : 'Não',
+      'Nível de Acesso': m.nvlAcesso === 0 ? 'Rede (todos)' : 'Franqueadora',
+      'Usuários com Acesso': m.usuariosPermitidos.length > 0 ? m.usuariosPermitidos.join(', ') : 'Todos (pelo nível)',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Ajustar largura das colunas
+    const colWidths = [
+      { wch: 20 }, // Grupo
+      { wch: 18 }, // Subgrupo
+      { wch: 30 }, // Módulo
+      { wch: 10 }, // Tipo
+      { wch: 50 }, // Link / Caminho
+      { wch: 8 },  // Ativo
+      { wch: 18 }, // Nível de Acesso
+      { wch: 40 }, // Usuários com Acesso
+    ];
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Módulos');
+    XLSX.writeFile(wb, `Controle_Modulos_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  }, [modulos]);
+
   const sidebarWidth = sidebarCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
 
   // Loading (auth OU dados dos módulos OU autorização ainda não determinada)
@@ -660,10 +705,19 @@ export default function ControleModulosPage() {
           className="px-4 mb-4 flex items-center justify-between"
           style={{ marginTop: '-8px' }}
         >
-          <div>
+          <div className="flex items-center gap-3">
             <span style={{ color: '#9ca3af', fontFamily: 'Poppins, sans-serif', fontSize: '0.8rem' }}>
               {modulos.length} módulos configurados
             </span>
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-dark-tertiary border border-gray-600 text-gray-400 hover:bg-orange-500/10 hover:border-orange-500 hover:text-orange-500"
+              style={{ fontFamily: 'Poppins, sans-serif' }}
+              title="Exportar módulos para Excel"
+            >
+              <Download size={16} />
+              Exportar
+            </button>
           </div>
           <div className="flex items-center gap-3">
             {error && (
