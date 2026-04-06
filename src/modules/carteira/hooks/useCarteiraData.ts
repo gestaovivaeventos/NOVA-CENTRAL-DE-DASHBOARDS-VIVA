@@ -240,17 +240,50 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     setError(null);
 
     try {
-      const url = '/api/carteira/data';
-      const response = await fetch(url);
+      const PAGE_SIZE = 10000;
+      const BATCH_SIZE = 5;
+
+      // Fetch first page
+      const refreshParam = forceRefresh ? '&refresh=true' : '';
+      const firstResponse = await fetch(`/api/carteira/data?page=0&pageSize=${PAGE_SIZE}${refreshParam}`);
       
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Falha ao buscar dados: ${response.status}`);
+      if (!firstResponse.ok) {
+        const errorData = await firstResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `Falha ao buscar dados: ${firstResponse.status}`);
       }
 
-      const data = await response.json();
-      const rows = data.values || [];
-      
+      const firstData = await firstResponse.json();
+      let allValues: string[][] = [...firstData.values];
+
+      // Fetch remaining pages in batches if needed
+      if (firstData.pagination?.hasMore) {
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const batch = Array.from({ length: BATCH_SIZE }, (_, i) => page + i);
+          const results = await Promise.all(
+            batch.map(p =>
+              fetch(`/api/carteira/data?page=${p}&pageSize=${PAGE_SIZE}`)
+                .then(r => r.ok ? r.json() : Promise.reject(new Error(`Erro página ${p}: ${r.status}`)))
+            )
+          );
+
+          for (const result of results) {
+            if (result.values?.length > 0) {
+              allValues = allValues.concat(result.values);
+            }
+            if (!result.pagination?.hasMore) {
+              hasMore = false;
+              break;
+            }
+          }
+          page += BATCH_SIZE;
+        }
+      }
+
+      // Reconstruct in format expected by processRows: [headers, ...dataRows]
+      const rows = [firstData.headers, ...allValues];
       const processedData = processRows(rows);
       
       // Salvar no cache

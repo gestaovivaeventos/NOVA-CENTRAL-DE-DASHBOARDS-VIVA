@@ -112,19 +112,50 @@ export function useSalesData(): UseSalesDataReturn {
     setError(null);
 
     try {
-      // Usar API route local para evitar CORS
-      const url = '/api/vendas/sales';
+      const PAGE_SIZE = 10000;
+      const BATCH_SIZE = 5;
+
+      // Fetch first page
+      const refreshParam = forceRefresh ? '&refresh=true' : '';
+      const firstResponse = await fetch(`/api/vendas/sales?page=0&pageSize=${PAGE_SIZE}${refreshParam}`);
       
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `Falha ao buscar dados de vendas: ${response.status}`);
+      if (!firstResponse.ok) {
+        const errorData = await firstResponse.json().catch(() => ({}));
+        throw new Error(errorData.message || `Falha ao buscar dados de vendas: ${firstResponse.status}`);
       }
 
-      const data = await response.json();
-      const rows = data.values || [];
-      
+      const firstData = await firstResponse.json();
+      let allValues: string[][] = [...firstData.values];
+
+      // Fetch remaining pages in batches if needed
+      if (firstData.pagination?.hasMore) {
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const batch = Array.from({ length: BATCH_SIZE }, (_, i) => page + i);
+          const results = await Promise.all(
+            batch.map(p =>
+              fetch(`/api/vendas/sales?page=${p}&pageSize=${PAGE_SIZE}`)
+                .then(r => r.ok ? r.json() : Promise.reject(new Error(`Erro página ${p}: ${r.status}`)))
+            )
+          );
+
+          for (const result of results) {
+            if (result.values?.length > 0) {
+              allValues = allValues.concat(result.values);
+            }
+            if (!result.pagination?.hasMore) {
+              hasMore = false;
+              break;
+            }
+          }
+          page += BATCH_SIZE;
+        }
+      }
+
+      // Reconstruct in format expected by processRows: [headers, ...dataRows]
+      const rows = [firstData.headers, ...allValues];
       const processedData = processRows(rows);
       
       // Salvar no cache com TTL longo (os dados são atualizados via API cache)

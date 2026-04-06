@@ -1,13 +1,12 @@
 /**
  * API Route para buscar dados do funil do Google Sheets
- * Com cache centralizado e deduplicação de requests
+ * Com paginação para respeitar limites do Vercel (4.5MB body, 10s timeout)
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import cache from '@/lib/cache';
 
-// TTL: 5 minutos para dados do funil
-const CACHE_KEY = 'vendas:funil';
+const DEFAULT_PAGE_SIZE = 7000;
 const CACHE_TTL = 5 * 60 * 1000;
 
 export default async function handler(
@@ -15,44 +14,62 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
-    // Verificar se é refresh forçado
+    const page = Math.max(0, parseInt(req.query.page as string) || 0);
+    const pageSize = Math.min(parseInt(req.query.pageSize as string) || DEFAULT_PAGE_SIZE, 15000);
     const forceRefresh = req.query.refresh === 'true';
-    if (forceRefresh) {
-      cache.invalidate(CACHE_KEY);
+
+    const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_FUNIL;
+    const SHEET_NAME = process.env.NEXT_PUBLIC_SHEET_FUNIL || 'base';
+    const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+
+    if (!SPREADSHEET_ID || !API_KEY) {
+      throw new Error('Variáveis de ambiente do Google Sheets não configuradas');
     }
 
-    // Usar cache com deduplicação
-    const rows = await cache.getOrFetch(
-      CACHE_KEY,
+    const cacheKey = `vendas:funil:p${page}:s${pageSize}`;
+    if (forceRefresh) {
+      cache.invalidateByPrefix('vendas:funil:');
+    }
+
+    const result = await cache.getOrFetch(
+      cacheKey,
       async () => {
-        const SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_FUNIL;
-        const SHEET_NAME = process.env.NEXT_PUBLIC_SHEET_FUNIL || 'base';
-        const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+        const startRow = page * pageSize + 2;
+        const endRow = startRow + pageSize - 1;
 
-        if (!API_KEY) {
-          throw new Error('Variáveis de ambiente do Google Sheets não configuradas');
-        }
+        const headerRange = encodeURIComponent(`${SHEET_NAME}!1:1`);
+        const dataRange = encodeURIComponent(`${SHEET_NAME}!${startRow}:${endRow}`);
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values:batchGet?ranges=${headerRange}&ranges=${dataRange}&key=${API_KEY}`;
 
-        const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${SHEET_NAME}?key=${API_KEY}`;
-        
-        console.log('[Cache] Fetching: vendas:funil');
+        console.log(`[API/funil] Fetching page ${page} (rows ${startRow}-${endRow})`);
         const response = await fetch(url);
-        
+
         if (!response.ok) {
           const errorText = await response.text();
           throw new Error(`Falha ao buscar dados: ${errorText}`);
         }
 
         const data = await response.json();
-        return data.values || [];
+        const headers = data.valueRanges?.[0]?.values?.[0] || [];
+        const rows = data.valueRanges?.[1]?.values || [];
+
+        return { headers, rows };
       },
       CACHE_TTL
     );
 
-    // Headers de cache para o browser
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
-    
-    return res.status(200).json({ values: rows, cached: true });
+
+    return res.status(200).json({
+      headers: result.headers,
+      values: result.rows,
+      pagination: {
+        page,
+        pageSize,
+        rowsInPage: result.rows.length,
+        hasMore: result.rows.length === pageSize,
+      },
+    });
 
   } catch (error: any) {
     console.error('[API/funil] Erro:', error.message);

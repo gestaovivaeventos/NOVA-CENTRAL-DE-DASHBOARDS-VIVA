@@ -48,17 +48,49 @@ export function useFunilData(): UseFunilDataReturn {
     setError(null);
 
     try {
-      // Usar API route local
-      const url = '/api/vendas/funil';
+      const PAGE_SIZE = 7000;
+      const BATCH_SIZE = 3;
+
+      // Fetch first page
+      const refreshParam = forceRefresh ? '&refresh=true' : '';
+      const firstResponse = await fetch(`/api/vendas/funil?page=0&pageSize=${PAGE_SIZE}${refreshParam}`);
       
-      const response = await fetch(url);
-      
-      if (!response.ok) {
+      if (!firstResponse.ok) {
         throw new Error('Falha ao buscar dados do funil');
       }
 
-      const data = await response.json();
-      const rows = data.values || [];
+      const firstData = await firstResponse.json();
+      let allValues: string[][] = [...firstData.values];
+
+      // Fetch remaining pages in batches if needed
+      if (firstData.pagination?.hasMore) {
+        let page = 1;
+        let hasMore = true;
+
+        while (hasMore) {
+          const batch = Array.from({ length: BATCH_SIZE }, (_, i) => page + i);
+          const results = await Promise.all(
+            batch.map(p =>
+              fetch(`/api/vendas/funil?page=${p}&pageSize=${PAGE_SIZE}`)
+                .then(r => r.ok ? r.json() : Promise.reject(new Error(`Erro página ${p}: ${r.status}`)))
+            )
+          );
+
+          for (const result of results) {
+            if (result.values?.length > 0) {
+              allValues = allValues.concat(result.values);
+            }
+            if (!result.pagination?.hasMore) {
+              hasMore = false;
+              break;
+            }
+          }
+          page += BATCH_SIZE;
+        }
+      }
+
+      // Reconstruct in format expected: [headers, ...dataRows]
+      const rows = [firstData.headers, ...allValues];
       
       if (rows.length < 2) {
         setLeads([]);
