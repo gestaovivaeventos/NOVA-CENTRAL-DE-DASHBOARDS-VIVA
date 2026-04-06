@@ -55,6 +55,9 @@ export default function KpiPage() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingKpi, setEditingKpi] = useState<{ name: string; data: KpiData[] } | null>(null);
   const [viewMode, setViewMode] = useState<'apresentacao' | 'gerenciamento'>('apresentacao');
+  const [selectedSituacao, setSelectedSituacao] = useState<string>('Ativo');
+
+  const SITUACOES_KPI = ['Ativo', 'Inativo', 'Em espera'];
 
   // FEAT usa rosa, outros usam laranja
   const accentColor = selectedTeam === 'FEAT' ? '#EA2B82' : '#ff6600';
@@ -236,8 +239,13 @@ export default function KpiPage() {
   // Agrupar KPIs por nome
   const kpiGroups = useMemo(() => {
     const groups: Record<string, KpiData[]> = {};
+
+    // Filtrar por situação selecionada
+    const filteredBySituacao = kpiData.filter(item =>
+      item.situacao === selectedSituacao
+    );
     
-    kpiData.forEach((item) => {
+    filteredBySituacao.forEach((item) => {
       if (!groups[item.kpi]) {
         groups[item.kpi] = [];
       }
@@ -265,7 +273,7 @@ export default function KpiPage() {
     });
     
     return groups;
-  }, [kpiData]);
+  }, [kpiData, selectedSituacao]);
 
   // Loading de autenticação
   if (authLoading) {
@@ -371,6 +379,42 @@ export default function KpiPage() {
                     <Plus size={20} />
                     Criar KPI
                   </button>
+                </div>
+
+                {/* Filtro de Situação KPI */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-gray-400 text-sm font-medium mr-1">Situação:</span>
+                  {SITUACOES_KPI.map(situacao => {
+                    const isSelected = selectedSituacao === situacao;
+                    const colors: Record<string, string> = {
+                      'Ativo': '#22c55e',
+                      'Inativo': '#ef4444',
+                      'Em espera': '#eab308',
+                    };
+                    const color = colors[situacao] ?? accentColor;
+                    return (
+                      <button
+                        key={situacao}
+                        onClick={() => setSelectedSituacao(situacao)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all"
+                        style={isSelected ? {
+                          backgroundColor: color + '22',
+                          borderColor: color,
+                          color: color,
+                        } : {
+                          backgroundColor: 'transparent',
+                          borderColor: '#4b5563',
+                          color: '#6b7280',
+                        }}
+                      >
+                        <span
+                          className="inline-block w-2 h-2 rounded-full"
+                          style={{ backgroundColor: isSelected ? color : '#6b7280' }}
+                        />
+                        {situacao}
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {loading ? (
