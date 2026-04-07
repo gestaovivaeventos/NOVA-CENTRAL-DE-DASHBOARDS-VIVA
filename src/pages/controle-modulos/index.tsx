@@ -13,6 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal, GerenciarSubgruposModal, EditSubgrupoModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
 import type { ModuloConfig } from '@/modules/controle-modulos/types';
+import { hasNivelAccess } from '@/modules/controle-modulos/types';
 import type { ExternalLinkData } from '@/modules/controle-modulos/components/AddExternalLinkModal';
 import type { GrupoInfo } from '@/modules/controle-modulos/components/GerenciarGruposModal';
 import type { SubgrupoInfo } from '@/modules/controle-modulos/components/GerenciarSubgruposModal';
@@ -126,7 +127,7 @@ export default function ControleModulosPage() {
     if (!user || modulos.length === 0) return null; // ainda carregando
     const cm = modulos.find(m => m.moduloId === 'controle-modulos');
     if (!cm || !cm.ativo) return false;
-    if ((user.accessLevel ?? 0) < cm.nvlAcesso) return false;
+    if (!hasNivelAccess(user.accessLevel ?? 0, cm.nvlAcesso)) return false;
     if (cm.usuariosPermitidos.length > 0 && !cm.usuariosPermitidos.includes(user.username)) return false;
     return true;
   }, [user, modulos]);
@@ -620,7 +621,7 @@ export default function ControleModulosPage() {
       'Tipo': m.tipo === 'externo' ? 'Externo' : 'Interno',
       'Link / Caminho': m.tipo === 'externo' ? m.urlExterna : m.moduloPath,
       'Ativo': m.ativo ? 'Sim' : 'Não',
-      'Nível de Acesso': m.nvlAcesso === 0 ? 'Rede (todos)' : 'Franqueadora',
+      'Nível de Acesso': m.nvlAcesso === 0 ? 'Rede (todos)' : m.nvlAcesso === 2 ? 'Franquia' : 'Franqueadora',
       'Usuários com Acesso': m.usuariosPermitidos.length > 0 ? m.usuariosPermitidos.join(', ') : 'Todos (pelo nível)',
     }));
 
@@ -1088,8 +1089,8 @@ export default function ControleModulosPage() {
                       renderItems.sort((a, b) => a.ordem - b.ordem);
 
                       const renderModRow = (mod: ModuloConfig, insideSubgrupo = false, parentSubgrupoName = '') => {
-                        const nivelColor = mod.nvlAcesso === 0 ? '#10b981' : '#f59e0b';
-                        const nivelLabel = mod.nvlAcesso === 0 ? 'Rede' : 'Franqueadora';
+                        const nivelColor = mod.nvlAcesso === 0 ? '#10b981' : mod.nvlAcesso === 2 ? '#3b82f6' : '#f59e0b';
+                        const nivelLabel = mod.nvlAcesso === 0 ? 'Rede' : mod.nvlAcesso === 2 ? 'Franquia' : 'Franqueadora';
                         const hasUsers = mod.usuariosPermitidos.length > 0;
                         const bgColor = insideSubgrupo ? '#1b2228' : '#212529';
                         const bgHover = insideSubgrupo ? '#232d34' : '#2d3239';
