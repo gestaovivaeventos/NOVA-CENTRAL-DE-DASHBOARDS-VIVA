@@ -142,6 +142,7 @@ function parseRows(rows: string[][]): LeadExpansao[] {
       dataUltimaAtualizacao: get(row, 'ultima_modificacao', 'última_modificação') || '',
       tipoFunil: extractTipoFunil(funilRaw),
       status: etapaLimpa,
+      rawEtapa: etapaRaw,
       origem: get(row, 'origem_do_lead', 'origem'),
       cidade: get(row, 'cidade') || '',
       uf: get(row, 'estado') || '',

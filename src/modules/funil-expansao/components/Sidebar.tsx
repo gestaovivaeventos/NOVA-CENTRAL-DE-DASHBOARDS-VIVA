@@ -236,7 +236,7 @@ function OrigemMultiSelect({ selectedValues, onChange, origens }: { selectedValu
   const triggerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const allOptions = [{ value: 'Todas', label: 'Todas as Origens' }, ...origens.map(o => ({ value: o, label: o }))];
+  const allOptions = [{ value: 'Todas', label: 'Todos os Canais' }, ...origens.map(o => ({ value: o, label: o }))];
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -324,9 +324,9 @@ function OrigemMultiSelect({ selectedValues, onChange, origens }: { selectedValu
   };
 
   const getDisplayText = () => {
-    if (selectedValues.length === 0 || selectedValues.includes('Todas')) return 'Todas as Origens';
+    if (selectedValues.length === 0 || selectedValues.includes('Todas')) return 'Todos os Canais';
     if (selectedValues.length === 1) return selectedValues[0];
-    return `${selectedValues.length} origens selecionadas`;
+    return `${selectedValues.length} canais selecionados`;
   };
 
   const isSelected = (val: string) => {
@@ -403,7 +403,7 @@ function OrigemMultiSelect({ selectedValues, onChange, origens }: { selectedValu
   return (
     <div style={{ marginBottom: 0, position: 'relative' }} ref={containerRef}>
       <label className="text-xs font-semibold uppercase tracking-wider mb-2 block" style={{ color: '#adb5bd', fontFamily: 'Poppins, sans-serif' }}>
-        Origem
+        Canal
       </label>
       <div ref={triggerRef}>
         <div

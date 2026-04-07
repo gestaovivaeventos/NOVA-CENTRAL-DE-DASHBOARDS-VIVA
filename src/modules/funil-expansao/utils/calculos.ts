@@ -18,7 +18,7 @@ import type {
   TempoComposicaoCidade,
   FiltrosExpansao,
 } from '../types';
-import { ETAPAS_TRATAMENTO, ETAPAS_QUALIFICADO, ETAPAS_MQL } from '../config/app.config';
+import { ETAPAS_TRATAMENTO, ETAPAS_QUALIFICADO, ETAPA_DISPLAY } from '../config/app.config';
 
 // Ordem completa de todas as etapas para logica de cascata
 const STATUS_ORDER = [...ETAPAS_TRATAMENTO, ...ETAPAS_QUALIFICADO];
@@ -32,21 +32,55 @@ function getStatusIndex(status: string): number {
   return -1;
 }
 
+/** Retorna o indice efetivo do lead para o funil de conversao.
+ *  Para leads com status nao reconhecido (VENDA PERDIDA, RECUPERAÇÃO, etc.),
+ *  tenta usar faseQuePerdeu. Caso contrario, assume que o lead passou
+ *  pelo menos pela primeira fase do seu funil.
+ */
+function getLeadFunilIndex(lead: LeadExpansao): number {
+  const idx = getStatusIndex(lead.status);
+  if (idx >= 0) return idx;
+
+  // Status nao reconhecido (VENDA PERDIDA, RECUPERAÇÃO, etc.)
+  // Tentar usar faseQuePerdeu para identificar a fase mais avancada
+  if (lead.faseQuePerdeu) {
+    const faseIdx = getStatusIndex(lead.faseQuePerdeu);
+    if (faseIdx >= 0) return faseIdx;
+  }
+
+  // Fallback: primeira fase do funil do lead
+  if (lead.tipoFunil === 'INVESTIDOR' || lead.tipoFunil === 'OPERADOR') {
+    return STATUS_ORDER.indexOf('DIAGNÓSTICO REALIZADO');
+  }
+  return STATUS_ORDER.indexOf('NOVO LEAD');
+}
+
 /** Verifica se um lead esta perdido */
 function isPerdido(lead: LeadExpansao): boolean {
   return lead.motivoPerda !== '';
 }
 
+/** Verifica se o texto raw da etapa contem a tag MQL (case-insensitive) */
+function rawContainsMQL(raw: string): boolean {
+  return raw.toUpperCase().includes('MQL');
+}
+
+/** Verifica se o texto raw da etapa contem a tag SQL (case-insensitive) */
+function rawContainsSQL(raw: string): boolean {
+  return raw.toUpperCase().includes('SQL');
+}
+
 /** Classifica lead perdido como MQL pela fase em que perdeu */
 function isMQLPorFasePerda(lead: LeadExpansao): boolean {
   const fase = (lead.faseQuePerdeu || '').toUpperCase();
-  return ETAPAS_MQL.some(e => fase.includes(e));
+  return rawContainsMQL(fase) || isSQLPorFasePerda(lead);
 }
 
 /** Classifica lead perdido como SQL pela fase em que perdeu */
 function isSQLPorFasePerda(lead: LeadExpansao): boolean {
   const fase = (lead.faseQuePerdeu || '').toUpperCase();
   return (
+    rawContainsSQL(fase) ||
     fase.includes('FIT FRANQUEADO') ||
     fase.includes('COF E VALIDA') ||
     fase.includes('AGUARDANDO COMPOSI') ||
@@ -54,10 +88,10 @@ function isSQLPorFasePerda(lead: LeadExpansao): boolean {
   );
 }
 
-/** Verifica se lead esta ATUALMENTE na fase MQL (somente fases DIAGNOSTICO REALIZADO e MODELO NEGOCIO *) */
+/** Verifica se lead esta ATUALMENTE na fase MQL (pela tag da etapa original) */
 function isMQLAtivo(lead: LeadExpansao): boolean {
-  const s = lead.status.toUpperCase();
-  return ETAPAS_MQL.some(e => s.includes(e));
+  const raw = (lead.rawEtapa || '').toUpperCase();
+  return rawContainsMQL(raw) && !isPerdido(lead);
 }
 
 /** Verifica se lead esta ATUALMENTE na fase SQL (FIT FRANQUEADO ate CANDIDATO APROVADO) */
@@ -68,24 +102,19 @@ function isSQLAtivo(lead: LeadExpansao): boolean {
     s.includes('COF E VALIDA') ||
     s.includes('AGUARDANDO COMPOSI') ||
     s.includes('CANDIDATO APROVADO')
-  );
+  ) && !isPerdido(lead);
 }
 
-/** Funil cheio: MQL inclui leads na fase MQL ou qualquer fase adiante (SQL, VENDA GANHA) */
+/** Funil cheio: MQL inclui leads cuja etapa contem tag MQL, ou que estao em fase SQL+ */
 function isMQL(lead: LeadExpansao): boolean {
-  const s = lead.status.toUpperCase();
-  return ETAPAS_MQL.some(e => s.includes(e)) ||
-    s.includes('FIT FRANQUEADO') ||
-    s.includes('COF E VALIDA') ||
-    s.includes('AGUARDANDO COMPOSI') ||
-    s.includes('CANDIDATO APROVADO') ||
-    s.includes('VENDA GANHA');
+  return rawContainsMQL(lead.rawEtapa || '') || isSQL(lead);
 }
 
-/** Funil cheio: SQL inclui leads na fase SQL ou adiante (VENDA GANHA) */
+/** Funil cheio: SQL inclui leads cuja etapa contem tag SQL, ou em fases SQL+ pelo nome */
 function isSQL(lead: LeadExpansao): boolean {
   const s = lead.status.toUpperCase();
   return (
+    rawContainsSQL(lead.rawEtapa || '') ||
     s.includes('FIT FRANQUEADO') ||
     s.includes('COF E VALIDA') ||
     s.includes('AGUARDANDO COMPOSI') ||
@@ -210,8 +239,9 @@ export function calcularKPIs(leads: LeadExpansao[]): KPIsExpansao {
 
 /**
  * Constroi etapas do funil com logica de CASCATA:
- * Um lead que chegou na ultima fase passou por todas anteriores,
- * entao ele conta em todas as fases anteriores tambem.
+ * Primeira etapa = todos os leads do funil (independente da fase atual).
+ * Demais etapas = leads que passaram por aquela fase (>= na ordem),
+ * incluindo leads perdidos via faseQuePerdeu.
  */
 function buildFunilEtapas(leads: LeadExpansao[], etapas: string[]): EtapaFunil[] {
   const result: EtapaFunil[] = [];
@@ -219,13 +249,12 @@ function buildFunilEtapas(leads: LeadExpansao[], etapas: string[]): EtapaFunil[]
   let anterior = 0;
 
   for (let i = 0; i < etapas.length; i++) {
-    // Primeira etapa = total de leads (todos passam pelo topo do funil)
-    // Demais etapas = cascata (lead na fase N conta em todas as fases <= N)
     const etapaIdx = STATUS_ORDER.indexOf(etapas[i]);
-    const count = i === 0 ? totalLeads : leads.filter(l => getStatusIndex(l.status) >= etapaIdx).length;
+    const count = i === 0 ? totalLeads : leads.filter(l => getLeadFunilIndex(l) >= etapaIdx).length;
+    const displayName = ETAPA_DISPLAY[etapas[i]] || etapas[i];
 
     const taxa = i === 0 ? 100 : (anterior > 0 ? (count / anterior) * 100 : 0);
-    result.push({ nome: etapas[i], quantidade: count, taxaConversao: taxa });
+    result.push({ nome: displayName, quantidade: count, taxaConversao: taxa });
     anterior = count;
   }
 
@@ -234,11 +263,12 @@ function buildFunilEtapas(leads: LeadExpansao[], etapas: string[]): EtapaFunil[]
 
 /** Calcula dados do funil completo com etapas */
 export function calcularFunil(leads: LeadExpansao[]): FunilCompleto {
+  const tratamento = leads.filter(l => l.tipoFunil === 'TRATAMENTO');
   const investidores = leads.filter(l => l.tipoFunil === 'INVESTIDOR');
   const operadores = leads.filter(l => l.tipoFunil === 'OPERADOR');
 
   return {
-    tratamento: buildFunilEtapas(leads, ETAPAS_TRATAMENTO),
+    tratamento: buildFunilEtapas(tratamento, ETAPAS_TRATAMENTO),
     investidor: buildFunilEtapas(investidores, ETAPAS_QUALIFICADO),
     operador: buildFunilEtapas(operadores, ETAPAS_QUALIFICADO),
   };
@@ -250,20 +280,21 @@ export function calcularFunil(leads: LeadExpansao[]): FunilCompleto {
  */
 export function calcularFunilAtivos(leads: LeadExpansao[]): FunilCompleto {
   const ativos = leads.filter(l => !isPerdido(l));
+  const ativosTrat = ativos.filter(l => l.tipoFunil === 'TRATAMENTO');
   const ativosInv = ativos.filter(l => l.tipoFunil === 'INVESTIDOR');
   const ativosOp = ativos.filter(l => l.tipoFunil === 'OPERADOR');
 
   const buildAtivos = (subset: LeadExpansao[], etapas: string[]): EtapaFunil[] => {
-    const totalSubset = subset.length;
-    return etapas.map((etapa, i) => {
+    return etapas.map((etapa) => {
       const etapaIdx = STATUS_ORDER.indexOf(etapa);
-      const count = i === 0 ? totalSubset : subset.filter(l => getStatusIndex(l.status) >= etapaIdx).length;
-      return { nome: etapa, quantidade: count, taxaConversao: 0 };
+      const count = subset.filter(l => getStatusIndex(l.status) === etapaIdx).length;
+      const displayName = ETAPA_DISPLAY[etapa] || etapa;
+      return { nome: displayName, quantidade: count, taxaConversao: 0 };
     });
   };
 
   return {
-    tratamento: buildAtivos(ativos, ETAPAS_TRATAMENTO),
+    tratamento: buildAtivos(ativosTrat, ETAPAS_TRATAMENTO),
     investidor: buildAtivos(ativosInv, ETAPAS_QUALIFICADO),
     operador: buildAtivos(ativosOp, ETAPAS_QUALIFICADO),
   };
@@ -567,7 +598,7 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
 
     if (perfil.includes('INVESTIDOR') && perfil.includes('TOTAL')) entry.investidorTotal++;
     else if (perfil.includes('INVESTIDOR') && perfil.includes('PARCIAL')) entry.investidorParcial++;
-    else if (perfil.includes('POS VENDA') || perfil.includes('POS VENDA')) entry.opPosVendaParcial++;
+    else if (perfil.includes('VENDAS') && perfil.includes('COM INVESTIMENTO PARCIAL')) entry.opPosVendaParcial++;
     else if (perfil.includes('VENDA') && perfil.includes('SEM')) entry.opVendaSem++;
     else if (perfil.includes('VENDA') && perfil.includes('PARCIAL')) entry.opVendaParcial++;
     else if (lead.tipoFunil === 'INVESTIDOR') entry.investidorParcial++;

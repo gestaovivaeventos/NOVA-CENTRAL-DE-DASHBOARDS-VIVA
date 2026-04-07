@@ -462,8 +462,8 @@ export default function AddExternalLinkModal({
               style={{
                 ...inputStyle,
                 cursor: 'pointer',
-                borderColor: nvlAcesso === '0' ? '#10b981' : '#f59e0b',
-                color: nvlAcesso === '0' ? '#10b981' : '#f59e0b',
+                borderColor: nvlAcesso === '0' ? '#10b981' : nvlAcesso === '2' ? '#3b82f6' : '#f59e0b',
+                color: nvlAcesso === '0' ? '#10b981' : nvlAcesso === '2' ? '#3b82f6' : '#f59e0b',
               }}
             >
               <option value="0" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
@@ -471,6 +471,9 @@ export default function AddExternalLinkModal({
               </option>
               <option value="1" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
                 1 — Franqueadora (apenas franqueadora)
+              </option>
+              <option value="2" style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
+                2 — Franquia (apenas franquias)
               </option>
             </select>
           </div>

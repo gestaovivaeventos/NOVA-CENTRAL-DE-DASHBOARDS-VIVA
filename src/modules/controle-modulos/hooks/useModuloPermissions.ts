@@ -7,6 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { hasNivelAccess } from '../types';
 
 interface ModuloPermission {
   moduloId: string;
@@ -50,7 +51,7 @@ export function useModuloPermissions(
       const ids = new Set<string>();
       for (const m of mods) {
         if (!m.ativo) continue;
-        if (userLevel < m.nvlAcesso) continue;
+        if (!hasNivelAccess(userLevel, m.nvlAcesso)) continue;
         if (
           m.usuariosPermitidos.length > 0 &&
           !m.usuariosPermitidos.includes(username)

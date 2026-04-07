@@ -30,6 +30,7 @@ export interface LeadExpansao {
   dataUltimaAtualizacao: string;
   tipoFunil: TipoFunil;
   status: string;
+  rawEtapa: string;
   origem: string;
   cidade: string;
   uf: string;

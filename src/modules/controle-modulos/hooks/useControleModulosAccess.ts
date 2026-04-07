@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { hasNivelAccess } from '../types';
 
 interface ModuloAccessResult {
   hasAccess: boolean;
@@ -44,9 +45,8 @@ export function useControleModulosAccess(
           return;
         }
 
-        // Verificar nível de acesso
         const userLevel = accessLevel ?? 0;
-        if (userLevel < cm.nvlAcesso) {
+        if (!hasNivelAccess(userLevel, cm.nvlAcesso)) {
           setHasAccess(false);
           return;
         }

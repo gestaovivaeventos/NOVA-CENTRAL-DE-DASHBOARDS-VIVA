@@ -19,6 +19,7 @@ import {
   AssertividadeCard,
   DataTableExpansao,
 } from '@/modules/funil-expansao/components';
+import type { SeriesKey } from '@/modules/funil-expansao/components';
 import { useFunilExpansaoData } from '@/modules/funil-expansao/hooks';
 import {
   filtrarLeads,
@@ -75,6 +76,7 @@ export default function FunilExpansaoDashboard() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [filtros, setFiltros] = useState<FiltrosExpansao>(INITIAL_FILTROS);
+  const [sharedActiveSeries, setSharedActiveSeries] = useState<Set<SeriesKey>>(new Set(['geral', 'mql', 'sql']));
 
   // Client-side init
   useEffect(() => {
@@ -142,10 +144,11 @@ export default function FunilExpansaoDashboard() {
   const motivosPerda = useMemo(() => agruparMotivosPerda(dadosSemPotenciais), [dadosSemPotenciais]);
   const fasesPerda = useMemo(() => agruparFasesPerda(dadosSemPotenciais), [dadosSemPotenciais]);
 
-  // Dados de campanhas (sem POTENCIAIS)
-  const campanhas = useMemo(() => agruparCampanhas(dadosSemPotenciais), [dadosSemPotenciais]);
-  const conjuntos = useMemo(() => agruparConjuntos(dadosSemPotenciais), [dadosSemPotenciais]);
-  const anuncios = useMemo(() => agruparAnuncios(dadosSemPotenciais), [dadosSemPotenciais]);
+  // Dados de campanhas (sem POTENCIAIS, somente Tráfego)
+  const leadsTrafego = useMemo(() => dadosSemPotenciais.filter(l => l.origem.toUpperCase().includes('TRÁFEGO') || l.origem.toUpperCase().includes('TRAFEGO')), [dadosSemPotenciais]);
+  const campanhas = useMemo(() => agruparCampanhas(leadsTrafego), [leadsTrafego]);
+  const conjuntos = useMemo(() => agruparConjuntos(leadsTrafego), [leadsTrafego]);
+  const anuncios = useMemo(() => agruparAnuncios(leadsTrafego), [leadsTrafego]);
 
   // Dados de composição (sem POTENCIAIS)
   const cidadesData = useMemo(() => agruparPorCidade(dadosSemPotenciais), [dadosSemPotenciais]);
@@ -215,7 +218,7 @@ export default function FunilExpansaoDashboard() {
   return (
     <>
       <Head>
-        <title>Funil de Expansão | VIVA Eventos</title>
+        <title>Vendas Expansão | VIVA Eventos</title>
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
@@ -237,12 +240,8 @@ export default function FunilExpansaoDashboard() {
           className="transition-all duration-300 px-4 pb-8"
           style={{ marginLeft: sidebarCollapsed ? '60px' : '300px' }}
         >
-          {/* Subtítulo da página */}
-          <div className="py-4">
-            <p className="text-xs" style={{ color: '#6c757d' }}>
-              Funil Expansão - {PAGES.find(p => p.id === paginaAtiva)?.label || 'Indicadores'}
-            </p>
-          </div>
+          {/* Espaçamento */}
+          <div className="py-4" />
 
           {/* Loading / Error */}
           {loading && <Loading mensagem="Carregando dados do funil..." />}
@@ -479,6 +478,7 @@ export default function FunilExpansaoDashboard() {
                         etapas={funil.tratamento}
                         cor={COLORS.FUNIL_TRATAMENTO}
                         vendas={vendasTratamento}
+                        hideGanhas
                       />
                       <FunilVisual
                         titulo="Funil Investidor"
@@ -528,6 +528,8 @@ export default function FunilExpansaoDashboard() {
                   <GroupedBarChart
                     titulo="Leads por Origem (Canais)"
                     dados={dadosOrigem.map(d => ({ label: d.origem, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    activeSeries={sharedActiveSeries}
+                    onActiveSeriesChange={setSharedActiveSeries}
                   />
 
                   {/* Assertividade */}
@@ -550,24 +552,32 @@ export default function FunilExpansaoDashboard() {
                   <GroupedBarChart
                     titulo="Distribuição por Persona"
                     dados={dadosPersona.map(d => ({ label: d.persona, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    activeSeries={sharedActiveSeries}
+                    onActiveSeriesChange={setSharedActiveSeries}
                   />
 
                   {/* Distribuição por Perfil */}
                   <GroupedBarChart
                     titulo="Distribuição por Perfil"
                     dados={dadosPerfil.map(d => ({ label: d.perfil, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    activeSeries={sharedActiveSeries}
+                    onActiveSeriesChange={setSharedActiveSeries}
                   />
 
                   {/* Motivos de Qualificação */}
                   <GroupedBarChart
                     titulo="Motivos de Qualificação"
                     dados={motivosQualificacao.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    activeSeries={sharedActiveSeries}
+                    onActiveSeriesChange={setSharedActiveSeries}
                   />
 
                   {/* Motivos de Perda */}
                   <GroupedBarChart
                     titulo="Motivos de Perda"
                     dados={motivosPerda.map(d => ({ label: d.motivo, geral: d.geral, mql: d.mql, sql: d.sql }))}
+                    activeSeries={sharedActiveSeries}
+                    onActiveSeriesChange={setSharedActiveSeries}
                   />
 
                   {/* Fases de Perda */}
@@ -591,7 +601,7 @@ export default function FunilExpansaoDashboard() {
                       { key: 'investidorParcial', header: 'Inv. Parcial', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
                       { key: 'opVendaParcial', header: 'Op. Venda Parc.', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
                       { key: 'opVendaSem', header: 'Op. Venda S/', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
-                      { key: 'opPosVendaParcial', header: 'Op. Pós-Venda', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'opPosVendaParcial', header: 'Op. Vendas c/ Inv. Parc.', align: 'center', format: 'number', sortable: true, color: '#059669' },
                       { key: 'total', header: 'Total', align: 'center', format: 'number', sortable: true },
                       { key: 'percentual', header: '%', align: 'center', format: 'percent', sortable: true },
                     ]}
@@ -644,7 +654,7 @@ export default function FunilExpansaoDashboard() {
                       { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
                       { key: 'recupPerdidos', header: 'Recup. + Perdidos', align: 'center', format: 'number', sortable: true },
                     ]}
-                    dados={campanhas}
+                    dados={anuncios}
                     pageSize={10}
                   />
 
@@ -672,7 +682,7 @@ export default function FunilExpansaoDashboard() {
                       { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
                       { key: 'recupPerdidos', header: 'Recup. + Perdidos', align: 'center', format: 'number', sortable: true },
                     ]}
-                    dados={anuncios}
+                    dados={campanhas}
                     pageSize={10}
                   />
                 </div>

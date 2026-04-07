@@ -15,9 +15,10 @@ interface FunilVisualProps {
   cor: string;
   maxWidth?: number;
   vendas?: { ganhas: number; perdidas: number; recuperacao: number; franquias?: number };
+  hideGanhas?: boolean;
 }
 
-export default function FunilVisual({ titulo, etapas, cor, vendas }: FunilVisualProps) {
+export default function FunilVisual({ titulo, etapas, cor, vendas, hideGanhas = false }: FunilVisualProps) {
   if (!etapas || etapas.length === 0) return null;
 
   const maxVal = Math.max(...etapas.map(e => e.quantidade), 1);
@@ -115,12 +116,14 @@ export default function FunilVisual({ titulo, etapas, cor, vendas }: FunilVisual
       {/* Vendas (resultados do funil) */}
       {vendas && (
         <div className="mt-4 pt-4 grid grid-cols-2 gap-2" style={{ borderTop: '1px solid #495057' }}>
+          {!hideGanhas && (
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: '#28a74520', color: '#28a745' }}>
               GANHAS
             </span>
             <span className="text-sm font-bold" style={{ color: '#28a745' }}>{vendas.ganhas}</span>
           </div>
+          )}
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: '#dc354520', color: '#dc3545' }}>
               PERDIDAS

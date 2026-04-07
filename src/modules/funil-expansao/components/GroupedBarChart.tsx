@@ -18,11 +18,15 @@ interface GroupedBarChartProps {
   dados: DataItem[];
   maxItems?: number;
   hideToggles?: boolean;
+  activeSeries?: Set<SeriesKey>;
+  onActiveSeriesChange?: (series: Set<SeriesKey>) => void;
 }
 
-type SeriesKey = 'geral' | 'mql' | 'sql';
+export type { SeriesKey };
 
-const SERIES_CONFIG: { key: SeriesKey; label: string; color: string }[] = [
+type SeriesKeyType = SeriesKey;
+
+const SERIES_CONFIG: { key: SeriesKeyType; label: string; color: string }[] = [
   { key: 'geral', label: 'Geral', color: '#FF6600' },
   { key: 'mql', label: 'MQL', color: '#60a5fa' },
   { key: 'sql', label: 'SQL', color: '#a78bfa' },
@@ -30,20 +34,24 @@ const SERIES_CONFIG: { key: SeriesKey; label: string; color: string }[] = [
 
 const CHART_HEIGHT = 260;
 
-export default function GroupedBarChart({ titulo, dados, maxItems = 15, hideToggles = false }: GroupedBarChartProps) {
-  const [activeSeries, setActiveSeries] = useState<Set<SeriesKey>>(new Set(hideToggles ? ['geral'] : ['geral', 'mql', 'sql']));
+export default function GroupedBarChart({ titulo, dados, maxItems = 15, hideToggles = false, activeSeries: externalActiveSeries, onActiveSeriesChange }: GroupedBarChartProps) {
+  const [internalActiveSeries, setInternalActiveSeries] = useState<Set<SeriesKey>>(new Set(hideToggles ? ['geral'] : ['geral', 'mql', 'sql']));
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
 
+  const activeSeries = externalActiveSeries || internalActiveSeries;
+
   const toggleSeries = (key: SeriesKey) => {
-    setActiveSeries(prev => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        if (next.size > 1) next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
+    const next = new Set(activeSeries);
+    if (next.has(key)) {
+      if (next.size > 1) next.delete(key);
+    } else {
+      next.add(key);
+    }
+    if (onActiveSeriesChange) {
+      onActiveSeriesChange(next);
+    } else {
+      setInternalActiveSeries(next);
+    }
   };
 
   const visibleData = dados.slice(0, maxItems);
