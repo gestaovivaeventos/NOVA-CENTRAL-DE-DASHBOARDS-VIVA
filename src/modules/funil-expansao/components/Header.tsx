@@ -52,7 +52,7 @@ export default function Header({ sidebarCollapsed = false }: HeaderProps) {
                   textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
                 }}
               >
-                Funil de Expansão
+                Vendas Expansão
               </h1>
             </div>
           </div>

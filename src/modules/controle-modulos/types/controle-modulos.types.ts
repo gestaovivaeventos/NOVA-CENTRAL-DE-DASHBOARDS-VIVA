@@ -5,7 +5,21 @@
 // Nível de acesso ao módulo
 // 0 = Rede (todos com acesso >= 0, ou seja, franqueados + franqueadora)
 // 1 = Franqueadora (somente franqueadora, accessLevel >= 1)
-export type NivelAcessoModulo = 0 | 1;
+// 2 = Franquia (somente franquias, accessLevel === 0, exclui franqueadora)
+export type NivelAcessoModulo = 0 | 1 | 2;
+
+/**
+ * Verifica se um userLevel tem acesso a um módulo com determinado nvlAcesso.
+ * 0 (Rede): todos
+ * 1 (Franqueadora): apenas accessLevel >= 1
+ * 2 (Franquia): apenas accessLevel === 0
+ */
+export function hasNivelAccess(userLevel: number, nvlAcesso: number): boolean {
+  if (nvlAcesso === 0) return true;               // Rede: todos
+  if (nvlAcesso === 1) return userLevel >= 1;      // Franqueadora only
+  if (nvlAcesso === 2) return userLevel === 0;     // Franquia only
+  return false;
+}
 
 // Tipo do módulo
 export type TipoModulo = 'interno' | 'externo';

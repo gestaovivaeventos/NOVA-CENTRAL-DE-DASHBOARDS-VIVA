@@ -49,7 +49,7 @@ export const PAGES = [
 
 export const ETAPAS_TRATAMENTO = [
   'POTENCIAIS',
-  'NOVO LEAD',
+  'NOVO',
   'EM QUALIFICAÇÃO',
   'DIAGNÓSTICO AGENDADO',
 ];
@@ -63,6 +63,12 @@ export const ETAPAS_QUALIFICADO = [
   'AGUARDANDO COMPOSIÇÃO',
   'CANDIDATO APROVADO',
 ];
+
+// Nomes de exibição para etapas cujo identificador é abreviado
+export const ETAPA_DISPLAY: Record<string, string> = {
+  'NOVO': 'NOVO LEAD',
+  'COF E VALIDAÇÕES FINAIS': 'COF E VALIDAÇÕES FINAIS',
+};
 
 // Etapas que definem MQL (somente fases 5 e 6)
 export const ETAPAS_MQL = [

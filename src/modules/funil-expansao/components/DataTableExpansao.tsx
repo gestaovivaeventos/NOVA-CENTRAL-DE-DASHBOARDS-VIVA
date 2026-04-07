@@ -237,9 +237,8 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
                       cursor: col.sortable ? 'pointer' : 'default',
                       userSelect: col.sortable ? 'none' : undefined,
                       transition: 'background-color 0.2s ease',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
                     }}
                     onMouseEnter={col.sortable ? e => { e.currentTarget.style.backgroundColor = '#3d4349'; } : undefined}
                     onMouseLeave={col.sortable ? e => { e.currentTarget.style.backgroundColor = '#2a2f36'; } : undefined}
