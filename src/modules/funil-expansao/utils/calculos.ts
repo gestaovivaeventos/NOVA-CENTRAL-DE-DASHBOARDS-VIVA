@@ -52,7 +52,7 @@ function getLeadFunilIndex(lead: LeadExpansao): number {
   if (lead.tipoFunil === 'INVESTIDOR' || lead.tipoFunil === 'OPERADOR') {
     return STATUS_ORDER.indexOf('DIAGNÓSTICO REALIZADO');
   }
-  return STATUS_ORDER.indexOf('NOVO LEAD');
+  return STATUS_ORDER.indexOf('NOVO');
 }
 
 /** Verifica se um lead esta perdido */
@@ -261,14 +261,16 @@ function buildFunilEtapas(leads: LeadExpansao[], etapas: string[]): EtapaFunil[]
   return result;
 }
 
-/** Calcula dados do funil completo com etapas */
+/** Calcula dados do funil completo com etapas.
+ *  Tratamento recebe TODOS os leads (inv/op também passaram pelo tratamento).
+ *  Investidor e Operador recebem somente os seus respectivos.
+ */
 export function calcularFunil(leads: LeadExpansao[]): FunilCompleto {
-  const tratamento = leads.filter(l => l.tipoFunil === 'TRATAMENTO');
   const investidores = leads.filter(l => l.tipoFunil === 'INVESTIDOR');
   const operadores = leads.filter(l => l.tipoFunil === 'OPERADOR');
 
   return {
-    tratamento: buildFunilEtapas(tratamento, ETAPAS_TRATAMENTO),
+    tratamento: buildFunilEtapas(leads, ETAPAS_TRATAMENTO),
     investidor: buildFunilEtapas(investidores, ETAPAS_QUALIFICADO),
     operador: buildFunilEtapas(operadores, ETAPAS_QUALIFICADO),
   };
