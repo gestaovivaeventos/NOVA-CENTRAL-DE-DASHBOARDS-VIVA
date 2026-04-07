@@ -52,7 +52,7 @@ function getLeadFunilIndex(lead: LeadExpansao): number {
   if (lead.tipoFunil === 'INVESTIDOR' || lead.tipoFunil === 'OPERADOR') {
     return STATUS_ORDER.indexOf('DIAGNÓSTICO REALIZADO');
   }
-  return STATUS_ORDER.indexOf('NOVO LEAD');
+  return STATUS_ORDER.indexOf('NOVO');
 }
 
 /** Verifica se um lead esta perdido */
