@@ -486,7 +486,7 @@ function mergeRegiaoSummaries(
   const todosEstados = valid.flatMap(s => s.estados);
   const totalMatEst = todosEstados.reduce((s, e) => s + e.mat, 0);
   const distribuicaoEstados: DadosEstado[] = todosEstados.map(e => ({
-    uf: e.uf, nome: e.nome, matriculas: e.mat, concluintes: e.conc, turmas: 0,
+    uf: e.uf, nome: e.nome, matriculas: e.mat, concluintes: e.conc, ingressantes: e.ing, turmas: 0,
     instituicoes: e.ies, percentual: totalMatEst > 0 ? Number(((e.mat / totalMatEst) * 100).toFixed(1)) : 0,
   }));
 
@@ -751,17 +751,18 @@ export async function fetchDistribuicaoEstados(
     const rows = await fetchInepRows({ ano, rede, ies, uf, municipio, curso, modalidade });
 
     // Agrupar por UF
-    const porUf = new Map<string, { mat: number; conc: number; ies: Set<number>; cursos: Set<number> }>();
+    const porUf = new Map<string, { mat: number; conc: number; ing: number; ies: Set<number>; cursos: Set<number> }>();
     for (const r of rows) {
       const uf = r.SG_UF;
       if (!uf) continue;
       let entry = porUf.get(uf);
       if (!entry) {
-        entry = { mat: 0, conc: 0, ies: new Set(), cursos: new Set() };
+        entry = { mat: 0, conc: 0, ing: 0, ies: new Set(), cursos: new Set() };
         porUf.set(uf, entry);
       }
       entry.mat += r.QT_MAT;
       entry.conc += r.QT_CONC;
+      entry.ing += r.QT_ING;
       entry.ies.add(r.CO_IES);
       entry.cursos.add(r.CO_CURSO);
     }
@@ -773,6 +774,7 @@ export async function fetchDistribuicaoEstados(
       nome: UF_NOMES[uf] || uf,
       matriculas: e.mat,
       concluintes: e.conc,
+      ingressantes: e.ing,
       turmas: 0,
       instituicoes: e.ies.size,
       percentual: totalMat > 0 ? Number(((e.mat / totalMat) * 100).toFixed(1)) : 0,

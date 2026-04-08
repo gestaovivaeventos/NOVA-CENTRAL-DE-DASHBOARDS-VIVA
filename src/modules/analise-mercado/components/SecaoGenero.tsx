@@ -88,6 +88,20 @@ export default function SecaoGenero({ evolucao, demografia }: SecaoGeneroProps) 
     maintainAspectRatio: false,
     plugins: {
       legend: { position: 'bottom' as const, labels: { color: '#ADB5BD', padding: 12, font: { size: 11 } } },
+      tooltip: {
+        backgroundColor: '#1a1d21',
+        borderColor: '#495057',
+        borderWidth: 1,
+        titleColor: '#F8F9FA',
+        bodyColor: '#ADB5BD',
+        padding: 10,
+        callbacks: {
+          label: (ctx: any) => {
+            const percentual = totalGenero ? ((ctx.raw / totalGenero) * 100).toFixed(1) : '0.0';
+            return `${ctx.label}: ${fmtNum(ctx.raw)} (${percentual}%)`;
+          },
+        },
+      },
       datalabels: {
         color: '#F8F9FA',
         font: { size: 13, weight: 'bold' },

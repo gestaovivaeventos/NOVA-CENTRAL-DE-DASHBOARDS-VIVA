@@ -32,9 +32,19 @@ interface TabelaComparativaProps {
 
 function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativaProps) {
   const [expandido, setExpandido] = useState<Set<TipoMetrica>>(new Set());
+  const [subExpandido, setSubExpandido] = useState<Set<string>>(new Set());
 
   const toggleExpandir = (key: TipoMetrica) => {
     setExpandido(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleSubExpandir = (key: string) => {
+    setSubExpandido(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -158,13 +168,22 @@ function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativ
                     return (
                     <>
                       {/* Pública */}
-                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                      <tr
+                        onClick={() => toggleSubExpandir(`${metrica.key}_publica`)}
+                        style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)', cursor: 'pointer' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.01)'; }}
+                      >
                         <td style={{
-                          padding: '7px 14px 7px 48px',
+                          padding: '7px 14px 7px 36px',
                           position: 'sticky', left: 0, zIndex: 1,
                           backgroundColor: '#343A40',
                           color: CORES.azul, fontSize: '0.72rem', fontWeight: 500,
+                          display: 'flex', alignItems: 'center', gap: 6,
                         }}>
+                          <span style={{ color: CORES.azul, display: 'flex', transition: 'transform 0.2s' }}>
+                            {subExpandido.has(`${metrica.key}_publica`) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                          </span>
                           ├ Pública
                         </td>
                         {dados.map((e, i) => {
@@ -174,6 +193,7 @@ function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativ
                       </tr>
 
                       {/* Pública → Presencial */}
+                      {subExpandido.has(`${metrica.key}_publica`) && (
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td style={{
                           padding: '5px 14px 5px 72px',
@@ -188,8 +208,10 @@ function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativ
                           return renderCell(bk(e).publicaPresencial, variacao(vals, i), CORES.verde, true);
                         })}
                       </tr>
+                      )}
 
                       {/* Pública → EAD */}
+                      {subExpandido.has(`${metrica.key}_publica`) && (
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td style={{
                           padding: '5px 14px 5px 72px',
@@ -204,15 +226,25 @@ function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativ
                           return renderCell(bk(e).publicaEad, variacao(vals, i), CORES.roxo, true);
                         })}
                       </tr>
+                      )}
 
                       {/* Privada */}
-                      <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                      <tr
+                        onClick={() => toggleSubExpandir(`${metrica.key}_privada`)}
+                        style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)', cursor: 'pointer' }}
+                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.01)'; }}
+                      >
                         <td style={{
-                          padding: '7px 14px 7px 48px',
+                          padding: '7px 14px 7px 36px',
                           position: 'sticky', left: 0, zIndex: 1,
                           backgroundColor: '#343A40',
                           color: CORES.laranja, fontSize: '0.72rem', fontWeight: 500,
+                          display: 'flex', alignItems: 'center', gap: 6,
                         }}>
+                          <span style={{ color: CORES.laranja, display: 'flex', transition: 'transform 0.2s' }}>
+                            {subExpandido.has(`${metrica.key}_privada`) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                          </span>
                           ├ Privada
                         </td>
                         {dados.map((e, i) => {
@@ -222,6 +254,7 @@ function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativ
                       </tr>
 
                       {/* Privada → Presencial */}
+                      {subExpandido.has(`${metrica.key}_privada`) && (
                       <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td style={{
                           padding: '5px 14px 5px 72px',
@@ -236,8 +269,10 @@ function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativ
                           return renderCell(bk(e).privadaPresencial, variacao(vals, i), CORES.verde, true);
                         })}
                       </tr>
+                      )}
 
                       {/* Privada → EAD */}
+                      {subExpandido.has(`${metrica.key}_privada`) && (
                       <tr style={{ borderBottom: '1px solid #3D4349', backgroundColor: 'rgba(255,255,255,0.01)' }}>
                         <td style={{
                           padding: '5px 14px 5px 72px',
@@ -252,6 +287,7 @@ function TabelaComparativa({ dados, metricasAtivas = [], ano }: TabelaComparativ
                           return renderCell(bk(e).privadaEad, variacao(vals, i), CORES.roxo, true);
                         })}
                       </tr>
+                      )}
                     </>
                     );
                   })()}

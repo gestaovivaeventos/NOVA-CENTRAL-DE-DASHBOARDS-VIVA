@@ -45,6 +45,21 @@ export default function SecaoTurmas({ dados, filtros, onEstadoClick }: SecaoTurm
     cutout: '65%',
     plugins: {
       legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1d21',
+        borderColor: '#495057',
+        borderWidth: 1,
+        titleColor: '#F8F9FA',
+        bodyColor: '#ADB5BD',
+        padding: 10,
+        callbacks: {
+          label: (ctx: any) => {
+            const total = ctx.chart.data.datasets[0].data.reduce((a: number, b: number) => a + b, 0);
+            const percentual = total ? ((ctx.raw / total) * 100).toFixed(1) : '0.0';
+            return `${ctx.label}: ${fmtNum(ctx.raw)} (${percentual}%)`;
+          },
+        },
+      },
       datalabels: {
         color: '#F8F9FA',
         font: { size: 12, weight: 'bold' as const },

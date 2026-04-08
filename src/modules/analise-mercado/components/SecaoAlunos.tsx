@@ -66,8 +66,8 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
 
   const ultimoAno = evolucaoAlunos.find(e => e.ano === filtros.ano) || evolucaoAlunos[evolucaoAlunos.length - 1];
 
-  // Map metric key for state data (only matriculas and concluintes available)
-  const mapMetricKey = (m: MetricaAtiva): 'matriculas' | 'concluintes' => m === 'concluintes' ? 'concluintes' : 'matriculas';
+  // Map metric key for state data
+  const mapMetricKey = (m: MetricaAtiva): 'matriculas' | 'concluintes' | 'ingressantes' => m;
 
   // ─── Reusable metric selector ───
   const MetricaSelector = ({ value, onChange, label }: { value: MetricaAtiva; onChange: (m: MetricaAtiva) => void; label: string }) => (
@@ -160,6 +160,21 @@ export default function SecaoAlunos({ dados, filtros, onEstadoClick, onMetricaCh
     cutout: '62%',
     plugins: {
       legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a1d21',
+          borderColor: '#495057',
+          borderWidth: 1,
+          titleColor: '#F8F9FA',
+          bodyColor: '#ADB5BD',
+          padding: 10,
+          callbacks: {
+            label: (ctx: any) => {
+              const total = ctx.chart.data.datasets[0].data.reduce((a: number, b: number) => a + b, 0);
+              const percentual = total ? ((ctx.raw / total) * 100).toFixed(1) : '0.0';
+              return `${ctx.label}: ${fmtNum(ctx.raw)} (${percentual}%)`;
+            },
+          },
+        },
       datalabels: {
         color: '#F8F9FA',
         font: { size: 11, weight: 'bold' as const },
