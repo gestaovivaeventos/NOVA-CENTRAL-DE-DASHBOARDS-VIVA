@@ -146,9 +146,12 @@ export interface CandidatoCidade {
   cidade: string;
   investidorTotal: number;
   investidorParcial: number;
-  opVendaParcial: number;
   opVendaSem: number;
+  opVendaParcial: number;
+  opVendaTotal: number;
+  opPosVendaSem: number;
   opPosVendaParcial: number;
+  semPerfil: number;
   total: number;
   percentual: number;
   temOportunidade: boolean; // tem ao menos 1 investidor E 1 operador

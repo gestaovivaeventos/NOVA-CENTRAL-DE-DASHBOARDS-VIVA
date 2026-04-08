@@ -331,7 +331,7 @@ export function calcularAssertividadeTerritorio(leads: LeadExpansao[]): DadosAss
   const total = leads.length;
 
   for (const lead of leads) {
-    const cat = (lead.assertividadeTerritorio && lead.assertividadeTerritorio.trim() !== '') ? lead.assertividadeTerritorio : 'Sem etiqueta';
+    const cat = (lead.assertividadeTerritorio && lead.assertividadeTerritorio.trim() !== '') ? lead.assertividadeTerritorio : 'Campo vazio';
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 
@@ -350,7 +350,7 @@ export function calcularAssertividadePersona(leads: LeadExpansao[]): DadosAssert
   const total = leads.length;
 
   for (const lead of leads) {
-    const cat = (lead.assertividadePersona && lead.assertividadePersona.trim() !== '') ? lead.assertividadePersona : 'Sem etiqueta';
+    const cat = (lead.assertividadePersona && lead.assertividadePersona.trim() !== '') ? lead.assertividadePersona : 'Campo vazio';
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 
@@ -585,7 +585,7 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
     l.status.toUpperCase().includes('AGUARDANDO COMPOSI') &&
     (l.tipoFunil === 'INVESTIDOR' || l.tipoFunil === 'OPERADOR')
   );
-  const map = new Map<string, { investidorTotal: number; investidorParcial: number; opVendaParcial: number; opVendaSem: number; opPosVendaParcial: number }>();
+  const map = new Map<string, { investidorTotal: number; investidorParcial: number; opVendaSem: number; opVendaParcial: number; opVendaTotal: number; opPosVendaSem: number; opPosVendaParcial: number; semPerfil: number }>();
 
   for (const lead of aguardando) {
     const cidade = lead.cidade && lead.uf ? `${lead.cidade} - ${siglaEstado(lead.uf)}` : lead.cidade || 'Nao informado';
@@ -593,29 +593,47 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
       map.set(cidade, {
         investidorTotal: 0,
         investidorParcial: 0,
-        opVendaParcial: 0,
         opVendaSem: 0,
+        opVendaParcial: 0,
+        opVendaTotal: 0,
+        opPosVendaSem: 0,
         opPosVendaParcial: 0,
+        semPerfil: 0,
       });
     }
     const entry = map.get(cidade)!;
     const perfil = lead.perfil.toUpperCase();
 
-    if (perfil.includes('INVESTIDOR') && perfil.includes('TOTAL')) entry.investidorTotal++;
-    else if (perfil.includes('INVESTIDOR') && perfil.includes('PARCIAL')) entry.investidorParcial++;
-    else if (perfil.includes('VENDAS') && perfil.includes('COM INVESTIMENTO PARCIAL')) entry.opPosVendaParcial++;
-    else if (perfil.includes('VENDA') && perfil.includes('SEM')) entry.opVendaSem++;
-    else if (perfil.includes('VENDA') && perfil.includes('PARCIAL')) entry.opVendaParcial++;
-    else if (lead.tipoFunil === 'INVESTIDOR') entry.investidorParcial++;
-    else entry.opVendaSem++;
+    // Tags possíveis:
+    // INVESTIDOR | COM INVESTIMENTO TOTAL
+    // INVESTIDOR | COM INVESTIMENTO PARCIAL
+    // OPERADOR | VENDAS | SEM INVESTIMENTO
+    // OPERADOR | VENDAS | COM INVESTIMENTO PARCIAL
+    // OPERADOR | VENDAS | COM INVESTIMENTO TOTAL
+    // OPERADOR | PÓS-VENDAS | SEM INVESTIMENTO
+    // OPERADOR | PÓS-VENDAS | COM INVESTIMENTO PARCIAL
+    if (perfil.includes('INVESTIDOR')) {
+      if (perfil.includes('TOTAL')) entry.investidorTotal++;
+      else if (perfil.includes('PARCIAL')) entry.investidorParcial++;
+      else entry.investidorTotal++;
+    } else if (perfil.includes('PÓS-VENDA') || perfil.includes('POS-VENDA') || perfil.includes('PÓS VENDA') || perfil.includes('POS VENDA')) {
+      if (perfil.includes('PARCIAL')) entry.opPosVendaParcial++;
+      else entry.opPosVendaSem++;
+    } else if (perfil.includes('OPERADOR') || perfil.includes('OPERAÇ') || perfil.includes('OPERAC') || perfil.includes('VENDA')) {
+      if (perfil.includes('INVESTIMENTO TOTAL') || perfil.includes('COM INVESTIMENTO TOTAL')) entry.opVendaTotal++;
+      else if (perfil.includes('PARCIAL')) entry.opVendaParcial++;
+      else entry.opVendaSem++;
+    } else {
+      entry.semPerfil++;
+    }
   }
 
   const total = aguardando.length;
   return Array.from(map.entries())
     .map(([cidade, vals]) => {
-      const t = vals.investidorTotal + vals.investidorParcial + vals.opVendaParcial + vals.opVendaSem + vals.opPosVendaParcial;
+      const t = vals.investidorTotal + vals.investidorParcial + vals.opVendaSem + vals.opVendaParcial + vals.opVendaTotal + vals.opPosVendaSem + vals.opPosVendaParcial + vals.semPerfil;
       const hasInvestidor = (vals.investidorTotal + vals.investidorParcial) > 0;
-      const hasOperador = (vals.opVendaParcial + vals.opVendaSem + vals.opPosVendaParcial) > 0;
+      const hasOperador = (vals.opVendaSem + vals.opVendaParcial + vals.opVendaTotal + vals.opPosVendaSem + vals.opPosVendaParcial) > 0;
       return {
         cidade,
         ...vals,

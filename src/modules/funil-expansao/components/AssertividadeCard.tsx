@@ -13,6 +13,7 @@ const CORES_ASSERTIVIDADE: Record<string, string> = {
   'Foco Franquia Operacao': '#17a2b8',
   'Fora': '#dc3545',
   'Sem Validacao': '#6c757d',
+  'Campo vazio': '#8B5CF6',
 };
 
 function getCorAssertividade(cat: string): string {
@@ -24,6 +25,7 @@ function getCorAssertividade(cat: string): string {
   if (upper === 'FOCO') return '#28a745';
   if (upper.includes('OPORTUNIDADE')) return '#ffc107';
   if (upper.includes('FORA')) return '#dc3545';
+  if (upper === 'CAMPO VAZIO') return '#8B5CF6';
   return '#6c757d';
 }
 

@@ -623,9 +623,12 @@ export default function FunilExpansaoDashboard() {
                       { key: 'cidade', header: 'Cidade', align: 'left', sortable: true },
                       { key: 'investidorTotal', header: 'Inv. Total', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
                       { key: 'investidorParcial', header: 'Inv. Parcial', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
-                      { key: 'opVendaParcial', header: 'Op. Venda Parc.', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
-                      { key: 'opVendaSem', header: 'Op. Venda S/', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
-                      { key: 'opPosVendaParcial', header: 'Op. Vendas c/ Inv. Parc.', align: 'center', format: 'number', sortable: true, color: '#059669' },
+                      { key: 'opVendaSem', header: 'Op. Venda S/ Inv.', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'opVendaParcial', header: 'Op. Venda c/ Inv. Parc.', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'opVendaTotal', header: 'Op. Venda c/ Inv. Total', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
+                      { key: 'opPosVendaSem', header: 'Op. Pós-Venda S/ Inv.', align: 'center', format: 'number', sortable: true, color: '#059669' },
+                      { key: 'opPosVendaParcial', header: 'Op. Pós-Venda c/ Inv. Parc.', align: 'center', format: 'number', sortable: true, color: '#059669' },
+                      { key: 'semPerfil', header: 'Sem Perfil', align: 'center', format: 'number', sortable: true, color: '#6c757d' },
                       { key: 'total', header: 'Total', align: 'center', format: 'number', sortable: true },
                       { key: 'percentual', header: '%', align: 'center', format: 'percent', sortable: true },
                     ]}
@@ -651,7 +654,7 @@ export default function FunilExpansaoDashboard() {
                       { key: 'inv1a3m', header: '1-3M', align: 'center', format: 'number', sortable: true },
                       { key: 'inv3a6m', header: '3-6M', align: 'center', format: 'number', sortable: true },
                       { key: 'invMais6m', header: '+6M', align: 'center', format: 'number', sortable: true },
-                      { key: 'opAte1m', header: '≤1M', align: 'center', format: 'number', sortable: true },
+                      { key: 'opAte1m', header: '≤1M', align: 'center', format: 'number', sortable: true, borderLeft: true },
                       { key: 'op1a3m', header: '1-3M', align: 'center', format: 'number', sortable: true },
                       { key: 'op3a6m', header: '3-6M', align: 'center', format: 'number', sortable: true },
                       { key: 'opMais6m', header: '+6M', align: 'center', format: 'number', sortable: true },
@@ -672,7 +675,7 @@ export default function FunilExpansaoDashboard() {
                   <DataTableExpansao
                     titulo="Campanhas"
                     colunas={[
-                      { key: 'nome', header: 'Nome', align: 'left' },
+                      { key: 'nome', header: 'Nome', align: 'left', sortable: true },
                       { key: 'tratamento', header: 'Tratamento', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_TRATAMENTO },
                       { key: 'investidores', header: 'Investidores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
                       { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
@@ -680,13 +683,15 @@ export default function FunilExpansaoDashboard() {
                     ]}
                     dados={anuncios}
                     pageSize={10}
+                    showSummary
+                    exportFilename="campanhas"
                   />
 
                   {/* Conjuntos */}
                   <DataTableExpansao
                     titulo="Conjuntos"
                     colunas={[
-                      { key: 'nome', header: 'Nome', align: 'left' },
+                      { key: 'nome', header: 'Nome', align: 'left', sortable: true },
                       { key: 'tratamento', header: 'Tratamento', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_TRATAMENTO },
                       { key: 'investidores', header: 'Investidores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
                       { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
@@ -694,13 +699,15 @@ export default function FunilExpansaoDashboard() {
                     ]}
                     dados={conjuntos}
                     pageSize={10}
+                    showSummary
+                    exportFilename="conjuntos"
                   />
 
                   {/* Anúncios */}
                   <DataTableExpansao
                     titulo="Anúncios"
                     colunas={[
-                      { key: 'nome', header: 'Nome', align: 'left' },
+                      { key: 'nome', header: 'Nome', align: 'left', sortable: true },
                       { key: 'tratamento', header: 'Tratamento', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_TRATAMENTO },
                       { key: 'investidores', header: 'Investidores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
                       { key: 'operadores', header: 'Operadores', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
@@ -708,6 +715,8 @@ export default function FunilExpansaoDashboard() {
                     ]}
                     dados={campanhas}
                     pageSize={10}
+                    showSummary
+                    exportFilename="anuncios"
                   />
                 </div>
               )}
