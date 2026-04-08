@@ -105,12 +105,12 @@ function isSQLAtivo(lead: LeadExpansao): boolean {
   ) && !isPerdido(lead);
 }
 
-/** Funil cheio: MQL inclui leads cuja etapa contem tag MQL, ou que estao em fase SQL+ */
+/** Funil cheio: MQL inclui leads cuja etapa contem tag MQL, ou que estao em fase SQL+, ou perdidos em fases MQL/SQL */
 function isMQL(lead: LeadExpansao): boolean {
-  return rawContainsMQL(lead.rawEtapa || '') || isSQL(lead);
+  return rawContainsMQL(lead.rawEtapa || '') || isSQL(lead) || (isPerdido(lead) && isMQLPorFasePerda(lead));
 }
 
-/** Funil cheio: SQL inclui leads cuja etapa contem tag SQL, ou em fases SQL+ pelo nome */
+/** Funil cheio: SQL inclui leads cuja etapa contem tag SQL, ou em fases SQL+ pelo nome, ou perdidos em fases SQL */
 function isSQL(lead: LeadExpansao): boolean {
   const s = lead.status.toUpperCase();
   return (
@@ -119,7 +119,8 @@ function isSQL(lead: LeadExpansao): boolean {
     s.includes('COF E VALIDA') ||
     s.includes('AGUARDANDO COMPOSI') ||
     s.includes('CANDIDATO APROVADO') ||
-    s.includes('VENDA GANHA')
+    s.includes('VENDA GANHA') ||
+    (isPerdido(lead) && isSQLPorFasePerda(lead))
   );
 }
 
@@ -203,10 +204,14 @@ export function calcularKPIs(leads: LeadExpansao[]): KPIsExpansao {
   const perdidosInv = leads.filter(l => isPerdido(l) && l.tipoFunil === 'INVESTIDOR').length;
   const perdidosOp = leads.filter(l => isPerdido(l) && l.tipoFunil === 'OPERADOR').length;
 
-  const assertTerr = leads.filter(l => l.assertividadeTerritorio.toUpperCase() === 'FOCO').length;
-  const assertPers = leads.filter(l => l.assertividadePersona.toUpperCase() === 'FOCO').length;
-  const comTerritorio = leads.filter(l => l.assertividadeTerritorio).length;
-  const comPersona = leads.filter(l => l.assertividadePersona).length;
+  const assertTerr = leads.filter(l => {
+    const v = l.assertividadeTerritorio.toUpperCase();
+    return v === 'FOCO' || v === 'FOCO FRANQUIA OPERAÇÃO' || v === 'FOCO FRANQUIA OPERACAO';
+  }).length;
+  const assertPers = leads.filter(l => {
+    const v = l.assertividadePersona.toUpperCase();
+    return v === 'FOCO' || v === 'FOCO FRANQUIA OPERAÇÃO' || v === 'FOCO FRANQUIA OPERACAO';
+  }).length;
 
   return {
     totalLeads,
@@ -220,8 +225,8 @@ export function calcularKPIs(leads: LeadExpansao[]): KPIsExpansao {
     aguardandoComposicao,
     emRecuperacao,
     perdidos,
-    assertividadeTerritorio: comTerritorio > 0 ? (assertTerr / comTerritorio) * 100 : 0,
-    assertividadePersona: comPersona > 0 ? (assertPers / comPersona) * 100 : 0,
+    assertividadeTerritorio: totalLeads > 0 ? (assertTerr / totalLeads) * 100 : 0,
+    assertividadePersona: totalLeads > 0 ? (assertPers / totalLeads) * 100 : 0,
     candidatosAprovadosInv,
     candidatosAprovadosOp,
     aguardandoComposicaoInv,
@@ -320,14 +325,13 @@ export function agruparPorOrigem(leads: LeadExpansao[]): DadosPorOrigem[] {
     .sort((a, b) => b.geral - a.geral);
 }
 
-/** Calcula assertividade de territorio (exclui leads sem valor) */
+/** Calcula assertividade de territorio (inclui leads sem valor como 'Sem etiqueta') */
 export function calcularAssertividadeTerritorio(leads: LeadExpansao[]): DadosAssertividade[] {
-  const comValor = leads.filter(l => l.assertividadeTerritorio && l.assertividadeTerritorio.trim() !== '');
   const map = new Map<string, number>();
-  const total = comValor.length;
+  const total = leads.length;
 
-  for (const lead of comValor) {
-    const cat = lead.assertividadeTerritorio;
+  for (const lead of leads) {
+    const cat = (lead.assertividadeTerritorio && lead.assertividadeTerritorio.trim() !== '') ? lead.assertividadeTerritorio : 'Sem etiqueta';
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 
@@ -340,14 +344,13 @@ export function calcularAssertividadeTerritorio(leads: LeadExpansao[]): DadosAss
     .sort((a, b) => b.quantidade - a.quantidade);
 }
 
-/** Calcula assertividade de persona (exclui leads sem valor) */
+/** Calcula assertividade de persona (inclui leads sem valor como 'Sem etiqueta') */
 export function calcularAssertividadePersona(leads: LeadExpansao[]): DadosAssertividade[] {
-  const comValor = leads.filter(l => l.assertividadePersona && l.assertividadePersona.trim() !== '');
   const map = new Map<string, number>();
-  const total = comValor.length;
+  const total = leads.length;
 
-  for (const lead of comValor) {
-    const cat = lead.assertividadePersona;
+  for (const lead of leads) {
+    const cat = (lead.assertividadePersona && lead.assertividadePersona.trim() !== '') ? lead.assertividadePersona : 'Sem etiqueta';
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 

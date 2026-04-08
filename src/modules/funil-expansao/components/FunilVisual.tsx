@@ -21,7 +21,10 @@ interface FunilVisualProps {
 export default function FunilVisual({ titulo, etapas, cor, vendas, hideGanhas = false }: FunilVisualProps) {
   if (!etapas || etapas.length === 0) return null;
 
-  const maxVal = Math.max(...etapas.map(e => e.quantidade), 1);
+  // Ocultar etapa POTENCIAIS do funil de tratamento
+  const etapasVisiveis = etapas.filter(e => e.nome !== 'POTENCIAIS');
+
+  const maxVal = Math.max(...etapasVisiveis.map(e => e.quantidade), 1);
 
   // Cores fixas por classificação (consistentes entre funis)
   const LABEL_COLORS: Record<string, string> = {
@@ -57,7 +60,7 @@ export default function FunilVisual({ titulo, etapas, cor, vendas, hideGanhas = 
       </h3>
 
       <div className="space-y-3">
-        {etapas.map((etapa, idx) => {
+        {etapasVisiveis.map((etapa, idx) => {
           const widthPct = maxVal > 0 ? (etapa.quantidade / maxVal) * 100 : 0;
           const label = getLabel(etapa.nome);
 

@@ -60,6 +60,23 @@ const INITIAL_FILTROS: FiltrosExpansao = {
   periodoSelecionado: 'esteanoateagora',
 };
 
+const FILTROS_STORAGE_KEY = 'funilExpansaoFiltros';
+
+function loadFiltrosFromStorage(): FiltrosExpansao {
+  if (typeof window === 'undefined') return INITIAL_FILTROS;
+  try {
+    const saved = localStorage.getItem(FILTROS_STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Validar que tem as propriedades esperadas
+      if (parsed.periodoInicio !== undefined && parsed.periodoFim !== undefined) {
+        return { ...INITIAL_FILTROS, ...parsed };
+      }
+    }
+  } catch {}
+  return INITIAL_FILTROS;
+}
+
 export default function FunilExpansaoDashboard() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -75,8 +92,15 @@ export default function FunilExpansaoDashboard() {
   const [paginaAtiva, setPaginaAtiva] = useState<PaginaAtivaExpansao>(() => getPaginaFromPath(router.asPath));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [filtros, setFiltros] = useState<FiltrosExpansao>(INITIAL_FILTROS);
+  const [filtros, setFiltros] = useState<FiltrosExpansao>(loadFiltrosFromStorage);
   const [sharedActiveSeries, setSharedActiveSeries] = useState<Set<SeriesKey>>(new Set(['geral', 'mql', 'sql']));
+
+  // Persistir filtros no localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(FILTROS_STORAGE_KEY, JSON.stringify(filtros));
+    }
+  }, [filtros]);
 
   // Client-side init
   useEffect(() => {
