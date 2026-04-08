@@ -14,6 +14,7 @@ interface Column {
   format?: 'number' | 'percent' | 'text';
   sortable?: boolean;
   color?: string;
+  borderLeft?: boolean;
 }
 
 interface HeaderGroup {
@@ -228,6 +229,7 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
                       padding: '12px 16px',
                       textAlign: col.align || 'center',
                       borderBottom: '2px solid #FF6600',
+                      borderLeft: col.borderLeft ? '1px solid #6c757d' : undefined,
                       color: col.color || '#adb5bd',
                       fontWeight: 600,
                       textTransform: 'uppercase',
@@ -278,6 +280,7 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
                           style={{
                             padding: '10px 16px',
                             textAlign: col.align || 'center',
+                            borderLeft: col.borderLeft ? '1px solid #6c757d' : undefined,
                             color: col.key === colunas[0].key ? '#F8F9FA' : '#adb5bd',
                             fontFamily: 'Poppins, sans-serif',
                             fontWeight: col.key === colunas[0].key ? 500 : 400,
@@ -329,6 +332,7 @@ export default function DataTableExpansao({ titulo, subtitulo, colunas, dados, p
                         color: '#FF6600',
                         fontFamily: 'Poppins, sans-serif',
                         fontSize: '0.8rem',
+                        borderLeft: col.borderLeft ? '1px solid #6c757d' : undefined,
                       }}
                     >
                       {formatValue(summaryRow[col.key], col.format)}

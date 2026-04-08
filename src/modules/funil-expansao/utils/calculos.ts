@@ -105,12 +105,12 @@ function isSQLAtivo(lead: LeadExpansao): boolean {
   ) && !isPerdido(lead);
 }
 
-/** Funil cheio: MQL inclui leads cuja etapa contem tag MQL, ou que estao em fase SQL+ */
+/** Funil cheio: MQL inclui leads cuja etapa contem tag MQL, ou que estao em fase SQL+, ou perdidos em fases MQL/SQL */
 function isMQL(lead: LeadExpansao): boolean {
-  return rawContainsMQL(lead.rawEtapa || '') || isSQL(lead);
+  return rawContainsMQL(lead.rawEtapa || '') || isSQL(lead) || (isPerdido(lead) && isMQLPorFasePerda(lead));
 }
 
-/** Funil cheio: SQL inclui leads cuja etapa contem tag SQL, ou em fases SQL+ pelo nome */
+/** Funil cheio: SQL inclui leads cuja etapa contem tag SQL, ou em fases SQL+ pelo nome, ou perdidos em fases SQL */
 function isSQL(lead: LeadExpansao): boolean {
   const s = lead.status.toUpperCase();
   return (
@@ -119,7 +119,8 @@ function isSQL(lead: LeadExpansao): boolean {
     s.includes('COF E VALIDA') ||
     s.includes('AGUARDANDO COMPOSI') ||
     s.includes('CANDIDATO APROVADO') ||
-    s.includes('VENDA GANHA')
+    s.includes('VENDA GANHA') ||
+    (isPerdido(lead) && isSQLPorFasePerda(lead))
   );
 }
 
@@ -203,10 +204,14 @@ export function calcularKPIs(leads: LeadExpansao[]): KPIsExpansao {
   const perdidosInv = leads.filter(l => isPerdido(l) && l.tipoFunil === 'INVESTIDOR').length;
   const perdidosOp = leads.filter(l => isPerdido(l) && l.tipoFunil === 'OPERADOR').length;
 
-  const assertTerr = leads.filter(l => l.assertividadeTerritorio.toUpperCase() === 'FOCO').length;
-  const assertPers = leads.filter(l => l.assertividadePersona.toUpperCase() === 'FOCO').length;
-  const comTerritorio = leads.filter(l => l.assertividadeTerritorio).length;
-  const comPersona = leads.filter(l => l.assertividadePersona).length;
+  const assertTerr = leads.filter(l => {
+    const v = l.assertividadeTerritorio.toUpperCase();
+    return v === 'FOCO' || v === 'FOCO FRANQUIA OPERAÇÃO' || v === 'FOCO FRANQUIA OPERACAO';
+  }).length;
+  const assertPers = leads.filter(l => {
+    const v = l.assertividadePersona.toUpperCase();
+    return v === 'FOCO' || v === 'FOCO FRANQUIA OPERAÇÃO' || v === 'FOCO FRANQUIA OPERACAO';
+  }).length;
 
   return {
     totalLeads,
@@ -220,8 +225,8 @@ export function calcularKPIs(leads: LeadExpansao[]): KPIsExpansao {
     aguardandoComposicao,
     emRecuperacao,
     perdidos,
-    assertividadeTerritorio: comTerritorio > 0 ? (assertTerr / comTerritorio) * 100 : 0,
-    assertividadePersona: comPersona > 0 ? (assertPers / comPersona) * 100 : 0,
+    assertividadeTerritorio: totalLeads > 0 ? (assertTerr / totalLeads) * 100 : 0,
+    assertividadePersona: totalLeads > 0 ? (assertPers / totalLeads) * 100 : 0,
     candidatosAprovadosInv,
     candidatosAprovadosOp,
     aguardandoComposicaoInv,
@@ -320,14 +325,13 @@ export function agruparPorOrigem(leads: LeadExpansao[]): DadosPorOrigem[] {
     .sort((a, b) => b.geral - a.geral);
 }
 
-/** Calcula assertividade de territorio (exclui leads sem valor) */
+/** Calcula assertividade de territorio (inclui leads sem valor como 'Sem etiqueta') */
 export function calcularAssertividadeTerritorio(leads: LeadExpansao[]): DadosAssertividade[] {
-  const comValor = leads.filter(l => l.assertividadeTerritorio && l.assertividadeTerritorio.trim() !== '');
   const map = new Map<string, number>();
-  const total = comValor.length;
+  const total = leads.length;
 
-  for (const lead of comValor) {
-    const cat = lead.assertividadeTerritorio;
+  for (const lead of leads) {
+    const cat = (lead.assertividadeTerritorio && lead.assertividadeTerritorio.trim() !== '') ? lead.assertividadeTerritorio : 'Campo vazio';
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 
@@ -340,14 +344,13 @@ export function calcularAssertividadeTerritorio(leads: LeadExpansao[]): DadosAss
     .sort((a, b) => b.quantidade - a.quantidade);
 }
 
-/** Calcula assertividade de persona (exclui leads sem valor) */
+/** Calcula assertividade de persona (inclui leads sem valor como 'Sem etiqueta') */
 export function calcularAssertividadePersona(leads: LeadExpansao[]): DadosAssertividade[] {
-  const comValor = leads.filter(l => l.assertividadePersona && l.assertividadePersona.trim() !== '');
   const map = new Map<string, number>();
-  const total = comValor.length;
+  const total = leads.length;
 
-  for (const lead of comValor) {
-    const cat = lead.assertividadePersona;
+  for (const lead of leads) {
+    const cat = (lead.assertividadePersona && lead.assertividadePersona.trim() !== '') ? lead.assertividadePersona : 'Campo vazio';
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 
@@ -582,7 +585,7 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
     l.status.toUpperCase().includes('AGUARDANDO COMPOSI') &&
     (l.tipoFunil === 'INVESTIDOR' || l.tipoFunil === 'OPERADOR')
   );
-  const map = new Map<string, { investidorTotal: number; investidorParcial: number; opVendaParcial: number; opVendaSem: number; opPosVendaParcial: number }>();
+  const map = new Map<string, { investidorTotal: number; investidorParcial: number; opVendaSem: number; opVendaParcial: number; opVendaTotal: number; opPosVendaSem: number; opPosVendaParcial: number; semPerfil: number }>();
 
   for (const lead of aguardando) {
     const cidade = lead.cidade && lead.uf ? `${lead.cidade} - ${siglaEstado(lead.uf)}` : lead.cidade || 'Nao informado';
@@ -590,29 +593,47 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
       map.set(cidade, {
         investidorTotal: 0,
         investidorParcial: 0,
-        opVendaParcial: 0,
         opVendaSem: 0,
+        opVendaParcial: 0,
+        opVendaTotal: 0,
+        opPosVendaSem: 0,
         opPosVendaParcial: 0,
+        semPerfil: 0,
       });
     }
     const entry = map.get(cidade)!;
     const perfil = lead.perfil.toUpperCase();
 
-    if (perfil.includes('INVESTIDOR') && perfil.includes('TOTAL')) entry.investidorTotal++;
-    else if (perfil.includes('INVESTIDOR') && perfil.includes('PARCIAL')) entry.investidorParcial++;
-    else if (perfil.includes('VENDAS') && perfil.includes('COM INVESTIMENTO PARCIAL')) entry.opPosVendaParcial++;
-    else if (perfil.includes('VENDA') && perfil.includes('SEM')) entry.opVendaSem++;
-    else if (perfil.includes('VENDA') && perfil.includes('PARCIAL')) entry.opVendaParcial++;
-    else if (lead.tipoFunil === 'INVESTIDOR') entry.investidorParcial++;
-    else entry.opVendaSem++;
+    // Tags possíveis:
+    // INVESTIDOR | COM INVESTIMENTO TOTAL
+    // INVESTIDOR | COM INVESTIMENTO PARCIAL
+    // OPERADOR | VENDAS | SEM INVESTIMENTO
+    // OPERADOR | VENDAS | COM INVESTIMENTO PARCIAL
+    // OPERADOR | VENDAS | COM INVESTIMENTO TOTAL
+    // OPERADOR | PÓS-VENDAS | SEM INVESTIMENTO
+    // OPERADOR | PÓS-VENDAS | COM INVESTIMENTO PARCIAL
+    if (perfil.includes('INVESTIDOR')) {
+      if (perfil.includes('TOTAL')) entry.investidorTotal++;
+      else if (perfil.includes('PARCIAL')) entry.investidorParcial++;
+      else entry.investidorTotal++;
+    } else if (perfil.includes('PÓS-VENDA') || perfil.includes('POS-VENDA') || perfil.includes('PÓS VENDA') || perfil.includes('POS VENDA')) {
+      if (perfil.includes('PARCIAL')) entry.opPosVendaParcial++;
+      else entry.opPosVendaSem++;
+    } else if (perfil.includes('OPERADOR') || perfil.includes('OPERAÇ') || perfil.includes('OPERAC') || perfil.includes('VENDA')) {
+      if (perfil.includes('INVESTIMENTO TOTAL') || perfil.includes('COM INVESTIMENTO TOTAL')) entry.opVendaTotal++;
+      else if (perfil.includes('PARCIAL')) entry.opVendaParcial++;
+      else entry.opVendaSem++;
+    } else {
+      entry.semPerfil++;
+    }
   }
 
   const total = aguardando.length;
   return Array.from(map.entries())
     .map(([cidade, vals]) => {
-      const t = vals.investidorTotal + vals.investidorParcial + vals.opVendaParcial + vals.opVendaSem + vals.opPosVendaParcial;
+      const t = vals.investidorTotal + vals.investidorParcial + vals.opVendaSem + vals.opVendaParcial + vals.opVendaTotal + vals.opPosVendaSem + vals.opPosVendaParcial + vals.semPerfil;
       const hasInvestidor = (vals.investidorTotal + vals.investidorParcial) > 0;
-      const hasOperador = (vals.opVendaParcial + vals.opVendaSem + vals.opPosVendaParcial) > 0;
+      const hasOperador = (vals.opVendaSem + vals.opVendaParcial + vals.opVendaTotal + vals.opPosVendaSem + vals.opPosVendaParcial) > 0;
       return {
         cidade,
         ...vals,
