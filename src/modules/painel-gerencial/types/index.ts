@@ -71,6 +71,7 @@ export interface NovoOkrData {
   atingMetaMes: number;
   formaDeMedir: string;
   medida: string;
+  tendencia: string;
 }
 
 export interface ProjectData {

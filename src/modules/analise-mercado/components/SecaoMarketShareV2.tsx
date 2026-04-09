@@ -159,7 +159,7 @@ interface SecaoMarketShareV2Props {
 export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Props) {
   const { matriculados, turmas, target } = dados;
   const TABS = modo === 'alunos' ? TABS_ALUNOS : TABS_TURMAS;
-  const defaultTab: TabId = modo === 'alunos' ? 'alunos' : 'turmas';
+  const defaultTab: TabId = modo === 'alunos' ? 'target' : 'turmas';
   const [abaAtiva, setAbaAtiva] = useState<TabId>(defaultTab);
   const tv = target[modo];
 
@@ -568,6 +568,10 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
         <>
           <SectionLabel num="1" label="Fundos — Carteira Ativa" cor={CORES.roxo} icone={<GraduationCap size={14} />} />
 
+          {turmas.semDados ? (
+            <SemDadosPlaceholder mensagem="Market Share Turmas — Em desenvolvimento" />
+          ) : (
+          <>
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
@@ -666,6 +670,8 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
               Análise de carteira vs mercado por instituição. Será habilitada quando a base estiver estruturada.
             </p>
           </div>
+          </>
+          )}
         </>
       )}
 
@@ -798,9 +804,9 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>Alunos Mercado</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Target</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.laranja, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Viva</th>
-                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.roxo, fontWeight: 700 }}>% do Mercado</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.roxo, fontWeight: 700 }}>Market Share do Mercado</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>% Target / Mercado</th>
-                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>% do Alunos Target</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>Market Share do Target</th>
                     </tr>
                   </thead>
                   <tbody>

@@ -12,6 +12,7 @@ import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMer
 import {
   AnaliseMercadoLayout,
   SecaoMarketShareV2,
+  PopupDadosInfo,
 } from '@/modules/analise-mercado/components';
 import type { DadosMarketShareV2 } from '@/modules/analise-mercado/types';
 
@@ -277,21 +278,14 @@ export default function MarketSharePage() {
           </div>
         )}
 
-        {/* Banner dados reais - Target */}
-        <div style={{
-          backgroundColor: 'rgba(16,185,129,0.1)',
-          border: '1px solid rgba(16,185,129,0.4)',
-          borderRadius: 8, padding: '10px 16px', marginBottom: 16,
-          display: 'flex', alignItems: 'center', gap: 10,
-        }}>
-          <span style={{ fontSize: '1.1rem' }}>✅</span>
-          <p style={{
-            color: '#10B981', fontSize: '0.75rem', margin: 0,
-            fontFamily: "'Poppins', sans-serif", lineHeight: 1.5,
-          }}>
-            <strong>Aba Market Share Medicina</strong> — Dados de Alunos Target importados da planilha real. Demais campos sem dados ainda.
-          </p>
-        </div>
+
+        <PopupDadosInfo
+          storageKey="market-share-alunos"
+          dados={[
+            { label: 'Aba Market Share Medicina — Dados reais (Target, Carteira Viva, INEP)', tipo: 'real' },
+            { label: 'Aba Market Share Aluno — Aguardando integração', tipo: 'desenvolvimento' },
+          ]}
+        />
 
         {marketData && <SecaoMarketShareV2 dados={marketData} modo="alunos" />}
 
