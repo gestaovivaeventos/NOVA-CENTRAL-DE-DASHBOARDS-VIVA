@@ -36,18 +36,18 @@ const MOCK_DISTRIBUICAO = {
 };
 
 const MOCK_CURSOS = [
-  { nome: 'Pedagogia', area: 'Educação', turmas: 48_320, instituicoes: 1_545, presencial: 18_200, ead: 30_120, publica: 12_800, privada: 35_520 },
-  { nome: 'Administração', area: 'Negócios, administração e direito', turmas: 42_180, instituicoes: 1_778, presencial: 15_600, ead: 26_580, publica: 8_400, privada: 33_780 },
-  { nome: 'Direito', area: 'Negócios, administração e direito', turmas: 38_950, instituicoes: 1_449, presencial: 28_200, ead: 10_750, publica: 9_800, privada: 29_150 },
-  { nome: 'Enfermagem', area: 'Saúde e bem-estar', turmas: 29_870, instituicoes: 1_115, presencial: 22_100, ead: 7_770, publica: 7_200, privada: 22_670 },
-  { nome: 'Educação Física', area: 'Educação', turmas: 27_640, instituicoes: 997, presencial: 12_800, ead: 14_840, publica: 6_100, privada: 21_540 },
-  { nome: 'Psicologia', area: 'Ciências sociais, comunicação e informação', turmas: 24_510, instituicoes: 1_033, presencial: 18_900, ead: 5_610, publica: 5_800, privada: 18_710 },
-  { nome: 'Análise E Desenvolvimento De Sistemas', area: 'Computação e Tecnologias da Informação e Comunicação (TIC)', turmas: 22_340, instituicoes: 895, presencial: 8_200, ead: 14_140, publica: 4_600, privada: 17_740 },
-  { nome: 'Ciências Contábeis', area: 'Negócios, administração e direito', turmas: 19_870, instituicoes: 1_319, presencial: 9_100, ead: 10_770, publica: 4_200, privada: 15_670 },
-  { nome: 'Medicina', area: 'Saúde e bem-estar', turmas: 18_640, instituicoes: 395, presencial: 18_640, ead: 0, publica: 8_900, privada: 9_740 },
-  { nome: 'Fisioterapia', area: 'Saúde e bem-estar', turmas: 15_890, instituicoes: 892, presencial: 12_400, ead: 3_490, publica: 3_200, privada: 12_690 },
-  { nome: 'Engenharia Civil', area: 'Engenharia, produção e construção', turmas: 14_520, instituicoes: 780, presencial: 11_200, ead: 3_320, publica: 5_100, privada: 9_420 },
-  { nome: 'Farmácia', area: 'Saúde e bem-estar', turmas: 12_180, instituicoes: 640, presencial: 9_800, ead: 2_380, publica: 2_800, privada: 9_380 },
+  { nome: 'Pedagogia', area: 'Educação', turmas: 48_320, matriculas: 1_932_800, instituicoes: 1_545, presencial: 18_200, ead: 30_120, publica: 12_800, privada: 35_520 },
+  { nome: 'Administração', area: 'Negócios, administração e direito', turmas: 42_180, matriculas: 1_476_300, instituicoes: 1_778, presencial: 15_600, ead: 26_580, publica: 8_400, privada: 33_780 },
+  { nome: 'Direito', area: 'Negócios, administração e direito', turmas: 38_950, matriculas: 1_519_050, instituicoes: 1_449, presencial: 28_200, ead: 10_750, publica: 9_800, privada: 29_150 },
+  { nome: 'Enfermagem', area: 'Saúde e bem-estar', turmas: 29_870, matriculas: 956_880, instituicoes: 1_115, presencial: 22_100, ead: 7_770, publica: 7_200, privada: 22_670 },
+  { nome: 'Educação Física', area: 'Educação', turmas: 27_640, matriculas: 773_920, instituicoes: 997, presencial: 12_800, ead: 14_840, publica: 6_100, privada: 21_540 },
+  { nome: 'Psicologia', area: 'Ciências sociais, comunicação e informação', turmas: 24_510, matriculas: 857_850, instituicoes: 1_033, presencial: 18_900, ead: 5_610, publica: 5_800, privada: 18_710 },
+  { nome: 'Análise E Desenvolvimento De Sistemas', area: 'Computação e Tecnologias da Informação e Comunicação (TIC)', turmas: 22_340, matriculas: 580_840, instituicoes: 895, presencial: 8_200, ead: 14_140, publica: 4_600, privada: 17_740 },
+  { nome: 'Ciências Contábeis', area: 'Negócios, administração e direito', turmas: 19_870, matriculas: 595_100, instituicoes: 1_319, presencial: 9_100, ead: 10_770, publica: 4_200, privada: 15_670 },
+  { nome: 'Medicina', area: 'Saúde e bem-estar', turmas: 18_640, matriculas: 428_720, instituicoes: 395, presencial: 18_640, ead: 0, publica: 8_900, privada: 9_740 },
+  { nome: 'Fisioterapia', area: 'Saúde e bem-estar', turmas: 15_890, matriculas: 413_140, instituicoes: 892, presencial: 12_400, ead: 3_490, publica: 3_200, privada: 12_690 },
+  { nome: 'Engenharia Civil', area: 'Engenharia, produção e construção', turmas: 14_520, matriculas: 377_520, instituicoes: 780, presencial: 11_200, ead: 3_320, publica: 5_100, privada: 9_420 },
+  { nome: 'Farmácia', area: 'Saúde e bem-estar', turmas: 12_180, matriculas: 304_500, instituicoes: 640, presencial: 9_800, ead: 2_380, publica: 2_800, privada: 9_380 },
 ];
 
 const MOCK_INSTITUICOES = [
@@ -149,6 +149,21 @@ export default function SecaoTurmasMock({ filtros, onEstadoClick }: SecaoTurmasM
     cutout: '62%',
     plugins: {
       legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1a1d21',
+        borderColor: '#495057',
+        borderWidth: 1,
+        titleColor: '#F8F9FA',
+        bodyColor: '#ADB5BD',
+        padding: 10,
+        callbacks: {
+          label: (ctx: any) => {
+            const total = ctx.chart.data.datasets[0].data.reduce((a: number, b: number) => a + b, 0);
+            const percentual = total ? ((ctx.raw / total) * 100).toFixed(1) : '0.0';
+            return `${ctx.label}: ${fmtNum(ctx.raw)} (${percentual}%)`;
+          },
+        },
+      },
       datalabels: {
         color: '#F8F9FA',
         font: { size: 11, weight: 'bold' as const },
@@ -331,6 +346,7 @@ export default function SecaoTurmasMock({ filtros, onEstadoClick }: SecaoTurmasM
                   <th style={{ ...thStyle('nome'), textAlign: 'left', paddingLeft: 20 }} onClick={() => handleSort('nome')}>Curso</th>
                   <th style={thStyle('area')}>Área</th>
                   <th style={thStyle('turmas')} onClick={() => handleSort('turmas')}>Turmas ▼</th>
+                  <th style={thStyle('media')}>Média Alunos</th>
                   <th style={thStyle('presencial')}>Presencial</th>
                   <th style={thStyle('ead')}>EAD</th>
                   <th style={thStyle('instituicoes')}>Instituições</th>
@@ -356,6 +372,9 @@ export default function SecaoTurmasMock({ filtros, onEstadoClick }: SecaoTurmasM
                     </td>
                     <td style={{ padding: '10px 8px', textAlign: 'right', color: CORES.laranja, fontWeight: 700, fontSize: '0.78rem' }}>
                       {fmtInteiro(curso.turmas)}
+                    </td>
+                    <td style={{ padding: '10px 8px', textAlign: 'right', color: CORES.azul, fontWeight: 600, fontSize: '0.75rem' }}>
+                      {curso.turmas > 0 ? (curso.matriculas / curso.turmas).toFixed(1) : '—'}
                     </td>
                     <td style={{ padding: '10px 8px', textAlign: 'right', color: CORES.verde, fontSize: '0.75rem' }}>
                       {fmtInteiro(curso.presencial)}

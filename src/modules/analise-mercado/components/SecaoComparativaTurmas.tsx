@@ -41,12 +41,16 @@ interface EvolucaoTurmasMock {
   ead: number;
   publica: number;
   privada: number;
+  publicaPresencial: number;
+  publicaEad: number;
+  privadaPresencial: number;
+  privadaEad: number;
 }
 
 const MOCK_EVOLUCAO: EvolucaoTurmasMock[] = [
-  { ano: 2022, total: 724_800, presencial: 310_200, ead: 414_600, publica: 192_100, privada: 532_700 },
-  { ano: 2023, total: 762_350, presencial: 308_900, ead: 453_450, publica: 194_800, privada: 567_550 },
-  { ano: 2024, total: 799_680, presencial: 312_450, ead: 487_230, publica: 198_680, privada: 601_000 },
+  { ano: 2022, total: 724_800, presencial: 310_200, ead: 414_600, publica: 192_100, privada: 532_700, publicaPresencial: 134_500, publicaEad: 57_600, privadaPresencial: 175_700, privadaEad: 357_000 },
+  { ano: 2023, total: 762_350, presencial: 308_900, ead: 453_450, publica: 194_800, privada: 567_550, publicaPresencial: 135_300, publicaEad: 59_500, privadaPresencial: 173_600, privadaEad: 393_950 },
+  { ano: 2024, total: 799_680, presencial: 312_450, ead: 487_230, publica: 198_680, privada: 601_000, publicaPresencial: 137_200, publicaEad: 61_480, privadaPresencial: 175_250, privadaEad: 425_750 },
 ];
 
 type MetricaTurma = 'total' | 'presencial' | 'ead';
@@ -332,28 +336,124 @@ export default function SecaoComparativaTurmas({ ano }: SecaoComparativaTurmasPr
                         {valores.map((v, i) => renderCell(v, varCell(valores, i), CORES.laranja))}
                       </tr>
                       {isOpen && (() => {
-                        const subRows: { key: keyof EvolucaoTurmasMock; label: string; cor: string; prefix: string }[] = [
-                          { key: 'presencial', label: 'Presencial', cor: CORES.verde, prefix: '├' },
-                          { key: 'ead', label: 'EAD', cor: CORES.roxo, prefix: '├' },
-                          { key: 'publica', label: 'Pública', cor: CORES.azul, prefix: '├' },
-                          { key: 'privada', label: 'Privada', cor: CORES.laranja, prefix: '└' },
-                        ];
-                        return subRows.map(sub => {
-                          const vals = evolucao.map(d => d[sub.key] as number);
-                          return (
-                            <tr key={sub.key} style={{ borderBottom: sub.prefix === '└' ? '1px solid #3D4349' : 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                        const pubOpen = expandido.has('publica');
+                        const privOpen = expandido.has('privada');
+                        return (
+                          <>
+                            {/* Pública — expandable */}
+                            <tr
+                              onClick={(ev) => { ev.stopPropagation(); toggleExpandir('publica'); }}
+                              style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)', cursor: 'pointer' }}
+                              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.01)'; }}
+                            >
                               <td style={{
-                                padding: '7px 14px 7px 48px',
+                                padding: '7px 14px 7px 36px',
                                 position: 'sticky', left: 0, zIndex: 1,
                                 backgroundColor: '#343A40',
-                                color: sub.cor, fontSize: '0.72rem', fontWeight: 500,
+                                color: CORES.azul, fontSize: '0.72rem', fontWeight: 500,
+                                display: 'flex', alignItems: 'center', gap: 6,
                               }}>
-                                {sub.prefix} {sub.label}
+                                <span style={{ color: CORES.azul, display: 'flex', transition: 'transform 0.2s' }}>
+                                  {pubOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
+                                ├ Pública
                               </td>
-                              {vals.map((v, i) => renderCell(v, varCell(vals, i), sub.cor, true))}
+                              {evolucao.map((e, i) => {
+                                const vals = evolucao.map(d => d.publica);
+                                return renderCell(e.publica, varCell(vals, i), CORES.azul, true);
+                              })}
                             </tr>
-                          );
-                        });
+                            {pubOpen && (
+                              <>
+                                <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                                  <td style={{
+                                    padding: '5px 14px 5px 72px',
+                                    position: 'sticky', left: 0, zIndex: 1,
+                                    backgroundColor: '#343A40',
+                                    color: CORES.verde, fontSize: '0.68rem', fontWeight: 400,
+                                  }}>
+                                    ├ Presencial
+                                  </td>
+                                  {evolucao.map((e, i) => {
+                                    const vals = evolucao.map(d => d.publicaPresencial);
+                                    return renderCell(e.publicaPresencial, varCell(vals, i), CORES.verde, true);
+                                  })}
+                                </tr>
+                                <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                                  <td style={{
+                                    padding: '5px 14px 5px 72px',
+                                    position: 'sticky', left: 0, zIndex: 1,
+                                    backgroundColor: '#343A40',
+                                    color: CORES.roxo, fontSize: '0.68rem', fontWeight: 400,
+                                  }}>
+                                    └ EAD
+                                  </td>
+                                  {evolucao.map((e, i) => {
+                                    const vals = evolucao.map(d => d.publicaEad);
+                                    return renderCell(e.publicaEad, varCell(vals, i), CORES.roxo, true);
+                                  })}
+                                </tr>
+                              </>
+                            )}
+                            {/* Privada — expandable */}
+                            <tr
+                              onClick={(ev) => { ev.stopPropagation(); toggleExpandir('privada'); }}
+                              style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)', cursor: 'pointer' }}
+                              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.01)'; }}
+                            >
+                              <td style={{
+                                padding: '7px 14px 7px 36px',
+                                position: 'sticky', left: 0, zIndex: 1,
+                                backgroundColor: '#343A40',
+                                color: CORES.laranja, fontSize: '0.72rem', fontWeight: 500,
+                                display: 'flex', alignItems: 'center', gap: 6,
+                              }}>
+                                <span style={{ color: CORES.laranja, display: 'flex', transition: 'transform 0.2s' }}>
+                                  {privOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
+                                ├ Privada
+                              </td>
+                              {evolucao.map((e, i) => {
+                                const vals = evolucao.map(d => d.privada);
+                                return renderCell(e.privada, varCell(vals, i), CORES.laranja, true);
+                              })}
+                            </tr>
+                            {privOpen && (
+                              <>
+                                <tr style={{ borderBottom: 'none', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                                  <td style={{
+                                    padding: '5px 14px 5px 72px',
+                                    position: 'sticky', left: 0, zIndex: 1,
+                                    backgroundColor: '#343A40',
+                                    color: CORES.verde, fontSize: '0.68rem', fontWeight: 400,
+                                  }}>
+                                    ├ Presencial
+                                  </td>
+                                  {evolucao.map((e, i) => {
+                                    const vals = evolucao.map(d => d.privadaPresencial);
+                                    return renderCell(e.privadaPresencial, varCell(vals, i), CORES.verde, true);
+                                  })}
+                                </tr>
+                                <tr style={{ borderBottom: '1px solid #3D4349', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                                  <td style={{
+                                    padding: '5px 14px 5px 72px',
+                                    position: 'sticky', left: 0, zIndex: 1,
+                                    backgroundColor: '#343A40',
+                                    color: CORES.roxo, fontSize: '0.68rem', fontWeight: 400,
+                                  }}>
+                                    └ EAD
+                                  </td>
+                                  {evolucao.map((e, i) => {
+                                    const vals = evolucao.map(d => d.privadaEad);
+                                    return renderCell(e.privadaEad, varCell(vals, i), CORES.roxo, true);
+                                  })}
+                                </tr>
+                              </>
+                            )}
+                          </>
+                        );
                       })()}
                     </React.Fragment>
                   );

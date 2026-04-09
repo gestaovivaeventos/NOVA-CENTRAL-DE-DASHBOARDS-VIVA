@@ -13,7 +13,7 @@ const BRASIL_TOPO_URL = 'https://raw.githubusercontent.com/codeforamerica/click_
 
 interface MapaBrasilProps {
   dados: DadosEstado[];
-  metrica: 'matriculas' | 'concluintes' | 'turmas';
+  metrica: 'matriculas' | 'concluintes' | 'ingressantes' | 'turmas';
   cidades?: Record<string, DadosCidade[]>;
   estadoSelecionado?: string | null;
   onEstadoClick?: (uf: string) => void;
@@ -94,7 +94,13 @@ export default function MapaBrasil({
     return { getColor: getCol, dadosMap: map };
   }, [dados, metrica]);
 
-  const metricaLabel = metrica === 'matriculas' ? 'Matrículas' : metrica === 'concluintes' ? 'Concluintes' : 'Turmas';
+  const metricaLabel = metrica === 'matriculas'
+    ? 'Matrículas'
+    : metrica === 'concluintes'
+      ? 'Concluintes'
+      : metrica === 'ingressantes'
+        ? 'Ingressantes'
+        : 'Turmas';
 
   // Cidades do estado expandido
   const cidadesEstado = useMemo(() => {

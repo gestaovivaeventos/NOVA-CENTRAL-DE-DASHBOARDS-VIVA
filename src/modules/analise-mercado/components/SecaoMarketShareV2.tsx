@@ -140,13 +140,13 @@ const CHART_TOOLTIP = {
 type TabId = 'alunos' | 'turmas' | 'target';
 
 const TABS_ALUNOS: { id: TabId; label: string; icone: React.ReactNode; cor: string }[] = [
-  { id: 'alunos', label: 'Alunos Carteira x Mercado', icone: <Users size={14} />, cor: CORES.azul },
-  { id: 'target', label: 'Target Medicina', icone: <Target size={14} />, cor: CORES.verde },
+  { id: 'alunos', label: 'Market Share Aluno', icone: <Users size={14} />, cor: CORES.azul },
+  { id: 'target', label: 'Market Share Medicina', icone: <Target size={14} />, cor: CORES.verde },
 ];
 
 const TABS_TURMAS: { id: TabId; label: string; icone: React.ReactNode; cor: string }[] = [
-  { id: 'turmas', label: 'Fundos Carteira x Mercado', icone: <GraduationCap size={14} />, cor: CORES.roxo },
-  { id: 'target', label: 'Target Medicina', icone: <Target size={14} />, cor: CORES.verde },
+  { id: 'turmas', label: 'Market Share Turma', icone: <GraduationCap size={14} />, cor: CORES.roxo },
+  { id: 'target', label: 'Market Share Medicina', icone: <Target size={14} />, cor: CORES.verde },
 ];
 
 // ─── Component ──────────────────────────────
@@ -178,7 +178,7 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
         categoryPercentage: 0.7,
       },
       {
-        label: 'Mercado Total (INEP)',
+        label: 'Mercado',
         data: matriculados.comparativoAnual.map(c => c.mercadoTotal),
         backgroundColor: `${CORES.azul}80`,
         borderRadius: 4,
@@ -267,7 +267,7 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
         categoryPercentage: 0.7,
       },
       {
-        label: 'Mercado Total (INEP)',
+        label: 'Mercado',
         data: turmas.comparativoAnual.map(c => c.mercadoTotal),
         backgroundColor: `${CORES.azul}80`,
         borderRadius: 4,
@@ -682,7 +682,7 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
           }}>
             <Target size={14} color={CORES.verde} />
             <p style={{ color: '#10B981', fontSize: '0.75rem', margin: 0, flex: 1 }}>
-              <strong>Medicina</strong> — Análise target no curso de Medicina ({modo === 'turmas' ? 'Turmas' : 'Alunos'}). Curso prioritário para mapeamento.
+              <strong>Target</strong> — Análise de {modo === 'turmas' ? 'Turmas' : 'Alunos'} Target no curso de Medicina. Curso prioritário para mapeamento.
             </p>
           </div>
 
@@ -694,48 +694,99 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
                 gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                 gap: 14, marginBottom: 16, opacity: 0.4, pointerEvents: 'none',
               }}>
-                <KpiCard titulo={`TOTAL DE ${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} (INEP)`} valorStr="—" cor={CORES.azul} icone={<Users size={15} />} />
-                <KpiCard titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} TARGET (PIPEFY)`} valorStr="—" cor={CORES.verde} icone={<Target size={15} />} />
-                <KpiCard titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} VIVA (MUNDO VIVA)`} valorStr="—" cor={CORES.laranja} icone={<Stethoscope size={15} />} />
+                <KpiCard titulo={`MERCADO`} valorStr="—" cor={CORES.azul} icone={<Users size={15} />} />
+                <KpiCard titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} TARGET`} valorStr="—" cor={CORES.verde} icone={<Target size={15} />} />
+                <KpiCard titulo={`CARTEIRA VIVA`} valorStr="—" cor={CORES.laranja} icone={<Stethoscope size={15} />} />
               </div>
               <SemDadosPlaceholder mensagem={`Análise de ${modo === 'turmas' ? 'Turmas' : 'Alunos'} Target — Dados não disponíveis`} />
             </>
           ) : (
             <>
-              {/* KPI Cards — 3 cards */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: 14, marginBottom: 20,
-              }}>
-                <KpiCard
-                  titulo={`TOTAL DE ${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} (INEP)`}
-                  valor={tv.totalMercado}
-                  cor={CORES.azul}
-                  subtitulo={`${modo === 'turmas' ? 'turmas' : 'matriculados'} em medicina`}
-                  icone={<Users size={15} />}
-                />
-                <KpiCard
-                  titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} TARGET (PIPEFY)`}
-                  valor={tv.totalTarget}
-                  cor={CORES.verde}
-                  subtitulo={tv.totalMercado ? `${((tv.totalTarget / tv.totalMercado) * 100).toFixed(1)}% do total INEP` : `${modo === 'turmas' ? 'turmas' : 'alunos'} do perfil target`}
-                  icone={<Target size={15} />}
-                />
-                <KpiCard
-                  titulo={`${modo === 'turmas' ? 'TURMAS' : 'ALUNOS'} VIVA (MUNDO VIVA)`}
-                  valor={tv.totalViva || null}
-                  valorStr={tv.totalViva ? fmtNum(tv.totalViva) : '—'}
-                  cor={CORES.laranja}
-                  subtitulo={(() => {
-                    const parts: string[] = [];
-                    if (tv.participacaoDoTotal) parts.push(`${fmtPct(tv.participacaoDoTotal)} do INEP`);
-                    if (tv.participacaoDoTarget) parts.push(`${fmtPct(tv.participacaoDoTarget)} do Target`);
-                    return parts.length > 0 ? parts.join(' · ') : `${modo === 'turmas' ? 'turmas' : 'alunos'} na carteira Viva`;
-                  })()}
-                  icone={<Stethoscope size={15} />}
-                />
-              </div>
+              {/* Cards de comparação — 3 ratios */}
+              {(() => {
+                const inep = tv.totalMercado || 0;
+                const tgt = tv.totalTarget;
+                const viva = tv.totalViva || 0;
+                const label = modo === 'turmas' ? 'Turmas' : 'Alunos';
+
+                const CompCard = ({ titulo, valorA, labelA, corA, valorB, labelB, corB }: {
+                  titulo: string;
+                  valorA: number; labelA: string; corA: string;
+                  valorB: number; labelB: string; corB: string;
+                }) => {
+                  const pct = valorB ? ((valorA / valorB) * 100) : 0;
+                  return (
+                    <div style={{
+                      backgroundColor: '#343A40', borderRadius: 12, padding: 20,
+                      position: 'relative', overflow: 'hidden',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                    }}>
+
+                      <p style={{
+                        color: '#ADB5BD', fontSize: '0.68rem', fontWeight: 600,
+                        textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 14px',
+                        fontFamily: "'Poppins', sans-serif",
+                      }}>
+                        {titulo}
+                      </p>
+                      {/* Dois valores lado a lado */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 14 }}>
+                        <div>
+                          <p style={{ color: '#6C757D', fontSize: '0.6rem', margin: '0 0 2px', textTransform: 'uppercase' }}>{labelA}</p>
+                          <span style={{ color: corA, fontSize: '1.6rem', fontWeight: 700, fontFamily: "'Orbitron', monospace" }}>
+                            {fmtNum(valorA)}
+                          </span>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <p style={{ color: '#6C757D', fontSize: '0.6rem', margin: '0 0 2px', textTransform: 'uppercase' }}>{labelB}</p>
+                          <span style={{ color: corB, fontSize: '1.6rem', fontWeight: 700, fontFamily: "'Orbitron', monospace" }}>
+                            {fmtNum(valorB)}
+                          </span>
+                        </div>
+                      </div>
+                      {/* Barra proporcional */}
+                      <div style={{ height: 8, backgroundColor: '#2D3238', borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
+                        <div style={{
+                          height: '100%', width: `${Math.min(pct, 100)}%`,
+                          backgroundColor: corA, borderRadius: 4,
+                          transition: 'width 0.5s ease',
+                        }} />
+                      </div>
+                      {/* Percentual */}
+                      <div style={{
+                        color: corA, fontSize: '1.4rem', fontWeight: 700,
+                        fontFamily: "'Orbitron', sans-serif", lineHeight: 1.1,
+                      }}>
+                        {pct.toFixed(1)}%
+                      </div>
+                    </div>
+                  );
+                };
+
+                return (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                    gap: 14, marginBottom: 20,
+                  }}>
+                    <CompCard
+                      titulo={`${label} Target / Mercado`}
+                      valorA={tgt} labelA={`${label} Target`} corA={CORES.verde}
+                      valorB={inep} labelB="Mercado" corB={CORES.azul}
+                    />
+                    <CompCard
+                      titulo={`Carteira Viva / Mercado`}
+                      valorA={viva} labelA="Carteira Viva" corA={CORES.laranja}
+                      valorB={inep} labelB="Mercado" corB={CORES.azul}
+                    />
+                    <CompCard
+                      titulo={`Carteira Viva / ${label} Target`}
+                      valorA={viva} labelA="Carteira Viva" corA={CORES.laranja}
+                      valorB={tgt} labelB={`${label} Target`} corB={CORES.verde}
+                    />
+                  </div>
+                );
+              })()}
 
               {/* Ranking por Franquia — Tabela */}
               <div style={{ overflowX: 'auto', border: '1px solid #495057', borderRadius: 10 }}>
@@ -744,25 +795,30 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
                     <tr style={{ backgroundColor: '#343A40', borderBottom: '2px solid #495057' }}>
                       <th style={{ textAlign: 'left', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>#</th>
                       <th style={{ textAlign: 'left', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>Franquia</th>
-                      <th style={{ textAlign: 'right', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>Matric. MED (INEP)</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>Alunos Mercado</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Target</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.laranja, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Viva</th>
-                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>% do INEP</th>
-                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>% do Target</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.roxo, fontWeight: 700 }}>% do Mercado</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>% Target / Mercado</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>% do Alunos Target</th>
                     </tr>
                   </thead>
                   <tbody>
                     {targetRankingSorted.map((r, i) => {
                       const pctInep = r.matriculadosInep ? (r.alunosViva / r.matriculadosInep * 100).toFixed(1) : '—';
+                      const pctTargetMercado = r.matriculadosInep ? (r.alunosTarget / r.matriculadosInep * 100).toFixed(1) : '—';
                       return (
                         <tr key={r.franquia} style={{ borderBottom: '1px solid #343A40', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                           <td style={{ padding: '8px 14px', color: '#6C757D' }}>{i + 1}</td>
                           <td style={{ padding: '8px 14px', color: '#F8F9FA', fontWeight: 500 }}>{r.franquia}</td>
-                          <td style={{ padding: '8px 14px', color: '#ADB5BD', textAlign: 'right' }}>{r.matriculadosInep ? fmtNum(r.matriculadosInep) : '—'}</td>
+                          <td style={{ padding: '8px 14px', color: CORES.azul, textAlign: 'right', fontWeight: 600 }}>{r.matriculadosInep ? fmtNum(r.matriculadosInep) : '—'}</td>
                           <td style={{ padding: '8px 14px', color: CORES.verde, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.alunosTarget)}</td>
                           <td style={{ padding: '8px 14px', color: CORES.laranja, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.alunosViva)}</td>
                           <td style={{ padding: '8px 14px', textAlign: 'right' }}>
-                            <span style={{ color: CORES.azul, fontWeight: 700 }}>{pctInep !== '—' ? `${pctInep}%` : '—'}</span>
+                            <span style={{ color: CORES.roxo, fontWeight: 700 }}>{pctInep !== '—' ? `${pctInep}%` : '—'}</span>
+                          </td>
+                          <td style={{ padding: '8px 14px', textAlign: 'right' }}>
+                            <span style={{ color: CORES.azul, fontWeight: 700 }}>{pctTargetMercado !== '—' ? `${pctTargetMercado}%` : '—'}</span>
                           </td>
                           <td style={{ padding: '8px 14px', textAlign: 'right' }}>
                             <span style={{ backgroundColor: `${CORES.verde}25`, color: CORES.verde, padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem' }}>

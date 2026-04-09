@@ -3,7 +3,7 @@
  * Reestruturada em 3 Blocos: Matriculados, Turmas, Target (Medicina)
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { Filter } from 'lucide-react';
@@ -13,7 +13,7 @@ import {
   AnaliseMercadoLayout,
   SecaoMarketShareV2,
 } from '@/modules/analise-mercado/components';
-import { MOCK_MARKET_SHARE_V2 } from '@/modules/analise-mercado/utils/mock-market-share-v2';
+import type { DadosMarketShareV2 } from '@/modules/analise-mercado/types';
 
 export default function MarketSharePage() {
   const router = useRouter();
@@ -26,6 +26,126 @@ export default function MarketSharePage() {
     setFiltros,
   } = useAnaliseMercado();
   const [ready, setReady] = useState(false);
+  const [marketData, setMarketData] = useState<DadosMarketShareV2 | null>(null);
+  const [loadingTarget, setLoadingTarget] = useState(true);
+
+  // Fetch real target + carteira viva + INEP Medicina data
+  const fetchTargetData = useCallback(async () => {
+    try {
+      setLoadingTarget(true);
+      const [resTarget, resViva, resInepMed, resFranquias] = await Promise.all([
+        fetch('/api/analise-mercado/target'),
+        fetch('/api/analise-mercado/carteira-viva'),
+        fetch('/api/analise-mercado/inep-medicina'),
+        fetch('/api/analise-mercado/franquias'),
+      ]);
+      const jsonTarget = await resTarget.json();
+      const jsonViva = await resViva.json();
+      const jsonInepMed = await resInepMed.json();
+      const jsonFranquias = await resFranquias.json();
+
+      // INEP total matriculados Medicina (mercado)
+      const totalMercado = jsonInepMed.total || 0;
+
+      // Build municipality → matriculas map (INEP)
+      const munMatMap = new Map<string, number>();
+      for (const m of (jsonInepMed.municipios || [])) {
+        munMatMap.set(String(m.municipio).toUpperCase(), m.matriculas);
+      }
+
+      // Build franquia → INEP matriculas map (via franquia→municípios mapping)
+      const franquiaInepMap = new Map<string, number>();
+      for (const fr of (jsonFranquias.franquias || [])) {
+        let total = 0;
+        for (const mun of (fr.municipios || [])) {
+          total += munMatMap.get(String(mun).toUpperCase()) || 0;
+        }
+        if (total > 0) franquiaInepMap.set(fr.nome, total);
+      }
+
+      // Build a map of carteira viva by franquia
+      const vivaMap = new Map<string, number>();
+      for (const f of (jsonViva.franquias || [])) {
+        vivaMap.set(f.franquia, f.alunosViva);
+      }
+      const totalViva = jsonViva.totalViva || 0;
+      const totalTarget = Math.round(jsonTarget.totalTarget || 0);
+
+      // Merge target + viva + inep per franquia
+      const rankingFranquias = (jsonTarget.franquias || []).map((f: any) => {
+        const viva = vivaMap.get(f.franquia) || 0;
+        const inep = franquiaInepMap.get(f.franquia) || 0;
+        return {
+          franquia: f.franquia,
+          alunosTarget: Math.round(f.alunosTarget),
+          alunosViva: viva,
+          participacao: f.alunosTarget > 0 ? parseFloat(((viva / f.alunosTarget) * 100).toFixed(1)) : 0,
+          matriculadosInep: inep,
+        };
+      });
+
+      const emptyRankingIes: any[] = [];
+
+      const targetAlunos = {
+        totalMercado: totalMercado,
+        totalTarget,
+        totalViva,
+        participacaoDoTotal: totalMercado > 0 ? parseFloat(((totalViva / totalMercado) * 100).toFixed(1)) : 0,
+        participacaoDoTarget: totalTarget > 0 ? parseFloat(((totalViva / totalTarget) * 100).toFixed(1)) : 0,
+        rankingFranquias,
+        rankingInstituicoes: emptyRankingIes,
+      };
+
+      const data: DadosMarketShareV2 = {
+        matriculados: {
+          totalMatriculados: 0,
+          totalCarteiraAtiva: 0,
+          participacao: 0,
+          comparativoAnual: [],
+          rankingFranquias: [],
+        },
+        turmas: {
+          totalTurmas: 0,
+          totalTurmasCarteira: 0,
+          participacao: 0,
+          comparativoAnual: [],
+          rankingFranquias: [],
+          semDados: true,
+        },
+        target: {
+          curso: 'Medicina',
+          totalAlunos: totalMercado,
+          totalAlunosTarget: totalTarget,
+          totalAlunosViva: totalViva,
+          participacaoDoTotal: totalMercado > 0 ? parseFloat(((totalViva / totalMercado) * 100).toFixed(1)) : 0,
+          participacaoDoTarget: totalTarget > 0 ? parseFloat(((totalViva / totalTarget) * 100).toFixed(1)) : 0,
+          rankingFranquias,
+          rankingInstituicoes: emptyRankingIes,
+          alunos: targetAlunos,
+          turmas: {
+            totalMercado: 0,
+            totalTarget: 0,
+            totalViva: 0,
+            participacaoDoTotal: 0,
+            participacaoDoTarget: 0,
+            rankingFranquias: [],
+            rankingInstituicoes: [],
+            semDados: true,
+          },
+        },
+      };
+
+      setMarketData(data);
+    } catch (err) {
+      console.error('[MarketShare] Erro ao carregar dados:', err);
+    } finally {
+      setLoadingTarget(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (ready) fetchTargetData();
+  }, [ready, fetchTargetData]);
 
   // Auth guard
   useEffect(() => {
@@ -36,7 +156,7 @@ export default function MarketSharePage() {
     }
   }, [isAuthenticated, authLoading, user, router, ready]);
 
-  if (authLoading || initialLoading || !ready) {
+  if (authLoading || initialLoading || !ready || loadingTarget) {
     return (
       <div style={{
         minHeight: '100vh', backgroundColor: '#212529',
@@ -157,23 +277,23 @@ export default function MarketSharePage() {
           </div>
         )}
 
-        {/* Banner dados mockados */}
+        {/* Banner dados reais - Target */}
         <div style={{
-          backgroundColor: 'rgba(245,158,11,0.1)',
-          border: '1px solid rgba(245,158,11,0.4)',
+          backgroundColor: 'rgba(16,185,129,0.1)',
+          border: '1px solid rgba(16,185,129,0.4)',
           borderRadius: 8, padding: '10px 16px', marginBottom: 16,
           display: 'flex', alignItems: 'center', gap: 10,
         }}>
-          <span style={{ fontSize: '1.1rem' }}>⚠️</span>
+          <span style={{ fontSize: '1.1rem' }}>✅</span>
           <p style={{
-            color: '#F59E0B', fontSize: '0.75rem', margin: 0,
+            color: '#10B981', fontSize: '0.75rem', margin: 0,
             fontFamily: "'Poppins', sans-serif", lineHeight: 1.5,
           }}>
-            <strong>Dados de demonstração</strong> — Os valores exibidos nesta página são fictícios e servem apenas para validação do layout. Serão substituídos por dados reais após integração.
+            <strong>Aba Market Share Medicina</strong> — Dados de Alunos Target importados da planilha real. Demais campos sem dados ainda.
           </p>
         </div>
 
-        <SecaoMarketShareV2 dados={MOCK_MARKET_SHARE_V2} modo="alunos" />
+        {marketData && <SecaoMarketShareV2 dados={marketData} modo="alunos" />}
 
         {/* Rodapé */}
         <div style={{
@@ -182,7 +302,7 @@ export default function MarketSharePage() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         }}>
           <span style={{ color: '#6C757D', fontSize: '0.68rem' }}>
-            Fonte: Dados mockados para validação
+            Fonte: Planilha Target Medicina
           </span>
           <span style={{ color: '#4a5568', fontSize: '0.65rem' }}>
             Última atualização: {new Date().toLocaleDateString('pt-BR')}

@@ -92,10 +92,22 @@ function FlyToView({ center, zoom }: { center: [number, number]; zoom: number })
   return null;
 }
 
+// ─── Pane para bolhas ficarem sempre acima do GeoJSON ───
+function EnsureBubblesPane() {
+  const map = useMap();
+  useEffect(() => {
+    if (!map.getPane('bubblesPane')) {
+      const pane = map.createPane('bubblesPane');
+      pane.style.zIndex = '650';
+    }
+  }, [map]);
+  return null;
+}
+
 // ─── Props ───
 interface MapaBrasilProps {
   dados: DadosEstado[];
-  metrica: 'matriculas' | 'concluintes' | 'turmas';
+  metrica: 'matriculas' | 'concluintes' | 'ingressantes' | 'turmas';
   cidades?: Record<string, DadosCidade[]>;
   estadoSelecionado?: string | null;
   onEstadoClick?: (uf: string) => void;
@@ -166,7 +178,13 @@ export default function MapaBrasilLeaflet({
     return { dadosMap: map, maxVal: max };
   }, [dados, metrica]);
 
-  const metricaLabel = metrica === 'matriculas' ? 'Matrículas' : metrica === 'concluintes' ? 'Concluintes' : 'Turmas';
+  const metricaLabel = metrica === 'matriculas'
+    ? 'Matrículas'
+    : metrica === 'concluintes'
+      ? 'Concluintes'
+      : metrica === 'ingressantes'
+        ? 'Ingressantes'
+        : 'Turmas';
 
   // Mesclar cidades vindas por prop + carregadas sob demanda
   const todasCidades = useMemo(() => {
@@ -372,6 +390,7 @@ export default function MapaBrasilLeaflet({
 
           {/* FlyTo para animar zoom */}
           <FlyToView center={flyTarget.center} zoom={flyTarget.zoom} />
+          <EnsureBubblesPane />
 
           {/* Choropleth GeoJSON */}
           {geoData && (
@@ -393,6 +412,7 @@ export default function MapaBrasilLeaflet({
                 key={cidade.nome}
                 center={[cidade.lat, cidade.lng]}
                 radius={r}
+                pane="bubblesPane"
                 pathOptions={{
                   fillColor: CORES.laranja,
                   fillOpacity: isTop5 ? 0.85 : (cidadesEstado.length > 100 ? 0.35 : 0.55),

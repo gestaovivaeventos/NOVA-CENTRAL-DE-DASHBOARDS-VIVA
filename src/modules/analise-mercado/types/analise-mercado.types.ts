@@ -94,6 +94,7 @@ export interface DadosEstado {
   nome: string;
   matriculas: number;
   concluintes: number;
+  ingressantes: number;
   turmas: number;
   instituicoes: number;
   percentual: number;

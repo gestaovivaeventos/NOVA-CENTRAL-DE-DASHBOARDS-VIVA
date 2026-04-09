@@ -24,6 +24,7 @@ import {
   getMunicipiosFranquia,
 } from '../utils/sheets-queries';
 import type { FranquiaMunicipios } from '../utils/sheets-queries';
+import { fixText } from '../utils/fix-encoding';
 
 /** Converter tipoInstituicao (string) → tp_rede (number) para filtro */
 function redeToNumber(tipo: TipoInstituicao): number | null {
@@ -37,6 +38,46 @@ function modalidadeToNumber(mod: TipoModalidade): number | null {
   if (mod === 'presencial') return 1;
   if (mod === 'ead') return 2;
   return null;
+}
+
+function normalizarMunicipio(value: string): string {
+  return fixText(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+function detectarUfFranquia(
+  franquiaId: string | null,
+  franquiasData: FranquiaMunicipios[],
+  cidadesPorEstado: DadosAnaliseMercado['cidadesPorEstado'],
+): string | null {
+  if (!franquiaId || franquiasData.length === 0) return null;
+
+  const municipiosFranquia = getMunicipiosFranquia(franquiaId, franquiasData);
+  if (municipiosFranquia.length === 0) return null;
+
+  const municipiosParaUf = new Map<string, Set<string>>();
+  for (const [uf, cidades] of Object.entries(cidadesPorEstado)) {
+    for (const cidade of cidades) {
+      const key = normalizarMunicipio(cidade.nome);
+      if (!key) continue;
+      if (!municipiosParaUf.has(key)) municipiosParaUf.set(key, new Set());
+      municipiosParaUf.get(key)!.add(uf);
+    }
+  }
+
+  const ufsEncontradas = new Set<string>();
+  for (const municipio of municipiosFranquia) {
+    const ufsMunicipio = municipiosParaUf.get(normalizarMunicipio(municipio));
+    if (ufsMunicipio && ufsMunicipio.size === 1) {
+      ufsEncontradas.add(Array.from(ufsMunicipio)[0]);
+    }
+  }
+
+  return ufsEncontradas.size === 1 ? Array.from(ufsEncontradas)[0] : null;
 }
 
 /** Estado vazio — exibe "-" nos cards e gráficos até dados carregarem */
@@ -199,6 +240,23 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
     };
   }, [filtros.ano, filtros.tipoInstituicao, filtros.modalidade, filtros.estado, filtros.municipio, filtros.instituicaoId, filtros.curso, filtros.franquiaId, franquiasData, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (!filtros.franquiaId || filtros.estado) return;
+
+    const ufFranquia = detectarUfFranquia(
+      filtros.franquiaId,
+      franquiasData,
+      dadosBase.cidadesPorEstado,
+    );
+
+    if (!ufFranquia) return;
+
+    setFiltrosState(prev => {
+      if (prev.franquiaId !== filtros.franquiaId || prev.estado === ufFranquia) return prev;
+      return { ...prev, estado: ufFranquia };
+    });
+  }, [filtros.franquiaId, filtros.estado, franquiasData, dadosBase.cidadesPorEstado]);
+
   // ──── Cascading resets na hierarquia ────
   const setFiltros = useCallback((patch: Partial<FiltrosAnaliseMercado>) => {
     setFiltrosState(prev => {
@@ -207,8 +265,8 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
       // Hierarquia: Franquia → Ano → Estado → Município → Rede → Modalidade → Instituição → Curso
       // Mudar um nível reseta todos os níveis abaixo
       if ('franquiaId' in patch && patch.franquiaId !== prev.franquiaId) {
-        // Franquia muda → limpa filtros geográficos subordinados
-        next.estado = null;
+        // Franquia muda → tenta identificar a UF automaticamente e limpa filtros subordinados
+        next.estado = detectarUfFranquia(patch.franquiaId, franquiasData, dadosBase.cidadesPorEstado);
         next.municipio = null;
         next.tipoInstituicao = 'todos';
         next.modalidade = 'todos';
@@ -250,7 +308,7 @@ export function useAnaliseMercado(): UseAnaliseMercadoReturn {
 
       return next;
     });
-  }, []);
+  }, [franquiasData, dadosBase.cidadesPorEstado]);
 
   // ──── Listas derivadas para dropdowns ────
 
