@@ -141,12 +141,12 @@ type TabId = 'alunos' | 'turmas' | 'target';
 
 const TABS_ALUNOS: { id: TabId; label: string; icone: React.ReactNode; cor: string }[] = [
   { id: 'alunos', label: 'Market Share Aluno', icone: <Users size={14} />, cor: CORES.azul },
-  { id: 'target', label: 'Target', icone: <Target size={14} />, cor: CORES.verde },
+  { id: 'target', label: 'Market Share Medicina', icone: <Target size={14} />, cor: CORES.verde },
 ];
 
 const TABS_TURMAS: { id: TabId; label: string; icone: React.ReactNode; cor: string }[] = [
   { id: 'turmas', label: 'Market Share Turma', icone: <GraduationCap size={14} />, cor: CORES.roxo },
-  { id: 'target', label: 'Target', icone: <Target size={14} />, cor: CORES.verde },
+  { id: 'target', label: 'Market Share Medicina', icone: <Target size={14} />, cor: CORES.verde },
 ];
 
 // ─── Component ──────────────────────────────
@@ -721,7 +721,7 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
                       position: 'relative', overflow: 'hidden',
                       boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
                     }}>
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: `linear-gradient(90deg, ${corA}, ${corB})` }} />
+
                       <p style={{
                         color: '#ADB5BD', fontSize: '0.68rem', fontWeight: 600,
                         textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 14px',
@@ -795,25 +795,30 @@ export default function SecaoMarketShareV2({ dados, modo }: SecaoMarketShareV2Pr
                     <tr style={{ backgroundColor: '#343A40', borderBottom: '2px solid #495057' }}>
                       <th style={{ textAlign: 'left', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>#</th>
                       <th style={{ textAlign: 'left', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>Franquia</th>
-                      <th style={{ textAlign: 'right', padding: '10px 14px', color: '#ADB5BD', fontWeight: 700 }}>Matric. MED (Mercado)</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>Alunos Mercado</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Target</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.laranja, fontWeight: 700 }}>{modo === 'turmas' ? 'Turmas' : 'Alunos'} Viva</th>
-                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>% do Mercado</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.roxo, fontWeight: 700 }}>% do Mercado</th>
+                      <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.azul, fontWeight: 700 }}>% Target / Mercado</th>
                       <th style={{ textAlign: 'right', padding: '10px 14px', color: CORES.verde, fontWeight: 700 }}>% do Alunos Target</th>
                     </tr>
                   </thead>
                   <tbody>
                     {targetRankingSorted.map((r, i) => {
                       const pctInep = r.matriculadosInep ? (r.alunosViva / r.matriculadosInep * 100).toFixed(1) : '—';
+                      const pctTargetMercado = r.matriculadosInep ? (r.alunosTarget / r.matriculadosInep * 100).toFixed(1) : '—';
                       return (
                         <tr key={r.franquia} style={{ borderBottom: '1px solid #343A40', backgroundColor: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
                           <td style={{ padding: '8px 14px', color: '#6C757D' }}>{i + 1}</td>
                           <td style={{ padding: '8px 14px', color: '#F8F9FA', fontWeight: 500 }}>{r.franquia}</td>
-                          <td style={{ padding: '8px 14px', color: '#ADB5BD', textAlign: 'right' }}>{r.matriculadosInep ? fmtNum(r.matriculadosInep) : '—'}</td>
+                          <td style={{ padding: '8px 14px', color: CORES.azul, textAlign: 'right', fontWeight: 600 }}>{r.matriculadosInep ? fmtNum(r.matriculadosInep) : '—'}</td>
                           <td style={{ padding: '8px 14px', color: CORES.verde, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.alunosTarget)}</td>
                           <td style={{ padding: '8px 14px', color: CORES.laranja, textAlign: 'right', fontWeight: 600 }}>{fmtNum(r.alunosViva)}</td>
                           <td style={{ padding: '8px 14px', textAlign: 'right' }}>
-                            <span style={{ color: CORES.azul, fontWeight: 700 }}>{pctInep !== '—' ? `${pctInep}%` : '—'}</span>
+                            <span style={{ color: CORES.roxo, fontWeight: 700 }}>{pctInep !== '—' ? `${pctInep}%` : '—'}</span>
+                          </td>
+                          <td style={{ padding: '8px 14px', textAlign: 'right' }}>
+                            <span style={{ color: CORES.azul, fontWeight: 700 }}>{pctTargetMercado !== '—' ? `${pctTargetMercado}%` : '—'}</span>
                           </td>
                           <td style={{ padding: '8px 14px', textAlign: 'right' }}>
                             <span style={{ backgroundColor: `${CORES.verde}25`, color: CORES.verde, padding: '2px 8px', borderRadius: 4, fontWeight: 700, fontSize: '0.75rem' }}>
