@@ -186,6 +186,22 @@ function processOkrsData(rows: any[][]): OkrData[] {
 // Processar dados do NOVO PAINEL OKR
 function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias: string[] } {
   if (rows.length < 2) return { data: [], competencias: [] };
+
+  // Parser de números que lida com formatação brasileira (16.000,00) e inglesa (16000.00)
+  const parseNumBR = (val: any): number => {
+    if (val === null || val === undefined) return 0;
+    if (typeof val === 'number') return val;
+    let str = String(val).replace('%', '').trim();
+    if (!str) return 0;
+    // Se tem tanto . quanto , → formato brasileiro: remover . (milhar) e trocar , por . (decimal)
+    if (str.includes('.') && str.includes(',')) {
+      str = str.replace(/\./g, '').replace(',', '.');
+    } else if (str.includes(',')) {
+      // Só vírgula → trocar por ponto decimal
+      str = str.replace(',', '.');
+    }
+    return parseFloat(str) || 0;
+  };
   
   const colData = 0;       // Coluna A: DATA
   const colTime = 1;       // Coluna B: TIME
@@ -197,6 +213,7 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
   const colRealizado = 8;  // Coluna I: REALIZADO
   const colAtingimento = 9; // Coluna J: ATINGIMENTO
   const colQuarter = 10;   // Coluna K: QUARTER
+  const colTendencia = 11;  // Coluna L: TENDENCIA
   const colMedida = 12;    // Coluna M: MEDIDA
   const colFormaDeMedir = 13; // Coluna N: FORMA DE MEDIR
   const colChave = 14;     // Coluna O: CHAVE (identificador único do KR)
@@ -232,26 +249,25 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
     const chaveUnica = chaveOriginal || `${objetivo}||${indicadorNome}`;
     
     // Meta (coluna H)
-    const metaStr = row[colMeta] ? String(row[colMeta]).replace('%', '').replace(',', '.').trim() : '';
-    const metaNum = parseFloat(metaStr) || 0;
+    const metaNum = parseNumBR(row[colMeta]);
     
     // Realizado (coluna I)
-    const realizadoStr = row[colRealizado] ? String(row[colRealizado]).replace('%', '').replace(',', '.').trim() : '';
-    const realizadoNum = parseFloat(realizadoStr) || 0;
+    const realizadoNum = parseNumBR(row[colRealizado]);
     
     // Atingimento Real (coluna R) - limitado a 100%
-    const atingStr = row[colAtingReal] ? String(row[colAtingReal]).replace('%', '').replace(',', '.').trim() : '';
-    const atingNum = parseFloat(atingStr) || 0;
+    const atingNum = parseNumBR(row[colAtingReal]);
     
     // Atingimento Meta Mês (coluna Q)
-    const atingMetaMesStr = row[colAtingMetaMes] ? String(row[colAtingMetaMes]).replace('%', '').replace(',', '.').trim() : '';
-    const atingMetaMesNum = parseFloat(atingMetaMesStr) || 0;
+    const atingMetaMesNum = parseNumBR(row[colAtingMetaMes]);
     
     // Forma de Medir (coluna N)
     const formaDeMedir = row[colFormaDeMedir] ? String(row[colFormaDeMedir]).trim().toUpperCase() : '';
     
     // Medida (coluna M) - MOEDA, PORCENTAGEM, NÚMERO INTEIRO
     const medida = row[colMedida] ? String(row[colMedida]).trim().toUpperCase() : '';
+    
+    // Tendência (coluna L) - AUMENTAR, DIMINUIR
+    const tendencia = row[colTendencia] ? String(row[colTendencia]).trim().toUpperCase() : '';
     
     if (time && indicadorNome) {
       processedData.push({
@@ -268,7 +284,8 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
         atingReal: atingNum,
         atingMetaMes: atingMetaMesNum,
         formaDeMedir: formaDeMedir,
-        medida: medida
+        medida: medida,
+        tendencia: tendencia
       });
     }
   });

@@ -12,8 +12,10 @@ import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMer
 import {
   AnaliseMercadoLayout,
   SecaoMarketShareV2,
+  PopupDadosInfo,
 } from '@/modules/analise-mercado/components';
 import { MOCK_MARKET_SHARE_V2 } from '@/modules/analise-mercado/utils/mock-market-share-v2';
+import type { DadosMarketShareV2 } from '@/modules/analise-mercado/types';
 
 export default function MarketShareTurmasPage() {
   const router = useRouter();
@@ -158,22 +160,26 @@ export default function MarketShareTurmasPage() {
         )}
 
         {/* Banner dados mockados */}
-        <div style={{
-          backgroundColor: 'rgba(245,158,11,0.1)',
-          border: '1px solid rgba(245,158,11,0.4)',
-          borderRadius: 8, padding: '10px 16px', marginBottom: 16,
-          display: 'flex', alignItems: 'center', gap: 10,
-        }}>
-          <span style={{ fontSize: '1.1rem' }}>⚠️</span>
-          <p style={{
-            color: '#F59E0B', fontSize: '0.75rem', margin: 0,
-            fontFamily: "'Poppins', sans-serif", lineHeight: 1.5,
-          }}>
-            <strong>Dados de demonstração</strong> — Os valores exibidos nesta página são fictícios e servem apenas para validação do layout. Serão substituídos por dados reais após integração.
-          </p>
-        </div>
 
-        <SecaoMarketShareV2 dados={MOCK_MARKET_SHARE_V2} modo="turmas" />
+        <PopupDadosInfo
+          storageKey="market-share-turmas"
+          dados={[
+            { label: 'Aba Market Share Turma — Aguardando integração', tipo: 'desenvolvimento' },
+            { label: 'Aba Market Share Medicina — Dados de demonstração', tipo: 'mockado' },
+          ]}
+        />
+
+        <SecaoMarketShareV2 dados={{
+          ...MOCK_MARKET_SHARE_V2,
+          turmas: {
+            totalTurmas: 0,
+            totalTurmasCarteira: 0,
+            participacao: 0,
+            comparativoAnual: [],
+            rankingFranquias: [],
+            semDados: true,
+          },
+        } as DadosMarketShareV2} modo="turmas" />
 
         {/* Rodapé */}
         <div style={{

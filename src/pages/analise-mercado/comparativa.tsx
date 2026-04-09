@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useAuth } from '@/context/AuthContext';
 import { useAnaliseMercado } from '@/modules/analise-mercado/hooks/useAnaliseMercado';
-import { AnaliseMercadoLayout, CardIndicador, SecaoTurmasMock } from '@/modules/analise-mercado/components';
+import { AnaliseMercadoLayout, CardIndicador, SecaoTurmasMock, PopupDadosInfo } from '@/modules/analise-mercado/components';
 import FiltroComBusca from '@/modules/analise-mercado/components/FiltroComBusca';
 import SecaoComparativaTurmas from '@/modules/analise-mercado/components/SecaoComparativaTurmas';
 import { Filter, BarChart3, TrendingUp } from 'lucide-react';
@@ -331,16 +331,13 @@ export default function ComparativaPage() {
         </div>
 
         {/* Alerta mock */}
-        <div style={{
-          backgroundColor: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)',
-          borderRadius: 6, padding: '8px 16px', marginBottom: 16,
-          display: 'flex', alignItems: 'center', gap: 10,
-        }}>
-          <span>⚠️</span>
-          <p style={{ color: '#F59E0B', fontSize: '0.75rem', margin: 0 }}>
-            <strong>Dados Mockados</strong> — Os dados de turmas exibidos são estimativas para fins de layout. Serão substituídos por dados reais quando disponíveis.
-          </p>
-        </div>
+        <PopupDadosInfo
+          storageKey="mercado-potencial-turma"
+          dados={[
+            { label: 'Visão do Ano — Dados de demonstração', tipo: 'mockado' },
+            { label: 'Comparativo Anual — Dados de demonstração', tipo: 'mockado' },
+          ]}
+        />
 
         {/* KPI Cards — apenas Visão do Ano */}
         {abaAtiva === 'visao-ano' && (

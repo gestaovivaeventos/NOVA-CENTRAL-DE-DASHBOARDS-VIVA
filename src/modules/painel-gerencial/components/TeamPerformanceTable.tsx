@@ -97,7 +97,7 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     'FEAT E GROWTH': ['FEAT | GROWTH'],
     'SQUAD FORNECEDORES': ['FORNECEDORES'],
     'GESTÃO': ['GESTÃO'],
-    'GESTÃO DE PESSOAS': ['GP'],
+    'GESTÃO DE PESSOAS': ['GESTÃO DE PESSOAS', 'GP'],
     'MARKETING': ['MARKETING'],
     'MARKETING E GROWTH': ['MARKETING E GROWTH', 'MARKETING'],
     'PÓS VENDA - CAF': ['POS VENDA'],
@@ -316,8 +316,9 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
         return timeMatch;
       }
       
-      // Caso contrário, filtrar apenas pelo mês exato da competência
-      if (mes !== mesCompetencia) return false;
+      // Trazer todos os meses até a competência selecionada (para ACUMULADO funcionar)
+      // O getOkrsAgrupados vai usar só o último mês para não-ACUMULADO
+      if (mes > mesCompetencia) return false;
       
       return timeMatch;
     });
@@ -367,6 +368,7 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     data: string;
     formaDeMedir: string;
     medida: string;
+    tendencia: string;
   };
   
   // Tipo para OKRs agrupados por objetivo dentro de um quarter
@@ -408,21 +410,33 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
       const ultimo = sorted[0];
       const formaDeMedir = ultimo.formaDeMedir || '';
       const medida = ultimo.medida || '';
+      const tendencia = ultimo.tendencia || '';
       const objetivo = ultimo.objetivo || 'Sem Objetivo';
       const idOkr = ultimo.idOkr || 0;
       const idKr = ultimo.idKr || 0;
       const quarter = ultimo.quarter || 0;
       
-      // Se FORMA DE MEDIR for ACUMULADO, somar meta e realizado de todo o período
-      if (formaDeMedir === 'ACUMULADO') {
+      // Se FORMA DE MEDIR for ACUMULADO (ou ACUMULADO NO ANO), somar meta e realizado de todo o período
+      if (formaDeMedir.includes('ACUMULADO')) {
         const metaTotal = okrData.reduce((acc, okr) => acc + okr.meta, 0);
         const realizadoTotal = okrData.reduce((acc, okr) => acc + okr.realizado, 0);
         
         // Se meta e realizado forem 0, atingimento é null
         let atingimento: number | null = null;
         if (metaTotal > 0 || realizadoTotal > 0) {
-          const atingimentoRaw = ultimo.atingMetaMes || 0;
-          atingimento = Math.min(atingimentoRaw, 100);
+          // Se meta=0, realizado>=0 e tendência AUMENTAR → atingimento = null (exibe "-")
+          const tendUpper = tendencia?.toUpperCase() || '';
+          if (metaTotal === 0 && realizadoTotal >= 0 && (tendUpper.includes('AUMENTAR') || tendUpper.includes('MAIOR'))) {
+            atingimento = null;
+          } else {
+            // Calcular atingimento a partir dos valores acumulados (não usar atingMetaMes do último mês)
+            const isMenorMelhor = tendUpper.includes('MENOR');
+            if (isMenorMelhor) {
+              atingimento = realizadoTotal > 0 ? Math.min((metaTotal / realizadoTotal) * 100, 100) : 0;
+            } else {
+              atingimento = metaTotal > 0 ? Math.min((realizadoTotal / metaTotal) * 100, 100) : 0;
+            }
+          }
         }
         
         return {
@@ -436,7 +450,37 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
           atingimento: atingimento,
           data: ultimo.data,
           formaDeMedir,
-          medida
+          medida,
+          tendencia
+        };
+      }
+      
+      // Se FORMA DE MEDIR for DEGRAU, calcular média dos realizados
+      if (formaDeMedir === 'DEGRAU') {
+        const metaUltimo = ultimo.meta;
+        const realizadosComValor = okrData.filter(okr => okr.realizado > 0 || okr.meta > 0);
+        const mediaRealizado = realizadosComValor.length > 0
+          ? realizadosComValor.reduce((acc, okr) => acc + okr.realizado, 0) / realizadosComValor.length
+          : 0;
+        
+        let atingimento: number | null = null;
+        if (metaUltimo > 0 || mediaRealizado > 0) {
+          atingimento = metaUltimo > 0 ? Math.min((mediaRealizado / metaUltimo) * 100, 100) : 0;
+        }
+        
+        return {
+          indicadorNome,
+          objetivo,
+          idOkr,
+          idKr,
+          quarter,
+          meta: metaUltimo,
+          realizado: Math.round(mediaRealizado * 100) / 100,
+          atingimento,
+          data: ultimo.data,
+          formaDeMedir,
+          medida,
+          tendencia
         };
       }
       
@@ -444,8 +488,14 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
       // Se meta e realizado forem 0, atingimento é null
       let atingimento: number | null = null;
       if (ultimo.meta > 0 || ultimo.realizado > 0) {
-        const atingimentoRaw = ultimo.atingMetaMes || 0;
-        atingimento = Math.min(atingimentoRaw, 100);
+        // Se meta=0, realizado>=0 e tendência AUMENTAR → atingimento = null (exibe "-")
+        const tendUpper = tendencia?.toUpperCase() || '';
+        if (ultimo.meta === 0 && ultimo.realizado >= 0 && (tendUpper.includes('AUMENTAR') || tendUpper.includes('MAIOR'))) {
+          atingimento = null;
+        } else {
+          const atingimentoRaw = ultimo.atingMetaMes || 0;
+          atingimento = Math.min(atingimentoRaw, 100);
+        }
       }
       
       return {
@@ -459,7 +509,8 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
         atingimento: atingimento,
         data: ultimo.data,
         formaDeMedir,
-        medida
+        medida,
+        tendencia
       };
     });
     
@@ -544,10 +595,16 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     // Usar getOkrsAgrupados para ter a mesma lógica da tabela expandida
     const okrsAgrupados = getOkrsAgrupados(teamOkrs);
     
-    // Pegar atingimentos não-null (já estão limitados a 100% no getOkrsAgrupados)
+    // Pegar atingimentos não-null, excluindo KRs onde meta=0, realizado>=0 e tendência AUMENTAR
     const atingimentos = okrsAgrupados
-      .map(okr => okr.atingimento)
-      .filter((a): a is number => a !== null && a > 0);
+      .filter(okr => {
+        if (okr.atingimento === null) return false;
+        // Excluir da média: meta=0, realizado>=0, tendência AUMENTAR
+        const tend = okr.tendencia?.toUpperCase() || '';
+        if (okr.meta === 0 && okr.realizado >= 0 && (tend.includes('MAIOR') || tend.includes('AUMENTAR'))) return false;
+        return true;
+      })
+      .map(okr => okr.atingimento!);
     
     if (atingimentos.length === 0) return null;
     return atingimentos.reduce((acc, a) => acc + a, 0) / atingimentos.length;
@@ -930,9 +987,16 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                                             </thead>
                                             <tbody>
                                               {okrsPorQuarter.map((quarterGroup, quarterIndex) => {
-                                                // Calcular média de atingimento do quarter (ignorando atingimentos null)
+                                                // Calcular média de atingimento do quarter
+                                                // Ignorar atingimentos null E KRs onde meta=0, realizado>=0 e tendência é AUMENTAR
                                                 const todosIndicadores = quarterGroup.objetivos.flatMap(obj => obj.indicadores);
-                                                const indicadoresComAtingimento = todosIndicadores.filter(okr => okr.atingimento !== null);
+                                                const indicadoresComAtingimento = todosIndicadores.filter(okr => {
+                                                  if (okr.atingimento === null) return false;
+                                                  // Excluir da média: meta=0, realizado>=0, tendência AUMENTAR (MAIOR, MELHOR)
+                                                  const tend = okr.tendencia?.toUpperCase() || '';
+                                                  if (okr.meta === 0 && okr.realizado >= 0 && (tend.includes('MAIOR') || tend.includes('AUMENTAR'))) return false;
+                                                  return true;
+                                                });
                                                 const mediaQuarter = indicadoresComAtingimento.length > 0
                                                   ? indicadoresComAtingimento.reduce((acc, okr) => acc + (okr.atingimento || 0), 0) / indicadoresComAtingimento.length
                                                   : null;
