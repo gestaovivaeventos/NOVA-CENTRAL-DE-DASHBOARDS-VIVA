@@ -60,22 +60,9 @@ const INITIAL_FILTROS: FiltrosExpansao = {
   periodoSelecionado: 'esteanoateagora',
 };
 
-const FILTROS_STORAGE_KEY = 'funilExpansaoFiltros';
-
-function loadFiltrosFromStorage(): FiltrosExpansao {
-  if (typeof window === 'undefined') return INITIAL_FILTROS;
-  try {
-    const saved = localStorage.getItem(FILTROS_STORAGE_KEY);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Validar que tem as propriedades esperadas
-      if (parsed.periodoInicio !== undefined && parsed.periodoFim !== undefined) {
-        return { ...INITIAL_FILTROS, ...parsed };
-      }
-    }
-  } catch {}
-  return INITIAL_FILTROS;
-}
+// Variável de escopo de módulo: persiste entre sub-páginas (client-side nav)
+// mas reseta no refresh (módulo é reavaliado)
+let _filtrosCache: FiltrosExpansao | null = null;
 
 export default function FunilExpansaoDashboard() {
   const router = useRouter();
@@ -92,19 +79,33 @@ export default function FunilExpansaoDashboard() {
   const [paginaAtiva, setPaginaAtiva] = useState<PaginaAtivaExpansao>(() => getPaginaFromPath(router.asPath));
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [filtros, setFiltros] = useState<FiltrosExpansao>(loadFiltrosFromStorage);
+  const [filtros, setFiltros] = useState<FiltrosExpansao>(() => _filtrosCache ?? INITIAL_FILTROS);
   const [sharedActiveSeries, setSharedActiveSeries] = useState<Set<SeriesKey>>(new Set(['geral', 'mql', 'sql']));
 
-  // Persistir filtros no localStorage
+  // Sincronizar cache do módulo quando filtros mudam
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(FILTROS_STORAGE_KEY, JSON.stringify(filtros));
-    }
+    _filtrosCache = filtros;
   }, [filtros]);
+
+  // Limpar cache ao sair do módulo
+  useEffect(() => {
+    const handleRouteChange = (url: string) => {
+      if (!url.startsWith('/funil-expansao')) {
+        _filtrosCache = null;
+      }
+    };
+    router.events.on('routeChangeStart', handleRouteChange);
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChange);
+    };
+  }, [router.events]);
 
   // Client-side init
   useEffect(() => {
     setIsClient(true);
+    // Limpar filtros antigos do storage (migração)
+    localStorage.removeItem('funilExpansaoFiltros');
+    sessionStorage.removeItem('funilExpansaoFiltros');
     const saved = localStorage.getItem('funilExpansaoSidebarCollapsed');
     if (saved === 'true') setSidebarCollapsed(true);
   }, []);
