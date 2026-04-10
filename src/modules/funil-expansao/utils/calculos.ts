@@ -325,13 +325,23 @@ export function agruparPorOrigem(leads: LeadExpansao[]): DadosPorOrigem[] {
     .sort((a, b) => b.geral - a.geral);
 }
 
-/** Calcula assertividade de territorio (inclui leads sem valor como 'Sem etiqueta') */
+/** Normaliza categoria de assertividade: unifica 'Campo vazio' e 'Sem Validação' */
+function normalizarCategoriaAssertividade(valor: string): string {
+  if (!valor || valor.trim() === '') return 'Campo vazio ou Sem Validação';
+  const upper = valor.toUpperCase().trim();
+  if (upper === 'CAMPO VAZIO' || upper === 'SEM VALIDACAO' || upper === 'SEM VALIDAÇÃO') {
+    return 'Campo vazio ou Sem Validação';
+  }
+  return valor;
+}
+
+/** Calcula assertividade de territorio (inclui leads sem valor como 'Campo vazio ou Sem Validação') */
 export function calcularAssertividadeTerritorio(leads: LeadExpansao[]): DadosAssertividade[] {
   const map = new Map<string, number>();
   const total = leads.length;
 
   for (const lead of leads) {
-    const cat = (lead.assertividadeTerritorio && lead.assertividadeTerritorio.trim() !== '') ? lead.assertividadeTerritorio : 'Campo vazio';
+    const cat = normalizarCategoriaAssertividade(lead.assertividadeTerritorio);
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 
@@ -344,13 +354,13 @@ export function calcularAssertividadeTerritorio(leads: LeadExpansao[]): DadosAss
     .sort((a, b) => b.quantidade - a.quantidade);
 }
 
-/** Calcula assertividade de persona (inclui leads sem valor como 'Sem etiqueta') */
+/** Calcula assertividade de persona (inclui leads sem valor como 'Campo vazio ou Sem Validação') */
 export function calcularAssertividadePersona(leads: LeadExpansao[]): DadosAssertividade[] {
   const map = new Map<string, number>();
   const total = leads.length;
 
   for (const lead of leads) {
-    const cat = (lead.assertividadePersona && lead.assertividadePersona.trim() !== '') ? lead.assertividadePersona : 'Campo vazio';
+    const cat = normalizarCategoriaAssertividade(lead.assertividadePersona);
     map.set(cat, (map.get(cat) || 0) + 1);
   }
 
@@ -632,14 +642,19 @@ export function agruparPorCidade(leads: LeadExpansao[]): CandidatoCidade[] {
   return Array.from(map.entries())
     .map(([cidade, vals]) => {
       const t = vals.investidorTotal + vals.investidorParcial + vals.opVendaSem + vals.opVendaParcial + vals.opVendaTotal + vals.opPosVendaSem + vals.opPosVendaParcial + vals.semPerfil;
-      const hasInvestidor = (vals.investidorTotal + vals.investidorParcial) > 0;
-      const hasOperador = (vals.opVendaSem + vals.opVendaParcial + vals.opVendaTotal + vals.opPosVendaSem + vals.opPosVendaParcial) > 0;
+      // Match: combinações válidas de perfis
+      // 1) INVESTIDOR TOTAL + (OP. VENDA c/ inv. parcial OU OP. VENDA s/ inv.)
+      // 2) INVESTIDOR PARCIAL + OP. VENDA c/ inv. parcial
+      // 3) OP. VENDA c/ inv. parcial + OP. PÓS-VENDA c/ inv. parcial
+      const match1 = vals.investidorTotal > 0 && (vals.opVendaParcial > 0 || vals.opVendaSem > 0);
+      const match2 = vals.investidorParcial > 0 && vals.opVendaParcial > 0;
+      const match3 = vals.opVendaParcial > 0 && vals.opPosVendaParcial > 0;
       return {
         cidade,
         ...vals,
         total: t,
         percentual: total > 0 ? (t / total) * 100 : 0,
-        temOportunidade: hasInvestidor && hasOperador,
+        temOportunidade: match1 || match2 || match3,
       };
     })
     .sort((a, b) => b.total - a.total);
