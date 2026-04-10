@@ -11,6 +11,25 @@ import { useSheetsData, Card, PexLayout } from '@/modules/pex';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
 
+// Helper para parsear data do histórico (DD/MM/AAAA)
+function parseDateHistorico(data: string): { mes: number; ano: number } | null {
+  if (!data) return null;
+  const partes = data.split('/');
+  if (partes.length !== 3) return null;
+  const mes = parseInt(partes[1], 10);
+  const ano = parseInt(partes[2], 10);
+  if (isNaN(mes) || isNaN(ano)) return null;
+  return { mes, ano };
+}
+
+// Helper para obter pontuacao_com_bonus de um item do histórico
+function parsePontuacaoHistorico(item: any): number {
+  const val = item?.pontuacao_com_bonus;
+  if (!val) return 0;
+  const num = parseFloat(String(val).replace(',', '.'));
+  return isNaN(num) ? 0 : num;
+}
+
 // Componente de Medalha Minimalista
 const PositionBadge = ({ position }: { position: number }) => {
   if (position > 3) return null;
@@ -70,6 +89,25 @@ export default function RankingPage() {
   
   // Nome dinâmico da coluna do consultor
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
+  
+  // Dados do histórico mensal (mesma fonte da página de resultados)
+  const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
+  const [loadingHistorico, setLoadingHistorico] = useState(true);
+  
+  // Carregar histórico mensal
+  useEffect(() => {
+    setLoadingHistorico(true);
+    fetch('/api/pex/historico')
+      .then(res => res.ok ? res.json() : [])
+      .then(data => {
+        setDadosHistorico(data);
+        setLoadingHistorico(false);
+      })
+      .catch(() => {
+        setDadosHistorico([]);
+        setLoadingHistorico(false);
+      });
+  }, []);
 
   // Listas para os filtros
   const listaQuarters = useMemo(() => {
@@ -154,55 +192,47 @@ export default function RankingPage() {
     return clusterUpper.includes('INCUBA');
   };
 
-  // Calcular ranking por média de quarters ATIVOS apenas
+  // Calcular ranking por média MENSAL do ciclo vigente (mesma lógica da página de resultados)
   const rankingGeral = useMemo(() => {
-    if (!dadosBrutos || dadosBrutos.length === 0) return [];
+    if (!dadosHistorico || dadosHistorico.length === 0) return [];
 
-    // Filtrar apenas quarters ativos
-    const dadosAtivos = dadosBrutos.filter(item => 
-      (item.quarter_ativo || '').toString().toLowerCase() === 'ativo'
-    );
+    const anoAtual = new Date().getFullYear();
 
-    // Agrupar por unidade e calcular média de quarters ativos
-    const unidadesComMedia = new Map<string, { 
-      soma: number; 
-      count: number; 
-      cluster?: string;
-      consultor?: string;
-    }>();
-
-    dadosAtivos.forEach(item => {
-      const unidade = item.nm_unidade;
-      const pontos = parseFloat((item['pontuacao_com_bonus'] || '0').toString().replace(',', '.')) || 0;
-      
-      if (!unidadesComMedia.has(unidade)) {
-        unidadesComMedia.set(unidade, { 
-          soma: 0, 
-          count: 0, 
-          cluster: item.cluster,
-          consultor: item[nomeColunaConsultor]
-        });
+    // Filtrar registros vigentes do histórico (mesma lógica de resultados.tsx)
+    const registrosVigentes = dadosHistorico.filter(item => {
+      const parsed = parseDateHistorico(item.data);
+      if (!parsed) return false;
+      // Para 2026 (primeiro ano): meses 1-9 do ano 2026
+      if (anoAtual === 2026) {
+        return parsed.ano === 2026 && parsed.mes >= 1 && parsed.mes <= 9;
       }
-      
-      const dados = unidadesComMedia.get(unidade)!;
-      dados.soma += pontos;
-      dados.count += 1;
+      // Próximos anos: ciclo Set(anoAnterior) a Set(anoAtual)
+      return (parsed.ano === anoAtual - 1 && parsed.mes >= 9) || 
+             (parsed.ano === anoAtual && parsed.mes <= 9);
     });
 
-    // Criar ranking com médias
-    return Array.from(unidadesComMedia.entries())
-      .map(([unidade, dados]) => ({
-        unidade,
-        media: dados.count > 0 ? dados.soma / dados.count : 0,
-        cluster: dados.cluster,
-        consultor: dados.consultor
-      }))
+    // Agrupar por unidade e calcular média mensal
+    const unidadesUnicas = Array.from(new Set(registrosVigentes.map(item => item.nm_unidade)));
+
+    const mediasPorUnidade = unidadesUnicas.map(unidade => {
+      const registros = registrosVigentes.filter(item => item.nm_unidade === unidade);
+      const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
+      const media = registros.length > 0 ? soma / registros.length : 0;
+      const cluster = registros[0]?.cluster || '';
+      // Buscar consultor do dadosBrutos (mais confiável para nome da coluna)
+      const itemBruto = dadosBrutos?.find(d => d.nm_unidade === unidade);
+      const consultor = itemBruto ? itemBruto[nomeColunaConsultor] : (registros[0]?.consultor || '');
+      return { unidade, media, cluster, consultor };
+    });
+
+    // Criar ranking ordenado por média (maior primeiro)
+    return mediasPorUnidade
       .sort((a, b) => b.media - a.media)
       .map((item, index) => ({
         ...item,
         posicao: index + 1
       }));
-  }, [dadosBrutos, nomeColunaConsultor]);
+  }, [dadosHistorico, dadosBrutos, nomeColunaConsultor]);
 
   // Ranking apenas de franquias MADURAS (não INCUBAÇÃO)
   const rankingMaduras = useMemo(() => {
@@ -268,7 +298,7 @@ export default function RankingPage() {
   }, [listaQuarters, filtroQuarter]);
 
   // Estado de Loading
-  if (loading) {
+  if (loading || loadingHistorico) {
     return (
       <PexLayout currentPage="ranking">
         <div style={{

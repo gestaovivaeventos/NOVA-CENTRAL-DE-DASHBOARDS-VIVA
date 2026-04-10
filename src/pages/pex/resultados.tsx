@@ -262,6 +262,13 @@ export default function ResultadosPage() {
     return clusterUpper.includes('INCUBA');
   };
 
+  // Helper para verificar se é INCUBAÇÃO 0 (franquia sem nota)
+  const isIncubacao0 = (cluster: string | undefined) => {
+    if (!cluster) return false;
+    const clusterNorm = cluster.toUpperCase().trim();
+    return clusterNorm === 'INCUBAÇÃO 0' || clusterNorm === 'INCUBACAO 0';
+  };
+
   // Detectar nome da coluna do consultor
   useEffect(() => {
     if (dadosBrutos && dadosBrutos.length > 0) {
@@ -529,6 +536,8 @@ export default function ResultadosPage() {
     // Filtrar registros da unidade no histórico
     const registrosUnidade = dadosHistorico.filter(item => {
       if (item.nm_unidade !== unidadeEfetiva) return false;
+      // Excluir meses em que a franquia estava em INCUBAÇÃO 0 (sem nota)
+      if (isIncubacao0(item.cluster)) return false;
       const parsed = parseDateHistorico(item.data);
       if (!parsed) return false;
       // Para 2026 (primeiro ano): meses 1-9 do ano 2026
@@ -553,8 +562,10 @@ export default function ResultadosPage() {
     
     const anoAtual = new Date().getFullYear();
     
-    // Filtrar registros vigentes do histórico
+    // Filtrar registros vigentes do histórico (excluindo INCUBAÇÃO 0)
     const registrosVigentes = dadosHistorico.filter(item => {
+      // Excluir meses em que a franquia estava em INCUBAÇÃO 0 (sem nota)
+      if (isIncubacao0(item.cluster)) return false;
       const parsed = parseDateHistorico(item.data);
       if (!parsed) return false;
       if (anoAtual === 2026) {
@@ -571,7 +582,7 @@ export default function ResultadosPage() {
       const registros = registrosVigentes.filter(item => item.nm_unidade === unidade);
       const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
       const media = registros.length > 0 ? soma / registros.length : 0;
-      const cluster = registros[0]?.cluster || '';
+      const cluster = registros[registros.length - 1]?.cluster || registros[0]?.cluster || '';
       return { unidade, media, cluster };
     });
     
@@ -606,9 +617,10 @@ export default function ResultadosPage() {
       const itemBruto = dadosBrutos?.find(d => d.quarter === quarter && d.nm_unidade === unidadeEfetiva);
       const quarterAtivo = itemBruto ? (itemBruto.quarter_ativo || '').toString().toLowerCase() === 'ativo' : false;
       
-      // Filtrar meses do histórico para este quarter e unidade
+      // Filtrar meses do histórico para este quarter e unidade (excluindo INCUBAÇÃO 0)
       const registrosMesesQuarter = dadosHistorico.filter(item => {
         if (item.nm_unidade !== unidadeEfetiva) return false;
+        if (isIncubacao0(item.cluster)) return false;
         const parsed = parseDateHistorico(item.data);
         if (!parsed) return false;
         return parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
@@ -622,10 +634,11 @@ export default function ResultadosPage() {
       let posicaoRede = 0, totalRede = 0, posicaoCluster = 0, totalCluster = 0;
       
       if (quarterAtivo) {
-        // Todas as unidades com dados neste quarter
+        // Todas as unidades com dados neste quarter (excluindo INCUBAÇÃO 0)
         const todasUnidadesQuarter = Array.from(new Set(
           dadosHistorico
             .filter(item => {
+              if (isIncubacao0(item.cluster)) return false;
               const parsed = parseDateHistorico(item.data);
               return parsed && parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
             })
@@ -635,12 +648,13 @@ export default function ResultadosPage() {
         const mediasQuarter = todasUnidadesQuarter.map(unidade => {
           const registros = dadosHistorico.filter(item => {
             if (item.nm_unidade !== unidade) return false;
+            if (isIncubacao0(item.cluster)) return false;
             const parsed = parseDateHistorico(item.data);
             return parsed && parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
           });
           const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
           const media = registros.length > 0 ? soma / registros.length : 0;
-          const cluster = registros[0]?.cluster || '';
+          const cluster = registros[registros.length - 1]?.cluster || registros[0]?.cluster || '';
           return { unidade, media, cluster };
         }).sort((a, b) => b.media - a.media);
         

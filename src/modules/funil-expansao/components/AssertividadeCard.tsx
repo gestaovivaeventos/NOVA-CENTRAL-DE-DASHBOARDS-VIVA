@@ -14,6 +14,7 @@ const CORES_ASSERTIVIDADE: Record<string, string> = {
   'Fora': '#dc3545',
   'Sem Validacao': '#6c757d',
   'Campo vazio': '#8B5CF6',
+  'Campo vazio ou Sem Validação': '#8B5CF6',
 };
 
 function getCorAssertividade(cat: string): string {
@@ -25,7 +26,7 @@ function getCorAssertividade(cat: string): string {
   if (upper === 'FOCO') return '#28a745';
   if (upper.includes('OPORTUNIDADE')) return '#ffc107';
   if (upper.includes('FORA')) return '#dc3545';
-  if (upper === 'CAMPO VAZIO') return '#8B5CF6';
+  if (upper.includes('CAMPO VAZIO') || upper.includes('SEM VALIDAÇ') || upper.includes('SEM VALIDAC')) return '#8B5CF6';
   return '#6c757d';
 }
 

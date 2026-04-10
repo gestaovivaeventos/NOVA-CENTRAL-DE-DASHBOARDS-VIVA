@@ -120,7 +120,8 @@ export default function GraficoEvolucao({
     const dadosPorMes = MESES.map((mes, index) => ({
       mes,
       mesNumero: index + 1,
-      valor: null as number | null
+      valor: null as number | null,
+      isIncubacao0: false
     }));
 
     // Preencher com dados existentes
@@ -132,6 +133,11 @@ export default function GraficoEvolucao({
           const mesIndex = mesNumero - 1;
           
           if (mesIndex >= 0 && mesIndex < 12) {
+            // Marcar se a franquia estava em INCUBAÇÃO 0 neste mês
+            const clusterNorm = (item.cluster || '').toString().toUpperCase().trim();
+            if (clusterNorm === 'INCUBAÇÃO 0' || clusterNorm === 'INCUBACAO 0') {
+              dadosPorMes[mesIndex].isIncubacao0 = true;
+            }
             const variacoesNomes: { [key: string]: string[] } = {
               'vvr_12_meses': ['vvr_12_meses'],
               'vvr_carteira': ['vvr_carteira'],
@@ -173,9 +179,11 @@ export default function GraficoEvolucao({
     return dadosPorMes;
   }, [dadosHistorico, indicadorSelecionado, anoSelecionado, unidadeSelecionada, clusterSelecionado, consultorSelecionado, nomeColunaConsultor]);
 
-  // Calcular média do ano
+  // Calcular média do ano (excluindo meses em INCUBAÇÃO 0)
   const mediaAno = useMemo(() => {
-    const valoresValidos = dadosGrafico.filter(d => d.valor !== null).map(d => d.valor as number);
+    const valoresValidos = dadosGrafico
+      .filter(d => d.valor !== null && !d.isIncubacao0)
+      .map(d => d.valor as number);
     if (valoresValidos.length === 0) return 0;
     const soma = valoresValidos.reduce((acc, val) => acc + val, 0);
     return soma / valoresValidos.length;

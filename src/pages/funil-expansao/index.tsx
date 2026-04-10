@@ -625,10 +625,10 @@ export default function FunilExpansaoDashboard() {
                       { key: 'investidorParcial', header: 'Inv. Parcial', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_INVESTIDOR },
                       { key: 'opVendaSem', header: 'Op. Venda S/ Inv.', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
                       { key: 'opVendaParcial', header: 'Op. Venda c/ Inv. Parc.', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
-                      { key: 'opVendaTotal', header: 'Op. Venda c/ Inv. Total', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR },
-                      { key: 'opPosVendaSem', header: 'Op. Pós-Venda S/ Inv.', align: 'center', format: 'number', sortable: true, color: '#059669' },
                       { key: 'opPosVendaParcial', header: 'Op. Pós-Venda c/ Inv. Parc.', align: 'center', format: 'number', sortable: true, color: '#059669' },
                       { key: 'semPerfil', header: 'Sem Perfil', align: 'center', format: 'number', sortable: true, color: '#6c757d' },
+                      { key: 'opVendaTotal', header: 'Op. Venda c/ Inv. Total', align: 'center', format: 'number', sortable: true, color: COLORS.FUNIL_OPERADOR, hiddenByDefault: true },
+                      { key: 'opPosVendaSem', header: 'Op. Pós-Venda S/ Inv.', align: 'center', format: 'number', sortable: true, color: '#059669', hiddenByDefault: true },
                       { key: 'total', header: 'Total', align: 'center', format: 'number', sortable: true },
                       { key: 'percentual', header: '%', align: 'center', format: 'percent', sortable: true },
                     ]}
