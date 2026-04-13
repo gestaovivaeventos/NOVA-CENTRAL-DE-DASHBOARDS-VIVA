@@ -81,7 +81,7 @@ export const EbitdaCard: React.FC<EbitdaCardProps> = ({ ebitdaByYear, competenci
               />
             </div>
             <p className="text-2xl font-bold" style={{ color: statusColor }}>
-              {atingimentoPercent.toFixed(2)}%
+              {Math.min(atingimentoPercent, 100).toFixed(2)}%
             </p>
             <p className="text-sm" style={{ color: '#ADB5BD' }}>ATINGIMENTO ATÉ {competencia}</p>
           </div>

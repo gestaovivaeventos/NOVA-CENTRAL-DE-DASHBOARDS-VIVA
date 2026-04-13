@@ -125,7 +125,7 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
       
       // Processar OKRs - apenas datas de fechamento de quarter (01/03, 01/06, 01/09, 01/12)
       filteredOkrs.forEach(okr => {
-        if (!okr.data || !okr.atingReal) return;
+        if (!okr.data) return;
         
         const parts = okr.data.split('/');
         if (parts.length !== 3) return;
@@ -139,13 +139,21 @@ export const PerformanceChart: React.FC<PerformanceChartProps> = ({
         
         if (quarterIndex === -1 || !year) return;
         
+        // Usar atingMetaMes com cap em 100%, igual à tabela
+        const atingValue = Math.min(okr.atingMetaMes || 0, 100);
+        if (atingValue === 0) return;
+        
+        // Excluir KRs com meta=0 e tendência AUMENTAR (mesma regra da tabela)
+        const tend = okr.tendencia?.toUpperCase() || '';
+        if (okr.meta === 0 && okr.realizado >= 0 && (tend.includes('MAIOR') || tend.includes('AUMENTAR'))) return;
+        
         const quarterName = QUARTERS[quarterIndex];
         
         if (!quarterData[quarterName][year]) {
           quarterData[quarterName][year] = { total: 0, count: 0 };
         }
         
-        quarterData[quarterName][year].total += okr.atingReal;
+        quarterData[quarterName][year].total += atingValue;
         quarterData[quarterName][year].count += 1;
       });
       

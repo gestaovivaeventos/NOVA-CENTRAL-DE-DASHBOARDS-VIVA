@@ -72,7 +72,8 @@ function processKpiData(rows: any[][]): KpiData[] {
     acao: headers.findIndex((h: string) => h.includes('AÇÃO')),
     responsavel: headers.findIndex((h: string) => h.includes('RESPONSÁVEL (FCA)')),
     terminoPrevisto: headers.findIndex((h: string) => h.includes('TÉRMINO')),
-    fcaRealizado: headers.indexOf('REALIZADO')
+    fcaRealizado: headers.indexOf('REALIZADO'),
+    situacaoKpi: headers.findIndex((h: string) => h.includes('SITUAÇÃO KPI') || h.includes('SITUACAO KPI'))
   };
 
   const dataRows = rows.slice(1);
@@ -129,7 +130,8 @@ function processKpiData(rows: any[][]): KpiData[] {
       acao: colIndices.acao >= 0 ? (row[colIndices.acao] || '') : '',
       responsavel: colIndices.responsavel >= 0 ? (row[colIndices.responsavel] || '') : '',
       terminoPrevisto: colIndices.terminoPrevisto >= 0 ? (row[colIndices.terminoPrevisto] || '') : '',
-      fcaRealizado: colIndices.fcaRealizado >= 0 ? (row[colIndices.fcaRealizado] || '') : ''
+      fcaRealizado: colIndices.fcaRealizado >= 0 ? (row[colIndices.fcaRealizado] || '') : '',
+      situacaoKpi: colIndices.situacaoKpi >= 0 ? (row[colIndices.situacaoKpi] || '').toString().trim() : ''
     };
   }).filter(item => 
     (item.organizacao === 'FRANQUEADORA | QUOKKA' || item.organizacao === 'FEAT') && 
@@ -481,7 +483,8 @@ function calculateTeamPerformance(
       item.competencia === competencia &&
       item.status === 'Finalizado' &&
       item.metasReal !== null &&
-      item.metasReal > 0
+      item.metasReal > 0 &&
+      (!item.situacaoKpi || item.situacaoKpi.toUpperCase() === 'ATIVO')
     );
     
     kpisDoTime.forEach(kpi => {
@@ -587,7 +590,7 @@ function calculateTeamPerformance(
     const teamData = timesConsolidados[teamName];
     
     const mediaKpis = teamData.kpis.length > 0
-      ? (teamData.kpis.reduce((acc, val) => acc + val, 0) / teamData.kpis.length) * 100
+      ? (teamData.kpis.reduce((acc, val) => acc + Math.min(val, 1), 0) / teamData.kpis.length) * 100
       : null;
     
     const mediaOkrs = teamData.okrs.length > 0
@@ -596,7 +599,7 @@ function calculateTeamPerformance(
     
     const todosAtingimentos = [...teamData.kpis, ...teamData.okrs];
     const mediaGeral = todosAtingimentos.length > 0
-      ? (todosAtingimentos.reduce((acc, val) => acc + val, 0) / todosAtingimentos.length) * 100
+      ? (todosAtingimentos.reduce((acc, val) => acc + Math.min(val, 1), 0) / todosAtingimentos.length) * 100
       : 0;
     
     teamPerformance.push({

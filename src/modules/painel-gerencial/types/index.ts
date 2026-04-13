@@ -54,6 +54,7 @@ export interface KpiData {
   criadoEm?: string;
   terminoPrevisto?: string;
   fcaRealizado?: string;
+  situacaoKpi?: string;
 }
 
 export interface NovoOkrData {

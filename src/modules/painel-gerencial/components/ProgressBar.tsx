@@ -42,7 +42,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
       </div>
       {showLabel && (
         <div className="flex justify-between mt-1 text-xs text-slate-400">
-          <span>{value.toFixed(1)}%</span>
+          <span>{Math.min(value, max).toFixed(1)}%</span>
           <span>Meta: {max}%</span>
         </div>
       )}
