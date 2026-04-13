@@ -45,8 +45,9 @@ const ProgressBar: React.FC<{ value: number | null; isBold?: boolean; muted?: bo
     return <span className="text-slate-500">-</span>;
   }
 
-  const color = getStatusColor(value);
-  const width = Math.min(value, 100);
+  const cappedValue = Math.min(value, 100);
+  const color = getStatusColor(cappedValue);
+  const width = cappedValue;
 
   return (
     <div className={`flex flex-col gap-1 transition-opacity duration-300 ${muted ? 'opacity-40' : ''}`}>
@@ -54,7 +55,7 @@ const ProgressBar: React.FC<{ value: number | null; isBold?: boolean; muted?: bo
         className={`text-sm ${isBold ? 'font-bold' : 'font-medium'}`}
         style={{ color }}
       >
-        {value.toFixed(1)}%
+        {cappedValue.toFixed(1)}%
       </span>
       <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
         <div
@@ -115,7 +116,8 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     return kpis.filter(kpi => {
       const timeMatch = kpi.time?.toUpperCase() === time?.toUpperCase();
       const yearMatch = kpi.year === anoCompetencia;
-      return timeMatch && yearMatch;
+      const isAtivo = !kpi.situacaoKpi || kpi.situacaoKpi.toUpperCase() === 'ATIVO';
+      return timeMatch && yearMatch && isAtivo;
     });
   };
   
@@ -300,6 +302,16 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     // Obter os nomes de times OKR correspondentes ao time KPI
     const okrTeamNames = teamMappingKpiToOkr[time.toUpperCase()] || [time.toUpperCase()];
     
+    // Calcular quarter da competência selecionada
+    const getQuarter = (mes: number) => {
+      if (mes <= 3) return 1;
+      if (mes <= 6) return 2;
+      if (mes <= 9) return 3;
+      return 4;
+    };
+    const quarterAtual = getQuarter(mesCompetencia);
+    const isAnual = isDezembro && modoVisualizacao === 'anual';
+    
     return novoOkrs.filter(okr => {
       if (!okr.data) return false;
       const parts = okr.data.split('/');
@@ -312,12 +324,12 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
       if (ano !== anoCompetencia) return false;
       
       // Se for dezembro E modo anual, retornar todos os meses do ano
-      if (isDezembro && modoVisualizacao === 'anual') {
+      if (isAnual) {
         return timeMatch;
       }
       
-      // Trazer todos os meses até a competência selecionada (para ACUMULADO funcionar)
-      // O getOkrsAgrupados vai usar só o último mês para não-ACUMULADO
+      // Caso contrário: filtrar apenas pelo quarter da competência selecionada
+      if (okr.quarter !== quarterAtual) return false;
       if (mes > mesCompetencia) return false;
       
       return timeMatch;
@@ -586,7 +598,7 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     }).filter((a): a is number => a !== null);
     
     if (atingimentos.length === 0) return null;
-    return atingimentos.reduce((acc, a) => acc + a, 0) / atingimentos.length;
+    return atingimentos.reduce((acc, a) => acc + Math.min(a, 100), 0) / atingimentos.length;
   };
   
   // Função para calcular média de OKRs considerando modo de visualização
@@ -595,10 +607,22 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     // Usar getOkrsAgrupados para ter a mesma lógica da tabela expandida
     const okrsAgrupados = getOkrsAgrupados(teamOkrs);
     
-    // Pegar atingimentos não-null, excluindo KRs onde meta=0, realizado>=0 e tendência AUMENTAR
+    // Determinar o quarter da competência selecionada
+    const getQuarter = (mes: number) => {
+      if (mes <= 3) return 1;
+      if (mes <= 6) return 2;
+      if (mes <= 9) return 3;
+      return 4;
+    };
+    const quarterAtual = getQuarter(mesCompetencia);
+    const isAnual = isDezembro && modoVisualizacao === 'anual';
+    
+    // Pegar atingimentos não-null, filtrando por quarter (exceto no modo anual)
     const atingimentos = okrsAgrupados
       .filter(okr => {
         if (okr.atingimento === null) return false;
+        // No modo mensal (ou dezembro não-anual), filtrar apenas pelo quarter da competência
+        if (!isAnual && okr.quarter !== quarterAtual) return false;
         // Excluir da média: meta=0, realizado>=0, tendência AUMENTAR
         const tend = okr.tendencia?.toUpperCase() || '';
         if (okr.meta === 0 && okr.realizado >= 0 && (tend.includes('MAIOR') || tend.includes('AUMENTAR'))) return false;
@@ -879,7 +903,7 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                                                   <td className="py-2 px-2 text-slate-300 sticky left-0 bg-slate-900 border-r border-slate-700">
                                                     <div className="flex items-center gap-2">
                                                       <span className="text-orange-400">↗</span>
-                                                      <span className="truncate max-w-[160px]" title={row.kpi}>{row.kpi}</span>
+                                                      <span className="break-words whitespace-normal max-w-[200px]" title={row.kpi}>{row.kpi}</span>
                                                     </div>
                                                     <span className="text-slate-500 text-[10px]">{row.grandeza || 'valor'}</span>
                                                   </td>
@@ -914,9 +938,9 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                                                           {dadosMes.atingimento !== null && (
                                                             <span 
                                                               className="text-[10px]"
-                                                              style={{ color: getStatusColor(dadosMes.atingimento) }}
+                                                              style={{ color: getStatusColor(Math.min(dadosMes.atingimento, 100)) }}
                                                             >
-                                                              {dadosMes.atingimento.toFixed(0)}%
+                                                              {Math.min(dadosMes.atingimento, 100).toFixed(0)}%
                                                             </span>
                                                           )}
                                                         </div>
@@ -928,9 +952,9 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                                                       <div className="relative inline-flex items-center gap-1">
                                                         <span 
                                                           className="font-semibold"
-                                                          style={{ color: getStatusColor(row.atingimentoAno) }}
+                                                          style={{ color: getStatusColor(Math.min(row.atingimentoAno, 100)) }}
                                                         >
-                                                          {row.atingimentoAno.toFixed(1)}%
+                                                          {Math.min(row.atingimentoAno, 100).toFixed(1)}%
                                                         </span>
                                                         <button
                                                           className="text-gray-500 hover:text-gray-300 transition-colors"

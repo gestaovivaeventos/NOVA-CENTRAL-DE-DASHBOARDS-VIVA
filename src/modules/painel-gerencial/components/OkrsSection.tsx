@@ -28,10 +28,12 @@ const ProgressBarCell: React.FC<{ value: number }> = ({ value }) => {
   const statusClass = getStatusClass(value);
   const width = Math.min(value, 100);
   
+  const cappedValue = Math.min(value, 100);
+  
   return (
     <div className="flex items-center gap-3 min-w-[180px]">
       <span className="font-semibold text-sm min-w-[55px] text-left" style={{ color }}>
-        {value.toFixed(1)}%
+        {cappedValue.toFixed(1)}%
       </span>
       <div className="flex-grow h-3.5 bg-slate-800/60 rounded-lg shadow-inner overflow-hidden">
         <div 
@@ -269,7 +271,7 @@ export const OkrsSection: React.FC<OkrsSectionProps> = ({ okrs, competencia }) =
                   {/* Centered text */}
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <p className="text-4xl font-bold" style={{ color }}>
-                      {percent.toFixed(1)}
+                      {Math.min(percent, 100).toFixed(1)}
                     </p>
                   </div>
                 </div>

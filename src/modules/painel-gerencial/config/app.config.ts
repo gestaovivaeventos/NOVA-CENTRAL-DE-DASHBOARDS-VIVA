@@ -7,7 +7,7 @@ export const API_CONFIG = {
   PROJECTS_SPREADSHEET_ID: process.env.PROJETOS_SPREADSHEET_ID || '',
   API_KEY: process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '',
   SHEETS: {
-    KPIS: 'KPIS!A:AD', // Inclui colunas FCA até REALIZADO
+    KPIS: 'KPIS!A:AG', // Inclui colunas FCA até SITUAÇÃO KPI
     OKRS: 'OKRS VC',
     PAINEL_OKR: 'NOVO PAINEL OKR',
     PROJETOS: 'Projetos'
