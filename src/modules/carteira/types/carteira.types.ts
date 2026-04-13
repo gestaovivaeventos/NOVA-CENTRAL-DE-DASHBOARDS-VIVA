@@ -29,6 +29,7 @@ export interface CarteiraRow {
   integrantesInadimplentes: number; // total_inadimplentes (coluna U)
   nuncaPagaram: number; // nunca_pagaram (coluna V)
   valorInadimplencia: number;
+  integrantesDesligados: number; // total_desligamentos (coluna X)
   
   // Baile
   baileARealizar: string; // baile_a_realizar (coluna W) - "REALIZAR" ou outro
@@ -51,7 +52,9 @@ export interface KPIsCarteira {
   alunosAtivos: number;
   alunosEventoPrincipal: number;
   integrantesInadimplentes: number;
+  integrantesEndividados: number;
   nuncaPagaram: number;
+  integrantesDesligados: number;
   tatAtual: number; // TAT total
   // Fundos por saúde
   fundosPorSaude: {
