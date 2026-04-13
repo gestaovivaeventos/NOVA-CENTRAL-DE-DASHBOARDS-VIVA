@@ -16,6 +16,16 @@ import {
 import { parseDate, parseNumericValue, getMesAno } from '@/modules/carteira/utils/formatacao';
 import { clientCache, CACHE_KEYS, CACHE_TTL } from '@/modules/carteira/utils/cache';
 
+// Tipo para dados parseados de endividados
+interface EndividadosRow {
+  data: Date;
+  idFundo: string;
+  franquia: string;
+  tipoClienteFundo: string;
+  situacaoFundo: string;
+  integrantesEndividados: number;
+}
+
 // Tipo extendido com consultores
 interface CarteiraRowExtended extends CarteiraRow {
   consultorRelacionamento: string;
@@ -54,7 +64,9 @@ const INITIAL_KPIS: KPIsCarteira = {
   alunosAtivos: 0,
   alunosEventoPrincipal: 0,
   integrantesInadimplentes: 0,
+  integrantesEndividados: 0,
   nuncaPagaram: 0,
+  integrantesDesligados: 0,
   tatAtual: 0,
   fundosPorSaude: {
     critico: 0,
@@ -116,6 +128,7 @@ function calcularSaudeFundo(dataBaile: Date | null, atingimentoMAC: number): Sau
  */
 export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataReturn {
   const [dados, setDados] = useState<CarteiraRow[]>([]);
+  const [endividadosRaw, setEndividadosRaw] = useState<EndividadosRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -166,6 +179,8 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       unidade: getIndex(['unidade', 'nm_unidade', 'franquia']),
       // TAT
       tatAtual: getIndex(['tat_atual', 'tat', 'meta_tat']),
+      // Desligados
+      desligados: getIndex(['total_desligamentos', 'desligados', 'integrantes_desligados']),
     };
 
     // Processar dados
@@ -199,6 +214,7 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
           integrantesInadimplentes: indices.inadimplentes !== -1 ? parseNumericValue(row[indices.inadimplentes]) : 0,
           nuncaPagaram: indices.nuncaPagaram !== -1 ? parseNumericValue(row[indices.nuncaPagaram]) : 0,
           valorInadimplencia: indices.valorInadimplencia !== -1 ? parseNumericValue(row[indices.valorInadimplencia]) : 0,
+          integrantesDesligados: indices.desligados !== -1 ? parseNumericValue(row[indices.desligados]) : 0,
           baileARealizar: baileARealizar,
           dataBaile: dataBaileValue,
           status: indices.status !== -1 ? row[indices.status] || 'Ativo' : 'Ativo',
@@ -280,6 +296,49 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       
       setDados(processedData);
       setLastUpdate(new Date());
+
+      // Buscar dados de endividados em paralelo
+      try {
+        const endivResp = await fetch(`/api/carteira/endividados${forceRefresh ? '?refresh=true' : ''}`);
+        if (endivResp.ok) {
+          const endivData = await endivResp.json();
+          if (endivData.headers && endivData.values) {
+            const endivHeaders = endivData.headers.map((h: string) => String(h).trim().toLowerCase());
+            
+            // Mapear índices das colunas da planilha de endividados
+            const findIdx = (names: string[]) => endivHeaders.findIndex((h: string) => names.includes(h));
+            const dataIdx = findIdx(['data', 'dt_referencia', 'data_referencia']);
+            const idFundoIdx = findIdx(['id_fundo', 'idfundo', 'codigo_fundo']);
+            const franquiaIdx = findIdx(['nm_unidade', 'unidade', 'franquia']);
+            const tipoClienteIdx = findIdx(['tipo_cliente_fundo', 'tipo_cliente']);
+            const situacaoIdx = findIdx(['situacao_fundo', 'situacao', 'status']);
+            const endividadosIdx = findIdx(['integrantes_endividados', 'endividados', 'qtd_endividados']);
+            
+            if (endividadosIdx !== -1) {
+              const parsed: EndividadosRow[] = [];
+              for (const row of endivData.values) {
+                const dateVal = dataIdx !== -1 ? parseDate(row[dataIdx]) : null;
+                if (!dateVal) continue;
+                
+                const tipoCliente = tipoClienteIdx !== -1 ? (row[tipoClienteIdx] || '').toUpperCase().trim() : '';
+                const situacao = situacaoIdx !== -1 ? (row[situacaoIdx] || '').toUpperCase().trim() : '';
+                
+                parsed.push({
+                  data: dateVal,
+                  idFundo: idFundoIdx !== -1 ? (row[idFundoIdx] || '').trim() : '',
+                  franquia: franquiaIdx !== -1 ? (row[franquiaIdx] || '').trim() : '',
+                  tipoClienteFundo: tipoCliente,
+                  situacaoFundo: situacao,
+                  integrantesEndividados: parseNumericValue(row[endividadosIdx]),
+                });
+              }
+              setEndividadosRaw(parsed);
+            }
+          }
+        }
+      } catch (endivErr) {
+        console.warn('[useCarteiraData] Erro ao buscar endividados:', endivErr);
+      }
 
     } catch (err: any) {
       setError(err.message || 'Erro desconhecido ao buscar dados');
@@ -430,6 +489,57 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
     const alunosEventoPrincipal = dadosFiltradosComSaude.reduce((sum, row) => sum + row.alunosEventoPrincipal, 0);
     const inadimplentes = dadosFiltradosComSaude.reduce((sum, row) => sum + row.integrantesInadimplentes, 0);
     const nuncaPagaram = dadosFiltradosComSaude.reduce((sum, row) => sum + row.nuncaPagaram, 0);
+    const desligados = dadosFiltradosComSaude.reduce((sum, row: any) => sum + (row.integrantesDesligados || 0), 0);
+
+    // Calcular endividados: aplicar mesmos filtros de negócio e data que dadosFiltrados
+    let totalEndividados = 0;
+    if (endividadosRaw.length > 0) {
+      // Aplicar filtros de negócio idênticos aos dados principais
+      let endivFiltrados = endividadosRaw.filter(row => {
+        if (row.tipoClienteFundo !== 'FUNDO DE FORMATURA') return false;
+        if (row.situacaoFundo === 'RESCINDINDO' || row.situacaoFundo === 'RESCINDIDO') return false;
+        return true;
+      });
+
+      // Aplicar filtros de data (mesmo critério da carteira principal)
+      if (filtros?.dataInicio) {
+        const [y, m, d] = filtros.dataInicio.split('-').map(Number);
+        const dataInicio = new Date(y, m - 1, d);
+        endivFiltrados = endivFiltrados.filter(row => row.data >= dataInicio);
+      }
+      if (filtros?.dataFim) {
+        const [y, m, d] = filtros.dataFim.split('-').map(Number);
+        const dataFim = new Date(y, m - 1, d, 23, 59, 59, 999);
+        endivFiltrados = endivFiltrados.filter(row => row.data <= dataFim);
+      }
+
+      // Aplicar filtro de unidades
+      if (filtros?.unidades && filtros.unidades.length > 0) {
+        endivFiltrados = endivFiltrados.filter(row => filtros.unidades.includes(row.franquia));
+      }
+
+      // Para cada fundo, pegar APENAS a linha mais recente (último snapshot)
+      const latestByFundo = new Map<string, EndividadosRow>();
+      endivFiltrados.forEach(row => {
+        if (!row.idFundo) return;
+        const existing = latestByFundo.get(row.idFundo);
+        if (!existing || row.data > existing.data) {
+          latestByFundo.set(row.idFundo, row);
+        }
+      });
+
+      // Somar endividados apenas dos fundos presentes na carteira filtrada
+      const fundosNaCarteira = new Set<string>();
+      dadosFiltradosComSaude.forEach((row: any) => {
+        fundosNaCarteira.add(row.idFundo || row.fundo);
+      });
+
+      latestByFundo.forEach((row, idFundo) => {
+        if (fundosNaCarteira.has(idFundo)) {
+          totalEndividados += row.integrantesEndividados;
+        }
+      });
+    }
 
     // Calcular fundos por saúde
     const fundosPorSaude = {
@@ -465,11 +575,13 @@ export function useCarteiraData(filtros?: FiltrosCarteira): UseCarteiraDataRetur
       alunosAtivos: integrantesAtivos,
       alunosEventoPrincipal,
       integrantesInadimplentes: inadimplentes,
+      integrantesEndividados: inadimplentes + totalEndividados,
       nuncaPagaram,
+      integrantesDesligados: desligados,
       tatAtual,
       fundosPorSaude,
     };
-  }, [dadosFiltradosComSaude, fundoSaudeMap]);
+  }, [dadosFiltradosComSaude, fundoSaudeMap, endividadosRaw, filtros]);
 
   // Agrupar por fundo
   const dadosPorFundo = useMemo((): DadosPorFundo[] => {

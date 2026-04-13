@@ -8,6 +8,14 @@ import { DadosPorFranquia } from '@/modules/carteira/types';
 import { formatPercent, formatNumber } from '@/modules/carteira/utils/formatacao';
 import { Download, ChevronDown, ChevronRight, AlertTriangle, AlertCircle, TrendingUp, CheckCircle } from 'lucide-react';
 
+// Tooltips para cada status de saúde
+const SAUDE_TOOLTIPS: Record<string, string> = {
+  critico: 'Crítico: Fundos com atingimento MAC muito abaixo do esperado para o tempo restante até o baile. Requer ação imediata.',
+  atencao: 'Atenção: Fundos com atingimento MAC abaixo do esperado. Necessitam monitoramento e ações corretivas.',
+  quaseLa: 'Quase lá: Fundos próximos de atingir a meta MAC. Manter acompanhamento para garantir o atingimento.',
+  alcancada: 'Meta Alcançada: Fundos que já atingiram ou superaram 100% da meta de alunos do contrato (MAC).',
+};
+
 // Cores para atingimento baseado no percentual
 const getAtingimentoColor = (atingimento: number): { bg: string; text: string; bar: string } => {
   if (atingimento >= 1) return { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', bar: '#22c55e' };
@@ -474,52 +482,80 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
                         <td style={{ padding: '10px 8px', width: '20%' }}>
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
                             {(item.saudeFundos?.critico || 0) > 0 && (
-                              <span style={{ 
-                                padding: '2px 6px', 
-                                borderRadius: '4px', 
-                                fontSize: '0.7rem', 
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(239, 68, 68, 0.2)', 
-                                color: '#ef4444' 
-                              }}>
-                                {item.saudeFundos?.critico}
-                              </span>
+                              <div className="relative group/critico">
+                                <span style={{ 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px', 
+                                  fontSize: '0.7rem', 
+                                  fontWeight: 600,
+                                  backgroundColor: 'rgba(239, 68, 68, 0.2)', 
+                                  color: '#ef4444',
+                                  cursor: 'help',
+                                }}>
+                                  {item.saudeFundos?.critico}
+                                </span>
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/critico:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                                  {SAUDE_TOOLTIPS.critico}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
                             )}
                             {(item.saudeFundos?.atencao || 0) > 0 && (
-                              <span style={{ 
-                                padding: '2px 6px', 
-                                borderRadius: '4px', 
-                                fontSize: '0.7rem', 
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(245, 158, 11, 0.2)', 
-                                color: '#f59e0b' 
-                              }}>
-                                {item.saudeFundos?.atencao}
-                              </span>
+                              <div className="relative group/atencao">
+                                <span style={{ 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px', 
+                                  fontSize: '0.7rem', 
+                                  fontWeight: 600,
+                                  backgroundColor: 'rgba(245, 158, 11, 0.2)', 
+                                  color: '#f59e0b',
+                                  cursor: 'help',
+                                }}>
+                                  {item.saudeFundos?.atencao}
+                                </span>
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/atencao:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                                  {SAUDE_TOOLTIPS.atencao}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
                             )}
                             {(item.saudeFundos?.quaseLa || 0) > 0 && (
-                              <span style={{ 
-                                padding: '2px 6px', 
-                                borderRadius: '4px', 
-                                fontSize: '0.7rem', 
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(59, 130, 246, 0.2)', 
-                                color: '#3b82f6' 
-                              }}>
-                                {item.saudeFundos?.quaseLa}
-                              </span>
+                              <div className="relative group/quasela">
+                                <span style={{ 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px', 
+                                  fontSize: '0.7rem', 
+                                  fontWeight: 600,
+                                  backgroundColor: 'rgba(59, 130, 246, 0.2)', 
+                                  color: '#3b82f6',
+                                  cursor: 'help',
+                                }}>
+                                  {item.saudeFundos?.quaseLa}
+                                </span>
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/quasela:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                                  {SAUDE_TOOLTIPS.quaseLa}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
                             )}
                             {(item.saudeFundos?.alcancada || 0) > 0 && (
-                              <span style={{ 
-                                padding: '2px 6px', 
-                                borderRadius: '4px', 
-                                fontSize: '0.7rem', 
-                                fontWeight: 600,
-                                backgroundColor: 'rgba(34, 197, 94, 0.2)', 
-                                color: '#22c55e' 
-                              }}>
-                                {item.saudeFundos?.alcancada}
-                              </span>
+                              <div className="relative group/alcancada">
+                                <span style={{ 
+                                  padding: '2px 6px', 
+                                  borderRadius: '4px', 
+                                  fontSize: '0.7rem', 
+                                  fontWeight: 600,
+                                  backgroundColor: 'rgba(34, 197, 94, 0.2)', 
+                                  color: '#22c55e',
+                                  cursor: 'help',
+                                }}>
+                                  {item.saudeFundos?.alcancada}
+                                </span>
+                                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/alcancada:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                                  {SAUDE_TOOLTIPS.alcancada}
+                                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              </div>
                             )}
                           </div>
                         </td>
@@ -586,18 +622,42 @@ export default function TabelaFranquias({ dados, loading = false }: TabelaFranqu
                 <td style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 700, color: '#ff6600', width: '10%' }}>{totais.percNuncaPagaram.toFixed(1)}%</td>
                 <td style={{ padding: '12px 8px', width: '20%' }}>
                   <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                    <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444' }}>
-                      {totais.totalSaude.critico}
-                    </span>
-                    <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b' }}>
-                      {totais.totalSaude.atencao}
-                    </span>
-                    <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6' }}>
-                      {totais.totalSaude.quaseLa}
-                    </span>
-                    <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#22c55e' }}>
-                      {totais.totalSaude.alcancada}
-                    </span>
+                    <div className="relative group/tcritico">
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(239, 68, 68, 0.2)', color: '#ef4444', cursor: 'help' }}>
+                        {totais.totalSaude.critico}
+                      </span>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tcritico:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                        {SAUDE_TOOLTIPS.critico}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                    <div className="relative group/tatencao">
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(245, 158, 11, 0.2)', color: '#f59e0b', cursor: 'help' }}>
+                        {totais.totalSaude.atencao}
+                      </span>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tatencao:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                        {SAUDE_TOOLTIPS.atencao}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                    <div className="relative group/tquasela">
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#3b82f6', cursor: 'help' }}>
+                        {totais.totalSaude.quaseLa}
+                      </span>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/tquasela:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                        {SAUDE_TOOLTIPS.quaseLa}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
+                    <div className="relative group/talcancada">
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, backgroundColor: 'rgba(34, 197, 94, 0.2)', color: '#22c55e', cursor: 'help' }}>
+                        {totais.totalSaude.alcancada}
+                      </span>
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover/talcancada:opacity-100 transition-opacity duration-200 z-50 pointer-events-none" style={{ minWidth: '220px', whiteSpace: 'normal' }}>
+                        {SAUDE_TOOLTIPS.alcancada}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>
