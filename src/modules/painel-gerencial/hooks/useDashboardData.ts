@@ -450,7 +450,7 @@ function calculateTeamPerformance(
     'INOVAÇÃO': null,
     'MARKETING': 'MARKETING',
     'MARKETING E GROWTH': 'MARKETING E GROWTH',
-    'POS VENDA': 'PÓS VENDA - CAF',
+    'POS VENDA': 'POS VENDA',
     'QUOKKA': ['CASH OUT | CONTROLADORIA', 'FINANCEIRO (CSC)'],
     'TI': 'TI',
     'PERFORMANCE': 'PERFORMANCE'
@@ -467,6 +467,12 @@ function calculateTeamPerformance(
   // Extrair mês e ano da competência selecionada
   const [mesCompetencia, anoCompetencia] = competencia.split('/').map(Number);
   const quarterCompetencia = getQuarter(mesCompetencia);
+
+  // Normalizar nomes de times duplicados
+  const normalizeTeamName = (name: string): string => {
+    if (name === 'PÓS VENDA - CAF') return 'POS VENDA';
+    return name;
+  };
 
   // Consolidar dados por time
   const timesConsolidados: Record<string, { kpis: number[], okrs: number[] }> = {};
@@ -487,11 +493,12 @@ function calculateTeamPerformance(
       (!item.situacaoKpi || item.situacaoKpi.toUpperCase() === 'ATIVO')
     );
     
+    const normalizedName = normalizeTeamName(teamName);
     kpisDoTime.forEach(kpi => {
-      if (!timesConsolidados[teamName]) {
-        timesConsolidados[teamName] = { kpis: [], okrs: [] };
+      if (!timesConsolidados[normalizedName]) {
+        timesConsolidados[normalizedName] = { kpis: [], okrs: [] };
       }
-      timesConsolidados[teamName].kpis.push(kpi.metasReal as number);
+      timesConsolidados[normalizedName].kpis.push(kpi.metasReal as number);
     });
   });
 
