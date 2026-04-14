@@ -243,8 +243,15 @@ function processNovoOkrData(rows: any[][]): { data: NovoOkrData[], competencias:
     const idOkr = parseInt(row[colIdOkr], 10) || 0;
     const idKr = parseInt(row[colIdKr], 10) || 0;
     
-    // QUARTER (coluna K)
-    const quarter = parseInt(row[colQuarter], 10) || 0;
+    // QUARTER (coluna K) - fallback: calcular a partir do mês da data
+    let quarter = parseInt(row[colQuarter], 10) || 0;
+    if (quarter === 0) {
+      const mesNum = parseInt(mes, 10);
+      if (mesNum >= 1 && mesNum <= 3) quarter = 1;
+      else if (mesNum >= 4 && mesNum <= 6) quarter = 2;
+      else if (mesNum >= 7 && mesNum <= 9) quarter = 3;
+      else if (mesNum >= 10 && mesNum <= 12) quarter = 4;
+    }
     
     // Usar a coluna CHAVE se existir, senão criar chave combinando objetivo + indicador
     const chaveOriginal = row[colChave] ? String(row[colChave]).trim() : '';
@@ -444,7 +451,7 @@ function calculateTeamPerformance(
     'CONSULTORIA': 'CONSULTORIA PERFORMANCE',
     'EXPANSÃO': 'EXPANSÃO',
     'FEAT | GROWTH': ['FEAT', 'FEAT E GROWTH'],
-    'FORNECEDORES': 'SQUAD FORNECEDORES',
+    'SQUAD FORNECEDORES': 'SQUAD FORNECEDORES',
     'GESTÃO': 'GESTÃO',
     'GP': 'GESTÃO DE PESSOAS',
     'INOVAÇÃO': null,
