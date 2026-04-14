@@ -96,12 +96,11 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     'EXPANSÃO': ['EXPANSÃO'],
     'FEAT': ['FEAT | GROWTH'],
     'FEAT E GROWTH': ['FEAT | GROWTH'],
-    'SQUAD FORNECEDORES': ['FORNECEDORES'],
+    'SQUAD FORNECEDORES': ['SQUAD FORNECEDORES'],
     'GESTÃO': ['GESTÃO'],
     'GESTÃO DE PESSOAS': ['GESTÃO DE PESSOAS', 'GP'],
     'MARKETING': ['MARKETING'],
     'MARKETING E GROWTH': ['MARKETING E GROWTH', 'MARKETING'],
-    'PÓS VENDA - CAF': ['POS VENDA'],
     'POS VENDA': ['POS VENDA'],
     'CASH OUT | CONTROLADORIA': ['QUOKKA'],
     'FINANCEIRO (CSC)': ['QUOKKA'],
@@ -111,10 +110,16 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
     'SQUAD FOTO': ['SQUAD FOTO', 'FOTO']
   };
   
+  // Mapeamento de nomes de times da tabela para nomes na planilha de KPIs
+  const teamKpiNameMapping: Record<string, string[]> = {
+    'PÓS VENDA - CAF': ['PÓS VENDA - CAF', 'POS VENDA - CAF', 'POS VENDA', 'PÓS VENDA'],
+  };
+
   // Filtrar KPIs de um time específico para o ano selecionado
   const getKpisForTeam = (time: string): KpiData[] => {
+    const kpiTimeNames = teamKpiNameMapping[time.toUpperCase()] || [time.toUpperCase()];
     return kpis.filter(kpi => {
-      const timeMatch = kpi.time?.toUpperCase() === time?.toUpperCase();
+      const timeMatch = kpiTimeNames.some(t => kpi.time?.toUpperCase() === t);
       const yearMatch = kpi.year === anoCompetencia;
       const isAtivo = !kpi.situacaoKpi || kpi.situacaoKpi.toUpperCase() === 'ATIVO';
       return timeMatch && yearMatch && isAtivo;
@@ -348,13 +353,12 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
       'EXPANSÃO': ['EXPANSÃO'],
       'ATENDIMENTO': ['ATENDIMENTO'],
       'PERFORMANCE': ['PERFORMANCE'],
-      'PÓS VENDA - CAF': ['PÓS VENDA - CAF', 'POS VENDA', 'PÓS VENDA'],
-      'POS VENDA': ['POS VENDA', 'PÓS VENDA'],
+      'POS VENDA': ['POS VENDA', 'PÓS VENDA', 'PÓS VENDA - CAF'],
       'FINANCEIRO (CSC)': ['FINANCEIRO (CSC)', 'FINANCEIRO', 'CSC'],
       'CASH OUT | CONTROLADORIA': ['CASH OUT | CONTROLADORIA', 'CONTROLADORIA', 'CASH OUT'],
       'FEAT': ['FEAT'],
       'MARKETING E GROWTH': ['MARKETING E GROWTH', 'MARKETING'],
-      'SQUAD FORNECEDORES': ['SQUAD FORNECEDORES', 'FORNECEDORES'],
+      'SQUAD FORNECEDORES': ['SQUAD FORNECEDORES'],
       'SQUAD PRODUTOS': ['SQUAD PRODUTOS', 'PRODUTOS']
     };
     
@@ -831,7 +835,7 @@ export const TeamPerformanceTable: React.FC<TeamPerformanceTableProps> = ({
                 if (mediaOkrsAtual !== null) valoresMG.push(mediaOkrsAtual);
                 const mediaGeralAtual = valoresMG.length > 0 
                   ? valoresMG.reduce((a, b) => a + b, 0) / valoresMG.length 
-                  : (isDezembro ? 0 : team.mediaGeral);
+                  : null;
                 
                 return (
                   <React.Fragment key={index}>
