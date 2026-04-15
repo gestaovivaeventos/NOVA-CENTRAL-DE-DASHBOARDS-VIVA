@@ -19,7 +19,9 @@ import {
 // Planilha específica de Gestão Rede - via variáveis de ambiente
 const SPREADSHEET_ID = process.env.GESTAO_REDE_SPREADSHEET_ID || '';
 const SHEET_NAME = process.env.GESTAO_REDE_SHEET_NAME || 'BASE GESTAO REDE';
+const PEX_SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID || '';
 const CACHE_KEY = 'gestao-rede:data';
+const CACHE_KEY_UNI_CONS = 'gestao-rede:uni-cons';
 
 /**
  * Mapeia o valor de saúde da planilha para o tipo
@@ -224,6 +226,7 @@ function processarDados(rows: string[][]): Franquia[] {
       cluster: getValue('cluster')?.trim() || '',
       dataEncerramento: getValue('dt_encerramento')?.trim() || '',
       consultorResponsavel: getValue('consultor_responsavel')?.trim() || '',
+      usuarioCentral: '',  // Será preenchido depois com dados da aba UNI CONS
       // Campos de evolução de saúde
       saudeAnterior,
       mesesNaSaudeAtual,
@@ -280,7 +283,37 @@ export default async function handler(
     
     // Processar dados
     const franquias = processarDados(rows);
-    
+
+    // Buscar mapeamento usuario_central da aba UNI CONS (planilha PEX)
+    try {
+      if (PEX_SPREADSHEET_ID) {
+        const uniConsRows = await getExternalSheetData(
+          PEX_SPREADSHEET_ID,
+          "'UNI CONS'!A:D",
+          CACHE_KEY_UNI_CONS,
+          CACHE_TTL.PONTUACAO_OFICIAL
+        );
+        if (uniConsRows && uniConsRows.length > 1) {
+          const ucHeaders = uniConsRows[0].map((h: string) => h.toLowerCase().trim().replace(/\s+/g, '_'));
+          const idxUnidade = ucHeaders.indexOf('nm_unidade');
+          const idxUsuario = ucHeaders.indexOf('usuario_central');
+          if (idxUnidade >= 0 && idxUsuario >= 0) {
+            const mapaUsuario = new Map<string, string>();
+            for (let i = 1; i < uniConsRows.length; i++) {
+              const unidade = (uniConsRows[i][idxUnidade] || '').trim();
+              const usuario = (uniConsRows[i][idxUsuario] || '').trim();
+              if (unidade && usuario) mapaUsuario.set(unidade.toLowerCase(), usuario);
+            }
+            franquias.forEach(f => {
+              f.usuarioCentral = mapaUsuario.get(f.nome.toLowerCase()) || '';
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[API gestao-rede/data] Falha ao buscar UNI CONS (não crítico):', err);
+    }
+
     // Obter data de referência (da primeira linha de dados)
     const dataReferencia = franquias.length > 0 ? franquias[0].dataReferencia : '';
     

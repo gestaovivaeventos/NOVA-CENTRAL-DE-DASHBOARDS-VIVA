@@ -126,13 +126,12 @@ export default function TabelaIndicadoresPEX({ resultados, metas, vendasVVR = {}
     return cluster.toUpperCase().includes('INCUBA') && cluster.includes('0');
   };
 
-  // Unidades ativas no PEX (da planilha de metas)
-  // Considera ativa toda unidade que NÃO esteja explicitamente marcada como "NÃO"
+  // Unidades com metas validadas (apenas metas com validado = SIM)
   const unidadesAtivas = useMemo(() => {
     return metas
       .filter(m => {
-        const v = (m.ativo_pex || '').trim().toUpperCase();
-        return v !== 'NÃO' && v !== 'NAO' && v !== 'FALSE' && v !== '0';
+        const v = (m.validado || '').trim().toUpperCase();
+        return v === 'SIM' || v === 'TRUE' || v === '1';
       })
       .map(m => m.nm_unidade?.trim())
       .filter(Boolean);

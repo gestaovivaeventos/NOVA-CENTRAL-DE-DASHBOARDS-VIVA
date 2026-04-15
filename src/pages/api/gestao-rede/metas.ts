@@ -28,6 +28,7 @@ const COLUNA_MAP: Record<string, string> = {
   'estrutura_organizacional': 'L',
   'churn': 'M',
   'ativo_pex': 'N',
+  'validado': 'O',
 };
 
 export default async function handler(
@@ -48,7 +49,7 @@ export default async function handler(
     if (req.method === 'GET') {
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `'${SHEET_NAME}'!A:N`,
+        range: `'${SHEET_NAME}'!A:O`,
       });
 
       const rows = response.data.values || [];
@@ -58,6 +59,10 @@ export default async function handler(
       }
 
       const headers = rows[0].map((h: string) => h.toLowerCase().trim().replace(/\s+/g, '_'));
+
+      // Garantir que coluna O (index 14) mapeie para 'validado' mesmo sem header na planilha
+      while (headers.length <= 14) headers.push('');
+      if (!headers[14] || headers[14] === '') headers[14] = 'validado';
 
       const data = rows.slice(1).map((row: string[]) => {
         const obj: Record<string, string> = {};
@@ -91,7 +96,7 @@ export default async function handler(
       // Buscar dados para encontrar a linha
       const response = await sheets.spreadsheets.values.get({
         spreadsheetId: SPREADSHEET_ID,
-        range: `'${SHEET_NAME}'!A:N`,
+        range: `'${SHEET_NAME}'!A:O`,
       });
 
       const rows = response.data.values || [];

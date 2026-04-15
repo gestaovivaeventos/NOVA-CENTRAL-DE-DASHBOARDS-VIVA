@@ -96,7 +96,7 @@ export default async function handler(
       }),
       sheets.spreadsheets.values.get({
         spreadsheetId: METAS_SPREADSHEET_ID,
-        range: `'${METAS_SHEET_NAME}'!A:N`,
+        range: `'${METAS_SHEET_NAME}'!A:O`,
       }),
       fetchVendasVVR(),
     ]);
@@ -120,6 +120,11 @@ export default async function handler(
     let metas: any[] = [];
     if (metasRows.length > 1) {
       const metasHeaders = metasRows[0].map((h: string) => h.toLowerCase().trim().replace(/\s+/g, '_'));
+
+      // Garantir que coluna O (index 14) mapeie para 'validado' mesmo sem header na planilha
+      while (metasHeaders.length <= 14) metasHeaders.push('');
+      if (!metasHeaders[14] || metasHeaders[14] === '') metasHeaders[14] = 'validado';
+
       metas = metasRows.slice(1).map((row: string[]) => {
         const obj: Record<string, string> = {};
         metasHeaders.forEach((header: string, index: number) => {
