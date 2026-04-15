@@ -65,6 +65,8 @@ function mapMaturidade(valor: string): MaturidadeFranquia {
  */
 function mapStatus(valor: string): StatusFranquia {
   const status = valor?.toUpperCase()?.trim() || '';
+  // #N/A, vazio ou erro de fórmula = franquia ainda não cadastrada no ERP → considerar ATIVA
+  if (!status || status === '#N/A' || status.startsWith('#')) return 'ATIVA';
   return status === 'ATIVA' ? 'ATIVA' : 'INATIVA';
 }
 
@@ -74,6 +76,9 @@ function mapStatus(valor: string): StatusFranquia {
  */
 function mapStatusInativacao(valor: string): StatusInativacao {
   const status = valor?.toUpperCase()?.trim() || '';
+  
+  // #N/A, vazio ou erro de fórmula → sem inativação
+  if (!status || status.startsWith('#')) return null;
   
   // "Implantação" sozinho NÃO é inativação — indica fase de implantação
   // Só considerar encerrada se contiver "encerrada" ou variações
