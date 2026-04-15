@@ -908,7 +908,7 @@ export default function LoginPage() {
       <div
         className="min-h-screen flex items-center justify-center p-4"
         style={{
-          backgroundImage: 'url(/capa_site.png)',
+          backgroundImage: 'url(/capa_site_nova_hd.png)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundAttachment: 'fixed',

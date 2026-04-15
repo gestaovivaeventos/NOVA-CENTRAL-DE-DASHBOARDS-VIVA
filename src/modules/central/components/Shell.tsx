@@ -179,7 +179,7 @@ export function Shell({ children }: ShellProps) {
       className="min-h-screen flex flex-col"
       style={{
         backgroundColor: '#212529',
-        backgroundImage: isHomePage ? 'url(/images/capa_site.png)' : 'none',
+        backgroundImage: isHomePage ? 'url(/images/capa_site_nova_hd.png)' : 'none',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',

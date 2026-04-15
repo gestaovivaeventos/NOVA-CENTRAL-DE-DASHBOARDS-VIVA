@@ -133,7 +133,7 @@ export default function LoginPage() {
           height: 100vh;
           font-family: 'Poppins', sans-serif;
           background-color: #212529;
-          background-image: url('/images/capa_site.png');
+          background-image: url('/images/capa_site_nova_hd.png');
           background-size: cover;
           background-position: center;
           background-attachment: fixed;

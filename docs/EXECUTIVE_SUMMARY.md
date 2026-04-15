@@ -201,7 +201,7 @@ projeto-central/
 ├── public/
 │   └── images/
 │       ├── logo_viva.png
-│       └── capa_site.png
+│       └── capa_site_nova_hd.png
 │
 ├── .env.local                    ← Variáveis de ambiente
 ├── tsconfig.json                 ← TypeScript config

@@ -67,7 +67,7 @@ projeto-central/                              ← Nova root
 ├── public/
 │   ├── images/
 │   │   ├── logo_viva.png
-│   │   └── capa_site.png
+│   │   └── capa_site_nova_hd.png
 │   └── icons/
 ├── src/
 │   ├── pages/
@@ -521,7 +521,7 @@ export default function LoginPage() {
         <title>Login - Projeto Central</title>
       </Head>
       <div className="min-h-screen flex items-center justify-center bg-gray-900" 
-           style={{ backgroundImage: 'url(/capa_site.png)', backgroundSize: 'cover' }}>
+           style={{ backgroundImage: 'url(/capa_site_nova_hd.png)', backgroundSize: 'cover' }}>
         <div className="bg-gray-800 p-10 rounded-lg shadow-lg max-w-md w-full">
           <h1 className="text-3xl font-bold text-white mb-6 text-center">Central de Dashboards</h1>
           
