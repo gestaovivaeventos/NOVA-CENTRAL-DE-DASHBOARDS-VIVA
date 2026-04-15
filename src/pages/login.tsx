@@ -170,10 +170,12 @@ export default function LoginPage() {
         }
 
         .main-heading {
+          font-family: 'Orbitron', sans-serif;
           font-size: 1.6em;
-          font-weight: bold;
+          font-weight: 700;
           color: #F8F9FA;
           margin: 0;
+          letter-spacing: 1px;
         }
 
         .sub-heading {
@@ -182,82 +184,178 @@ export default function LoginPage() {
           margin-top: 5px;
         }
 
+        /* ===== Card wrapper com decorações ===== */
+        .card-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+
+
         .access-control {
-          background-color: rgba(33, 37, 41, 0.95);
-          padding: 40px 30px;
-          border-radius: 10px;
-          border: 1px solid #495057;
+          background: 
+            linear-gradient(135deg, 
+              rgba(45, 48, 52, 0.98) 0%, 
+              rgba(32, 35, 39, 0.99) 25%, 
+              rgba(50, 53, 58, 0.97) 50%, 
+              rgba(28, 31, 35, 0.99) 75%, 
+              rgba(42, 45, 49, 0.98) 100%
+            );
+          padding: 40px 35px;
+          border-radius: 16px;
+          border: 1px solid rgba(255, 140, 50, 0.2);
+          border-top-color: rgba(255, 255, 255, 0.08);
+          border-left-color: rgba(255, 255, 255, 0.05);
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 20px;
+          gap: 18px;
           max-width: 420px;
           width: 100%;
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+          box-shadow: 
+            0 0 40px rgba(255, 102, 0, 0.06),
+            0 0 80px rgba(255, 102, 0, 0.03),
+            0 25px 60px rgba(0, 0, 0, 0.7),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06),
+            inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+            inset 2px 0 8px rgba(0, 0, 0, 0.15),
+            inset -2px 0 8px rgba(0, 0, 0, 0.15);
+          position: relative;
+          z-index: 1;
+          overflow: hidden;
+        }
+
+        /* Textura metálica (pseudo-element) */
+        .access-control::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: 
+            repeating-linear-gradient(
+              0deg,
+              transparent,
+              transparent 2px,
+              rgba(255, 255, 255, 0.008) 2px,
+              rgba(255, 255, 255, 0.008) 4px
+            ),
+            radial-gradient(ellipse at 30% 20%, rgba(255, 160, 60, 0.04) 0%, transparent 50%),
+            radial-gradient(ellipse at 70% 80%, rgba(255, 120, 40, 0.03) 0%, transparent 50%);
+          border-radius: 16px;
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        /* Brilho sutil no topo */
+        .access-control::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 10%;
+          right: 10%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255, 180, 100, 0.2), rgba(255, 255, 255, 0.1), rgba(255, 180, 100, 0.2), transparent);
+          pointer-events: none;
+          z-index: 0;
+        }
+
+        .access-control > * {
+          position: relative;
+          z-index: 1;
         }
 
         .access-control input {
-          background-color: #212529;
-          border: 1px solid #495057;
+          background-color: rgba(20, 22, 25, 0.9);
+          border: 1px solid rgba(255, 140, 50, 0.2);
           color: #F8F9FA;
-          border-radius: 6px;
-          padding: 12px 15px;
-          text-align: center;
-          font-size: 1.2em;
-          width: 280px;
-          letter-spacing: 1px;
+          border-radius: 8px;
+          padding: 14px 16px;
+          text-align: left;
+          font-size: 1em;
+          width: 100%;
+          letter-spacing: 0.5px;
           box-sizing: border-box;
+          transition: border-color 0.3s, box-shadow 0.3s;
         }
 
         .access-control input::placeholder {
           letter-spacing: 0.5px;
           font-size: 0.9em;
-          color: #adb5bd;
+          color: #6c757d;
         }
 
         .access-control input:focus {
           outline: none;
-          box-shadow: 0 0 0 2px #FF6600;
+          box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.4);
           border-color: #FF6600;
         }
 
-        .access-control button {
+        .access-control button[type="submit"] {
           background: linear-gradient(180deg, #ff8a33 0%, #FF6600 50%, #D35400 100%);
           color: #212529;
           border: 1px solid #A6300C;
           border-top-color: #ff9c4d;
-          border-radius: 6px;
-          box-shadow: 0 4px 10px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+          border-radius: 8px;
+          box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3), inset 0 1px 0 rgba(255,255,255,0.15);
           text-shadow: 0 1px 1px rgba(0,0,0,0.2);
-          padding: 12px 25px;
+          padding: 14px 25px;
           font-weight: bold;
           cursor: pointer;
           font-size: 1.1em;
           letter-spacing: 0.5px;
-          transition: all 0.2s ease;
-          width: 280px;
+          transition: all 0.25s ease;
+          width: 100%;
         }
 
-        .access-control button:hover:not(:disabled) {
+        .access-control button[type="submit"]:hover:not(:disabled) {
           filter: brightness(1.1);
           transform: translateY(-2px);
-          box-shadow: 0 8px 18px rgba(0,0,0,0.45);
+          box-shadow: 0 8px 25px rgba(255, 102, 0, 0.4);
         }
 
-        .access-control button:disabled {
+        .access-control button[type="submit"]:disabled {
           opacity: 0.7;
           cursor: not-allowed;
+        }
+
+        .divider {
+          width: 60%;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(255, 140, 50, 0.3), transparent);
+          margin: 2px 0;
+        }
+
+        /* Decoração circuito ao redor do logo */
+        .logo-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          padding: 0 15px;
+        }
+
+        .logo-circuit-left, .logo-circuit-right {
+          flex-shrink: 0;
+          width: 80px;
+          height: 50px;
         }
 
         .error-message {
           color: #dc3545;
           font-weight: bold;
+          font-size: 0.9em;
         }
 
         .company-logo {
-          height: 60px;
+          height: 50px;
           width: auto;
-          margin-top: 15px;
+          margin-top: 5px;
+          opacity: 0.9;
         }
 
         #login-screen {
@@ -282,7 +380,7 @@ export default function LoginPage() {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 20px;
+          gap: 14px;
           width: 100%;
         }
 
@@ -291,11 +389,11 @@ export default function LoginPage() {
         }
 
         .forgot-password-link {
-          margin-top: 15px;
+          margin-top: 2px;
         }
 
         .forgot-password-link a {
-          font-size: 0.9em;
+          font-size: 0.85em;
           color: #adb5bd;
           text-decoration: none;
           transition: color 0.2s ease;
@@ -308,18 +406,16 @@ export default function LoginPage() {
         .password-wrapper {
           position: relative;
           width: 100%;
-          display: flex;
-          justify-content: center;
         }
 
         .password-wrapper input {
-          padding-right: 50px;
-          width: 280px;
+          padding-right: 55px;
+          width: 100%;
         }
 
         .password-toggle {
           position: absolute;
-          right: calc(50% - 140px + 15px);
+          right: 14px;
           top: 50%;
           transform: translateY(-50%);
           background: none;
@@ -339,64 +435,66 @@ export default function LoginPage() {
         footer {
           position: fixed;
           bottom: 16px;
-          left: 16px;
+          left: 50%;
+          transform: translateX(-50%);
           background: none;
           border: none;
           padding: 0;
           margin: 0;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           color: #6c757d;
           font-family: 'Poppins', sans-serif;
           letter-spacing: 0.3px;
           z-index: 100;
-          opacity: 0.8;
+          opacity: 0.7;
         }
       `}</style>
 
       <div id="login-screen">
         <div id="login-container">
           <h1 className="page-title">CENTRAL DE DASHBOARDS</h1>
-          <section className="access-control">
-            <div className="login-heading">
-              <h3 className="main-heading">Bem-vindo!</h3>
-              <p className="sub-heading">Faça o seu login</p>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="form-container">
-              {/* Campo Username */}
-              <div className="form-group">
-                <input
-                  id="username"
-                  name="username"
-                  type="text"
-                  value={formState.username}
-                  onChange={handleInputChange}
-                  placeholder="Usuário"
-                  disabled={formState.loading}
-                  maxLength={20}
-                />
+          <div className="card-wrapper">
+            <section className="access-control">
+              <div className="login-heading">
+                <h3 className="main-heading">Bem-vindo!</h3>
+                <p className="sub-heading">Faça o seu login</p>
               </div>
-
-              {/* Campo Senha */}
-              <div className="form-group">
-                <div className="password-wrapper">
+              
+              <form onSubmit={handleSubmit} className="form-container">
+                {/* Campo Username */}
+                <div className="form-group">
                   <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={formState.password}
+                    id="username"
+                    name="username"
+                    type="text"
+                    value={formState.username}
                     onChange={handleInputChange}
-                    placeholder="Senha"
+                    placeholder="Usuário"
                     disabled={formState.loading}
+                    maxLength={20}
                   />
-                  <span
-                    className="password-toggle"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? 'Ocultar' : 'Ver'}
-                  </span>
                 </div>
-              </div>
+
+                {/* Campo Senha */}
+                <div className="form-group">
+                  <div className="password-wrapper">
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? 'text' : 'password'}
+                      value={formState.password}
+                      onChange={handleInputChange}
+                      placeholder="Senha"
+                      disabled={formState.loading}
+                    />
+                    <span
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? 'Ocultar' : 'Ver'}
+                    </span>
+                  </div>
+                </div>
 
               {/* Mensagem de Erro */}
               {formState.error && (
@@ -413,9 +511,48 @@ export default function LoginPage() {
             <div className="forgot-password-link">
               <a href="/reset-password">Primeiro acesso / Esqueceu sua senha?</a>
             </div>
+
+            <div className="divider" />
+
+            <div className="logo-wrapper">
+              <svg className="logo-circuit-left" viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Linha principal */}
+                <line x1="0" y1="25" x2="60" y2="25" stroke="rgba(255,140,50,0.35)" strokeWidth="1"/>
+                <circle cx="60" cy="25" r="2.5" fill="rgba(255,140,50,0.5)"/>
+                {/* Ramal superior */}
+                <line x1="5" y1="10" x2="35" y2="10" stroke="rgba(255,140,50,0.25)" strokeWidth="0.8"/>
+                <line x1="35" y1="10" x2="45" y2="18" stroke="rgba(255,140,50,0.2)" strokeWidth="0.8"/>
+                <circle cx="35" cy="10" r="1.5" fill="rgba(255,140,50,0.35)"/>
+                <rect x="42" y="15" width="5" height="5" rx="1" stroke="rgba(255,140,50,0.3)" strokeWidth="0.7" fill="none"/>
+                {/* Ramal inferior */}
+                <line x1="10" y1="40" x2="50" y2="40" stroke="rgba(255,140,50,0.25)" strokeWidth="0.8"/>
+                <circle cx="50" cy="40" r="2" fill="rgba(255,140,50,0.4)"/>
+                <line x1="50" y1="40" x2="55" y2="32" stroke="rgba(255,140,50,0.2)" strokeWidth="0.8"/>
+                {/* Nó intermediário */}
+                <line x1="25" y1="25" x2="25" y2="15" stroke="rgba(255,140,50,0.15)" strokeWidth="0.8"/>
+                <circle cx="25" cy="15" r="1" fill="rgba(255,140,50,0.25)"/>
+              </svg>
+              <img className="company-logo" src="/images/logo_viva.png" alt="Logo Viva Eventos" />
+              <svg className="logo-circuit-right" viewBox="0 0 80 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+                {/* Linha principal */}
+                <line x1="80" y1="25" x2="20" y2="25" stroke="rgba(255,140,50,0.35)" strokeWidth="1"/>
+                <circle cx="20" cy="25" r="2.5" fill="rgba(255,140,50,0.5)"/>
+                {/* Ramal superior */}
+                <line x1="75" y1="10" x2="45" y2="10" stroke="rgba(255,140,50,0.25)" strokeWidth="0.8"/>
+                <line x1="45" y1="10" x2="35" y2="18" stroke="rgba(255,140,50,0.2)" strokeWidth="0.8"/>
+                <circle cx="45" cy="10" r="1.5" fill="rgba(255,140,50,0.35)"/>
+                <rect x="33" y="15" width="5" height="5" rx="1" stroke="rgba(255,140,50,0.3)" strokeWidth="0.7" fill="none"/>
+                {/* Ramal inferior */}
+                <line x1="70" y1="40" x2="30" y2="40" stroke="rgba(255,140,50,0.25)" strokeWidth="0.8"/>
+                <circle cx="30" cy="40" r="2" fill="rgba(255,140,50,0.4)"/>
+                <line x1="30" y1="40" x2="25" y2="32" stroke="rgba(255,140,50,0.2)" strokeWidth="0.8"/>
+                {/* Nó intermediário */}
+                <line x1="55" y1="25" x2="55" y2="15" stroke="rgba(255,140,50,0.15)" strokeWidth="0.8"/>
+                <circle cx="55" cy="15" r="1" fill="rgba(255,140,50,0.25)"/>
+              </svg>
+            </div>
           </section>
-          
-          <img className="company-logo" src="/images/logo_viva.png" alt="Logo Viva Eventos" />
+          </div>
         </div>
       </div>
 

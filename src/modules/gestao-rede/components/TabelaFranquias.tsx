@@ -445,6 +445,8 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
               const saudeConfig = SAUDE_CONFIG[franquia.saude] || SAUDE_CONFIG['SEM_AVALIACAO'];
               const isImplantacao = franquia.maturidade === 'IMPLANTACAO';
               const isInativa = franquia.status === 'INATIVA' || franquia.statusInativacao === 'EM_ENCERRAMENTO';
+              const isIncubacao0 = franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0');
+              const semClassificacao = isImplantacao || isInativa || isIncubacao0;
               const isEven = index % 2 === 0;
               
               return (
@@ -532,7 +534,7 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                     borderBottom: '1px solid #444',
                     textAlign: 'left',
                   }}>
-                    {isImplantacao || isInativa ? (
+                    {semClassificacao ? (
                       <span style={{ color: '#6c757d', fontSize: '0.85rem' }}>-</span>
                     ) : (
                       <span style={{
@@ -549,8 +551,8 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                     padding: '10px 8px',
                     borderBottom: '1px solid #444',
                   }}>
-                    {isImplantacao || isInativa ? (
-                      <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>N/A</span>
+                    {semClassificacao ? (
+                      <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>{isIncubacao0 ? 'Sem Avaliação' : 'N/A'}</span>
                     ) : (
                       <span style={{
                         backgroundColor: saudeConfig.bg,
@@ -570,7 +572,7 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                     padding: '10px 8px',
                     borderBottom: '1px solid #444',
                   }}>
-                    {isImplantacao || isInativa || !franquia.saudeAnterior ? (
+                    {semClassificacao || !franquia.saudeAnterior ? (
                       <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>-</span>
                     ) : (() => {
                       const saudeAntConfig = SAUDE_CONFIG[franquia.saudeAnterior!] || SAUDE_CONFIG['SEM_AVALIACAO'];
@@ -609,7 +611,7 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                     borderBottom: '1px solid #444',
                     textAlign: 'left',
                   }}>
-                    {isImplantacao || isInativa || !franquia.mesesNaSaudeAtual ? (
+                    {semClassificacao || !franquia.mesesNaSaudeAtual ? (
                       <span style={{ color: '#6c757d', fontSize: '0.75rem' }}>-</span>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
@@ -635,7 +637,7 @@ export default function TabelaFranquias({ franquias, titulo, filtros }: TabelaFr
                     borderBottom: '1px solid #444',
                     textAlign: 'left',
                   }}>
-                    {isImplantacao || isInativa ? (
+                    {semClassificacao ? (
                       <span style={{ color: '#6c757d' }}>-</span>
                     ) : (
                       renderFlags(franquia)

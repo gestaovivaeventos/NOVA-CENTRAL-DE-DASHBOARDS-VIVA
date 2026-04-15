@@ -105,6 +105,7 @@ export interface Franquia {
   cluster: string;              // Cluster da franquia (ex: "INCUBAÇÃO 0")
   dataEncerramento: string;     // Data de encerramento da franquia
   consultorResponsavel: string; // Consultor responsável pela franquia
+  usuarioCentral: string;       // Login do consultor na central (ex: "melo.marina")
   // Campos de evolução de saúde (calculados a partir do histórico)
   saudeAnterior?: SaudeFranquia;       // Saúde do mês anterior
   mesesNaSaudeAtual?: number;          // Quantos meses consecutivos na saúde atual
@@ -182,6 +183,7 @@ export interface GestaoRedeApiResponse {
 export interface MetaIndicadorUnidade {
   data: string;
   nm_unidade: string;
+  consultor_responsavel: string;
   vvr: string;
   vvr_carteira: string;
   endividamento: string;
@@ -194,6 +196,7 @@ export interface MetaIndicadorUnidade {
   estrutura_organizacional: string;
   churn: string;
   ativo_pex: string;
+  validado: string;
 }
 
 /**

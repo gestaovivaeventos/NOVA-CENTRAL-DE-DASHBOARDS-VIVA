@@ -4,10 +4,12 @@
  * ACESSO RESTRITO: Apenas Franqueadora (accessLevel = 1)
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { withAuthAndFranchiser } from '@/utils/auth';
 import Head from 'next/head';
 import Image from 'next/image';
+import * as XLSX from 'xlsx';
+import { Download } from 'lucide-react';
 import { Card, PexLayout, useSheetsData, useParametrosData } from '@/modules/pex';
 
 interface UnidadeConsultor {
@@ -67,6 +69,11 @@ function ParametrosContent() {
   useEffect(() => {
     console.log('[Parametros] Forçando busca de dados frescos do banco...');
     forceRefetchAll();
+    // Carregar dados de resultados oficiais (para tempo_medio_carteira)
+    fetch('/api/pex/historico-resultados')
+      .then(res => res.ok ? res.json() : [])
+      .then(setDadosResultadosOficiais)
+      .catch(() => setDadosResultadosOficiais([]));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   
   // Estados locais para UI (não afetam o cache)
@@ -104,6 +111,10 @@ function ParametrosContent() {
   const [alteracoesBonus, setAlteracoesBonus] = useState<Map<string, Map<string, string>>>(new Map());
   const [mensagemBonus, setMensagemBonus] = useState<{ tipo: 'success' | 'error'; texto: string } | null>(null);
   const [pesquisaUnidadeBonus, setPesquisaUnidadeBonus] = useState<string>('');
+
+  // Estado para dados de resultados oficiais (tempo_medio_carteira por franquia)
+  const [dadosResultadosOficiais, setDadosResultadosOficiais] = useState<any[]>([]);
+  const [pesquisaVvrCarteira, setPesquisaVvrCarteira] = useState<string>('');
 
   // Dados do contexto (com cache)
   const unidadesConsultores = parametrosData.consultores;
@@ -490,7 +501,6 @@ function ParametrosContent() {
         return {
           ...meta,
           vvr: alteracoesDoCluster.get('VVR') || meta.vvr,
-          vvrCarteira: alteracoesDoCluster.get('VVR CARTEIRA') || meta.vvrCarteira,
           percentualEndividamento: alteracoesDoCluster.get('% ENDIVIDAMENTO') || meta.percentualEndividamento,
           nps: alteracoesDoCluster.get('NPS') || meta.nps,
           percentualMcEntrega: alteracoesDoCluster.get('% MC ENTREGA') || meta.percentualMcEntrega,
@@ -1232,7 +1242,7 @@ function ParametrosContent() {
                   {/* Cabeçalho da tabela */}
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '140px repeat(11, 1fr)',
+                    gridTemplateColumns: '140px repeat(10, 1fr)',
                     gap: '8px',
                     padding: '12px 16px',
                     backgroundColor: '#2a2f36',
@@ -1244,7 +1254,6 @@ function ParametrosContent() {
                   }}>
                     <div>CLUSTER</div>
                     <div style={{ textAlign: 'center' }}>VVR</div>
-                    <div style={{ textAlign: 'center' }}>VVR CARTEIRA</div>
                     <div style={{ textAlign: 'center' }}>% ENDIV.</div>
                     <div style={{ textAlign: 'center' }}>NPS</div>
                     <div style={{ textAlign: 'center' }}>% MC ENTREGA</div>
@@ -1273,7 +1282,6 @@ function ParametrosContent() {
                         const foiAlterado = alteracoesDaMeta && alteracoesDaMeta.size > 0;
 
                         const vvrAtual = alteracoesDaMeta?.get('VVR') || meta.vvr;
-                        const vvrCarteiraAtual = alteracoesDaMeta?.get('VVR CARTEIRA') || meta.vvrCarteira;
                         const endivAtual = alteracoesDaMeta?.get('% ENDIVIDAMENTO') || meta.percentualEndividamento;
                         const npsAtual = alteracoesDaMeta?.get('NPS') || meta.nps;
                         const mcAtual = alteracoesDaMeta?.get('% MC ENTREGA') || meta.percentualMcEntrega;
@@ -1289,7 +1297,7 @@ function ParametrosContent() {
                           key={meta.cluster}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '140px repeat(11, 1fr)',
+                            gridTemplateColumns: '140px repeat(10, 1fr)',
                             gap: '8px',
                             padding: '12px 16px',
                             borderBottom: '1px solid #343A40',
@@ -1325,27 +1333,6 @@ function ParametrosContent() {
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('VVR') ? '2px solid #FF6600' : '1px solid #555',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                                fontFamily: 'Poppins, sans-serif',
-                                textAlign: 'center',
-                                outline: 'none'
-                              }}
-                            />
-                          </div>
-
-                          {/* Input VVR CARTEIRA */}
-                          <div>
-                            <input
-                              type="text"
-                              value={vvrCarteiraAtual}
-                              onChange={(e) => handleMetaChange(meta.cluster, 'VVR CARTEIRA', e.target.value)}
-                              style={{
-                                width: '100%',
-                                padding: '6px 8px',
-                                backgroundColor: '#343A40',
-                                color: 'white',
-                                border: alteracoesDaMeta?.has('VVR CARTEIRA') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
                                 fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
@@ -1596,6 +1583,215 @@ function ParametrosContent() {
               </div>
             )}
           </Card>
+
+          {/* SEÇÃO META VVR CARTEIRA POR FRANQUIA */}
+          {(() => {
+            // Calcular dados da tabela VVR Carteira por franquia
+            const dadosVvrCarteira = (() => {
+              if (!dadosResultadosOficiais.length || !unidadesClusters.length || !metasClusters.length) return [];
+
+              // Encontrar o mês mais recente por franquia
+              const latestByFranquia: Record<string, any> = {};
+              dadosResultadosOficiais.forEach((item: any) => {
+                const franquia = (item['Franquia'] || '').trim();
+                if (!franquia) return;
+                const dataStr = (item['data'] || '').trim();
+                const partes = dataStr.split('/');
+                if (partes.length < 3) return;
+                const mes = parseInt(partes[1], 10);
+                const ano = parseInt(partes[2], 10);
+                if (isNaN(mes) || isNaN(ano)) return;
+                const key = ano * 100 + mes;
+                if (!latestByFranquia[franquia] || key > latestByFranquia[franquia]._key) {
+                  latestByFranquia[franquia] = { ...item, _key: key };
+                }
+              });
+
+              return Object.entries(latestByFranquia).map(([franquia, item]: [string, any]) => {
+                const cluster = (item['Grupo da franquia'] || '').toString().toUpperCase().trim();
+                const isIncubacao = cluster.includes('INCUBA');
+                const metaCluster = metasClusters.find((m: any) => m.cluster.toUpperCase().trim() === cluster);
+                const tempoMedio = parseFloat((item['tempo_medio_carteira'] || '0').toString().replace(',', '.')) || 0;
+                const vvrMeta = metaCluster ? parseFloat(metaCluster.vvr) || 0 : 0;
+                const vvrCarteiraMeta = isIncubacao
+                  ? (metaCluster ? parseFloat((metaCluster as any).vvrCarteira || '0') || 0 : 0)
+                  : vvrMeta > 0 && tempoMedio > 0 ? (vvrMeta * tempoMedio) / 12 : 0;
+
+                return { franquia, cluster, tempoMedio, vvrCarteiraMeta };
+              }).sort((a, b) => a.franquia.localeCompare(b.franquia));
+            })();
+
+            const dadosFiltradosVvr = dadosVvrCarteira.filter(item =>
+              item.franquia.toLowerCase().includes(pesquisaVvrCarteira.toLowerCase())
+            );
+
+            const exportarVvrCarteira = () => {
+              const linhas = dadosFiltradosVvr.map(item => ({
+                Franquia: item.franquia,
+                Cluster: item.cluster,
+                'Tempo Médio (meses)': item.tempoMedio > 0 ? item.tempoMedio.toFixed(1).replace('.', ',') : '-',
+                'Meta VVR Carteira': item.vvrCarteiraMeta > 0
+                  ? item.vvrCarteiraMeta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+                  : '-',
+              }));
+              const ws = XLSX.utils.json_to_sheet(linhas);
+              const wb = XLSX.utils.book_new();
+              XLSX.utils.book_append_sheet(wb, ws, 'Meta VVR Carteira');
+              XLSX.writeFile(wb, 'PEX_Meta_VVR_Carteira_por_Franquia.xlsx');
+            };
+
+            return (
+              <>
+                <h1 
+                  className="text-3xl font-bold mb-6 mt-12" 
+                  style={{ 
+                    color: '#adb5bd', 
+                    fontFamily: 'Poppins, sans-serif',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.06em',
+                    borderBottom: '2px solid #FF6600',
+                    paddingBottom: '12px'
+                  }}
+                >
+                  Meta VVR Carteira por Franquia
+                </h1>
+
+                <Card>
+                  {dadosResultadosOficiais.length === 0 ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-16 w-16 border-b-2 mx-auto" style={{ borderColor: '#FF6600' }}></div>
+                      <p className="mt-4" style={{ color: '#adb5bd' }}>Carregando dados...</p>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Barra de pesquisa + exportar */}
+                      <div style={{ 
+                        padding: '12px 16px', 
+                        borderBottom: '1px solid #343A40',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '16px',
+                        flexWrap: 'wrap'
+                      }}>
+                        <input
+                          type="text"
+                          placeholder="Pesquisar franquia..."
+                          value={pesquisaVvrCarteira}
+                          onChange={(e) => setPesquisaVvrCarteira(e.target.value)}
+                          style={{
+                            width: '100%',
+                            maxWidth: '400px',
+                            padding: '8px 16px',
+                            backgroundColor: '#343A40',
+                            color: 'white',
+                            border: '1px solid #555',
+                            borderRadius: '8px',
+                            fontSize: '0.85rem',
+                            fontFamily: 'Poppins, sans-serif',
+                            outline: 'none'
+                          }}
+                        />
+                        <button
+                          onClick={exportarVvrCarteira}
+                          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-dark-tertiary border border-gray-600 text-gray-400 hover:bg-orange-500/10 hover:border-orange-500 hover:text-orange-500"
+                          style={{ fontFamily: 'Poppins, sans-serif' }}
+                        >
+                          <Download size={16} />
+                          Exportar
+                        </button>
+                      </div>
+
+                      <div style={{ overflowX: 'auto' }}>
+                        <div style={{ minWidth: '700px' }}>
+                          {/* Cabeçalho da tabela */}
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '2fr 1fr 1fr 1.5fr',
+                            gap: '8px',
+                            padding: '12px 16px',
+                            backgroundColor: '#2a2f36',
+                            borderRadius: '0',
+                            fontWeight: 600,
+                            color: '#FF6600',
+                            fontFamily: 'Poppins, sans-serif',
+                            fontSize: '0.7rem'
+                          }}>
+                            <div>FRANQUIA</div>
+                            <div style={{ textAlign: 'center' }}>CLUSTER</div>
+                            <div style={{ textAlign: 'center' }}>TEMPO MÉDIO (MESES)</div>
+                            <div style={{ textAlign: 'center' }}>META VVR CARTEIRA</div>
+                          </div>
+
+                          {/* Lista */}
+                          <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+                            {dadosFiltradosVvr.length === 0 ? (
+                              <div style={{
+                                padding: '40px',
+                                textAlign: 'center',
+                                color: '#adb5bd',
+                                fontFamily: 'Poppins, sans-serif'
+                              }}>
+                                Nenhum dado disponível
+                              </div>
+                            ) : (
+                              dadosFiltradosVvr.map((item, index) => (
+                                <div 
+                                  key={item.franquia}
+                                  style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '2fr 1fr 1fr 1.5fr',
+                                    gap: '8px',
+                                    padding: '10px 16px',
+                                    borderBottom: '1px solid #343A40',
+                                    backgroundColor: index % 2 === 0 ? '#2a2f36' : '#23272d',
+                                    fontFamily: 'Poppins, sans-serif',
+                                    alignItems: 'center'
+                                  }}
+                                >
+                                  <div style={{ color: '#F8F9FA', fontSize: '0.8rem', fontWeight: 500 }}>
+                                    {item.franquia}
+                                  </div>
+                                  <div style={{ color: '#adb5bd', fontSize: '0.75rem', textAlign: 'center' }}>
+                                    {item.cluster || '-'}
+                                  </div>
+                                  <div style={{ color: '#adb5bd', fontSize: '0.75rem', textAlign: 'center' }}>
+                                    {item.tempoMedio > 0 ? item.tempoMedio.toFixed(1).replace('.', ',') : '-'}
+                                  </div>
+                                  <div style={{ 
+                                    color: item.vvrCarteiraMeta > 0 ? '#F8F9FA' : '#6c757d', 
+                                    fontSize: '0.8rem', 
+                                    textAlign: 'center',
+                                    fontWeight: 600
+                                  }}>
+                                    {item.vvrCarteiraMeta > 0
+                                      ? item.vvrCarteiraMeta.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 2 })
+                                      : '-'}
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Rodapé informativo */}
+                      <div style={{ 
+                        padding: '12px 16px', 
+                        borderTop: '2px solid #343A40',
+                        color: '#6c757d',
+                        fontSize: '0.75rem',
+                        fontFamily: 'Poppins, sans-serif'
+                      }}>
+                        Meta VVR Carteira = (Meta VVR do Cluster × Tempo Médio Carteira) / 12 &nbsp;|&nbsp; 
+                        {dadosFiltradosVvr.length} franquia(s)
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </>
+            );
+          })()}
 
           {/* SEÇÃO DE GERENCIAMENTO DE PESOS POR QUARTER */}
           <h1 

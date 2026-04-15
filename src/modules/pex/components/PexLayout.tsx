@@ -260,10 +260,17 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                   {user?.unitPrincipal || user?.unitNames?.[0] || 'Franquia'}
                 </p>
                 <p style={{
-                  color: '#4a5568',
+                  color: '#FFFFFF',
                   fontSize: '0.6rem',
                 }}>
-                  Atualizado: {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                  Atualizado: {(() => {
+                    const hoje = new Date();
+                    const dia6 = new Date(hoje.getFullYear(), hoje.getMonth(), 6);
+                    const dow = dia6.getDay(); // 0=dom, 6=sab
+                    if (dow === 6) dia6.setDate(8); // sab -> seg
+                    if (dow === 0) dia6.setDate(7); // dom -> seg
+                    return dia6.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                  })()}
                 </p>
               </div>
             </div>

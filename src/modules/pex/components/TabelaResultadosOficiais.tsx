@@ -29,6 +29,12 @@ interface TabelaResultadosOficiaisProps {
   metas: MetaCluster[];
   quarterSelecionado: string;
   franquiasFiltradas?: string[];
+  isFranqueadora?: boolean;
+  dadosEstrutura?: Record<string, { societaria: string; time: string }>;
+  dadosConformidades?: Record<string, Record<string, {
+    pipeVendas: string; pipeRelacionamento: string; pipeProducao: string; confPipe: string;
+    fechamentoPrazo: string; endividamentoFranq: string; confFinanceira: string;
+  }>>;
 }
 
 const INDICADORES = [
@@ -113,7 +119,10 @@ export default function TabelaResultadosOficiais({
   dadosResultados,
   metas,
   quarterSelecionado,
-  franquiasFiltradas
+  franquiasFiltradas,
+  isFranqueadora = false,
+  dadosEstrutura = {},
+  dadosConformidades = {}
 }: TabelaResultadosOficiaisProps) {
   const [colunaOrdenada, setColunaOrdenada] = useState<string | null>(null);
   const [direcaoOrdenacao, setDirecaoOrdenacao] = useState<OrdenacaoDir>(null);
@@ -219,7 +228,7 @@ export default function TabelaResultadosOficiais({
         indicadoresResult[ind.id] = { realizado, meta, formato: ind.formato };
       });
 
-      return { franquia, cluster, indicadores: indicadoresResult };
+      return { franquia, cluster, tempoMedio, indicadores: indicadoresResult };
     });
   }, [dadosFiltrados, metas]);
 
@@ -468,8 +477,21 @@ export default function TabelaResultadosOficiais({
                             textAlign: 'center',
                             verticalAlign: 'middle',
                             backgroundColor: cellBg,
-                            transition: 'background-color 0.15s ease'
+                            transition: 'background-color 0.15s ease',
+                            position: ind.id === 'vvrCarteira' ? 'relative' as const : undefined,
                           }}
+                          title={
+                            ind.id === 'vvrCarteira' && isFranqueadora
+                              ? `Tempo médio carteira: ${item.tempoMedio > 0 ? item.tempoMedio.toFixed(1).replace('.', ',') + ' meses' : '-'}`
+                              : ind.id === 'estrutura' && isFranqueadora && filtroMes === listaMeses[0] && dadosEstrutura[item.franquia]
+                                ? `Societária: ${dadosEstrutura[item.franquia].societaria || '-'} | Times: ${dadosEstrutura[item.franquia].time || '-'}`
+                                : ind.id === 'conformidades' && isFranqueadora && filtroMesParsed && dadosConformidades[item.franquia]?.[`${filtroMesParsed.mes}-${filtroMesParsed.ano}`]
+                                  ? (() => {
+                                      const c = dadosConformidades[item.franquia][`${filtroMesParsed.mes}-${filtroMesParsed.ano}`];
+                                      return `Conf. Pipe: ${c.confPipe || '-'} (Vendas: ${c.pipeVendas || '-'} | Relac: ${c.pipeRelacionamento || '-'} | Prod: ${c.pipeProducao || '-'})\nConf. Financeira: ${c.confFinanceira || '-'} (Fechamento: ${c.fechamentoPrazo || '-'} | Endiv: ${c.endividamentoFranq || '-'})`;
+                                    })()
+                                  : undefined
+                          }
                         >
                           {/* Meta */}
                           <div style={{
