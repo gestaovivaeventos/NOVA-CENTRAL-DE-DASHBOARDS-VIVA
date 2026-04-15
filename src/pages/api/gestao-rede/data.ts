@@ -75,8 +75,10 @@ function mapStatus(valor: string): StatusFranquia {
 function mapStatusInativacao(valor: string): StatusInativacao {
   const status = valor?.toUpperCase()?.trim() || '';
   
-  if (status.includes('OPERA')) return 'ENCERRADA_OPERACAO';
-  if (status.includes('IMPLANTA')) return 'ENCERRADA_IMPLANTACAO';
+  // "Implantação" sozinho NÃO é inativação — indica fase de implantação
+  // Só considerar encerrada se contiver "encerrada" ou variações
+  if (status.includes('ENCERRAD') && status.includes('OPERA')) return 'ENCERRADA_OPERACAO';
+  if (status.includes('ENCERRAD') && status.includes('IMPLANTA')) return 'ENCERRADA_IMPLANTACAO';
   if (status.includes('ENCERRAMENTO') || status.includes('EM ENCERRAMENTO')) return 'EM_ENCERRAMENTO';
   
   return null;
