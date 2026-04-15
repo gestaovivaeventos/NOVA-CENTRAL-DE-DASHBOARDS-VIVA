@@ -250,6 +250,11 @@ export default function ResultadosPage() {
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
   const [dadosResultadosOficiais, setDadosResultadosOficiais] = useState<any[]>([]);
+  const [dadosEstrutura, setDadosEstrutura] = useState<Record<string, { societaria: string; time: string }>>({});
+  const [dadosConformidades, setDadosConformidades] = useState<Record<string, Record<string, {
+    pipeVendas: string; pipeRelacionamento: string; pipeProducao: string; confPipe: string;
+    fechamentoPrazo: string; endividamentoFranq: string; confFinanceira: string;
+  }>>>({});
   // Filtro independente de mês/ano para os cards de indicador
   const [filtroMesIndicador, setFiltroMesIndicador] = useState<string>('');
   // Filtro independente de quarter para a tabela resumo
@@ -289,6 +294,16 @@ export default function ResultadosPage() {
       .then(res => res.ok ? res.json() : [])
       .then(setDadosResultadosOficiais)
       .catch(() => setDadosResultadosOficiais([]));
+    // Carregar dados de estrutura organizacional
+    fetch('/api/pex/estrutura')
+      .then(res => res.ok ? res.json() : { data: {} })
+      .then(result => setDadosEstrutura(result.data || {}))
+      .catch(() => setDadosEstrutura({}));
+    // Carregar detalhamento de conformidades
+    fetch('/api/pex/conformidades')
+      .then(res => res.ok ? res.json() : { data: {} })
+      .then(result => setDadosConformidades(result.data || {}))
+      .catch(() => setDadosConformidades({}));
   }, []);
 
   // Listas para os filtros
@@ -1193,6 +1208,9 @@ export default function ResultadosPage() {
                   metas={parametrosData?.metas || []}
                   quarterSelecionado={filtroQuarterTabela}
                   franquiasFiltradas={filtrosUnidades.length > 0 ? filtrosUnidades : listaUnidades}
+                  isFranqueadora={isFranchiser}
+                  dadosEstrutura={dadosEstrutura}
+                  dadosConformidades={dadosConformidades}
                 />
               </Card>
             </>
@@ -1791,6 +1809,9 @@ export default function ResultadosPage() {
                   metas={parametrosData?.metas || []}
                   quarterSelecionado={filtroQuarterTabela}
                   franquiasFiltradas={filtrosUnidades.length > 0 ? filtrosUnidades : listaUnidades}
+                  isFranqueadora={isFranchiser}
+                  dadosEstrutura={dadosEstrutura}
+                  dadosConformidades={dadosConformidades}
                 />
               </Card>
             </>

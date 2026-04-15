@@ -97,7 +97,7 @@ export default async function handler(
 
       const colunaMap: Record<string, string> = {
         'VVR': 'B',
-        'VVR CARTEIRA': 'C',
+        // 'VVR CARTEIRA' removido - agora é campo somente leitura (tempo_medio_carteira)
         '% ENDIVIDAMENTO': 'D',
         'NPS': 'E',
         '% MC ENTREGA': 'F',
@@ -139,8 +139,8 @@ export default async function handler(
         return num.toFixed(casasDecimais).replace('.', ',');
       };
       
-      if (coluna === 'VVR' || coluna === 'VVR CARTEIRA') {
-        // VVR são valores monetários, sem %
+      if (coluna === 'VVR') {
+        // VVR é valor monetário, sem %
         const numero = parseFloat(String(valor).replace(',', '.'));
         valorFormatado = formatoBrasileiro(numero, 2);
         valueInputOption = 'USER_ENTERED';

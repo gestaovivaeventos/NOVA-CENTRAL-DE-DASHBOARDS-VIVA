@@ -490,7 +490,6 @@ function ParametrosContent() {
         return {
           ...meta,
           vvr: alteracoesDoCluster.get('VVR') || meta.vvr,
-          vvrCarteira: alteracoesDoCluster.get('VVR CARTEIRA') || meta.vvrCarteira,
           percentualEndividamento: alteracoesDoCluster.get('% ENDIVIDAMENTO') || meta.percentualEndividamento,
           nps: alteracoesDoCluster.get('NPS') || meta.nps,
           percentualMcEntrega: alteracoesDoCluster.get('% MC ENTREGA') || meta.percentualMcEntrega,
@@ -1232,7 +1231,7 @@ function ParametrosContent() {
                   {/* Cabeçalho da tabela */}
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: '140px repeat(11, 1fr)',
+                    gridTemplateColumns: '140px repeat(10, 1fr)',
                     gap: '8px',
                     padding: '12px 16px',
                     backgroundColor: '#2a2f36',
@@ -1244,7 +1243,6 @@ function ParametrosContent() {
                   }}>
                     <div>CLUSTER</div>
                     <div style={{ textAlign: 'center' }}>VVR</div>
-                    <div style={{ textAlign: 'center' }}>VVR CARTEIRA</div>
                     <div style={{ textAlign: 'center' }}>% ENDIV.</div>
                     <div style={{ textAlign: 'center' }}>NPS</div>
                     <div style={{ textAlign: 'center' }}>% MC ENTREGA</div>
@@ -1273,7 +1271,6 @@ function ParametrosContent() {
                         const foiAlterado = alteracoesDaMeta && alteracoesDaMeta.size > 0;
 
                         const vvrAtual = alteracoesDaMeta?.get('VVR') || meta.vvr;
-                        const vvrCarteiraAtual = alteracoesDaMeta?.get('VVR CARTEIRA') || meta.vvrCarteira;
                         const endivAtual = alteracoesDaMeta?.get('% ENDIVIDAMENTO') || meta.percentualEndividamento;
                         const npsAtual = alteracoesDaMeta?.get('NPS') || meta.nps;
                         const mcAtual = alteracoesDaMeta?.get('% MC ENTREGA') || meta.percentualMcEntrega;
@@ -1289,7 +1286,7 @@ function ParametrosContent() {
                           key={meta.cluster}
                           style={{
                             display: 'grid',
-                            gridTemplateColumns: '140px repeat(11, 1fr)',
+                            gridTemplateColumns: '140px repeat(10, 1fr)',
                             gap: '8px',
                             padding: '12px 16px',
                             borderBottom: '1px solid #343A40',
@@ -1325,27 +1322,6 @@ function ParametrosContent() {
                                 backgroundColor: '#343A40',
                                 color: 'white',
                                 border: alteracoesDaMeta?.has('VVR') ? '2px solid #FF6600' : '1px solid #555',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                                fontFamily: 'Poppins, sans-serif',
-                                textAlign: 'center',
-                                outline: 'none'
-                              }}
-                            />
-                          </div>
-
-                          {/* Input VVR CARTEIRA */}
-                          <div>
-                            <input
-                              type="text"
-                              value={vvrCarteiraAtual}
-                              onChange={(e) => handleMetaChange(meta.cluster, 'VVR CARTEIRA', e.target.value)}
-                              style={{
-                                width: '100%',
-                                padding: '6px 8px',
-                                backgroundColor: '#343A40',
-                                color: 'white',
-                                border: alteracoesDaMeta?.has('VVR CARTEIRA') ? '2px solid #FF6600' : '1px solid #555',
                                 borderRadius: '6px',
                                 fontSize: '0.75rem',
                                 fontFamily: 'Poppins, sans-serif',
