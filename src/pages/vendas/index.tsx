@@ -891,10 +891,10 @@ export default function Dashboard() {
     }
 
     return {
-      leads: { valor: leadsCount, meta: metaLeads * multiplicador },
-      reunioes: { valor: reunioesCount, meta: metaReunioes * multiplicador },
-      contratos: { valor: contratosCount, meta: metaContratos * multiplicador },
-      adesao: { valor: adesoesCount, meta: metaAdesoes * multiplicador },
+      leads: { valor: leadsCount, meta: Math.ceil(metaLeads * multiplicador) },
+      reunioes: { valor: reunioesCount, meta: Math.ceil(metaReunioes * multiplicador) },
+      contratos: { valor: contratosCount, meta: Math.ceil(metaContratos * multiplicador) },
+      adesao: { valor: adesoesCount, meta: Math.ceil(metaAdesoes * multiplicador) },
     };
   }, [dadosFiltrados, funilData, fundosData, filtros.unidades, filtros.tipoCurso, filtros.isMetaInterna, metasData, periodo, parseFunilDate]);
 
@@ -1216,7 +1216,7 @@ export default function Dashboard() {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
             const metaRangeEnd = new Date(Number(ano), Number(mes), 1);
             if (metaRangeStart <= endDate && metaRangeEnd > startDate) {
-              leadsMeta += (metaInfo.meta_leads || 0) * multiplicador;
+              leadsMeta += Math.ceil((metaInfo.meta_leads || 0) * multiplicador);
             }
           }
         });
@@ -1251,7 +1251,7 @@ export default function Dashboard() {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
             const metaRangeEnd = new Date(Number(ano), Number(mes), 1);
             if (metaRangeStart <= endDate && metaRangeEnd > startDate) {
-              reunioesMeta += (metaInfo.meta_reunioes || 0) * multiplicador;
+              reunioesMeta += Math.ceil((metaInfo.meta_reunioes || 0) * multiplicador);
             }
           }
         });
@@ -1277,7 +1277,7 @@ export default function Dashboard() {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
             const metaRangeEnd = new Date(Number(ano), Number(mes), 1);
             if (metaRangeStart <= endDate && metaRangeEnd > startDate) {
-              contratosMeta += (metaInfo.meta_contratos || 0) * multiplicador;
+              contratosMeta += Math.ceil((metaInfo.meta_contratos || 0) * multiplicador);
             }
           }
         });
@@ -1300,7 +1300,7 @@ export default function Dashboard() {
             const metaRangeStart = new Date(Number(ano), Number(mes) - 1, 1);
             const metaRangeEnd = new Date(Number(ano), Number(mes), 1);
             if (metaRangeStart <= endDate && metaRangeEnd > startDate) {
-              adesoesMeta += (metaInfo.meta_adesoes || 0) * multiplicador;
+              adesoesMeta += Math.ceil((metaInfo.meta_adesoes || 0) * multiplicador);
             }
           }
         });
