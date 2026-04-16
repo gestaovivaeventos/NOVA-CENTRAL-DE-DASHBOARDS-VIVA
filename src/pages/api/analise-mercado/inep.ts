@@ -363,16 +363,16 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
   }
 
   // ── 3. Distribuição por estado ──
-  const porUf = new Map<string, { mat: number; conc: number; ies: Set<number> }>();
+  const porUf = new Map<string, { mat: number; conc: number; ing: number; ies: Set<number> }>();
   for (const r of rowsAtual) {
     if (!r.SG_UF) continue;
     let e = porUf.get(r.SG_UF);
-    if (!e) { e = { mat: 0, conc: 0, ies: new Set() }; porUf.set(r.SG_UF, e); }
-    e.mat += r.QT_MAT; e.conc += r.QT_CONC; e.ies.add(r.CO_IES);
+    if (!e) { e = { mat: 0, conc: 0, ing: 0, ies: new Set() }; porUf.set(r.SG_UF, e); }
+    e.mat += r.QT_MAT; e.conc += r.QT_CONC; e.ing += r.QT_ING; e.ies.add(r.CO_IES);
   }
   const totalMatEst = Array.from(porUf.values()).reduce((s, e) => s + e.mat, 0);
   const estados = Array.from(porUf.entries()).map(([u, e]) => ({
-    uf: u, nome: UF_NOMES[u] || u, matriculas: e.mat, concluintes: e.conc, turmas: 0,
+    uf: u, nome: UF_NOMES[u] || u, matriculas: e.mat, concluintes: e.conc, ingressantes: e.ing, turmas: 0,
     instituicoes: e.ies.size, percentual: totalMatEst > 0 ? Number(((e.mat / totalMatEst) * 100).toFixed(1)) : 0,
   }));
 
@@ -433,7 +433,7 @@ async function handleDashboard(req: NextApiRequest, res: NextApiResponse) {
   for (const r of rowsAtual) { if (r.NO_CINE_AREA_GERAL) areasSet.add(r.NO_CINE_AREA_GERAL); }
   const areas = Array.from(areasSet).sort();
 
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=7200');
+  res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
   return res.status(200).json({
     indicadores, evolucao, estados, cidades, cursos: cursosAgg, instituicoes, areas,
     anos: ANOS_DISPONIVEIS,
@@ -482,7 +482,7 @@ async function handleEvolucao(req: NextApiRequest, res: NextApiResponse) {
     });
   }
 
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=7200');
+  res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
   return res.status(200).json({ evolucao });
 }
 
@@ -610,7 +610,7 @@ async function handleRegiaoAgg(req: NextApiRequest, res: NextApiResponse) {
 
   console.log(`[RegiaoAgg] ${regiao}/${anoNum}: ${rows.length} rows → ${Date.now() - startTime}ms`);
 
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=7200');
+  res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
   return res.status(200).json({
     regiao, ano: anoNum,
     totais: { mat, conc, ing, ies: iesSet.size, cursos: cursoSet.size },
@@ -698,7 +698,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const regioes = regioesParaConsultar(ufStr);
     const rows = await loadRows(anoNum, regioes, filters);
 
-    res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate=7200');
+    res.setHeader('Cache-Control', 's-maxage=86400, stale-while-revalidate=172800');
     return res.status(200).json({ rows, total: rows.length });
   } catch (err: unknown) {
     console.error('[API INEP] Erro:', err);

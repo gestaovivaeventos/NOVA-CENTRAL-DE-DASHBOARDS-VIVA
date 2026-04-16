@@ -9,14 +9,14 @@ import cache from './cache';
 // TTL para diferentes tipos de dados
 export const CACHE_TTL = {
   // PEX
-  PONTUACAO_OFICIAL: 30 * 1000,      // 30 segundos - dados principais (atualiza frequentemente)
-  UNI_CONS: 60 * 1000,     // 1 minuto - consultores/clusters
-  CRITERIOS: 60 * 1000,    // 1 minuto - pesos
+  PONTUACAO_OFICIAL: 60 * 1000,      // 1 minuto - dados principais
+  UNI_CONS: 2 * 60 * 1000,           // 2 minutos - consultores/clusters
+  CRITERIOS: 2 * 60 * 1000,          // 2 minutos - pesos
   // Vendas
-  SALES: 60 * 1000,        // 1 minuto - dados de vendas
-  FUNIL: 60 * 1000,        // 1 minuto - dados do funil
-  FUNDOS: 60 * 1000,       // 1 minuto - dados de fundos
-  METAS: 30 * 1000,        // 30 segundos - metas (para refletir alterações rápido)
+  SALES: 2 * 60 * 1000,              // 2 minutos - dados de vendas
+  FUNIL: 2 * 60 * 1000,              // 2 minutos - dados do funil
+  FUNDOS: 2 * 60 * 1000,             // 2 minutos - dados de fundos
+  METAS: 60 * 1000,                  // 1 minuto - metas (para refletir alterações rápido)
 };
 
 interface SheetsConfig {

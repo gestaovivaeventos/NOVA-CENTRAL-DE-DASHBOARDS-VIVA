@@ -157,6 +157,7 @@ export default async function handler(
       data = data.filter(d => d.quarter === quarter || d.quarter.includes(quarter.replace('-', ' ')));
     }
 
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     res.status(200).json({
       success: true,
       data,

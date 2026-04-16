@@ -7,10 +7,10 @@
   "functions": {
     "src/pages/api/analise-mercado/inep.ts": {
       "maxDuration": 60,
-      "memory": 1024
+      "memory": 512
     },
     "src/pages/api/analise-mercado/franquias.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
     }
   }
 }
