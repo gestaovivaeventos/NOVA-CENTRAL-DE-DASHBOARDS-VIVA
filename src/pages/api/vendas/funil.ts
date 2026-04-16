@@ -8,7 +8,7 @@ import { google } from 'googleapis';
 import { getAuthenticatedClient } from '@/lib/sheets-client';
 import cache from '@/lib/cache';
 
-const CHUNK_SIZE = 15000;
+const CHUNK_SIZE = 30000;
 const CACHE_TTL = 5 * 60 * 1000;
 
 export default async function handler(
@@ -65,7 +65,7 @@ export default async function handler(
       CACHE_TTL
     );
 
-    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
 
     return res.status(200).json({
       headers: result.headers,

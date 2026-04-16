@@ -127,9 +127,9 @@ export function useSalesData(): UseSalesDataReturn {
 
       // Buscar chunks restantes em paralelo se houver mais dados
       if (firstData.hasMore) {
-        // Estimar ~5 chunks para 130K+ linhas (chunk size = 30K)
+        // Estimar ~3 chunks para 130K+ linhas (chunk size = 60K)
         const chunkPromises = [];
-        for (let c = 1; c <= 5; c++) {
+        for (let c = 1; c <= 3; c++) {
           chunkPromises.push(
             fetch(`/api/vendas/sales?chunk=${c}`)
               .then(r => r.ok ? r.json() : null)

@@ -11,6 +11,18 @@
     },
     "src/pages/api/analise-mercado/franquias.ts": {
       "maxDuration": 60
+    },
+    "src/pages/api/vendas/sales.ts": {
+      "maxDuration": 30
+    },
+    "src/pages/api/vendas/funil.ts": {
+      "maxDuration": 30
+    },
+    "src/pages/api/vendas/fundos.ts": {
+      "maxDuration": 30
+    },
+    "src/pages/api/vendas/metas.ts": {
+      "maxDuration": 30
     }
   }
 }

@@ -50,7 +50,7 @@ export default async function handler(
     );
 
     // Headers de cache para o browser
-    res.setHeader('Cache-Control', 'public, s-maxage=120, stale-while-revalidate=300');
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     
     return res.status(200).json({ values: rows, cached: true });
 
