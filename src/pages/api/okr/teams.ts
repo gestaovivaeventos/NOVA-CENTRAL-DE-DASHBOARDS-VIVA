@@ -70,6 +70,7 @@ export default async function handler(
   try {
     const teams = await fetchTeams();
 
+    res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
     res.status(200).json({
       success: true,
       data: teams,

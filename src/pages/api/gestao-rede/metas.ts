@@ -72,6 +72,7 @@ export default async function handler(
         return obj;
       });
 
+      res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
       return res.status(200).json({ success: true, data });
     }
 

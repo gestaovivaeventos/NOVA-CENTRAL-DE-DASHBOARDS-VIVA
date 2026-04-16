@@ -1175,9 +1175,27 @@ export default function ControleModulosPage() {
                               overflow: 'hidden',
                               textOverflow: 'ellipsis',
                               whiteSpace: 'nowrap',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
                             }}
                           >
                             {mod.moduloNome}
+                            {(mod as any).beta && (
+                              <span title="Versão beta em validação" style={{
+                                background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                                color: '#fff',
+                                padding: '1px 6px',
+                                borderRadius: 4,
+                                fontSize: '0.5rem',
+                                fontWeight: 700,
+                                letterSpacing: '0.06em',
+                                textTransform: 'uppercase',
+                                lineHeight: 1.4,
+                                flexShrink: 0,
+                                cursor: 'default',
+                              }}>BETA</span>
+                            )}
                           </span>
 
                           {/* Path */}

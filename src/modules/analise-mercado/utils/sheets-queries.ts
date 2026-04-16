@@ -1043,7 +1043,7 @@ function derivarGruposEducacionais(instituicoes: DadosInstituicao[]): GrupoEduca
   return grupos;
 }
 
-// ─── Fetch completo (carregamento progressivo por região — cabe nos 10s do Hobby) ─
+// ─── Fetch completo (chamada única — Pro plan 60s timeout) ─
 export async function fetchDadosAnaliseMercado(
   ano: number,
   rede: number | null = null,
@@ -1055,29 +1055,89 @@ export async function fetchDadosAnaliseMercado(
   municipios: string[] | null = null,
   onProgress?: (msg: string) => void,
 ): Promise<DadosAnaliseMercado> {
-  const filters: FiltrosRegiao = { uf, rede, municipio, municipios, ies, curso, modalidade };
-  const regioes = regioesParaCarregar(uf, municipios);
+  // Cache key
+  const parts = [`dash_v3_${ano}`];
+  if (rede) parts.push(`r${rede}`);
+  if (uf) parts.push(`uf${uf}`);
+  if (municipio) parts.push(`m${municipio}`);
+  if (municipios && municipios.length > 0) parts.push(`muns${municipios.join('|')}`);
+  if (ies) parts.push(`ies${ies}`);
+  if (curso) parts.push(`c${curso}`);
+  if (modalidade) parts.push(`mod${modalidade}`);
+  const cacheKey = parts.join('_');
 
-  if (onProgress) onProgress(`Carregando ${regioes.length} região(ões) de ${ano}...`);
+  const dados = await cachedFetch(cacheKey, async () => {
+    if (onProgress) onProgress('Carregando dados do dashboard...');
 
-  // Carrega TODAS as regiões do ano atual E anterior em paralelo
-  // Cada request = 1 região × 1 ano (cabe nos 10s do Vercel Hobby)
-  // Retry automático nas que falharem — SÓ mostra dados quando 100% carregados
-  const [summaries, summariesAnt] = await Promise.all([
-    fetchAllRegionsWithRetry(ano, regioes, filters, 3, onProgress),
-    fetchAllRegionsWithRetry(ano - 1, regioes, filters, 3),
-  ]);
+    // Single API call — server does all region aggregation + YoY variation
+    const query = new URLSearchParams();
+    query.set('action', 'dashboard');
+    query.set('ano', String(ano));
+    if (uf) query.set('uf', uf);
+    if (rede) query.set('rede', String(rede));
+    if (municipio) query.set('municipio', municipio);
+    if (municipios && municipios.length > 0) query.set('municipios', municipios.join(','));
+    if (ies) query.set('ies', String(ies));
+    if (curso) query.set('curso', curso);
+    if (modalidade) query.set('modalidade', String(modalidade));
 
-  if (onProgress) onProgress('Processando dados...');
+    const res = await fetchWithRetry(`/api/analise-mercado/inep?${query.toString()}`, 1, 55000);
+    if (!res.ok) throw new Error(`Dashboard API error: ${res.status}`);
+    const json = await res.json();
 
-  // Merge das regiões + variação ano anterior
-  const dados = mergeRegiaoSummaries(summaries, ano, summariesAnt.length > 0 ? summariesAnt : undefined);
+    // Map server response → DadosAnaliseMercado
+    const indicadores: IndicadorCard[] = json.indicadores || [];
 
-  // Franquias
+    const evolucaoAlunos: DadosEvolucaoAnual[] = (json.evolucao || []).map((e: any) => ({
+      ano: e.ano, matriculas: e.matriculas, concluintes: e.concluintes, ingressantes: e.ingressantes,
+      presencial: e.presencial || 0, ead: e.ead || 0, publica: e.publica || 0, privada: e.privada || 0,
+      genero: e.genero || { feminino: 0, masculino: 0 }, porMetrica: e.porMetrica,
+    }));
+
+    const distribuicaoEstados: DadosEstado[] = (json.estados || []).map((e: any) => ({
+      uf: e.uf, nome: e.nome || UF_NOMES[e.uf] || e.uf,
+      matriculas: e.matriculas, concluintes: e.concluintes, ingressantes: e.ingressantes || 0,
+      turmas: e.turmas || 0, instituicoes: e.instituicoes, percentual: e.percentual || 0,
+    }));
+
+    // Group cidades by UF and apply coordinates
+    const cidadesPorEstado: Record<string, DadosCidade[]> = {};
+    for (const c of (json.cidades || [])) {
+      const coord = getCoordenadaMunicipio(fixText(c.nome), c.uf, COORDS_CAPITAIS);
+      const obj: DadosCidade = {
+        nome: fixText(c.nome), uf: c.uf, lat: coord.lat, lng: coord.lng,
+        matriculas: c.matriculas, concluintes: c.concluintes, ingressantes: c.ingressantes || 0,
+        turmas: c.turmas || 0, instituicoes: c.instituicoes,
+      };
+      if (!cidadesPorEstado[c.uf]) cidadesPorEstado[c.uf] = [];
+      cidadesPorEstado[c.uf].push(obj);
+    }
+
+    const rankingCursos: DadosCurso[] = (json.cursos || []).map((c: any) => ({
+      ...c, nome: fixText(c.nome), area: fixText(c.area),
+    }));
+
+    const instituicoes: DadosInstituicao[] = (json.instituicoes || []).map((i: any) => ({
+      ...i, nome: fixText(i.nome),
+    }));
+
+    if (onProgress) onProgress('');
+
+    return {
+      indicadores, evolucaoAlunos, distribuicaoEstados, cidadesPorEstado, rankingCursos, instituicoes,
+      demografia: derivarDemografia(evolucaoAlunos, ano),
+      evolucaoTurmas: derivarEvolucaoTurmas(evolucaoAlunos),
+      gruposEducacionais: derivarGruposEducacionais(instituicoes),
+      franquias: [],
+      ultimaAtualizacao: new Date().toISOString(),
+      fonte: 'Censo da Educação Superior — INEP',
+    };
+  });
+
+  // Franquias (separate small fetch, cached 1h)
   const franquiasMun = await fetchFranquiasMunicipios();
   dados.franquias = franquiasParaLista(franquiasMun);
 
-  // Anos disponíveis na fonte
   const anosDisp = await fetchAnosDisponiveis();
   dados.fonte = `Censo da Educação Superior — INEP (${anosDisp.length > 0 ? `${anosDisp[0]}–${anosDisp[anosDisp.length - 1]}` : 'N/A'})`;
 
@@ -1085,7 +1145,7 @@ export async function fetchDadosAnaliseMercado(
   return dados;
 }
 
-// ─── Fetch evolução histórica (all years, per-region com retry) ──────
+// ─── Fetch evolução histórica (chamada única — Pro plan 60s timeout) ──────
 export async function fetchEvolucaoLazy(
   rede: number | null = null,
   uf: string | null = null,
@@ -1096,40 +1156,41 @@ export async function fetchEvolucaoLazy(
   municipios: string[] | null = null,
   onProgress?: (msg: string) => void,
 ): Promise<DadosEvolucaoAnual[]> {
-  const filters: FiltrosRegiao = { uf, rede, municipio, municipios, ies, curso, modalidade };
-  const regioes = regioesParaCarregar(uf, municipios);
-  const anos = await fetchAnosDisponiveis();
+  const parts = ['evol_v3'];
+  if (rede) parts.push(`r${rede}`);
+  if (uf) parts.push(`uf${uf}`);
+  if (municipio) parts.push(`m${municipio}`);
+  if (municipios && municipios.length > 0) parts.push(`muns${municipios.join('|')}`);
+  if (ies) parts.push(`ies${ies}`);
+  if (curso) parts.push(`c${curso}`);
+  if (modalidade) parts.push(`mod${modalidade}`);
+  const cacheKey = parts.join('_');
 
-  const evolucao: DadosEvolucaoAnual[] = [];
+  return cachedFetch(cacheKey, async () => {
+    if (onProgress) onProgress('Carregando evolução histórica...');
 
-  for (const ano of anos) {
-    if (onProgress) onProgress(`Evolução ${ano} — carregando ${regioes.length} região(ões)...`);
+    // Single API call — server loads all years sequentially (already cached per region)
+    const query = new URLSearchParams();
+    query.set('action', 'evolucao');
+    if (uf) query.set('uf', uf);
+    if (rede) query.set('rede', String(rede));
+    if (municipio) query.set('municipio', municipio);
+    if (municipios && municipios.length > 0) query.set('municipios', municipios.join(','));
+    if (ies) query.set('ies', String(ies));
+    if (curso) query.set('curso', curso);
+    if (modalidade) query.set('modalidade', String(modalidade));
 
-    // Carrega TODAS as regiões deste ano com retry (garante 100% dos dados)
-    const summaries = await fetchAllRegionsWithRetry(ano, regioes, filters, 3, onProgress);
-    const valid = summaries.filter(s => !s.empty);
+    const res = await fetchWithRetry(`/api/analise-mercado/inep?${query.toString()}`, 1, 55000);
+    if (!res.ok) return [];
+    const json = await res.json();
 
-    if (valid.length === 0) continue;
+    if (onProgress) onProgress('');
 
-    // Merge totais deste ano
-    let totalMat = 0, totalConc = 0, totalIng = 0, totalIes = 0, totalCursos = 0;
-    const bdMat = mkBreakdown(), bdConc = mkBreakdown(), bdIng = mkBreakdown();
-    for (const s of valid) {
-      totalMat += s.totais.mat; totalConc += s.totais.conc; totalIng += s.totais.ing;
-      totalIes += s.totais.ies; totalCursos += s.totais.cursos;
-      mergeBd(bdMat, s.bdMat); mergeBd(bdConc, s.bdConc); mergeBd(bdIng, s.bdIng);
-    }
-
-    evolucao.push({
-      ano, matriculas: totalMat, concluintes: totalConc, ingressantes: totalIng,
-      ies: totalIes, cursos: totalCursos,
-      presencial: bdMat.presencial, ead: bdMat.ead,
-      publica: bdMat.publica, privada: bdMat.privada,
-      genero: { feminino: bdMat.feminino, masculino: bdMat.masculino },
-      porMetrica: { matriculas: bdMat, concluintes: bdConc, ingressantes: bdIng },
-    });
-  }
-
-  if (onProgress) onProgress('');
-  return evolucao;
+    return (json.evolucao || []).map((e: any) => ({
+      ano: e.ano, matriculas: e.matriculas, concluintes: e.concluintes, ingressantes: e.ingressantes,
+      ies: e.ies, cursos: e.cursos,
+      presencial: e.presencial || 0, ead: e.ead || 0, publica: e.publica || 0, privada: e.privada || 0,
+      genero: e.genero || { feminino: 0, masculino: 0 }, porMetrica: e.porMetrica,
+    })) as DadosEvolucaoAnual[];
+  });
 }

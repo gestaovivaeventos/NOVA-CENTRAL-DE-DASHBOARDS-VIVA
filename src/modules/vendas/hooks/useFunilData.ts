@@ -6,10 +6,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { LeadFunil } from '@/modules/vendas/types/funil.types';
 import { normalizarNomeUnidade } from '@/modules/vendas/utils/calculos';
+import { clientCache, CACHE_TTL } from '@/modules/vendas/utils/cache';
 
-// Cache simples em memória
-let funilCache: { data: LeadFunil[]; timestamp: number } | null = null;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const FUNIL_CACHE_KEY = 'funil_data';
 
 interface UseFunilDataReturn {
   data: LeadFunil[];
@@ -37,10 +36,13 @@ export function useFunilData(): UseFunilDataReturn {
     }
 
     // Verificar cache primeiro (a menos que force refresh)
-    if (!forceRefresh && funilCache && Date.now() - funilCache.timestamp < CACHE_TTL) {
-      setLeads(funilCache.data);
-      setLoading(false);
-      return;
+    if (!forceRefresh) {
+      const cachedData = clientCache.get<LeadFunil[]>(FUNIL_CACHE_KEY);
+      if (cachedData) {
+        setLeads(cachedData);
+        setLoading(false);
+        return;
+      }
     }
 
     isFetching.current = true;
@@ -155,11 +157,8 @@ export function useFunilData(): UseFunilDataReturn {
         })
         .filter(Boolean) as LeadFunil[];
       
-      // Salvar no cache
-      funilCache = {
-        data: processedData,
-        timestamp: Date.now(),
-      };
+      // Salvar no cache persistente (30 min)
+      clientCache.set(FUNIL_CACHE_KEY, processedData, CACHE_TTL.LONG);
       
       setLeads(processedData);
       setLastUpdate(new Date());

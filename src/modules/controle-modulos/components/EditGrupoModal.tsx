@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Loader2, ChevronDown, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import IconSelect from './IconSelect';
 
 export interface GrupoInfo {
   nome: string;
@@ -12,30 +13,6 @@ export interface GrupoInfo {
   ordem: number;
   ativo: boolean;
 }
-
-const ICONES_GRUPO = [
-  { value: 'target', label: 'Meta' },
-  { value: 'chart', label: 'Gráfico' },
-  { value: 'money', label: 'Financeiro' },
-  { value: 'trophy', label: 'Troféu' },
-  { value: 'users', label: 'Pessoas' },
-  { value: 'settings', label: 'Config' },
-  { value: 'dashboard', label: 'Dashboard' },
-  { value: 'file-spreadsheet', label: 'Planilha' },
-  { value: 'code', label: '</>' },
-  { value: 'git-branch', label: 'Branch' },
-  { value: 'bar-chart', label: 'Barras' },
-  { value: 'pie-chart', label: 'Pizza' },
-  { value: 'trending-up', label: 'Tendência' },
-  { value: 'database', label: 'Dados' },
-  { value: 'folder', label: 'Pasta' },
-  { value: 'link', label: 'Link' },
-  { value: 'external-link', label: 'Externo' },
-  { value: 'wallet', label: 'Carteira' },
-  { value: 'funnel', label: 'Funil' },
-  { value: 'clipboard', label: 'Relatório' },
-  { value: 'layout-dashboard', label: 'Layout' },
-];
 
 interface EditGrupoModalProps {
   isOpen: boolean;
@@ -220,29 +197,7 @@ export default function EditGrupoModal({
           {/* Ícone */}
           <div>
             <label style={labelStyle}>Ícone</label>
-            <div style={{ position: 'relative' }}>
-              <select
-                value={icone}
-                onChange={(e) => setIcone(e.target.value)}
-                style={{
-                  ...inputStyle,
-                  appearance: 'none',
-                  cursor: 'pointer',
-                  paddingRight: 36,
-                }}
-              >
-                {ICONES_GRUPO.map((i) => (
-                  <option key={i.value} value={i.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                    {i.label}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={16}
-                color="#6c757d"
-                style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
-              />
-            </div>
+            <IconSelect value={icone} onChange={setIcone} />
           </div>
 
           {/* Ordem + Ativo (mesma linha) */}

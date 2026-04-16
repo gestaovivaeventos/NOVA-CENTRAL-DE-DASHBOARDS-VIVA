@@ -37,7 +37,7 @@ export default async function handler(
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:L`,
+      range: `${sheetName}!A:O`,
     });
     const rows = response.data.values || [];
 
@@ -61,6 +61,13 @@ export default async function handler(
         tipo: ((row[9] || '').trim().toLowerCase() || 'interno') as 'interno' | 'externo',
         urlExterna: (row[10] || '').trim(),
         subgrupo: (row[11] || '').trim(),
+        setoresPermitidos: (row[12] || '').trim()
+          ? (row[12] || '').split(',').map((s: string) => s.trim()).filter(Boolean)
+          : [],
+        gruposPermitidos: (row[13] || '').trim()
+          ? (row[13] || '').split(',').map((g: string) => g.trim()).filter(Boolean)
+          : [],
+        beta: (row[14] || '').toUpperCase() === 'TRUE',
       }));
 
     res.setHeader('Cache-Control', 'no-cache');

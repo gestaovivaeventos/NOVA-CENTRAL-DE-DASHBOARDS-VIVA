@@ -22,6 +22,9 @@ interface ModuloPermission {
   tipo: string;
   urlExterna: string;
   subgrupo: string;
+  setoresPermitidos: string[];
+  gruposPermitidos: string[];
+  beta: boolean;
 }
 
 interface UseModuloPermissionsResult {
@@ -33,9 +36,16 @@ interface UseModuloPermissionsResult {
   loading: boolean;
 }
 
+// Info do usuário logado para checar setor/grupo
+interface UserInfo {
+  setor?: string;
+  nmGrupo?: string;
+}
+
 export function useModuloPermissions(
   username?: string,
-  accessLevel?: number
+  accessLevel?: number,
+  userInfo?: UserInfo
 ): UseModuloPermissionsResult {
   const [modulos, setModulos] = useState<ModuloPermission[]>([]);
   const [allowedIds, setAllowedIds] = useState<Set<string>>(new Set());
@@ -52,6 +62,20 @@ export function useModuloPermissions(
       for (const m of mods) {
         if (!m.ativo) continue;
         if (!hasNivelAccess(userLevel, m.nvlAcesso)) continue;
+        // Checar setores permitidos
+        if (
+          m.setoresPermitidos.length > 0 &&
+          userInfo?.setor &&
+          !m.setoresPermitidos.includes(userInfo.setor)
+        )
+          continue;
+        // Checar grupos/cargos permitidos
+        if (
+          m.gruposPermitidos.length > 0 &&
+          userInfo?.nmGrupo &&
+          !m.gruposPermitidos.includes(userInfo.nmGrupo)
+        )
+          continue;
         if (
           m.usuariosPermitidos.length > 0 &&
           !m.usuariosPermitidos.includes(username)
@@ -61,7 +85,7 @@ export function useModuloPermissions(
       }
       setAllowedIds(ids);
     },
-    [username, accessLevel]
+    [username, accessLevel, userInfo?.setor, userInfo?.nmGrupo]
   );
 
   useEffect(() => {
@@ -95,6 +119,9 @@ export function useModuloPermissions(
             tipo: m.tipo || 'interno',
             urlExterna: m.urlExterna || '',
             subgrupo: m.subgrupo || '',
+            setoresPermitidos: m.setoresPermitidos || [],
+            gruposPermitidos: m.gruposPermitidos || [],
+            beta: m.beta || false,
           })
         );
         setModulos(mods);

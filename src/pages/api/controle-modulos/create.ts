@@ -42,6 +42,9 @@ export default async function handler(
       tipo = 'externo',
       urlExterna = '',
       subgrupo = '',
+      setoresPermitidos = '',
+      gruposPermitidos = '',
+      beta = 'FALSE',
     } = req.body;
 
     if (!moduloId || !moduloNome) {
@@ -77,7 +80,7 @@ export default async function handler(
       });
     }
 
-    // Montar nova linha: A-K
+    // Montar nova linha: A-N
     const newRow = [
       moduloId.trim(),
       moduloNome.trim(),
@@ -91,11 +94,14 @@ export default async function handler(
       tipo,
       urlExterna.trim(),
       (subgrupo || '').trim(),
+      setoresPermitidos,
+      gruposPermitidos,
+      beta,
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:L`,
+      range: `${sheetName}!A:O`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [newRow] },
     });

@@ -38,6 +38,9 @@ export interface ModuloConfig {
   tipo: TipoModulo; // 'interno' = rota Next.js, 'externo' = link externo (Looker, Sheets, etc)
   urlExterna: string; // URL completa quando tipo = 'externo'
   subgrupo: string; // Nome do subgrupo dentro do grupo (vazio = sem subgrupo)
+  setoresPermitidos: string[]; // setores; vazio = todos
+  gruposPermitidos: string[]; // nm_grupo/cargo; vazio = todos (do setor selecionado)
+  beta: boolean; // módulo em fase beta (exibe badge visual na sidebar/favoritos)
 }
 
 // Dados brutos da planilha (linha como array)
@@ -57,6 +60,9 @@ export interface ModuloPayload {
   tipo: TipoModulo;
   urlExterna: string;
   subgrupo: string;
+  setoresPermitidos: string[];
+  gruposPermitidos: string[];
+  beta: boolean;
 }
 
 // Grupos de módulos para exibição

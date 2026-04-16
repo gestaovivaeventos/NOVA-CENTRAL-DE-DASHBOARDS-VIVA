@@ -324,6 +324,7 @@ export default async function handler(
     // Obter data de referência (da primeira linha de dados)
     const dataReferencia = franquias.length > 0 ? franquias[0].dataReferencia : '';
     
+    res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     return res.status(200).json({
       success: true,
       data: franquias,
