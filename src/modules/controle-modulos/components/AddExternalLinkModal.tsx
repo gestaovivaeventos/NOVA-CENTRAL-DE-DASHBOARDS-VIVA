@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Plus, ExternalLink, Search, Check, ChevronDown } from 'lucide-react';
+import IconSelect from './IconSelect';
 
 interface Usuario {
   username: string;
@@ -33,17 +34,6 @@ export interface ExternalLinkData {
   urlExterna: string;
   subgrupo: string;
 }
-
-const ICONES_SUGERIDOS = [
-  { value: 'link', label: 'Link' },
-  { value: 'bar-chart', label: 'Gráfico' },
-  { value: 'file-spreadsheet', label: 'Planilha' },
-  { value: 'pie-chart', label: 'Pizza' },
-  { value: 'trending-up', label: 'Tendência' },
-  { value: 'database', label: 'Dados' },
-  { value: 'layout-dashboard', label: 'Dashboard' },
-  { value: 'external-link', label: 'Externo' },
-];
 
 export default function AddExternalLinkModal({
   isOpen,
@@ -425,17 +415,7 @@ export default function AddExternalLinkModal({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: '20px' }}>
             <div>
               <label style={labelStyle}>Ícone</label>
-              <select
-                value={icone}
-                onChange={(e) => setIcone(e.target.value)}
-                style={{ ...inputStyle, cursor: 'pointer' }}
-              >
-                {ICONES_SUGERIDOS.map(i => (
-                  <option key={i.value} value={i.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                    {i.label}
-                  </option>
-                ))}
-              </select>
+              <IconSelect value={icone} onChange={setIcone} />
             </div>
             <div>
               <label style={labelStyle}>Ordem</label>

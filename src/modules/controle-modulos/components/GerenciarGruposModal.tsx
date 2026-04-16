@@ -4,7 +4,9 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, Plus, FolderPlus, Trash2, Loader2, AlertCircle, CheckCircle2, Pencil, Check, ChevronDown } from 'lucide-react';
+import { X, Plus, FolderPlus, Trash2, Loader2, AlertCircle, CheckCircle2, Pencil, Check } from 'lucide-react';
+import IconSelect from './IconSelect';
+import { ICONES, IconPreview } from '../config/icones';
 
 export interface GrupoInfo {
   nome: string;
@@ -12,29 +14,6 @@ export interface GrupoInfo {
   ordem: number;
   ativo: boolean;
 }
-
-const ICONES_GRUPO = [
-  { value: 'target', label: 'Meta' },
-  { value: 'chart', label: 'Gráfico' },
-  { value: 'money', label: 'Financeiro' },
-  { value: 'trophy', label: 'Troféu' },
-  { value: 'users', label: 'Pessoas' },
-  { value: 'settings', label: 'Config' },
-  { value: 'dashboard', label: 'Dashboard' },
-  { value: 'file-spreadsheet', label: 'Planilha' },
-  { value: 'git-branch', label: 'Dev' },
-  { value: 'bar-chart', label: 'Barras' },
-  { value: 'pie-chart', label: 'Pizza' },
-  { value: 'trending-up', label: 'Tendência' },
-  { value: 'database', label: 'Dados' },
-  { value: 'folder', label: 'Pasta' },
-  { value: 'link', label: 'Link' },
-  { value: 'external-link', label: 'Externo' },
-  { value: 'wallet', label: 'Carteira' },
-  { value: 'funnel', label: 'Funil' },
-  { value: 'clipboard', label: 'Relatório' },
-  { value: 'layout-dashboard', label: 'Layout' },
-];
 
 interface GerenciarGruposModalProps {
   isOpen: boolean;
@@ -269,22 +248,7 @@ export default function GerenciarGruposModal({
         <div style={{ padding: '20px 24px 0' }}>
           <label style={labelStyle}>Novo Grupo</label>
           <div style={{ display: 'flex', gap: 10 }}>
-            <select
-              value={novoIcone}
-              onChange={(e) => setNovoIcone(e.target.value)}
-              style={{
-                ...inputStyle,
-                width: 100,
-                flex: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              {ICONES_GRUPO.map(i => (
-                <option key={i.value} value={i.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                  {i.label}
-                </option>
-              ))}
-            </select>
+            <IconSelect value={novoIcone} onChange={setNovoIcone} compact style={{ flex: 'none' }} />
             <input
               type="text"
               value={novoGrupo}
@@ -399,27 +363,7 @@ export default function GerenciarGruposModal({
                     <div style={{ flexShrink: 0 }}>
                       {isEditingThisIcone ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <select
-                            value={editingIconeValue}
-                            onChange={(e) => setEditingIconeValue(e.target.value)}
-                            style={{
-                              backgroundColor: '#2d3239',
-                              border: '1px solid #FF6600',
-                              borderRadius: 6,
-                              color: '#F8F9FA',
-                              padding: '3px 6px',
-                              fontSize: '0.7rem',
-                              fontFamily: 'Poppins, sans-serif',
-                              outline: 'none',
-                              cursor: 'pointer',
-                            }}
-                          >
-                            {ICONES_GRUPO.map(i => (
-                              <option key={i.value} value={i.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                                {i.label}
-                              </option>
-                            ))}
-                          </select>
+                          <IconSelect value={editingIconeValue} onChange={setEditingIconeValue} compact />
                           <button
                             onClick={() => handleUpdateIcone(g.nome, editingIconeValue)}
                             disabled={savingIcone}
@@ -479,7 +423,8 @@ export default function GerenciarGruposModal({
                           }}
                           title={naPlanilha ? 'Editar ícone' : 'Grupo só em uso (não registrado)'}
                         >
-                          {ICONES_GRUPO.find(i => i.value === g.icone)?.label || g.icone}
+                          <IconPreview value={g.icone} size={12} color="#FF6600" />
+                          {ICONES.find(i => i.value === g.icone)?.label || g.icone}
                           {naPlanilha && <Pencil size={10} />}
                         </button>
                       )}

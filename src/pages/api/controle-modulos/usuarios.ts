@@ -37,8 +37,9 @@ export default async function handler(
     const csvText = await response.text();
     const lines = csvText.split('\n');
 
-    // Colunas: D (3) = nome, E (4) = username, F (5) = enabled, L (11) = nvl_acesso_unidade
-    const userMap = new Map<string, { username: string; name: string; accessLevel: number }>();
+    // Colunas: D (3) = nome, E (4) = username, F (5) = enabled, 
+    // I (8) = nm_grupo/cargo, K (10) = setor, L (11) = nvl_acesso_unidade
+    const userMap = new Map<string, { username: string; name: string; accessLevel: number; setor: string; nmGrupo: string }>();
 
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -49,13 +50,15 @@ export default async function handler(
         const name = cells[3]?.trim().replace(/^"|"$/g, '');
         const username = cells[4]?.trim().replace(/^"|"$/g, '');
         const enabledStr = cells[5]?.trim().replace(/^"|"$/g, '').toUpperCase();
+        const nmGrupo = cells[8]?.trim().replace(/^"|"$/g, '') || '';
+        const setor = cells[10]?.trim().replace(/^"|"$/g, '') || '';
         const accessLevelStr = cells[11]?.trim().replace(/^"|"$/g, '');
 
         const enabled = enabledStr === 'TRUE';
         const accessLevel = accessLevelStr === '1' ? 1 : 0;
 
         if (username && name && enabled && !userMap.has(username)) {
-          userMap.set(username, { username, name, accessLevel });
+          userMap.set(username, { username, name, accessLevel, setor, nmGrupo });
         }
       }
     }

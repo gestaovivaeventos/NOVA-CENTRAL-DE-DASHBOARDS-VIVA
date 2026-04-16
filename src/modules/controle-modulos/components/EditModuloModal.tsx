@@ -6,11 +6,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Save, Settings, Search, Check, Plus, ChevronDown } from 'lucide-react';
 import type { ModuloConfig } from '../types';
+import IconSelect from './IconSelect';
 
 interface Usuario {
   username: string;
   name: string;
   accessLevel: number;
+  setor: string;
+  nmGrupo: string;
 }
 
 interface EditModuloModalProps {
@@ -21,27 +24,6 @@ interface EditModuloModalProps {
   gruposExistentes?: string[];
   subgruposExistentes?: { nome: string; grupo: string }[];
 }
-
-const ICONES_SUGERIDOS = [
-  { value: 'link', label: 'Link' },
-  { value: 'bar-chart', label: 'Gráfico' },
-  { value: 'file-spreadsheet', label: 'Planilha' },
-  { value: 'pie-chart', label: 'Pizza' },
-  { value: 'trending-up', label: 'Tendência' },
-  { value: 'database', label: 'Dados' },
-  { value: 'layout-dashboard', label: 'Dashboard' },
-  { value: 'external-link', label: 'Externo' },
-  { value: 'chart', label: 'Chart' },
-  { value: 'dashboard', label: 'Painel' },
-  { value: 'settings', label: 'Configurações' },
-  { value: 'users', label: 'Usuários' },
-  { value: 'folder', label: 'Pasta' },
-  { value: 'target', label: 'Meta' },
-  { value: 'dollar-sign', label: 'Financeiro' },
-  { value: 'clipboard', label: 'Relatório' },
-  { value: 'git-branch', label: 'Branch' },
-  { value: 'check-circle', label: 'Check' },
-];
 
 export default function EditModuloModal({
   isOpen,
@@ -61,13 +43,26 @@ export default function EditModuloModal({
   const [tipo, setTipo] = useState('interno');
   const [urlExterna, setUrlExterna] = useState('');
   const [subgrupo, setSubgrupo] = useState('');
+  const [beta, setBeta] = useState(false);
   const [usuariosSelecionados, setUsuariosSelecionados] = useState<string[]>([]);
+  const [setoresSelecionados, setSetoresSelecionados] = useState<string[]>([]);
+  const [gruposCargos, setGruposCargos] = useState<string[]>([]);
 
   // Users data
   const [todosUsuarios, setTodosUsuarios] = useState<Usuario[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Setor multi-select
+  const [setorSearch, setSetorSearch] = useState('');
+  const [setorDropdownOpen, setSetorDropdownOpen] = useState(false);
+  const setorDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Grupo/Cargo multi-select
+  const [grupoCargoSearch, setGrupoCargoSearch] = useState('');
+  const [grupoCargoDropdownOpen, setGrupoCargoDropdownOpen] = useState(false);
+  const grupoCargoDropdownRef = useRef<HTMLDivElement>(null);
 
   // Grupo search/create
   const [grupoSearch, setGrupoSearch] = useState('');
@@ -88,9 +83,16 @@ export default function EditModuloModal({
       setTipo((modulo as any).tipo || 'interno');
       setUrlExterna((modulo as any).urlExterna || '');
       setSubgrupo((modulo as any).subgrupo || '');
+      setBeta((modulo as any).beta || false);
       setUsuariosSelecionados(modulo.usuariosPermitidos || []);
+      setSetoresSelecionados((modulo as any).setoresPermitidos || []);
+      setGruposCargos((modulo as any).gruposPermitidos || []);
       setUserSearch('');
       setUserDropdownOpen(false);
+      setSetorSearch('');
+      setSetorDropdownOpen(false);
+      setGrupoCargoSearch('');
+      setGrupoCargoDropdownOpen(false);
     }
   }, [modulo]);
 
@@ -104,7 +106,7 @@ export default function EditModuloModal({
     }
   }, [isOpen]);
 
-  // Close user dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
@@ -112,6 +114,12 @@ export default function EditModuloModal({
       }
       if (grupoDropdownRef.current && !grupoDropdownRef.current.contains(e.target as Node)) {
         setGrupoDropdownOpen(false);
+      }
+      if (setorDropdownRef.current && !setorDropdownRef.current.contains(e.target as Node)) {
+        setSetorDropdownOpen(false);
+      }
+      if (grupoCargoDropdownRef.current && !grupoCargoDropdownRef.current.contains(e.target as Node)) {
+        setGrupoCargoDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClick);
@@ -130,12 +138,50 @@ export default function EditModuloModal({
   }, [todosGrupos, grupoSearch]);
 
   const filteredUsers = useMemo(() => {
-    if (!userSearch) return todosUsuarios;
+    // Filtrar por setor e grupo/cargo selecionados, depois por busca
+    let base = todosUsuarios;
+    if (setoresSelecionados.length > 0) {
+      base = base.filter(u => setoresSelecionados.includes(u.setor));
+    }
+    if (gruposCargos.length > 0) {
+      base = base.filter(u => gruposCargos.includes(u.nmGrupo));
+    }
+    if (!userSearch) return base;
     const q = userSearch.toLowerCase();
-    return todosUsuarios.filter(
+    return base.filter(
       u => u.username.toLowerCase().includes(q) || u.name.toLowerCase().includes(q)
     );
-  }, [todosUsuarios, userSearch]);
+  }, [todosUsuarios, userSearch, setoresSelecionados, gruposCargos]);
+
+  // Lista de setores únicos extraídos dos usuários
+  const todosSetores = useMemo(() => {
+    const set = new Set<string>();
+    todosUsuarios.forEach(u => { if (u.setor) set.add(u.setor); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [todosUsuarios]);
+
+  const filteredSetores = useMemo(() => {
+    if (!setorSearch) return todosSetores;
+    const q = setorSearch.toLowerCase();
+    return todosSetores.filter(s => s.toLowerCase().includes(q));
+  }, [todosSetores, setorSearch]);
+
+  // Lista de grupos/cargos, filtrada pelo setor selecionado
+  const todosGruposCargos = useMemo(() => {
+    let base = todosUsuarios;
+    if (setoresSelecionados.length > 0) {
+      base = base.filter(u => setoresSelecionados.includes(u.setor));
+    }
+    const set = new Set<string>();
+    base.forEach(u => { if (u.nmGrupo) set.add(u.nmGrupo); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [todosUsuarios, setoresSelecionados]);
+
+  const filteredGruposCargos = useMemo(() => {
+    if (!grupoCargoSearch) return todosGruposCargos;
+    const q = grupoCargoSearch.toLowerCase();
+    return todosGruposCargos.filter(g => g.toLowerCase().includes(q));
+  }, [todosGruposCargos, grupoCargoSearch]);
 
   if (!isOpen || !modulo) return null;
 
@@ -150,9 +196,16 @@ export default function EditModuloModal({
     if (tipo !== ((modulo as any).tipo || 'interno')) return true;
     if (urlExterna !== ((modulo as any).urlExterna || '')) return true;
     if (subgrupo !== ((modulo as any).subgrupo || '')) return true;
+    if (beta !== ((modulo as any).beta || false)) return true;
     const originalUsers = (modulo.usuariosPermitidos || []).join(',');
     const currentUsers = usuariosSelecionados.join(',');
     if (currentUsers !== originalUsers) return true;
+    const originalSetores = ((modulo as any).setoresPermitidos || []).join(',');
+    const currentSetores = setoresSelecionados.join(',');
+    if (currentSetores !== originalSetores) return true;
+    const originalGruposCargos = ((modulo as any).gruposPermitidos || []).join(',');
+    const currentGruposCargos = gruposCargos.join(',');
+    if (currentGruposCargos !== originalGruposCargos) return true;
     return false;
   })();
 
@@ -162,6 +215,40 @@ export default function EditModuloModal({
         ? prev.filter(u => u !== username)
         : [...prev, username]
     );
+  };
+
+  const toggleSetor = (setor: string) => {
+    setSetoresSelecionados(prev => {
+      const next = prev.includes(setor) ? prev.filter(s => s !== setor) : [...prev, setor];
+      // Limpar grupos/cargos que não pertencem mais a nenhum setor selecionado
+      if (next.length > 0) {
+        const gruposValidos = new Set<string>();
+        todosUsuarios.filter(u => next.includes(u.setor)).forEach(u => { if (u.nmGrupo) gruposValidos.add(u.nmGrupo); });
+        setGruposCargos(gc => gc.filter(g => gruposValidos.has(g)));
+        // Limpar usuários que não pertencem mais aos setores selecionados
+        const usersValidos = new Set<string>();
+        todosUsuarios.filter(u => next.includes(u.setor)).forEach(u => usersValidos.add(u.username));
+        setUsuariosSelecionados(us => us.filter(u => usersValidos.has(u)));
+      }
+      return next;
+    });
+  };
+
+  const toggleGrupoCargo = (gc: string) => {
+    setGruposCargos(prev => {
+      const next = prev.includes(gc) ? prev.filter(g => g !== gc) : [...prev, gc];
+      // Limpar usuários que não pertencem mais aos grupos selecionados
+      if (next.length > 0) {
+        const usersValidos = new Set<string>();
+        let base = todosUsuarios;
+        if (setoresSelecionados.length > 0) {
+          base = base.filter(u => setoresSelecionados.includes(u.setor));
+        }
+        base.filter(u => next.includes(u.nmGrupo)).forEach(u => usersValidos.add(u.username));
+        setUsuariosSelecionados(us => us.filter(u => usersValidos.has(u)));
+      }
+      return next;
+    });
   };
 
   // Save all changed fields one by one
@@ -215,6 +302,25 @@ export default function EditModuloModal({
     const currentUsers = usuariosSelecionados.join(',');
     if (currentUsers !== originalUsers) {
       const ok = await onSave(modulo.moduloId, 'usuarios_permitidos', currentUsers);
+      if (!ok) allOk = false;
+    }
+
+    const originalSetores = ((modulo as any).setoresPermitidos || []).join(',');
+    const currentSetores = setoresSelecionados.join(',');
+    if (currentSetores !== originalSetores) {
+      const ok = await onSave(modulo.moduloId, 'setores_permitidos', currentSetores);
+      if (!ok) allOk = false;
+    }
+
+    const originalGruposCargos = ((modulo as any).gruposPermitidos || []).join(',');
+    const currentGruposCargos = gruposCargos.join(',');
+    if (currentGruposCargos !== originalGruposCargos) {
+      const ok = await onSave(modulo.moduloId, 'grupos_permitidos', currentGruposCargos);
+      if (!ok) allOk = false;
+    }
+
+    if (beta !== ((modulo as any).beta || false)) {
+      const ok = await onSave(modulo.moduloId, 'beta', beta ? 'TRUE' : 'FALSE');
       if (!ok) allOk = false;
     }
 
@@ -533,25 +639,7 @@ export default function EditModuloModal({
           {/* Ícone */}
           <div style={{ marginBottom: '20px' }}>
             <label style={labelStyle}>Ícone</label>
-            <select
-              value={icone}
-              onChange={(e) => setIcone(e.target.value)}
-              style={{
-                ...inputStyle,
-                cursor: 'pointer',
-              }}
-            >
-              {!ICONES_SUGERIDOS.some(i => i.value === icone) && icone && (
-                <option value={icone} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                  {icone} (atual)
-                </option>
-              )}
-              {ICONES_SUGERIDOS.map((ic) => (
-                <option key={ic.value} value={ic.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                  {ic.label} ({ic.value})
-                </option>
-              ))}
-            </select>
+            <IconSelect value={icone} onChange={setIcone} />
           </div>
 
           {/* Tipo */}
@@ -592,6 +680,456 @@ export default function EditModuloModal({
               />
             </div>
           )}
+
+          {/* Versão Beta Toggle */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Versão Beta</label>
+            <button
+              type="button"
+              onClick={() => setBeta(!beta)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                width: '100%',
+                padding: '10px 14px',
+                backgroundColor: beta ? 'rgba(139, 92, 246, 0.08)' : '#1a1d21',
+                border: beta ? '1px solid rgba(139, 92, 246, 0.5)' : '1px solid #444',
+                borderRadius: 8,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontFamily: "'Poppins', sans-serif",
+              }}
+            >
+              {/* Toggle pill */}
+              <div style={{
+                width: 40,
+                height: 22,
+                borderRadius: 11,
+                backgroundColor: beta ? '#8b5cf6' : '#4b5563',
+                position: 'relative',
+                transition: 'background-color 0.2s',
+                flexShrink: 0,
+              }}>
+                <div style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  position: 'absolute',
+                  top: 3,
+                  left: beta ? 21 : 3,
+                  transition: 'left 0.2s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <span style={{
+                  color: beta ? '#c4b5fd' : '#6c757d',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                }}>
+                  {beta ? 'BETA ativado' : 'Desativado'}
+                </span>
+                <span style={{
+                  color: '#6c757d',
+                  fontSize: '0.7rem',
+                  display: 'block',
+                  marginTop: 2,
+                }}>
+                  Exibe badge “BETA” no menu e favoritos
+                </span>
+              </div>
+              {beta && (
+                <span style={{
+                  background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                  color: '#fff',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}>
+                  BETA
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Versão Beta Toggle */}
+          <div style={{ marginBottom: '20px' }}>
+            <label style={labelStyle}>Versão Beta</label>
+            <button
+              type="button"
+              onClick={() => setBeta(!beta)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                width: '100%',
+                padding: '10px 14px',
+                backgroundColor: beta ? 'rgba(139, 92, 246, 0.08)' : '#1a1d21',
+                border: beta ? '1px solid rgba(139, 92, 246, 0.5)' : '1px solid #444',
+                borderRadius: 8,
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontFamily: "'Poppins', sans-serif",
+              }}
+            >
+              {/* Toggle pill */}
+              <div style={{
+                width: 40,
+                height: 22,
+                borderRadius: 11,
+                backgroundColor: beta ? '#8b5cf6' : '#4b5563',
+                position: 'relative',
+                transition: 'background-color 0.2s',
+                flexShrink: 0,
+              }}>
+                <div style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: '50%',
+                  backgroundColor: '#fff',
+                  position: 'absolute',
+                  top: 3,
+                  left: beta ? 21 : 3,
+                  transition: 'left 0.2s',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                }} />
+              </div>
+              <div style={{ flex: 1, textAlign: 'left' }}>
+                <span style={{
+                  color: beta ? '#c4b5fd' : '#6c757d',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                }}>
+                  {beta ? 'BETA ativado' : 'Desativado'}
+                </span>
+                <span style={{
+                  color: '#6c757d',
+                  fontSize: '0.7rem',
+                  display: 'block',
+                  marginTop: 2,
+                }}>
+                  Exibe badge “BETA” no menu e favoritos
+                </span>
+              </div>
+              {beta && (
+                <span style={{
+                  background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                  color: '#fff',
+                  padding: '2px 8px',
+                  borderRadius: 6,
+                  fontSize: '0.6rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                }}>
+                  BETA
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* ===== FILTROS HIERÁRQUICOS: Setor → Grupo/Cargo → Usuário ===== */}
+
+          {/* Setores Permitidos — Searchable multi-select */}
+          <div style={{ marginBottom: '20px' }} ref={setorDropdownRef}>
+            <label style={labelStyle}>
+              Setores Permitidos
+              <span style={{ color: '#6c757d', fontWeight: 400, textTransform: 'none', marginLeft: 8 }}>
+                {setoresSelecionados.length === 0
+                  ? '(vazio = todos os setores)'
+                  : `(${setoresSelecionados.length} selecionados)`}
+              </span>
+            </label>
+
+            {/* Selected chips */}
+            {setoresSelecionados.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                {setoresSelecionados.map(s => (
+                  <span
+                    key={s}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      backgroundColor: 'rgba(16,185,129,0.12)',
+                      border: '1px solid rgba(16,185,129,0.3)',
+                      borderRadius: 6,
+                      padding: '3px 10px',
+                      fontSize: '0.75rem',
+                      color: '#10b981',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {s}
+                    <button
+                      onClick={() => toggleSetor(s)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#10b981',
+                        cursor: 'pointer',
+                        padding: 0,
+                        lineHeight: 1,
+                        fontSize: '1rem',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative' }}>
+                <Search
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#6c757d',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={setorSearch}
+                  onChange={(e) => setSetorSearch(e.target.value)}
+                  onFocus={() => setSetorDropdownOpen(true)}
+                  placeholder="Buscar setor..."
+                  style={{
+                    ...inputStyle,
+                    paddingLeft: 36,
+                  }}
+                />
+              </div>
+
+              {setorDropdownOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                    backgroundColor: '#1a1d21',
+                    border: '1px solid #444',
+                    borderRadius: '0 0 8px 8px',
+                    zIndex: 10,
+                  }}
+                >
+                  {filteredSetores.length === 0 ? (
+                    <div style={{ padding: '10px 14px', color: '#6c757d', fontSize: '0.8rem' }}>
+                      Nenhum setor encontrado
+                    </div>
+                  ) : (
+                    filteredSetores.map(s => {
+                      const selected = setoresSelecionados.includes(s);
+                      return (
+                        <button
+                          key={s}
+                          onClick={() => toggleSetor(s)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            width: '100%',
+                            padding: '8px 14px',
+                            background: selected ? 'rgba(16,185,129,0.1)' : 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid #333',
+                            color: selected ? '#10b981' : '#F8F9FA',
+                            fontSize: '0.8rem',
+                            fontFamily: 'Poppins, sans-serif',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.05)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(16,185,129,0.1)' : 'transparent')}
+                        >
+                          <div
+                            style={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: 4,
+                              border: selected ? '2px solid #10b981' : '2px solid #555',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              backgroundColor: selected ? 'rgba(16,185,129,0.15)' : 'transparent',
+                            }}
+                          >
+                            {selected && <Check size={12} color="#10b981" />}
+                          </div>
+                          {s}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Grupos/Cargos Permitidos — Searchable multi-select (filtrado por setor) */}
+          <div style={{ marginBottom: '20px' }} ref={grupoCargoDropdownRef}>
+            <label style={labelStyle}>
+              Grupos / Cargos Permitidos
+              <span style={{ color: '#6c757d', fontWeight: 400, textTransform: 'none', marginLeft: 8 }}>
+                {gruposCargos.length === 0
+                  ? '(vazio = todos os grupos)'
+                  : `(${gruposCargos.length} selecionados)`}
+              </span>
+            </label>
+
+            {/* Selected chips */}
+            {gruposCargos.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                {gruposCargos.map(g => (
+                  <span
+                    key={g}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      backgroundColor: 'rgba(59,130,246,0.12)',
+                      border: '1px solid rgba(59,130,246,0.3)',
+                      borderRadius: 6,
+                      padding: '3px 10px',
+                      fontSize: '0.75rem',
+                      color: '#3b82f6',
+                      fontFamily: 'Poppins, sans-serif',
+                      fontWeight: 500,
+                    }}
+                  >
+                    {g}
+                    <button
+                      onClick={() => toggleGrupoCargo(g)}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#3b82f6',
+                        cursor: 'pointer',
+                        padding: 0,
+                        lineHeight: 1,
+                        fontSize: '1rem',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative' }}>
+                <Search
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: 12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#6c757d',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={grupoCargoSearch}
+                  onChange={(e) => setGrupoCargoSearch(e.target.value)}
+                  onFocus={() => setGrupoCargoDropdownOpen(true)}
+                  placeholder={setoresSelecionados.length > 0 ? 'Buscar grupo/cargo (filtrado por setor)...' : 'Buscar grupo/cargo...'}
+                  style={{
+                    ...inputStyle,
+                    paddingLeft: 36,
+                  }}
+                />
+              </div>
+
+              {grupoCargoDropdownOpen && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                    backgroundColor: '#1a1d21',
+                    border: '1px solid #444',
+                    borderRadius: '0 0 8px 8px',
+                    zIndex: 10,
+                  }}
+                >
+                  {filteredGruposCargos.length === 0 ? (
+                    <div style={{ padding: '10px 14px', color: '#6c757d', fontSize: '0.8rem' }}>
+                      {setoresSelecionados.length > 0
+                        ? 'Nenhum grupo/cargo encontrado para os setores selecionados'
+                        : 'Nenhum grupo/cargo encontrado'}
+                    </div>
+                  ) : (
+                    filteredGruposCargos.map(g => {
+                      const selected = gruposCargos.includes(g);
+                      return (
+                        <button
+                          key={g}
+                          onClick={() => toggleGrupoCargo(g)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            width: '100%',
+                            padding: '8px 14px',
+                            background: selected ? 'rgba(59,130,246,0.1)' : 'transparent',
+                            border: 'none',
+                            borderBottom: '1px solid #333',
+                            color: selected ? '#3b82f6' : '#F8F9FA',
+                            fontSize: '0.8rem',
+                            fontFamily: 'Poppins, sans-serif',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'background 0.15s',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.05)')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = selected ? 'rgba(59,130,246,0.1)' : 'transparent')}
+                        >
+                          <div
+                            style={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: 4,
+                              border: selected ? '2px solid #3b82f6' : '2px solid #555',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                              backgroundColor: selected ? 'rgba(59,130,246,0.15)' : 'transparent',
+                            }}
+                          >
+                            {selected && <Check size={12} color="#3b82f6" />}
+                          </div>
+                          {g}
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Usuários Permitidos — Searchable multi-select */}
           <div style={{ marginBottom: '20px' }} ref={userDropdownRef}>
@@ -663,7 +1201,11 @@ export default function EditModuloModal({
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   onFocus={() => setUserDropdownOpen(true)}
-                  placeholder="Buscar usuário..."
+                  placeholder={
+                    setoresSelecionados.length > 0 || gruposCargos.length > 0
+                      ? 'Buscar usuário (filtrado por setor/grupo)...'
+                      : 'Buscar usuário...'
+                  }
                   style={{
                     ...inputStyle,
                     paddingLeft: 36,

@@ -6,6 +6,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '@/context/AuthContext';
 import { Search, X, ChevronDown, FolderOpen } from 'lucide-react';
 import { useModuloPermissions } from '@/modules/controle-modulos/hooks';
+import { getLucideIcon } from '@/modules/controle-modulos/config/icones';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface Dashboard {
   urlExterna: string;
   subgrupo: string;
   ordem: number;
+  beta: boolean;
 }
 
 // Definição de subgrupo
@@ -98,6 +100,7 @@ const buildDashboardGroups = (
       urlExterna: m.urlExterna || '',
       subgrupo: m.subgrupo || '',
       ordem: m.ordem,
+      beta: m.beta || false,
     });
   }
 
@@ -357,9 +360,26 @@ const DashboardItem = ({
   const linkContent = (
     <>
       <span style={{ opacity: active ? 1 : 0.55, flexShrink: 0, width: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {icons[dashboard.icon] || icons.dashboard}
+        {(() => { const Icon = getLucideIcon(dashboard.icon); return <Icon size={16} />; })()}
       </span>
-      <span style={{ flex: 1, minWidth: 0, lineHeight: '1.3', wordBreak: 'break-word' }}>{dashboard.label}</span>
+      <span style={{ flex: 1, minWidth: 0, lineHeight: '1.3', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: 6 }}>
+        {dashboard.label}
+        {dashboard.beta && (
+          <span title="Versão beta em validação" style={{
+            background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+            color: '#fff',
+            padding: '1px 5px',
+            borderRadius: 4,
+            fontSize: '0.5rem',
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase' as const,
+            lineHeight: 1.4,
+            flexShrink: 0,
+            cursor: 'default',
+          }}>BETA</span>
+        )}
+      </span>
       {isExternal && (
         <span style={{ opacity: 0.4, flexShrink: 0 }}>
           {icons.externalLink}
@@ -486,11 +506,9 @@ const CollapsibleGroup = ({
   };
 
   const groupIcon = useMemo(() => {
-    if (group.iconName) {
-      const key = grupoIconToSidebarIcon[group.iconName];
-      if (key && icons[key]) return icons[key];
-    }
-    return icons.dashboard;
+    const iconName = group.iconName || 'dashboard';
+    const Icon = getLucideIcon(iconName);
+    return <Icon size={16} />;
   }, [group.iconName]);
 
   // Todos os dashboards do grupo (incluindo os de subgrupos)
@@ -693,7 +711,7 @@ const CollapsibleGroup = ({
                       }
                     }}
                   >
-                    <FolderOpen size={13} color={sgOpen ? '#10b981' : '#555'} />
+                    {(() => { const Icon = getLucideIcon(sg.icone || 'folder'); return <Icon size={13} color={sgOpen ? '#10b981' : '#555'} />; })()}
                     <span style={{
                       color: sgOpen ? '#a7f3d0' : '#6b7280',
                       fontWeight: 600,

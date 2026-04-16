@@ -4,7 +4,9 @@
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { X, Plus, FolderOpen, Trash2, Loader2, AlertCircle, CheckCircle2, Pencil, Check, ChevronDown } from 'lucide-react';
+import { X, Plus, FolderOpen, Trash2, Loader2, AlertCircle, CheckCircle2, Pencil, Check } from 'lucide-react';
+import IconSelect from './IconSelect';
+import { ICONES, IconPreview } from '../config/icones';
 
 export interface SubgrupoInfo {
   nome: string;
@@ -13,25 +15,6 @@ export interface SubgrupoInfo {
   ordem: number;
   ativo: boolean;
 }
-
-const ICONES_SUBGRUPO = [
-  { value: 'folder', label: 'Pasta' },
-  { value: 'target', label: 'Meta' },
-  { value: 'chart', label: 'Gráfico' },
-  { value: 'money', label: 'Financeiro' },
-  { value: 'trophy', label: 'Troféu' },
-  { value: 'users', label: 'Pessoas' },
-  { value: 'settings', label: 'Config' },
-  { value: 'dashboard', label: 'Dashboard' },
-  { value: 'file-spreadsheet', label: 'Planilha' },
-  { value: 'trending-up', label: 'Tendência' },
-  { value: 'database', label: 'Dados' },
-  { value: 'link', label: 'Link' },
-  { value: 'wallet', label: 'Carteira' },
-  { value: 'funnel', label: 'Funil' },
-  { value: 'clipboard', label: 'Relatório' },
-  { value: 'layout-dashboard', label: 'Layout' },
-];
 
 interface GerenciarSubgruposModalProps {
   isOpen: boolean;
@@ -276,22 +259,7 @@ export default function GerenciarSubgruposModal({
                 </option>
               ))}
             </select>
-            <select
-              value={novoIcone}
-              onChange={(e) => setNovoIcone(e.target.value)}
-              style={{
-                ...inputStyle,
-                width: 90,
-                flex: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              {ICONES_SUBGRUPO.map(i => (
-                <option key={i.value} value={i.value} style={{ color: '#F8F9FA', backgroundColor: '#1a1d21' }}>
-                  {i.label}
-                </option>
-              ))}
-            </select>
+            <IconSelect value={novoIcone} onChange={setNovoIcone} compact style={{ flex: 'none' }} />
             <input
               type="text"
               value={novoNome}
@@ -432,7 +400,8 @@ export default function GerenciarSubgruposModal({
                               fontWeight: 600,
                             }}
                           >
-                            {ICONES_SUBGRUPO.find(i => i.value === s.icone)?.label || s.icone}
+                            <IconPreview value={s.icone} size={12} color="#FF6600" />
+                            {ICONES.find(i => i.value === s.icone)?.label || s.icone}
                           </span>
                           <span
                             style={{
