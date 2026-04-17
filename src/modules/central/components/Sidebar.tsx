@@ -62,7 +62,7 @@ interface SubgrupoAPIInfo {
 
 // Grupos de dashboards - 100% dinâmico a partir da planilha BASE MODULOS
 const buildDashboardGroups = (
-  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string; tipo?: string; urlExterna?: string; subgrupo?: string }[],
+  modulos: { moduloId: string; moduloNome: string; moduloPath: string; grupo: string; ordem: number; icone: string; tipo?: string; urlExterna?: string; subgrupo?: string; beta?: boolean }[],
   allowedIds: Set<string>,
   gruposInfo: GrupoAPIInfo[],
   subgruposInfo: SubgrupoAPIInfo[]
@@ -365,7 +365,7 @@ const DashboardItem = ({
       <span style={{ flex: 1, minWidth: 0, lineHeight: '1.3', wordBreak: 'break-word', display: 'flex', alignItems: 'center', gap: 6 }}>
         {dashboard.label}
         {dashboard.beta && (
-          <span title="Versão beta em validação" style={{
+          <span title="Versão beta em validação interna" style={{
             background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
             color: '#fff',
             padding: '1px 5px',
