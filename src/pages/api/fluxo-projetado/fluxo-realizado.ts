@@ -12,7 +12,7 @@ import cache from '@/lib/cache';
 const SPREADSHEET_ID = process.env.PLANILHA_FLUXO_PROJETADO_ID!;
 const SHEET_NAME = 'carteira_realizado';
 const CACHE_KEY = 'fluxo-realizado:fundos';
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const CACHE_TTL = 2 * 60 * 1000; // 2 minutos
 
 /**
  * Mapeamento das colunas da aba carteira_realizado
@@ -115,27 +115,27 @@ function parseNumber(value: any): number {
   return parseFloat(cleaned) || 0;
 }
 
-// Interface para parâmetros da aba PARAMETROS PAINEL
+// Interface para parâmetros da aba PARAMETRO OFICIAL DO FLUXO REALIZADO
 interface ParametrosPainel {
   percentualAntecipacao: number;
   diasBaileAntecipar: number;
 }
 
-// Busca parâmetros da aba PARAMETROS PAINEL para a franquia
+// Busca parâmetros da aba PARAMETRO OFICIAL DO FLUXO REALIZADO para a franquia
 // Coluna C = % ANTECIPAÇÃO | Coluna G = DIAS DO BAILE P/ ANTECIPAR ULTIMA PARCELA DO FEE
 async function getParametrosPainel(sheets: any, franquia: string): Promise<ParametrosPainel> {
   try {
-    const range = `'PARAMETROS PAINEL'!A:G`;
+    const range = `'PARAMETRO OFICIAL DO FLUXO REALIZADO'!A:G`;
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
       range,
     });
     const rows = response.data.values || [];
-    const franquiaUpper = franquia.toUpperCase();
+    const franquiaUpper = franquia.toUpperCase().trim();
     
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      if (row[0] && row[0].toString().toUpperCase() === franquiaUpper) {
+      if (row[0] && row[0].toString().trim().toUpperCase() === franquiaUpper) {
         // Coluna C (índice 2) = % ANTECIPAÇÃO (vem como decimal, ex: 0.60 = 60%)
         let percentualAntecipacao = 0;
         const valorC = row[2];

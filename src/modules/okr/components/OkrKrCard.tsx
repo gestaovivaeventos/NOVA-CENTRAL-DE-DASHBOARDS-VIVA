@@ -100,6 +100,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [barGradient, setBarGradient] = useState<CanvasGradient | string>(accentColor);
   const [doughnutGradient, setDoughnutGradient] = useState<CanvasGradient | string>(accentColor);
+  const [showAcumulado, setShowAcumulado] = useState(false);
 
   // Refs para os inputs
   const metaInputsRef = useRef<(HTMLInputElement | null)[]>([]);
@@ -168,6 +169,22 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
   // Função para salvar dados na planilha
   const handleSaveData = async () => {
     setSaveMessage(null);
+
+    // Validar Forma de Medir
+    const formaDeMedirSelecionada = formaDeMedirRef.current?.value || '';
+    if (!formaDeMedirSelecionada) {
+      setSaveMessage({ type: 'error', text: 'Selecione a Forma de Medir antes de salvar.' });
+      formaDeMedirRef.current?.focus();
+      return;
+    }
+
+    // Validar Medida
+    const medidaSelecionada = medidaRef.current?.value || '';
+    if (!medidaSelecionada) {
+      setSaveMessage({ type: 'error', text: 'Selecione a Medida antes de salvar.' });
+      medidaRef.current?.focus();
+      return;
+    }
 
     // Validar campos obrigatórios
     const responsavelValue = responsavelRef.current?.value?.trim() || '';
@@ -327,6 +344,23 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
     return { labels, realizadoData, metaData, atingMetaMesData };
   }, [sortedData]);
 
+  // Dados acumulados para visualização
+  const acumuladoChartData = useMemo(() => {
+    const acumRealizado: (number | null)[] = [];
+    const acumMeta: (number | null)[] = [];
+    let sumR = 0;
+    let sumM = 0;
+    for (let i = 0; i < chartData.realizadoData.length; i++) {
+      const r = chartData.realizadoData[i];
+      const m = chartData.metaData[i];
+      sumR += typeof r === 'number' ? r : 0;
+      sumM += typeof m === 'number' ? m : 0;
+      acumRealizado.push(r !== null ? sumR : null);
+      acumMeta.push(m !== null ? sumM : null);
+    }
+    return { realizadoData: acumRealizado, metaData: acumMeta };
+  }, [chartData]);
+
   // Calcular métricas
   const metrics = useMemo(() => {
     const metas = sortedData.map(d => d.meta).filter(m => m !== null) as number[];
@@ -404,8 +438,10 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
 
   // Configuração do gráfico principal (barras + linha)
   const mainChartConfig = useMemo(() => {
+    const activeRealizadoData = showAcumulado && formaDeMedir === 'ACUMULADO' ? acumuladoChartData.realizadoData : chartData.realizadoData;
+    const activeMetaData = showAcumulado && formaDeMedir === 'ACUMULADO' ? acumuladoChartData.metaData : chartData.metaData;
     // Calcular min e max para detectar valores baixos
-    const allValues = [...chartData.realizadoData, ...chartData.metaData].filter(
+    const allValues = [...activeRealizadoData, ...activeMetaData].filter(
       (v) => typeof v === 'number' && !isNaN(v)
     ) as number[];
     const minY = Math.min(...allValues, 0);
@@ -417,8 +453,8 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
       labels: chartData.labels,
       datasets: [
         {
-          label: 'REALIZADO',
-          data: chartData.realizadoData,
+          label: showAcumulado && formaDeMedir === 'ACUMULADO' ? 'REALIZADO ACUMULADO' : 'REALIZADO',
+          data: activeRealizadoData,
           backgroundColor: barGradient,
           borderRadius: 0,
           borderSkipped: false as const,
@@ -435,7 +471,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
             // Posicionamento: centralizado por padrão, mas ajusta quando valor está muito baixo
             anchor: (context: any) => {
               const idx = context.dataIndex;
-              const resultadoVal = chartData.realizadoData[idx];
+              const resultadoVal = activeRealizadoData[idx];
               
               // Se o valor é muito baixo (próximo do eixo X), colocar rótulo acima da barra
               if (resultadoVal !== null && resultadoVal !== undefined && range > 0) {
@@ -448,7 +484,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
             },
             align: (context: any) => {
               const idx = context.dataIndex;
-              const resultadoVal = chartData.realizadoData[idx];
+              const resultadoVal = activeRealizadoData[idx];
               
               // Se o valor é muito baixo, posicionar acima
               if (resultadoVal !== null && resultadoVal !== undefined && range > 0) {
@@ -461,7 +497,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
             },
             offset: (context: any) => {
               const idx = context.dataIndex;
-              const resultadoVal = chartData.realizadoData[idx];
+              const resultadoVal = activeRealizadoData[idx];
               
               if (resultadoVal !== null && resultadoVal !== undefined && range > 0) {
                 const heightPercent = (resultadoVal - minY) / range;
@@ -478,8 +514,8 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
           },
         },
         {
-          label: 'META',
-          data: chartData.metaData,
+          label: showAcumulado && formaDeMedir === 'ACUMULADO' ? 'META ACUMULADA' : 'META',
+          data: activeMetaData,
           type: 'line' as const,
           borderColor: '#E0E0E0',
           backgroundColor: 'transparent',
@@ -507,7 +543,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
             anchor: 'end' as const,
             align: (context: any) => {
               const idx = context.dataIndex;
-              const metaVal = chartData.metaData[idx];
+              const metaVal = activeMetaData[idx];
               
               // Se meta está muito baixa (próxima do eixo X), posicionar à direita
               if (metaVal !== null && metaVal !== undefined && range > 0) {
@@ -521,7 +557,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
             },
             offset: (context: any) => {
               const idx = context.dataIndex;
-              const metaVal = chartData.metaData[idx];
+              const metaVal = activeMetaData[idx];
               
               if (metaVal !== null && metaVal !== undefined && range > 0) {
                 const heightPercent = (metaVal - minY) / range;
@@ -570,8 +606,8 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
           callbacks: {
             label: (context: any) => {
               const idx = context.dataIndex;
-              if (context.dataset.label === 'REALIZADO') {
-                const meta = chartData.metaData[idx];
+              if (context.dataset.label === 'REALIZADO' || context.dataset.label === 'REALIZADO ACUMULADO') {
+                const meta = activeMetaData[idx];
                 const realizado = context.raw as number | null;
                 const ating = chartData.atingMetaMesData[idx] || '';
 
@@ -594,7 +630,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
       },
     },
   };
-  }, [chartData, barGradient, medida]);
+  }, [chartData, acumuladoChartData, barGradient, medida, showAcumulado, formaDeMedir]);
 
   // Configuração do gráfico de atingimento (doughnut)
   const atingimentoPercent = metrics.atingimentoFinal;
@@ -720,9 +756,10 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
                   <div className="select-row">
                     <select
                       className="forma-de-medir-select"
-                      defaultValue={formaDeMedir || 'ACUMULADO'}
+                      defaultValue=""
                       ref={formaDeMedirRef}
                     >
+                      <option value="" disabled>Selecione</option>
                       <option value="ACUMULADO">Métrica Acumulativa</option>
                       <option value="PONTUAL">Métrica de Valor Pontual</option>
                       <option value="DEGRAU">Métrica de Variação</option>
@@ -751,15 +788,10 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
                   <label>Medida:</label>
                   <select
                     className="medida-select"
-                    defaultValue={
-                      medida.toUpperCase().includes('MOEDA') || medida.toUpperCase().includes('R$')
-                        ? 'MOEDA'
-                        : medida.toUpperCase().includes('PORCENTAGEM') || medida.toUpperCase().includes('%')
-                          ? 'PORCENTAGEM'
-                          : 'NÚMERO INTEIRO'
-                    }
+                    defaultValue=""
                     ref={medidaRef}
                   >
+                    <option value="" disabled>Selecione</option>
                     <option value="MOEDA">MOEDA</option>
                     <option value="NÚMERO INTEIRO">NÚMERO INTEIRO</option>
                     <option value="PORCENTAGEM">PORCENTAGEM</option>
@@ -878,6 +910,15 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
 
             {/* Área do gráfico principal */}
             <div className="main-chart-area">
+              {formaDeMedir === 'ACUMULADO' && (
+                <button
+                  className={`toggle-acumulado-btn${showAcumulado ? ' active' : ''}`}
+                  onClick={() => setShowAcumulado(prev => !prev)}
+                  title={showAcumulado ? 'Ver mensal' : 'Ver acumulado'}
+                >
+                  {showAcumulado ? 'Ver Mensal' : 'Ver Acumulado'}
+                </button>
+              )}
               <Chart ref={chartRef} type="bar" data={mainChartConfig.data as any} options={mainChartConfig.options as any} />
             </div>
           </div>

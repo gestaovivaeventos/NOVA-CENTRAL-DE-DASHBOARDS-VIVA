@@ -18,6 +18,16 @@ const nextConfig = {
     APP_NAME: 'Projeto Central',
     APP_VERSION: '1.0.0',
   },
+  // Redirecionamentos
+  async redirects() {
+    return [
+      {
+        source: '/fluxo-projetado',
+        destination: '/fluxo-projetado/realizado',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
