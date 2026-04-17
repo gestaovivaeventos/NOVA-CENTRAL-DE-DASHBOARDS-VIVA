@@ -485,7 +485,7 @@ export default function TabelaResultadosOficiais({
                               ? `Tempo médio carteira: ${item.tempoMedio > 0 ? item.tempoMedio.toFixed(1).replace('.', ',') + ' meses' : '-'}`
                               : ind.id === 'estrutura' && isFranqueadora && filtroMes === listaMeses[0] && dadosEstrutura[item.franquia]
                                 ? `Societária: ${dadosEstrutura[item.franquia].societaria || '-'} | Times: ${dadosEstrutura[item.franquia].time || '-'}`
-                                : ind.id === 'conformidades' && isFranqueadora && filtroMesParsed && dadosConformidades[item.franquia]?.[`${filtroMesParsed.mes}-${filtroMesParsed.ano}`]
+                                : ind.id === 'conformidades' && isFranqueadora && filtroMes === listaMeses[0] && filtroMesParsed && dadosConformidades[item.franquia]?.[`${filtroMesParsed.mes}-${filtroMesParsed.ano}`]
                                   ? (() => {
                                       const c = dadosConformidades[item.franquia][`${filtroMesParsed.mes}-${filtroMesParsed.ano}`];
                                       return `Conf. Pipe: ${c.confPipe || '-'} (Vendas: ${c.pipeVendas || '-'} | Relac: ${c.pipeRelacionamento || '-'} | Prod: ${c.pipeProducao || '-'})\nConf. Financeira: ${c.confFinanceira || '-'} (Fechamento: ${c.fechamentoPrazo || '-'} | Endiv: ${c.endividamentoFranq || '-'})`;
