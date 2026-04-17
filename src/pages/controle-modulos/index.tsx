@@ -1182,7 +1182,7 @@ export default function ControleModulosPage() {
                           >
                             {mod.moduloNome}
                             {(mod as any).beta && (
-                              <span title="Versão beta em validação" style={{
+                              <span title="Versão beta em validação interna" style={{
                                 background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
                                 color: '#fff',
                                 padding: '1px 6px',
