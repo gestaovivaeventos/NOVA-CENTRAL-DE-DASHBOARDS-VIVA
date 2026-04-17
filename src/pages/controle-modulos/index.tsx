@@ -621,8 +621,13 @@ export default function ControleModulosPage() {
       'Tipo': m.tipo === 'externo' ? 'Externo' : 'Interno',
       'Link / Caminho': m.tipo === 'externo' ? m.urlExterna : m.moduloPath,
       'Ativo': m.ativo ? 'Sim' : 'Não',
+      'Beta': m.beta ? 'Sim' : 'Não',
       'Nível de Acesso': m.nvlAcesso === 0 ? 'Rede (todos)' : m.nvlAcesso === 2 ? 'Franquia' : 'Franqueadora',
       'Usuários com Acesso': m.usuariosPermitidos.length > 0 ? m.usuariosPermitidos.join(', ') : 'Todos (pelo nível)',
+      'Setores Permitidos': m.setoresPermitidos && m.setoresPermitidos.length > 0 ? m.setoresPermitidos.join(', ') : 'Todos',
+      'Grupos Permitidos': m.gruposPermitidos && m.gruposPermitidos.length > 0 ? m.gruposPermitidos.join(', ') : 'Todos',
+      'Ordem': m.ordem,
+      'Ícone': m.icone || '',
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
@@ -635,8 +640,13 @@ export default function ControleModulosPage() {
       { wch: 10 }, // Tipo
       { wch: 50 }, // Link / Caminho
       { wch: 8 },  // Ativo
+      { wch: 8 },  // Beta
       { wch: 18 }, // Nível de Acesso
       { wch: 40 }, // Usuários com Acesso
+      { wch: 30 }, // Setores Permitidos
+      { wch: 30 }, // Grupos Permitidos
+      { wch: 8 },  // Ordem
+      { wch: 15 }, // Ícone
     ];
     ws['!cols'] = colWidths;
 
