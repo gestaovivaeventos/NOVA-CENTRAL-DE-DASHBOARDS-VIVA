@@ -245,11 +245,11 @@ export default function HomePage() {
     }
   }, [isAuthenticated, isLoading]);
 
-  // Dashboards favoritos (filtrados pela planilha BASE MODULOS)
+  // Dashboards favoritos (filtrados pela planilha BASE MODULOS, ordenados alfabeticamente)
   const favoriteDashboards = useMemo(() => {
-    return allDashboards.filter(d => 
-      favorites.includes(d.id) && allowedIds.has(d.id)
-    );
+    return allDashboards
+      .filter(d => favorites.includes(d.id) && allowedIds.has(d.id))
+      .sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
   }, [favorites, allowedIds]);
 
   // Mostrar loading enquanto verifica auth
