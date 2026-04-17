@@ -131,12 +131,8 @@ const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       item.data && item.data.getFullYear().toString() === selectedYear
     );
     const teams = [...new Set(dataForQuarter.map(item => item.time).filter(Boolean))];
-    // Ordenar pela ordem do ALL_TEAMS
-    return teams.sort((a, b) => {
-      const indexA = ALL_TEAMS.indexOf(a);
-      const indexB = ALL_TEAMS.indexOf(b);
-      return indexA - indexB;
-    });
+    // Ordenar alfabeticamente
+    return teams.sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [allOkrData, selectedQuarter, selectedYear]);
 
   // Reset do time selecionado quando mudar de quarter (se o time não existir no novo quarter)

@@ -44,7 +44,7 @@ export function useFluxoRealizado(franquia: string): UseFluxoRealizadoResult {
 
     try {
       const response = await fetch(
-        `/api/fluxo-projetado/fluxo-realizado?franquia=${encodeURIComponent(franquia)}`
+        `/api/fluxo-projetado/fluxo-realizado?franquia=${encodeURIComponent(franquia)}&skipCache=true`
       );
 
       if (!response.ok) {
