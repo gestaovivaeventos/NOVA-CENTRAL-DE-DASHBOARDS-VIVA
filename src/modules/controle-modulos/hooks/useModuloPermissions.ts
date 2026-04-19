@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { hasNivelAccess } from '../types';
+import { hasModuloAccess, type AcessoEixo } from '../types';
 
 interface ModuloPermission {
   moduloId: string;
@@ -24,7 +24,16 @@ interface ModuloPermission {
   subgrupo: string;
   setoresPermitidos: string[];
   gruposPermitidos: string[];
+  usuariosExcecao: string[];
   beta: boolean;
+  acessoFranqueadora: AcessoEixo;
+  franqueadoraSetores: string[];
+  franqueadoraGrupos: string[];
+  franqueadoraUsuarios: string[];
+  acessoFranquia: AcessoEixo;
+  franquiaSetores: string[];
+  franquiaGrupos: string[];
+  franquiaUsuarios: string[];
 }
 
 interface UseModuloPermissionsResult {
@@ -60,28 +69,13 @@ export function useModuloPermissions(
       const userLevel = accessLevel ?? 0;
       const ids = new Set<string>();
       for (const m of mods) {
-        if (!m.ativo) continue;
-        if (!hasNivelAccess(userLevel, m.nvlAcesso)) continue;
-        // Checar setores permitidos
-        if (
-          m.setoresPermitidos.length > 0 &&
-          userInfo?.setor &&
-          !m.setoresPermitidos.includes(userInfo.setor)
-        )
-          continue;
-        // Checar grupos/cargos permitidos
-        if (
-          m.gruposPermitidos.length > 0 &&
-          userInfo?.nmGrupo &&
-          !m.gruposPermitidos.includes(userInfo.nmGrupo)
-        )
-          continue;
-        if (
-          m.usuariosPermitidos.length > 0 &&
-          !m.usuariosPermitidos.includes(username)
-        )
-          continue;
-        ids.add(m.moduloId);
+        const ok = hasModuloAccess(m, {
+          username,
+          accessLevel: userLevel,
+          setor: userInfo?.setor,
+          nmGrupo: userInfo?.nmGrupo,
+        });
+        if (ok) ids.add(m.moduloId);
       }
       setAllowedIds(ids);
     },
@@ -121,7 +115,16 @@ export function useModuloPermissions(
             subgrupo: m.subgrupo || '',
             setoresPermitidos: m.setoresPermitidos || [],
             gruposPermitidos: m.gruposPermitidos || [],
+            usuariosExcecao: m.usuariosExcecao || [],
             beta: m.beta || false,
+            acessoFranqueadora: m.acessoFranqueadora || 'sem_acesso',
+            franqueadoraSetores: m.franqueadoraSetores || [],
+            franqueadoraGrupos: m.franqueadoraGrupos || [],
+            franqueadoraUsuarios: m.franqueadoraUsuarios || [],
+            acessoFranquia: m.acessoFranquia || 'sem_acesso',
+            franquiaSetores: m.franquiaSetores || [],
+            franquiaGrupos: m.franquiaGrupos || [],
+            franquiaUsuarios: m.franquiaUsuarios || [],
           })
         );
         setModulos(mods);

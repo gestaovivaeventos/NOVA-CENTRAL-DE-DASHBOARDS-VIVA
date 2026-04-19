@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { hasNivelAccess } from '../types';
+import { hasModuloAccess } from '../types';
 
 interface ModuloAccessResult {
   hasAccess: boolean;
@@ -13,7 +13,8 @@ interface ModuloAccessResult {
 
 export function useControleModulosAccess(
   username?: string,
-  accessLevel?: number
+  accessLevel?: number,
+  userInfo?: { setor?: string; nmGrupo?: string }
 ): ModuloAccessResult {
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -25,7 +26,6 @@ export function useControleModulosAccess(
       return;
     }
 
-    // IMPORTANTE: resetar loading a cada execução para evitar estado stale
     setHasAccess(false);
     setLoading(true);
 
@@ -40,28 +40,18 @@ export function useControleModulosAccess(
           (m: { moduloId: string }) => m.moduloId === 'controle-modulos'
         );
 
-        if (!cm || !cm.ativo) {
+        if (!cm) {
           setHasAccess(false);
           return;
         }
 
-        const userLevel = accessLevel ?? 0;
-        if (!hasNivelAccess(userLevel, cm.nvlAcesso)) {
-          setHasAccess(false);
-          return;
-        }
-
-        // Verificar usuários específicos (vazio = todos com nível adequado)
-        if (
-          cm.usuariosPermitidos &&
-          cm.usuariosPermitidos.length > 0 &&
-          !cm.usuariosPermitidos.includes(username)
-        ) {
-          setHasAccess(false);
-          return;
-        }
-
-        setHasAccess(true);
+        const ok = hasModuloAccess(cm, {
+          username,
+          accessLevel: accessLevel ?? 0,
+          setor: userInfo?.setor,
+          nmGrupo: userInfo?.nmGrupo,
+        });
+        setHasAccess(ok);
       })
       .catch(() => {
         if (!cancelled) setHasAccess(false);
@@ -73,7 +63,7 @@ export function useControleModulosAccess(
     return () => {
       cancelled = true;
     };
-  }, [username, accessLevel]);
+  }, [username, accessLevel, userInfo?.setor, userInfo?.nmGrupo]);
 
   return { hasAccess, loading };
 }

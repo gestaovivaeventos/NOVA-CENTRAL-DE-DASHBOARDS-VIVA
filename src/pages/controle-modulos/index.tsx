@@ -13,7 +13,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal, GerenciarSubgruposModal, EditSubgrupoModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
 import type { ModuloConfig } from '@/modules/controle-modulos/types';
-import { hasNivelAccess } from '@/modules/controle-modulos/types';
+import { hasModuloAccess } from '@/modules/controle-modulos/types';
 import type { ExternalLinkData } from '@/modules/controle-modulos/components/AddExternalLinkModal';
 import type { GrupoInfo } from '@/modules/controle-modulos/components/GerenciarGruposModal';
 import type { SubgrupoInfo } from '@/modules/controle-modulos/components/GerenciarSubgruposModal';
@@ -126,10 +126,13 @@ export default function ControleModulosPage() {
   const isAuthorized = useMemo(() => {
     if (!user || modulos.length === 0) return null; // ainda carregando
     const cm = modulos.find(m => m.moduloId === 'controle-modulos');
-    if (!cm || !cm.ativo) return false;
-    if (!hasNivelAccess(user.accessLevel ?? 0, cm.nvlAcesso)) return false;
-    if (cm.usuariosPermitidos.length > 0 && !cm.usuariosPermitidos.includes(user.username)) return false;
-    return true;
+    if (!cm) return false;
+    return hasModuloAccess(cm, {
+      username: user.username,
+      accessLevel: user.accessLevel ?? 0,
+      setor: (user as any).setor,
+      nmGrupo: (user as any).nmGrupo,
+    });
   }, [user, modulos]);
 
   // Redirecionar se não autenticado ou sem permissão

@@ -37,38 +37,125 @@ export default async function handler(
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:O`,
+      range: `${sheetName}!A:X`,
     });
     const rows = response.data.values || [];
 
     // Pular header (primeira linha)
     const dataRows = rows.slice(1);
 
+    // Helper: parse CSV cell
+    const csv = (v: any): string[] => {
+      const s = (v || '').toString().trim();
+      return s ? s.split(',').map((x: string) => x.trim()).filter(Boolean) : [];
+    };
+
+    // Helper: normaliza valor de eixo ('geral' | 'sem_acesso' | 'restrito')
+    const parseEixo = (v: any): 'geral' | 'sem_acesso' | 'restrito' | '' => {
+      const s = (v || '').toString().trim().toLowerCase();
+      if (s === 'geral' || s === 'sem_acesso' || s === 'restrito') return s;
+      return '';
+    };
+
     const modulos = dataRows
       .filter((row: string[]) => row[0]) // filtrar linhas vazias
-      .map((row: string[]) => ({
-        moduloId: (row[0] || '').trim(),
-        moduloNome: (row[1] || '').trim(),
-        moduloPath: (row[2] || '').trim(),
-        nvlAcesso: parseInt(row[3] || '0', 10),
-        usuariosPermitidos: (row[4] || '').trim()
-          ? (row[4] || '').split(',').map((u: string) => u.trim()).filter(Boolean)
-          : [],
-        ativo: (row[5] || '').toUpperCase() === 'TRUE',
-        grupo: (row[6] || '').trim(),
-        ordem: parseInt(row[7] || '0', 10),
-        icone: (row[8] || '').trim(),
-        tipo: ((row[9] || '').trim().toLowerCase() || 'interno') as 'interno' | 'externo',
-        urlExterna: (row[10] || '').trim(),
-        subgrupo: (row[11] || '').trim(),
-        setoresPermitidos: (row[12] || '').trim()
-          ? (row[12] || '').split(',').map((s: string) => s.trim()).filter(Boolean)
-          : [],
-        gruposPermitidos: (row[13] || '').trim()
-          ? (row[13] || '').split(',').map((g: string) => g.trim()).filter(Boolean)
-          : [],
-        beta: (row[14] || '').toUpperCase() === 'TRUE',
-      }));
+      .map((row: string[]) => {
+        // Legado
+        const nvlAcesso = parseInt(row[3] || '0', 10);
+        const usuariosPermitidos = csv(row[4]);
+        const setoresPermitidos = csv(row[12]);
+        const gruposPermitidos = csv(row[13]);
+
+        // Novo modelo (Q-X): se preenchido, usa; senão, deriva do legado
+        let acessoFranqueadora = parseEixo(row[16]);
+        let franqueadoraSetores = csv(row[17]);
+        let franqueadoraGrupos = csv(row[18]);
+        let franqueadoraUsuarios = csv(row[19]);
+        let acessoFranquia = parseEixo(row[20]);
+        let franquiaSetores = csv(row[21]);
+        let franquiaGrupos = csv(row[22]);
+        let franquiaUsuarios = csv(row[23]);
+
+        // Derivação: se eixo não está definido na planilha, calcula a partir do legado
+        // Mantém permissões IDÊNTICAS às do sistema antigo.
+        const hasRestricoes =
+          usuariosPermitidos.length > 0 ||
+          setoresPermitidos.length > 0 ||
+          gruposPermitidos.length > 0;
+
+        if (!acessoFranqueadora) {
+          if (nvlAcesso === 0) {
+            // Rede: franqueadora tem acesso
+            acessoFranqueadora = hasRestricoes ? 'restrito' : 'geral';
+            if (hasRestricoes) {
+              franqueadoraSetores = setoresPermitidos;
+              franqueadoraGrupos = gruposPermitidos;
+              franqueadoraUsuarios = usuariosPermitidos;
+            }
+          } else if (nvlAcesso === 1) {
+            // Franqueadora only
+            acessoFranqueadora = hasRestricoes ? 'restrito' : 'geral';
+            if (hasRestricoes) {
+              franqueadoraSetores = setoresPermitidos;
+              franqueadoraGrupos = gruposPermitidos;
+              franqueadoraUsuarios = usuariosPermitidos;
+            }
+          } else if (nvlAcesso === 2) {
+            // Franquia only → franqueadora sem acesso
+            acessoFranqueadora = 'sem_acesso';
+          }
+        }
+
+        if (!acessoFranquia) {
+          if (nvlAcesso === 0) {
+            // Rede: franquia tem acesso
+            acessoFranquia = hasRestricoes ? 'restrito' : 'geral';
+            if (hasRestricoes) {
+              franquiaSetores = setoresPermitidos;
+              franquiaGrupos = gruposPermitidos;
+              franquiaUsuarios = usuariosPermitidos;
+            }
+          } else if (nvlAcesso === 1) {
+            // Franqueadora only → franquia sem acesso
+            acessoFranquia = 'sem_acesso';
+          } else if (nvlAcesso === 2) {
+            // Franquia only
+            acessoFranquia = hasRestricoes ? 'restrito' : 'geral';
+            if (hasRestricoes) {
+              franquiaSetores = setoresPermitidos;
+              franquiaGrupos = gruposPermitidos;
+              franquiaUsuarios = usuariosPermitidos;
+            }
+          }
+        }
+
+        return {
+          moduloId: (row[0] || '').trim(),
+          moduloNome: (row[1] || '').trim(),
+          moduloPath: (row[2] || '').trim(),
+          nvlAcesso,
+          usuariosPermitidos,
+          ativo: (row[5] || '').toUpperCase() === 'TRUE',
+          grupo: (row[6] || '').trim(),
+          ordem: parseInt(row[7] || '0', 10),
+          icone: (row[8] || '').trim(),
+          tipo: ((row[9] || '').trim().toLowerCase() || 'interno') as 'interno' | 'externo',
+          urlExterna: (row[10] || '').trim(),
+          subgrupo: (row[11] || '').trim(),
+          setoresPermitidos,
+          gruposPermitidos,
+          beta: (row[14] || '').toUpperCase() === 'TRUE',
+          usuariosExcecao: csv(row[15]),
+          acessoFranqueadora: (acessoFranqueadora || 'sem_acesso') as 'geral' | 'sem_acesso' | 'restrito',
+          franqueadoraSetores,
+          franqueadoraGrupos,
+          franqueadoraUsuarios,
+          acessoFranquia: (acessoFranquia || 'sem_acesso') as 'geral' | 'sem_acesso' | 'restrito',
+          franquiaSetores,
+          franquiaGrupos,
+          franquiaUsuarios,
+        };
+      });
 
     res.setHeader('Cache-Control', 'no-cache');
     return res.status(200).json({ modulos, cached: true });
