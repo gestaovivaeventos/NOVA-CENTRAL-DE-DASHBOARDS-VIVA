@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { X, Save, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Save, Loader2, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
 import IconSelect from './IconSelect';
 
 export interface SubgrupoInfo {
