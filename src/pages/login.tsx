@@ -116,8 +116,8 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>Login - PEX Dashboard</title>
-        <meta name="description" content="Acesso ao PEX Dashboard" />
+        <title>Login - Central de Dashboards Viva Eventos</title>
+        <meta name="description" content="Acesso à Central de Dashboards Viva Eventos" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -170,12 +170,12 @@ export default function LoginPage() {
         }
 
         .main-heading {
-          font-family: 'Orbitron', sans-serif;
+          font-family: 'Poppins', sans-serif;
           font-size: 1.6em;
           font-weight: 700;
           color: #F8F9FA;
           margin: 0;
-          letter-spacing: 1px;
+          letter-spacing: 0.5px;
         }
 
         .sub-heading {
@@ -212,7 +212,7 @@ export default function LoginPage() {
           flex-direction: column;
           align-items: center;
           gap: 18px;
-          max-width: 420px;
+          max-width: 370px;
           width: 100%;
           box-shadow: 
             0 0 40px rgba(255, 102, 0, 0.06),
@@ -268,12 +268,31 @@ export default function LoginPage() {
           z-index: 1;
         }
 
+        .input-with-icon {
+          position: relative;
+          display: flex;
+          align-items: center;
+          width: 100%;
+        }
+
+        .input-icon {
+          position: absolute;
+          left: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6c757d;
+          pointer-events: none;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+        }
+
         .access-control input {
           background-color: rgba(20, 22, 25, 0.9);
           border: 1px solid rgba(255, 140, 50, 0.2);
           color: #F8F9FA;
           border-radius: 8px;
-          padding: 14px 16px;
+          padding: 14px 16px 14px 44px;
           text-align: left;
           font-size: 1em;
           width: 100%;
@@ -345,6 +364,15 @@ export default function LoginPage() {
           height: 50px;
         }
 
+        @keyframes pulseGlow {
+          0%, 100% { filter: drop-shadow(0 0 3px rgba(255,102,0,0.4)); }
+          50% { filter: drop-shadow(0 0 12px rgba(255,102,0,1)); }
+        }
+
+        .logo-wrapper {
+          animation: pulseGlow 3s ease-in-out infinite;
+        }
+
         .error-message {
           color: #dc3545;
           font-weight: bold;
@@ -392,15 +420,21 @@ export default function LoginPage() {
           margin-top: 2px;
         }
 
-        .forgot-password-link a {
+        .forgot-password-link {
           font-size: 0.85em;
           color: #adb5bd;
+        }
+
+        .forgot-password-link a {
+          color: #FF6600;
           text-decoration: none;
+          font-weight: 600;
           transition: color 0.2s ease;
         }
 
         .forgot-password-link a:hover {
-          color: #FF6600;
+          color: #ff8a33;
+          text-decoration: underline;
         }
 
         .password-wrapper {
@@ -410,6 +444,7 @@ export default function LoginPage() {
 
         .password-wrapper input {
           padding-right: 55px;
+          padding-left: 44px;
           width: 100%;
         }
 
@@ -422,10 +457,12 @@ export default function LoginPage() {
           border: none;
           color: #adb5bd;
           cursor: pointer;
-          font-size: 0.85em;
+          font-size: 0;
           padding: 0;
           transition: color 0.2s ease;
-          z-index: 1;
+          z-index: 2;
+          display: flex;
+          align-items: center;
         }
 
         .password-toggle:hover {
@@ -463,21 +500,35 @@ export default function LoginPage() {
               <form onSubmit={handleSubmit} className="form-container">
                 {/* Campo Username */}
                 <div className="form-group">
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    value={formState.username}
-                    onChange={handleInputChange}
-                    placeholder="Usuário"
-                    disabled={formState.loading}
-                    maxLength={20}
-                  />
+                  <div className="input-with-icon">
+                    <span className="input-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                    </span>
+                    <input
+                      id="username"
+                      name="username"
+                      type="text"
+                      value={formState.username}
+                      onChange={handleInputChange}
+                      placeholder="Nome de usuário (Login MV)"
+                      disabled={formState.loading}
+                      maxLength={20}
+                    />
+                  </div>
                 </div>
 
                 {/* Campo Senha */}
                 <div className="form-group">
                   <div className="password-wrapper">
+                    <span className="input-icon">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                      </svg>
+                    </span>
                     <input
                       id="password"
                       name="password"
@@ -491,7 +542,18 @@ export default function LoginPage() {
                       className="password-toggle"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? 'Ocultar' : 'Ver'}
+                      {showPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -509,7 +571,8 @@ export default function LoginPage() {
 
             {/* Link Redefinir Senha */}
             <div className="forgot-password-link">
-              <a href="/reset-password">Primeiro acesso / Esqueceu sua senha?</a>
+              Primeiro acesso / Esqueceu sua senha?{' '}<br/>
+              <a href="/reset-password">Clique aqui.</a>
             </div>
 
             <div className="divider" />

@@ -164,12 +164,12 @@ export default function ResetPasswordPage() {
 
       <style jsx>{`
         .page-subtitle {
-          font-family: 'Orbitron', sans-serif;
-          font-size: 1.2em;
+          font-family: 'Poppins', sans-serif;
+          font-size: 1.4em;
           font-weight: 700;
           color: #F8F9FA;
           margin-bottom: 0;
-          letter-spacing: 1px;
+          letter-spacing: 0.5px;
         }
 
         .page-description {
@@ -310,9 +310,11 @@ export default function ResetPasswordPage() {
           border: none;
           color: #adb5bd;
           cursor: pointer;
-          font-size: 0.85em;
+          font-size: 0;
           padding: 0;
           transition: color 0.2s ease;
+          display: flex;
+          align-items: center;
         }
 
         .password-toggle:hover {
@@ -378,13 +380,15 @@ export default function ResetPasswordPage() {
 
         .back-link a {
           font-size: 0.9em;
-          color: #adb5bd;
+          color: #FF6600;
           text-decoration: none;
+          font-weight: 600;
           transition: color 0.2s ease;
         }
 
         .back-link a:hover {
-          color: #FF6600;
+          color: #ff8a33;
+          text-decoration: underline;
         }
 
         #reset-password-screen {
@@ -449,6 +453,15 @@ export default function ResetPasswordPage() {
           flex-shrink: 0;
           width: 80px;
           height: 50px;
+        }
+
+        @keyframes pulseGlow {
+          0%, 100% { filter: drop-shadow(0 0 3px rgba(255,102,0,0.4)); }
+          50% { filter: drop-shadow(0 0 12px rgba(255,102,0,1)); }
+        }
+
+        .logo-wrapper {
+          animation: pulseGlow 3s ease-in-out infinite;
         }
 
         footer {
@@ -537,7 +550,18 @@ export default function ResetPasswordPage() {
                       className="password-toggle"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      {showPassword ? 'Ocultar' : 'Ver'}
+                      {showPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      )}
                     </span>
                   </div>
                 </div>
@@ -560,7 +584,18 @@ export default function ResetPasswordPage() {
                       className="password-toggle"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
-                      {showConfirmPassword ? 'Ocultar' : 'Ver'}
+                      {showConfirmPassword ? (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                          <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                          <line x1="1" y1="1" x2="23" y2="23"/>
+                        </svg>
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                          <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                      )}
                     </span>
                   </div>
                 </div>

@@ -45,6 +45,15 @@ export default async function handler(
       setoresPermitidos = '',
       gruposPermitidos = '',
       beta = 'FALSE',
+      usuariosExcecao = '',
+      acessoFranqueadora = '',
+      franqueadoraSetores = '',
+      franqueadoraGrupos = '',
+      franqueadoraUsuarios = '',
+      acessoFranquia = '',
+      franquiaSetores = '',
+      franquiaGrupos = '',
+      franquiaUsuarios = '',
     } = req.body;
 
     if (!moduloId || !moduloNome) {
@@ -97,11 +106,20 @@ export default async function handler(
       setoresPermitidos,
       gruposPermitidos,
       beta,
+      usuariosExcecao,
+      acessoFranqueadora,
+      franqueadoraSetores,
+      franqueadoraGrupos,
+      franqueadoraUsuarios,
+      acessoFranquia,
+      franquiaSetores,
+      franquiaGrupos,
+      franquiaUsuarios,
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:O`,
+      range: `${sheetName}!A:X`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [newRow] },
     });

@@ -27,6 +27,15 @@ const FIELD_TO_COL: Record<string, number> = {
   setores_permitidos: 12, // M
   grupos_permitidos: 13,  // N
   beta: 14,              // O
+  usuarios_excecao: 15,  // P
+  acesso_franqueadora: 16,     // Q
+  franqueadora_setores: 17,    // R
+  franqueadora_grupos: 18,     // S
+  franqueadora_usuarios: 19,   // T
+  acesso_franquia: 20,         // U
+  franquia_setores: 21,        // V
+  franquia_grupos: 22,         // W
+  franquia_usuarios: 23,       // X
 };
 
 export default async function handler(
@@ -69,7 +78,7 @@ export default async function handler(
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:O`,
+      range: `${sheetName}!A:X`,
     });
 
     const rows = response.data.values || [];
