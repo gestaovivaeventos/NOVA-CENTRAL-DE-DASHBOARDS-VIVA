@@ -851,8 +851,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           borderRight: '1px solid #333',
         }}
         className={`
-          fixed lg:static inset-y-0 left-0 z-50
-          w-64
+          fixed lg:relative inset-y-0 left-0 z-50
+          flex flex-col
+          w-64 h-screen lg:h-auto
           transform transition-transform duration-300 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
@@ -873,11 +874,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
-        {/* Navigation - Altura responsiva considerando header mobile (64px) e footer (60px) */}
+        {/* Navigation - ocupa todo o espaço disponível até o footer */}
         <nav 
-          className="overflow-y-auto overflow-x-hidden"
+          className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden"
           style={{
-            height: 'calc(100vh - 64px - 60px)',
             scrollbarWidth: 'thin',
             scrollbarColor: '#444 #1a1d21',
           }}
@@ -895,11 +895,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }
             nav::-webkit-scrollbar-thumb:hover {
               background: #666;
-            }
-            @media (min-width: 1024px) {
-              nav {
-                height: calc(100vh - 80px - 60px) !important;
-              }
             }
           `}</style>
           {/* Barra de Pesquisa */}
@@ -1022,7 +1017,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <div style={{ height: '16px' }} />
         </nav>
 
-        {/* Footer - Posição fixa na parte inferior */}
+        {/* Footer */}
         <div 
           style={{ 
             backgroundColor: '#1a1d21',
@@ -1032,7 +1027,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             alignItems: 'center',
             flexShrink: 0,
           }}
-          className="absolute bottom-0 left-0 right-0 px-4"
+          className="px-4"
         >
           <p style={{
             fontSize: '0.75rem',
