@@ -2,13 +2,13 @@
  * API Handler para salvar FCA (Fato, Causa, Ação) na planilha KPIS
  * 
  * Colunas fixas na planilha:
- * V = CRIADO EM
- * W = FATO
- * X = CAUSA
- * Y = EFEITO
- * Z = AÇÃO (LINK DO CARD)
- * AA = RESPONSÁVEL (FCA)
- * AB = TÉRMINO PREVISTO
+ * O = CRIADO EM
+ * P = FATO
+ * Q = CAUSA
+ * R = EFEITO
+ * S = AÇÃO (LINK DO CARD)
+ * T = RESPONSÁVEL (FCA)
+ * U = TÉRMINO PREVISTO
  */
 
 import type { NextApiRequest, NextApiResponse } from 'next';
@@ -19,14 +19,14 @@ const GERENCIAL_SPREADSHEET_ID = process.env.NEXT_PUBLIC_SPREADSHEET_GESTAO!;
 
 // Colunas fixas para FCA (conforme estrutura da planilha)
 const FCA_COLUMNS = {
-  criadoEm: 'V',        // CRIADO EM
-  fato: 'W',            // FATO
-  causa: 'X',           // CAUSA
-  efeito: 'Y',          // EFEITO
-  acao: 'Z',            // AÇÃO (LINK DO CARD)
-  responsavel: 'AA',    // RESPONSÁVEL (FCA)
-  terminoPrevisto: 'AB', // TÉRMINO PREVISTO
-  realizado: 'AC'       // REALIZADO
+  criadoEm: 'O',        // CRIADO EM
+  fato: 'P',            // FATO
+  causa: 'Q',           // CAUSA
+  efeito: 'R',          // EFEITO
+  acao: 'S',            // AÇÃO (LINK DO CARD)
+  responsavel: 'T',     // RESPONSÁVEL (FCA)
+  terminoPrevisto: 'U', // TÉRMINO PREVISTO
+  realizado: 'V'        // REALIZADO
 };
 
 interface FcaRequestBody {
@@ -104,7 +104,7 @@ export default async function handler(
     // Buscar dados da planilha KPIS para encontrar a linha correta
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: GERENCIAL_SPREADSHEET_ID,
-      range: 'KPIS!A:S', // Buscar colunas A até S para encontrar DATA, TIME, KPI e COMPETÊNCIA
+      range: 'KPIS!A:D', // Buscar colunas A até D para encontrar DATA, TIME e KPI
     });
 
     const rows = response.data.values || [];
@@ -125,7 +125,6 @@ export default async function handler(
       data: headers.findIndex((h: string) => h.toUpperCase() === 'DATA'),
       time: headers.findIndex((h: string) => h.toUpperCase() === 'TIME'),
       kpi: headers.findIndex((h: string) => h.toUpperCase() === 'KPI'),
-      competencia: headers.findIndex((h: string) => h.toUpperCase() === 'COMPETÊNCIA' || h.toUpperCase() === 'COMPETENCIA'),
     };
 
     console.log('Headers encontrados:', headers.slice(0, 20));
@@ -133,28 +132,31 @@ export default async function handler(
     console.log('Buscando: TIME=', time, 'KPI=', kpi, 'COMPETÊNCIA=', competencia);
 
     // Verificar se as colunas de identificação existem
-    if (colIndices.time === -1 || colIndices.kpi === -1 || colIndices.competencia === -1) {
+    if (colIndices.time === -1 || colIndices.kpi === -1 || colIndices.data === -1) {
       return res.status(500).json({
         success: false,
         error: 'Estrutura da planilha inválida',
-        message: 'Colunas TIME, KPI ou COMPETÊNCIA não encontradas',
+        message: 'Colunas DATA, TIME ou KPI não encontradas',
         headers: headers.slice(0, 25),
         indices: colIndices,
       });
     }
 
-    // Encontrar a linha correta (match por TIME, KPI e COMPETÊNCIA)
+    // Encontrar a linha correta (match por TIME, KPI e competência derivada de DATA)
     let rowIndex = -1;
     console.log('Procurando linha com TIME=', time, 'KPI=', kpi, 'COMPETÊNCIA=', competencia);
     
     for (let i = 1; i < rows.length; i++) {
       const rowTime = (rows[i][colIndices.time] || '').toString().trim();
       const rowKpi = (rows[i][colIndices.kpi] || '').toString().trim();
-      const rowCompetencia = (rows[i][colIndices.competencia] || '').toString().trim();
+      // Derivar competência (MM/YYYY) da coluna DATA (DD/MM/YYYY)
+      const rowData = (rows[i][colIndices.data] || '').toString().trim();
+      const dataParts = rowData.split('/');
+      const rowCompetencia = dataParts.length === 3 ? `${dataParts[1]}/${dataParts[2]}` : '';
       
       // Log das primeiras linhas para debug
       if (i <= 5) {
-        console.log(`Linha ${i}: TIME="${rowTime}" KPI="${rowKpi}" COMP="${rowCompetencia}"`);
+        console.log(`Linha ${i}: TIME="${rowTime}" KPI="${rowKpi}" DATA="${rowData}" COMP="${rowCompetencia}"`);
       }
       
       if (rowTime === time && rowKpi === kpi && rowCompetencia === competencia) {
@@ -171,8 +173,10 @@ export default async function handler(
         const rowTime = (rows[i][colIndices.time] || '').toString().trim();
         const rowKpi = (rows[i][colIndices.kpi] || '').toString().trim();
         if (rowTime === time && rowKpi === kpi) {
-          const rowCompetencia = (rows[i][colIndices.competencia] || '').toString().trim();
-          console.log(`Encontrado TIME+KPI na linha ${i+1}, mas COMPETÊNCIA é "${rowCompetencia}" != "${competencia}"`);
+          const rowData = (rows[i][colIndices.data] || '').toString().trim();
+          const dataParts = rowData.split('/');
+          const rowCompetencia = dataParts.length === 3 ? `${dataParts[1]}/${dataParts[2]}` : '';
+          console.log(`Encontrado TIME+KPI na linha ${i+1}, mas COMPETÊNCIA derivada é "${rowCompetencia}" != "${competencia}"`);
           foundWithoutComp = true;
           break;
         }

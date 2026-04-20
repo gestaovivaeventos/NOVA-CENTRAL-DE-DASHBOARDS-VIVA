@@ -35,10 +35,10 @@ const COL_INDEX = {
   ID: 2,          // C
   KPI: 3,         // D - Nome do KPI
   META: 4,        // E
-  GRANDEZA: 9,    // J
-  TENDENCIA: 15,  // P
-  EDITADO_EM: 35,   // AJ - Data de edição
-  EDITADO_POR: 36,  // AK - Usuário que editou
+  GRANDEZA: 7,    // H
+  TENDENCIA: 10,  // K
+  EDITADO_EM: 27,   // AB - Data de edição
+  EDITADO_POR: 28,  // AC - Usuário que editou
 };
 
 /**
@@ -99,7 +99,7 @@ export default async function handler(
     // Buscar todas as linhas da planilha
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:AD`,
+      range: `${SHEET_NAME}!A:AC`,
     });
 
     const rows = response.data.values || [];

@@ -39,16 +39,15 @@ const COL_INDEX = {
   KPI: 3,         // D - Nome do KPI
   META: 4,        // E
   RESULTADO: 5,   // F
-  GRANDEZA: 9,    // J
-  TENDENCIA: 15,  // P
-  COMPETENCIA: 18, // S - Competência (MM/YYYY)
-  SITUACAO_KPI: 32, // AG - Situação do KPI (Ativo/Inativo)
-  CRIADO_EM: 33,    // AH - Data de criação
-  CRIADO_POR: 34,   // AI - Usuário que criou
-  EDITADO_EM: 35,   // AJ - Data de edição
-  EDITADO_POR: 36,  // AK - Usuário que editou
-  INATIVADO_EM: 37, // AL - Data de inativação
-  INATIVADO_POR: 38, // AM - Usuário que inativou
+  GRANDEZA: 7,    // H
+  TENDENCIA: 10,  // K
+  SITUACAO_KPI: 24, // Y - Situação do KPI (Ativo/Inativo)
+  CRIADO_EM: 25,    // Z - Data de criação
+  CRIADO_POR: 26,   // AA - Usuário que criou
+  EDITADO_EM: 27,   // AB - Data de edição
+  EDITADO_POR: 28,  // AC - Usuário que editou
+  INATIVADO_EM: 29, // AD - Data de inativação
+  INATIVADO_POR: 30, // AE - Usuário que inativou
 };
 
 /**
@@ -150,8 +149,8 @@ function createRow(
   tendencia: string,
   username?: string
 ): (string | number)[] {
-  // Criar array com 39 colunas (até AM)
-  const row: (string | number)[] = new Array(39).fill('');
+  // Criar array com 31 colunas (até AE)
+  const row: (string | number)[] = new Array(31).fill('');
   
   // Processar valor da meta
   let metaValue: string | number = '';
@@ -174,10 +173,6 @@ function createRow(
     }
   }
   
-  // Extrair MM/YYYY do formato 01/MM/YYYY para coluna COMPETÊNCIA
-  const parts = competencia.split('/');
-  const competenciaMesAno = parts.length === 3 ? `${parts[1]}/${parts[2]}` : competencia;
-  
   // Data/hora atual no formato brasileiro
   const now = new Date();
   const dataHoraCriacao = now.toLocaleString('pt-BR', { 
@@ -195,12 +190,11 @@ function createRow(
   row[COL_INDEX.ID] = kpiId;                   // C - # (ID)
   row[COL_INDEX.KPI] = kpiName;                // D - KPI
   row[COL_INDEX.META] = metaValue;             // E - META
-  row[COL_INDEX.GRANDEZA] = grandeza;          // J - GRANDEZA
-  row[COL_INDEX.TENDENCIA] = tendencia;        // P - TENDÊNCIA
-  row[COL_INDEX.COMPETENCIA] = competenciaMesAno; // S - COMPETÊNCIA (MM/YYYY)
-  row[COL_INDEX.SITUACAO_KPI] = 'Ativo';       // AG - SITUAÇÃO KPI
-  row[COL_INDEX.CRIADO_EM] = dataHoraCriacao;  // AH - CRIADO EM
-  row[COL_INDEX.CRIADO_POR] = username || '';  // AI - CRIADO POR
+  row[COL_INDEX.GRANDEZA] = grandeza;          // H - GRANDEZA
+  row[COL_INDEX.TENDENCIA] = tendencia;        // K - TENDÊNCIA
+  row[COL_INDEX.SITUACAO_KPI] = 'Ativo';       // Y - SITUAÇÃO KPI
+  row[COL_INDEX.CRIADO_EM] = dataHoraCriacao;  // Z - CRIADO EM
+  row[COL_INDEX.CRIADO_POR] = username || '';  // AA - CRIADO POR
   
   return row;
 }
@@ -281,7 +275,7 @@ export default async function handler(
     // Inserir dados na planilha (append na última linha)
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:AD`,
+      range: `${SHEET_NAME}!A:AE`,
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
       requestBody: {

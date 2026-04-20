@@ -35,7 +35,6 @@ export interface ProcessedKpiData {
 
 export interface KpiData {
   competencia: string;
-  organizacao: string;
   time: string;
   kpi: string;
   meta: number;
