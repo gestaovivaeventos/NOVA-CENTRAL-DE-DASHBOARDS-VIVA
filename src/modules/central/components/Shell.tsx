@@ -176,7 +176,7 @@ export function Shell({ children }: ShellProps) {
 
   return (
     <div 
-      className="min-h-screen flex flex-col"
+      className="h-screen flex flex-col overflow-hidden"
       style={{
         backgroundColor: '#212529',
         backgroundImage: isHomePage ? 'url(/images/capa_site_nova_hd.png)' : 'none',
@@ -192,12 +192,12 @@ export function Shell({ children }: ShellProps) {
       />
 
       {/* Container com Sidebar + Content */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Sidebar */}
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
           {/* Page content */}
           <main className="flex-1 p-4 lg:p-6 overflow-auto">
             {children}

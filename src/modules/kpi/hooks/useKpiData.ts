@@ -7,7 +7,7 @@ import { config, kpiColumns } from '../config/app.config';
 import { KpiData } from '../types';
 
 const buildApiUrl = () =>
-  `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodeURIComponent(config.sheetName + '!A:AG')}?key=${config.apiKey}`;
+  `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${encodeURIComponent(config.sheetName + '!A:Y')}?key=${config.apiKey}`;
 
 // Função para parsear valores numéricos (incluindo moeda)
 const parseNumericValue = (value: string | null | undefined): number => {
@@ -92,7 +92,7 @@ export function useKpiData() {
             grandeza,
             tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
             tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
-            situacao: (row[kpiColumns.SITUACAO_KPI] || '').toString().trim() || 'Em espera',
+            situacao: (row[kpiColumns.SITUACAO_KPI] || '').toString().trim() || 'Ativo',
           };
         })
         .filter((d: KpiData) => d.time && d.kpi && d.competencia);
@@ -138,7 +138,7 @@ export async function fetchKpiData(): Promise<KpiData[]> {
         grandeza,
         tendencia: (row[kpiColumns.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[kpiColumns.TIPO] || '').toString().toUpperCase().trim(),
-        situacao: (row[kpiColumns.SITUACAO_KPI] || '').toString().trim() || 'Em espera',
+        situacao: (row[kpiColumns.SITUACAO_KPI] || '').toString().trim() || 'Ativo',
       };
     })
     .filter((d: KpiData) => d.time && d.kpi && d.competencia);

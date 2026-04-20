@@ -23,12 +23,11 @@ export const kpiColumns = {
   META: 4,          // E
   RESULTADO: 5,     // F
   ATINGIMENTO: 6,   // G - % ATINGIMENTO
-  PERCENTUAL: 16,   // Q
-  GRANDEZA: 9,      // J
-  TENDENCIA: 15,    // P
-  TIPO: 29,         // AD
-  NIVEL_ACESSO: 7,  // H
-  SITUACAO_KPI: 32, // AG - SITUAÇÃO KPI (Ativo/Inativo)
+  GRANDEZA: 7,      // H
+  TENDENCIA: 10,    // K
+  PERCENTUAL: 11,   // L - % METAS REAL
+  TIPO: 22,         // W
+  SITUACAO_KPI: 24, // Y - SITUAÇÃO KPI (Ativo/Inativo)
 };
 
 // Mapeamento de times para logos

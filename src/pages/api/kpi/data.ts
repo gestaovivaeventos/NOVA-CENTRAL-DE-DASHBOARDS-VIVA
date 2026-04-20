@@ -24,12 +24,11 @@ const COL_MAP = {
   META: 4,          // E
   RESULTADO: 5,     // F
   ATINGIMENTO: 6,   // G - % ATINGIMENTO
-  PERCENTUAL: 16,   // Q
-  GRANDEZA: 9,      // J
-  TENDENCIA: 15,    // P
-  TIPO: 29,         // AD
-  NIVEL_ACESSO: 7,  // H
-  SITUACAO_KPI: 32, // AG - SITUAÇÃO KPI (Ativo/Inativo)
+  GRANDEZA: 7,      // H
+  TENDENCIA: 10,    // K
+  PERCENTUAL: 11,   // L - % METAS REAL
+  TIPO: 22,         // W
+  SITUACAO_KPI: 24, // Y - SITUAÇÃO KPI (Ativo/Inativo)
 };
 
 async function fetchKpiData(): Promise<KpiData[]> {
@@ -38,7 +37,7 @@ async function fetchKpiData(): Promise<KpiData[]> {
     return cache.data;
   }
 
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME + '!A:AG')}?key=${API_KEY}`;
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(SHEET_NAME + '!A:Y')}?key=${API_KEY}`;
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -76,7 +75,7 @@ async function fetchKpiData(): Promise<KpiData[]> {
         grandeza: (row[COL_MAP.GRANDEZA] || '').trim().toLowerCase(),
         tendencia: (row[COL_MAP.TENDENCIA] || '').toString().toUpperCase().trim(),
         tipo: (row[COL_MAP.TIPO] || '').toString().toUpperCase().trim(),
-        situacao: (row[COL_MAP.SITUACAO_KPI] || 'Ativo').toString().trim(),
+        situacao: (row[COL_MAP.SITUACAO_KPI] || '').toString().trim() || 'Ativo',
       };
     })
     .filter((d: KpiData) => d.time && d.kpi && d.competencia);

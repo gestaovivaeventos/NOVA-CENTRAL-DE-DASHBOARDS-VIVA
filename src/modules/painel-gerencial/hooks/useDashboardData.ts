@@ -53,8 +53,6 @@ function processKpiData(rows: any[][]): KpiData[] {
   
   const headers = rows[0].map((h: string) => h?.trim() || '');
   const colIndices = {
-    competencia: headers.indexOf('COMPETÊNCIA'),
-    organizacao: headers.indexOf('ORGANIZAÇÃO'),
     time: headers.indexOf('TIME'),
     kpi: headers.indexOf('KPI'),
     meta: headers.indexOf('META'),
@@ -112,7 +110,6 @@ function processKpiData(rows: any[][]): KpiData[] {
     
     return {
       competencia: competenciaFromData,
-      organizacao: row[colIndices.organizacao] || '',
       time: row[colIndices.time] || '',
       kpi: row[colIndices.kpi] || '',
       meta: metaValue,
@@ -134,7 +131,6 @@ function processKpiData(rows: any[][]): KpiData[] {
       situacaoKpi: colIndices.situacaoKpi >= 0 ? (row[colIndices.situacaoKpi] || '').toString().trim() : ''
     };
   }).filter(item => 
-    (item.organizacao === 'FRANQUEADORA | QUOKKA' || item.organizacao === 'FEAT') && 
     item.time && 
     item.year
   );

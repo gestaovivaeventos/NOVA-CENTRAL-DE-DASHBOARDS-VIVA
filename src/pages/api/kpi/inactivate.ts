@@ -28,9 +28,9 @@ const COL_INDEX = {
   TIME: 1,          // B
   KPI: 3,           // D - Nome do KPI
   RESULTADO: 5,     // F
-  SITUACAO_KPI: 32, // AG - Situação do KPI (Ativo/Inativo)
-  INATIVADO_EM: 37, // AL - Data de inativação
-  INATIVADO_POR: 38, // AM - Usuário que inativou
+  SITUACAO_KPI: 24, // Y - Situação do KPI (Ativo/Inativo)
+  INATIVADO_EM: 29, // AD - Data de inativação
+  INATIVADO_POR: 30, // AE - Usuário que inativou
 };
 
 /**
@@ -89,7 +89,7 @@ export default async function handler(
     // B = TIME, D = KPI, F = RESULTADO, AG = SITUAÇÃO KPI
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:AG`,
+      range: `${SHEET_NAME}!A:Y`,
     });
 
     const rows = response.data.values || [];
@@ -135,19 +135,19 @@ export default async function handler(
     
     // Para cada linha, adicionar requisições para AG (Inativo), AL (data) e AM (usuário)
     for (const rowNumber of rowsToUpdate) {
-      // Coluna AG - Situação
+      // Coluna Y - Situação
       updateRequests.push({
-        range: `${SHEET_NAME}!AG${rowNumber}`,
+        range: `${SHEET_NAME}!Y${rowNumber}`,
         values: [['Inativo']]
       });
-      // Coluna AL - INATIVADO EM
+      // Coluna AD - INATIVADO EM
       updateRequests.push({
-        range: `${SHEET_NAME}!AL${rowNumber}`,
+        range: `${SHEET_NAME}!AD${rowNumber}`,
         values: [[dataHoraInativacao]]
       });
-      // Coluna AM - INATIVADO POR
+      // Coluna AE - INATIVADO POR
       updateRequests.push({
-        range: `${SHEET_NAME}!AM${rowNumber}`,
+        range: `${SHEET_NAME}!AE${rowNumber}`,
         values: [[username || '']]
       });
     }
