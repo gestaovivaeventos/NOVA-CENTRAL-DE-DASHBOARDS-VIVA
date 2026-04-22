@@ -138,6 +138,24 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
   const formaDeMedir = (kr.formaDeMedir || '').toUpperCase();
   const tendencia = (kr.tendencia || '').toUpperCase();
   const responsavel = kr.responsavel || 'N/A';
+  const formaDeMedirDefault = useMemo(() => {
+    const value = (kr.formaDeMedir || '').toUpperCase().trim();
+    if (value === 'ACUMULADO' || value === 'PONTUAL' || value === 'DEGRAU') {
+      return value;
+    }
+    return '';
+  }, [kr.formaDeMedir]);
+
+  const medidaDefault = useMemo(() => {
+    const value = (kr.medida || '').toUpperCase().trim();
+    if (value === 'MOEDA' || value === 'PORCENTAGEM') {
+      return value;
+    }
+    if (value === 'NUMERO INTEIRO' || value === 'NÚMERO INTEIRO') {
+      return 'NÚMERO INTEIRO';
+    }
+    return '';
+  }, [kr.medida]);
 
   // Cores de degradê baseadas na cor de destaque
   const gradientColors = useMemo(() => createGradientColors(accentColor), [accentColor]);
@@ -756,7 +774,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
                   <div className="select-row">
                     <select
                       className="forma-de-medir-select"
-                      defaultValue=""
+                      defaultValue={formaDeMedirDefault}
                       ref={formaDeMedirRef}
                     >
                       <option value="" disabled>Selecione</option>
@@ -788,7 +806,7 @@ export const OkrKrCard: React.FC<OkrKrCardProps> = ({
                   <label>Medida:</label>
                   <select
                     className="medida-select"
-                    defaultValue=""
+                    defaultValue={medidaDefault}
                     ref={medidaRef}
                   >
                     <option value="" disabled>Selecione</option>
