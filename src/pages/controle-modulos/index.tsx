@@ -12,8 +12,9 @@ import * as XLSX from 'xlsx';
 import { useAuth } from '@/context/AuthContext';
 import { Header, Sidebar, EditModuloModal, AddExternalLinkModal, GerenciarGruposModal, EditGrupoModal, GerenciarSubgruposModal, EditSubgrupoModal } from '@/modules/controle-modulos/components';
 import { useControleModulos } from '@/modules/controle-modulos/hooks';
-import type { ModuloConfig } from '@/modules/controle-modulos/types';
+import type { ModuloConfig, AcessoEixo } from '@/modules/controle-modulos/types';
 import { hasModuloAccess } from '@/modules/controle-modulos/types';
+import { getLucideIcon } from '@/modules/controle-modulos/config/icones';
 import type { ExternalLinkData } from '@/modules/controle-modulos/components/AddExternalLinkModal';
 import type { GrupoInfo } from '@/modules/controle-modulos/components/GerenciarGruposModal';
 import type { SubgrupoInfo } from '@/modules/controle-modulos/components/GerenciarSubgruposModal';
@@ -936,21 +937,26 @@ export default function ControleModulosPage() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: 10,
-                        padding: '10px 16px',
-                        backgroundColor: dragOverId === `grupo::${grupo}` ? 'rgba(255,102,0,0.06)' : '#262a30',
-                        borderBottom: '1px solid #333',
+                        padding: '14px 16px',
+                        backgroundColor: dragOverId === `grupo::${grupo}` ? 'rgba(255,102,0,0.12)' : '#2d1e10',
+                        backgroundImage: dragOverId === `grupo::${grupo}`
+                          ? 'none'
+                          : 'linear-gradient(90deg, rgba(255,102,0,0.18) 0%, rgba(255,102,0,0.05) 60%, rgba(255,102,0,0) 100%)',
+                        borderTop: '1px solid rgba(255,102,0,0.35)',
+                        borderBottom: '1px solid rgba(255,102,0,0.35)',
+                        borderLeft: '4px solid #FF6600',
                         boxShadow: dragOverId === `grupo::${grupo}` && dragOverPosition === 'above'
                           ? 'inset 0 3px 0 0 #FF6600'
                           : dragOverId === `grupo::${grupo}` && dragOverPosition === 'below'
                             ? 'inset 0 -3px 0 0 #FF6600'
-                            : 'none',
+                            : '0 2px 8px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.03)',
                         cursor: 'pointer',
                         userSelect: 'none',
                         transition: 'background-color 0.15s',
                         opacity: isInativo ? 0.5 : 1,
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#2d3239'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#262a30'; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#3a2614'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = dragOverId === `grupo::${grupo}` ? 'rgba(255,102,0,0.12)' : '#2d1e10'; }}
                     >
                       <span
                         onMouseDown={(e) => e.stopPropagation()}
@@ -965,27 +971,29 @@ export default function ControleModulosPage() {
                         <ChevronRight size={16} color="#FF6600" />
                       )}
                       {(() => {
-                        const IconComp = ICON_MAP[grupoIconeMap.get(grupo) || 'settings'] || Settings;
-                        return <IconComp size={14} color="#FF6600" />;
+                        const IconComp = getLucideIcon(grupoIconeMap.get(grupo) || 'settings');
+                        return <IconComp size={18} color="#FF6600" />;
                       })()}
 
                       <span
                         style={{
-                          color: '#F8F9FA',
+                          color: '#FFFFFF',
                           fontFamily: "'Poppins', sans-serif",
                           fontWeight: 700,
-                          fontSize: '0.85rem',
+                          fontSize: '0.95rem',
                           textTransform: 'uppercase',
-                          letterSpacing: '0.05em',
+                          letterSpacing: '0.08em',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.6)',
                         }}
                       >
                         {grupo}
                       </span>
                       <span
                         style={{
-                          color: '#6c757d',
+                          color: '#FFB380',
                           fontSize: '0.72rem',
                           fontFamily: 'Poppins, sans-serif',
+                          fontWeight: 600,
                         }}
                       >
                         ({mods.length})
@@ -1102,13 +1110,29 @@ export default function ControleModulosPage() {
                       renderItems.sort((a, b) => a.ordem - b.ordem);
 
                       const renderModRow = (mod: ModuloConfig, insideSubgrupo = false, parentSubgrupoName = '') => {
-                        const nivelColor = mod.nvlAcesso === 0 ? '#10b981' : mod.nvlAcesso === 2 ? '#3b82f6' : '#f59e0b';
-                        const nivelLabel = mod.nvlAcesso === 0 ? 'Rede' : mod.nvlAcesso === 2 ? 'Franquia' : 'Franqueadora';
-                        const hasUsers = mod.usuariosPermitidos.length > 0;
+                        // Rótulo/cor dos 2 eixos de acesso (novo modelo)
+                        const eixoInfo = (eixo: AcessoEixo | undefined) => {
+                          switch (eixo) {
+                            case 'geral':      return { label: 'Geral',      color: '#10b981' };
+                            case 'sem_acesso': return { label: 'Sem acesso', color: '#ef4444' };
+                            case 'restrito':   return { label: 'Restrito',   color: '#f59e0b' };
+                            default:           return { label: '—',          color: '#6c757d' };
+                          }
+                        };
+                        const fqdInfo = eixoInfo(mod.acessoFranqueadora);
+                        const fqaInfo = eixoInfo(mod.acessoFranquia);
+                        // Contagem de usuários específicos configurados (novo modelo + exceções)
+                        const totalUsuarios = new Set([
+                          ...((mod as any).franqueadoraUsuarios || []),
+                          ...((mod as any).franquiaUsuarios || []),
+                          ...((mod as any).usuariosExcecao || []),
+                        ]).size;
+                        const hasUsers = totalUsuarios > 0;
                         const bgColor = insideSubgrupo ? '#1b2228' : '#212529';
                         const bgHover = insideSubgrupo ? '#232d34' : '#2d3239';
                         const itemDragId = `mod::${mod.moduloId}`;
                         const isDropTarget = dragOverId === `item::${itemDragId}`;
+                        const ModIcon = getLucideIcon(mod.icone || 'link');
 
                       return (
                         <div
@@ -1193,6 +1217,7 @@ export default function ControleModulosPage() {
                               gap: 6,
                             }}
                           >
+                            <ModIcon size={14} color="#FF6600" style={{ flexShrink: 0 }} />
                             {mod.moduloNome}
                             {(mod as any).beta && (
                               <span title="Versão beta em validação interna" style={{
@@ -1243,25 +1268,48 @@ export default function ControleModulosPage() {
                             {(mod as any).tipo === 'externo' ? '↗ Externo' : 'Interno'}
                           </span>
 
-                          {/* Nível */}
-                          <span
+                          {/* Nível (2 eixos) */}
+                          <div
                             style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 2,
+                              fontFamily: 'Poppins, sans-serif',
+                              fontSize: '0.62rem',
+                            }}
+                            title={`Franqueadora: ${fqdInfo.label} · Franquia: ${fqaInfo.label}`}
+                          >
+                            <span style={{
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: 4,
-                              fontSize: '0.68rem',
+                              color: fqdInfo.color,
+                              backgroundColor: `${fqdInfo.color}15`,
+                              border: `1px solid ${fqdInfo.color}30`,
+                              padding: '1px 6px',
+                              borderRadius: 4,
                               fontWeight: 600,
-                              fontFamily: 'Poppins, sans-serif',
-                              color: nivelColor,
-                              backgroundColor: `${nivelColor}15`,
-                              padding: '2px 8px',
-                              borderRadius: 6,
-                              border: `1px solid ${nivelColor}30`,
                               width: 'fit-content',
-                            }}
-                          >
-                            {mod.nvlAcesso} — {nivelLabel}
-                          </span>
+                            }}>
+                              <span style={{ opacity: 0.7, fontSize: '0.55rem', letterSpacing: '0.04em' }}>FQD</span>
+                              {fqdInfo.label}
+                            </span>
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                              color: fqaInfo.color,
+                              backgroundColor: `${fqaInfo.color}15`,
+                              border: `1px solid ${fqaInfo.color}30`,
+                              padding: '1px 6px',
+                              borderRadius: 4,
+                              fontWeight: 600,
+                              width: 'fit-content',
+                            }}>
+                              <span style={{ opacity: 0.7, fontSize: '0.55rem', letterSpacing: '0.04em' }}>FQA</span>
+                              {fqaInfo.label}
+                            </span>
+                          </div>
 
                           {/* Status */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1300,7 +1348,7 @@ export default function ControleModulosPage() {
                               width: 'fit-content',
                             }}
                           >
-                            {hasUsers ? `${mod.usuariosPermitidos.length} usuários` : 'Todos'}
+                            {hasUsers ? `${totalUsuarios} usuários` : 'Todos'}
                           </span>
 
                           {/* Ordem */}
@@ -1386,7 +1434,12 @@ export default function ControleModulosPage() {
                             ? <ChevronDown size={13} color={accentColor} />
                             : <ChevronRight size={13} color={accentColor} />
                           }
-                          <FolderOpen size={12} color={accentColor} />
+                          {(() => {
+                            const sgData = subgruposDaPlanilha.find(s => s.nome === nome && s.grupo.toLowerCase() === grupoName.toLowerCase());
+                            const iconeValue = sgData?.icone || 'folder-open';
+                            const IconComp = getLucideIcon(iconeValue);
+                            return <IconComp size={12} color={accentColor} />;
+                          })()}
                           <span
                             style={{
                               color: accentColor,
