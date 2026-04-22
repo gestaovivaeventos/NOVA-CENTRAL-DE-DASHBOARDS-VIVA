@@ -313,6 +313,23 @@ export default function LoginPage() {
           border-color: #FF6600;
         }
 
+        /* Override do autofill do Chrome/Edge para manter visual escuro */
+        .access-control input:-webkit-autofill,
+        .access-control input:-webkit-autofill:hover,
+        .access-control input:-webkit-autofill:focus,
+        .access-control input:-webkit-autofill:active {
+          -webkit-box-shadow: 0 0 0 1000px rgba(20, 22, 25, 0.9) inset !important;
+          -webkit-text-fill-color: #F8F9FA !important;
+          caret-color: #F8F9FA !important;
+          border: 1px solid rgba(255, 140, 50, 0.2) !important;
+          transition: background-color 9999s ease-in-out 0s;
+        }
+
+        .access-control input:-webkit-autofill:focus {
+          -webkit-box-shadow: 0 0 0 1000px rgba(20, 22, 25, 0.9) inset, 0 0 0 2px rgba(255, 102, 0, 0.4) !important;
+          border-color: #FF6600 !important;
+        }
+
         .access-control button[type="submit"] {
           background: linear-gradient(180deg, #ff8a33 0%, #FF6600 50%, #D35400 100%);
           color: #212529;

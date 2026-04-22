@@ -698,6 +698,12 @@ function buildDoc(mods, a) {
     { autor: 'Bruna Beltante', item: 'Criar agrupamento "Gestão Pós-Vendas" (realocar Mestres da Jornada, puxadas, Pipefy, histórico)', status: 'Gap estrutural', prior: 'Alta', grupo: 'Pós-Vendas' },
     { autor: 'Bruna Beltante', item: 'Criar Dashboard Huggy (tempo de resposta, CSAT por franquia, histórico de conversas)', status: 'Gap', prior: 'Média-Alta', grupo: 'Pós-Vendas / Atendimento' },
     { autor: 'Bruna Beltante', item: 'Definir política para "Relatórios Recorrentes" — há ~40 links adicionais que podem inflar o menu', status: 'Decisão produto', prior: 'Média', grupo: 'Relatórios Recorrentes' },
+    // Clariane
+    { autor: 'Clariane', item: 'Fluxo de caixa (levantamento de fee) — processo validado, pode liberar para as franquias', status: 'Pronto para liberar', prior: 'Alta', grupo: 'Gestão Financeira (Franquia)' },
+    { autor: 'Clariane', item: 'Resultados de Eventos — migração para o Mundo Viva neste quarter; dashboard atual será descontinuado na plataforma', status: 'Decisão produto — migração', prior: 'Média', grupo: 'Gestão Carteira / Eventos' },
+    { autor: 'Clariane', item: 'Fluxo Projetado (Franquia) — liberação pendente de validação do Everdan (impacta projeções de vendas e metas das franquias)', status: 'Bloqueado — aguarda Everdan', prior: 'Alta', grupo: 'Gestão Financeira (Franquia)' },
+    { autor: 'Clariane', item: 'Repasses de cartão de crédito (Cielo/Zoop) — dashboard existe mas link não está no painel. Melhoria em andamento: Cielo já melhorada, Zoop precisa ser derrubada. Dor recorrente das franquias com conta própria (Lavras e Itaperuna)', status: 'Gap — link faltando + melhoria em andamento', prior: 'Alta', grupo: 'Gestão Financeira (Franquia)' },
+    { autor: 'Clariane', item: 'Dados da controladoria para sócios (Franqueadora) — avaliar disponibilização. Control Hub em construção; direcionar via link assim que finalizado', status: 'Decisão produto — aguarda Control Hub', prior: 'Média', grupo: 'Gestão Franqueadora' },
   ];
 
   children.push(makeTable(
@@ -716,6 +722,8 @@ function buildDoc(mods, a) {
   children.push(bullet('Reorganização do menu (criação de Gestão Pós-Vendas e Gestão de Colaboradores).'));
   children.push(bullet('Inclusão de Portal da Liderança e puxadas de Vendas/Pós-Vendas como links externos.'));
   children.push(bullet('Liberação de acessos já prontos à franqueadora em geral.'));
+  children.push(bullet('Adicionar link do dashboard de Repasses de Cartão de Crédito (Cielo/Zoop) ao painel — link existe mas não aparece. Dor urgente das franquias com conta própria.'));
+  children.push(bullet('Liberar módulo de Fluxo de Caixa (levantamento de fee) para as franquias — processo validado pela Clariane.'));
 
   children.push(h('Sprint 2 — Entregas de Alto Valor', HeadingLevel.HEADING_2, COR_AZUL));
   children.push(bullet('CHURN no Dash de Clientes.'));
@@ -731,6 +739,9 @@ function buildDoc(mods, a) {
   children.push(bullet(`Plano de rollout para a rede — ativar gradualmente os ${a.gapFqEntregas} entregas já mapeadas para franquias.`));
   children.push(bullet('Dashboard Huggy completo.'));
   children.push(bullet('Migração da estrutura Miro.'));
+  children.push(bullet('Integração Cielo/Zoop ao fluxo de caixa — eliminar necessidade do dashboard separado de repasses.'));
+  children.push(bullet('Fluxo Projetado para Franquias — liberar após validação do Everdan (impacta projeções de vendas e metas).'));
+  children.push(bullet('Control Hub — assim que finalizado, disponibilizar link para dados de controladoria na visão Franqueadora.'));
 
   children.push(new Paragraph({ spacing: { before: 400 } }));
   children.push(para([t('— Fim do Relatório —', { italics: true, color: COR_CINZA })], AlignmentType.CENTER));
