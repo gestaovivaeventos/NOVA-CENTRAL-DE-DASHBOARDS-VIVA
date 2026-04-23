@@ -8,6 +8,11 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { useRouter } from 'next/router';
 import { useSheetsData, Card, PexLayout } from '@/modules/pex';
+import {
+  calcularRankings,
+  isIniciante as isInicianteRanking,
+  isIncubacao as isIncubacaoRanking,
+} from '@/modules/pex/utils/ranking';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
 
@@ -186,73 +191,30 @@ export default function RankingPage() {
   }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, nomeColunaConsultor]);
 
   // Helper para verificar se é franquia iniciante (INCUBAÇÃO)
-  const isIniciante = (cluster: string | undefined) => {
-    if (!cluster) return false;
-    const clusterUpper = cluster.toUpperCase();
-    return clusterUpper.includes('INCUBA');
-  };
+  const isIniciante = (cluster: string | undefined) => isInicianteRanking(cluster);
 
-  // Calcular ranking por média MENSAL do ciclo vigente (mesma lógica da página de resultados)
-  const rankingGeral = useMemo(() => {
-    if (!dadosHistorico || dadosHistorico.length === 0) return [];
+  // Calcular ranking por média MENSAL do ciclo vigente.
+  // Regra unificada (ver `modules/pex/utils/ranking.ts`):
+  //  - Exclui INCUBAÇÃO 0.
+  //  - Separa Maduras x Iniciantes (Incubação 1/2/3).
+  //  - Cluster = registro mais recente dentro do ciclo.
+  const { rankingMaduras: rankingMadurasBase, rankingIniciantes: rankingIniciantesBase } = useMemo(() => {
+    return calcularRankings(dadosHistorico);
+  }, [dadosHistorico]);
 
-    const anoAtual = new Date().getFullYear();
-
-    // Filtrar registros vigentes do histórico (mesma lógica de resultados.tsx)
-    const registrosVigentes = dadosHistorico.filter(item => {
-      const parsed = parseDateHistorico(item.data);
-      if (!parsed) return false;
-      // Para 2026 (primeiro ano): meses 1-9 do ano 2026
-      if (anoAtual === 2026) {
-        return parsed.ano === 2026 && parsed.mes >= 1 && parsed.mes <= 9;
-      }
-      // Próximos anos: ciclo Set(anoAnterior) a Set(anoAtual)
-      return (parsed.ano === anoAtual - 1 && parsed.mes >= 9) || 
-             (parsed.ano === anoAtual && parsed.mes <= 9);
+  // Enriquecer ranking com consultor (vem de dadosBrutos) e renomear `posicao` para `posicao`
+  const enrich = (lista: Array<{ unidade: string; media: number; cluster: string; posicao: number }>) =>
+    lista.map(item => {
+      const itemBruto = dadosBrutos?.find(d => d.nm_unidade === item.unidade);
+      const consultor = itemBruto ? itemBruto[nomeColunaConsultor] : '';
+      return { ...item, consultor };
     });
-
-    // Agrupar por unidade e calcular média mensal
-    const unidadesUnicas = Array.from(new Set(registrosVigentes.map(item => item.nm_unidade)));
-
-    const mediasPorUnidade = unidadesUnicas.map(unidade => {
-      const registros = registrosVigentes.filter(item => item.nm_unidade === unidade);
-      const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
-      const media = registros.length > 0 ? soma / registros.length : 0;
-      const cluster = registros[0]?.cluster || '';
-      // Buscar consultor do dadosBrutos (mais confiável para nome da coluna)
-      const itemBruto = dadosBrutos?.find(d => d.nm_unidade === unidade);
-      const consultor = itemBruto ? itemBruto[nomeColunaConsultor] : (registros[0]?.consultor || '');
-      return { unidade, media, cluster, consultor };
-    });
-
-    // Criar ranking ordenado por média (maior primeiro)
-    return mediasPorUnidade
-      .sort((a, b) => b.media - a.media)
-      .map((item, index) => ({
-        ...item,
-        posicao: index + 1
-      }));
-  }, [dadosHistorico, dadosBrutos, nomeColunaConsultor]);
 
   // Ranking apenas de franquias MADURAS (não INCUBAÇÃO)
-  const rankingMaduras = useMemo(() => {
-    return rankingGeral
-      .filter(item => !isIniciante(item.cluster))
-      .map((item, index) => ({
-        ...item,
-        posicao: index + 1
-      }));
-  }, [rankingGeral]);
+  const rankingMaduras = useMemo(() => enrich(rankingMadurasBase), [rankingMadurasBase, dadosBrutos, nomeColunaConsultor]);
 
   // Ranking apenas de franquias INICIANTES (INCUBAÇÃO 1, 2 ou 3)
-  const rankingIniciantes = useMemo(() => {
-    return rankingGeral
-      .filter(item => isIniciante(item.cluster))
-      .map((item, index) => ({
-        ...item,
-        posicao: index + 1
-      }));
-  }, [rankingGeral]);
+  const rankingIniciantes = useMemo(() => enrich(rankingIniciantesBase), [rankingIniciantesBase, dadosBrutos, nomeColunaConsultor]);
 
   // Aplicar filtros ao ranking (usa apenas franquias maduras)
   const rankingFiltrado = useMemo(() => {

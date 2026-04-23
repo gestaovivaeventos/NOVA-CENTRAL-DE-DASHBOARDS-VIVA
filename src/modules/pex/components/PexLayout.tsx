@@ -20,6 +20,7 @@ interface FilterConfig {
   showPerformanceComercial?: boolean;
   showMaturidade?: boolean;
   showMercado?: boolean;
+  showSaudeFranquia?: boolean;
   
   // Suporte para valores únicos (retrocompatível)
   filtroQuarter?: string;
@@ -37,6 +38,7 @@ interface FilterConfig {
   filtrosPerformanceComercial?: string[];
   filtrosMaturidades?: string[];
   filtrosMercados?: string[];
+  filtrosSaudeFranquia?: string[];
   
   onQuarterChange?: (value: string) => void;
   onClusterChange?: (value: string) => void;
@@ -53,6 +55,7 @@ interface FilterConfig {
   onPerformanceComercialMultiChange?: (values: string[]) => void;
   onMaturidadesChange?: (values: string[]) => void;
   onMercadosChange?: (values: string[]) => void;
+  onSaudeFranquiaChange?: (values: string[]) => void;
   
   listaQuarters?: string[];
   listaClusters?: string[];
@@ -61,6 +64,7 @@ interface FilterConfig {
   listaPerformanceComercial?: string[];
   listaMaturidades?: string[];
   listaMercados?: string[];
+  listaSaudeFranquia?: string[];
 }
 
 interface PexLayoutProps {
@@ -145,7 +149,8 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
     filters.showCluster || 
     filters.showUnidade || 
     filters.showConsultor ||
-    filters.showPerformanceComercial
+    filters.showPerformanceComercial ||
+    filters.showSaudeFranquia
   );
 
   // Fechar menu mobile ao clicar em um link (desktop mantém estado da sidebar)
@@ -620,6 +625,27 @@ export default function PexLayout({ children, currentPage, filters }: PexLayoutP
                         ))}
                       </select>
                     )}
+                  </div>
+                )}
+
+                {/* Filtro Saúde da Franquia - MultiSelect (exclusivo franqueadora) */}
+                {filters.showSaudeFranquia && (
+                  <div>
+                    <label style={{
+                      display: 'block',
+                      color: '#adb5bd',
+                      fontSize: '0.8rem',
+                      marginBottom: '6px',
+                      fontWeight: 500,
+                    }}>
+                      Saúde da Franquia
+                    </label>
+                    <MultiSelectFilter
+                      options={filters.listaSaudeFranquia || []}
+                      selectedValues={filters.filtrosSaudeFranquia || []}
+                      onChange={filters.onSaudeFranquiaChange || (() => {})}
+                      placeholder="Selecione saúde..."
+                    />
                   </div>
                 )}
 
