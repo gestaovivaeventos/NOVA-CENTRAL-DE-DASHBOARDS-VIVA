@@ -72,6 +72,15 @@ export function useModuloPermissions(
       }
       const userLevel = accessLevel ?? 0;
       const ids = new Set<string>();
+      // DEBUG: verifique no console do browser se setor/nmGrupo estão preenchidos
+      // e como cada módulo restrito é avaliado.
+      // eslint-disable-next-line no-console
+      console.log('[useModuloPermissions] user=', {
+        username,
+        accessLevel: userLevel,
+        setor: userInfo?.setor,
+        nmGrupo: userInfo?.nmGrupo,
+      });
       for (const m of mods) {
         const ok = hasModuloAccess(m, {
           username,
@@ -80,6 +89,21 @@ export function useModuloPermissions(
           nmGrupo: userInfo?.nmGrupo,
           unitNames: userInfo?.unitNames,
         });
+        if (
+          m.acessoFranqueadora === 'restrito' ||
+          m.acessoFranquia === 'restrito'
+        ) {
+          // eslint-disable-next-line no-console
+          console.log('[useModuloPermissions] módulo restrito:', m.moduloId, {
+            acessoFranqueadora: m.acessoFranqueadora,
+            franqueadoraSetores: m.franqueadoraSetores,
+            franqueadoraGrupos: m.franqueadoraGrupos,
+            franqueadoraUsuarios: m.franqueadoraUsuarios,
+            acessoFranquia: m.acessoFranquia,
+            franquiaSetores: m.franquiaSetores,
+            resultado: ok,
+          });
+        }
         if (ok) ids.add(m.moduloId);
       }
       setAllowedIds(ids);

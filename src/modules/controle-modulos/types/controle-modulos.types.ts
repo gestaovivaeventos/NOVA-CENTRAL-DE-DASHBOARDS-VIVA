@@ -32,7 +32,10 @@ export function hasNivelAccess(userLevel: number, nvlAcesso: number): boolean {
  * Ordem de checagem (para cada eixo aplicável ao usuário):
  *   1. Exceções (usuariosExcecao)   → acesso GARANTIDO (super-admin bypass)
  *   2. Eixo do usuário ('geral'/'sem_acesso'/'restrito')
- *   3. Se 'restrito': setores → grupos → usuários do eixo
+ *   3. Se 'restrito': usuário precisa corresponder a pelo menos UM dos filtros
+ *      preenchidos (setores OU grupos OU usuários). Se nenhum filtro estiver
+ *      preenchido, o eixo 'restrito' libera acesso por padrão.
+ *      Comparações são case-insensitive e ignoram espaços nas bordas.
  */
 export function hasModuloAccess(
   modulo: Pick<
@@ -71,10 +74,27 @@ export function hasModuloAccess(
 
   if (eixo === 'sem_acesso') return false;
   if (eixo === 'geral') return true;
-  // restrito:
-  if (setores && setores.length > 0 && user.setor && !setores.includes(user.setor)) return false;
-  if (grupos && grupos.length > 0 && user.nmGrupo && !grupos.includes(user.nmGrupo)) return false;
-  if (usuarios && usuarios.length > 0 && !usuarios.includes(user.username)) return false;
+
+  // restrito: os três filtros (setores, grupos, usuários) são combinados em OR.
+  // Se QUALQUER um dos filtros estiver preenchido, o usuário precisa corresponder
+  // a pelo menos um deles. Caso contrário (todos vazios), libera pelo eixo 'restrito'.
+  const norm = (v?: string) => (v || '').trim().toLowerCase();
+  const hasSetorFilter = !!(setores && setores.length > 0);
+  const hasGrupoFilter = !!(grupos && grupos.length > 0);
+  const hasUsuarioFilter = !!(usuarios && usuarios.length > 0);
+
+  if (hasSetorFilter || hasGrupoFilter || hasUsuarioFilter) {
+    const setoresNorm = new Set((setores || []).map(norm).filter(Boolean));
+    const gruposNorm = new Set((grupos || []).map(norm).filter(Boolean));
+    const usuariosNorm = new Set((usuarios || []).map(norm).filter(Boolean));
+
+    const matchSetor = hasSetorFilter && !!user.setor && setoresNorm.has(norm(user.setor));
+    const matchGrupo = hasGrupoFilter && !!user.nmGrupo && gruposNorm.has(norm(user.nmGrupo));
+    const matchUsuario = hasUsuarioFilter && usuariosNorm.has(norm(user.username));
+
+    if (!matchSetor && !matchGrupo && !matchUsuario) return false;
+  }
+
   // Restrição por unidade (só se aplica ao eixo Franquia)
   if (!isFranqueadora) {
     const unidades = modulo.franquiaUnidades || [];

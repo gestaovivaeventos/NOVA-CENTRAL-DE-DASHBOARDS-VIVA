@@ -177,7 +177,7 @@ export default function HomePage() {
   const { allowedIds, modulos } = useModuloPermissions(
     user?.username,
     user?.accessLevel,
-    { unitNames: user?.unitNames }
+    { unitNames: user?.unitNames, setor: user?.setor, nmGrupo: user?.nmGrupo }
   );
 
   // Construir lista de dashboards dinamicamente a partir da planilha

@@ -771,7 +771,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { allowedIds, modulos, loading: modulosLoading } = useModuloPermissions(
     user?.username,
     user?.accessLevel,
-    { unitNames: user?.unitNames }
+    { unitNames: user?.unitNames, setor: user?.setor, nmGrupo: user?.nmGrupo }
   );
 
   // Buscar dados de grupos da API (ícone, ordem, ativo)

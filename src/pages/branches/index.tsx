@@ -60,7 +60,7 @@ export default function BranchesPage() {
   const { allowedIds, loading: permissionsLoading } = useModuloPermissions(
     user?.username,
     user?.accessLevel,
-    { unitNames: user?.unitNames }
+    { unitNames: user?.unitNames, setor: user?.setor, nmGrupo: user?.nmGrupo }
   );
   const { releases, branches, loading, error, refetch, setReleases, setBranches } = useBranchesData();
   const {

@@ -22,6 +22,10 @@ export interface User {
   accessLevel: AccessLevel;
   unitNames?: string[];
   unitPrincipal?: string;
+  /** Setor do usuário (coluna K da planilha de acessos) — usado para filtrar permissões por setor */
+  setor?: string;
+  /** Grupo/cargo do usuário (coluna I da planilha de acessos) — usado para filtrar permissões por grupo/cargo */
+  nmGrupo?: string;
   modules?: string[];
   createdAt?: string;
 }
