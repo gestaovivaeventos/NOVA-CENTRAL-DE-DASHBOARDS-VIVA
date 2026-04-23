@@ -33,7 +33,7 @@ export function Shell({ children }: ShellProps) {
   const { allowedIds, loading: permissionsLoading } = useModuloPermissions(
     user?.username,
     user?.accessLevel,
-    { unitNames: user?.unitNames }
+    { unitNames: user?.unitNames, setor: user?.setor, nmGrupo: user?.nmGrupo }
   );
 
   // Fechar sidebar ao mudar de rota (mobile)

@@ -25,7 +25,7 @@ export default function ControleUsuariosPage() {
   const { allowedIds, loading: permissionsLoading } = useModuloPermissions(
     user?.username,
     user?.accessLevel,
-    { unitNames: user?.unitNames }
+    { unitNames: user?.unitNames, setor: user?.setor, nmGrupo: user?.nmGrupo }
   );
   const { data: usuarios, loading, error } = useUsuariosData();
 

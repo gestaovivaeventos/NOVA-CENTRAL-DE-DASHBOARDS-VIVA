@@ -79,7 +79,9 @@ export default function LoginPage() {
           firstName: data.user.firstName,
           accessLevel: data.user.accessLevel,
           unitNames: data.user.unitNames || [],
-          unitPrincipal: data.user.unitPrincipal || ''
+          unitPrincipal: data.user.unitPrincipal || '',
+          setor: data.user.setor || '',
+          nmGrupo: data.user.nmGrupo || ''
         };
         localStorage.setItem('auth_user', JSON.stringify(userObj));
         

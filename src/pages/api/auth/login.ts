@@ -12,6 +12,8 @@ interface SheetUser {
   accessLevel: 0 | 1;
   unitNames: string[];
   unitPrincipal: string;
+  setor: string;
+  nmGrupo: string;
   enabled: boolean;
 }
 
@@ -50,6 +52,8 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
     // D (índice 3) = nome (full name)
     // E (índice 4) = username
     // F (índice 5) = enabled (TRUE/FALSE)
+    // I (índice 8) = nm_grupo (grupo/cargo)
+    // K (índice 10) = setor
     // L (índice 11) = nvl_acesso_unidade (0 = franqueado, 1 = franqueadora)
 
     // Agrupar por username para coletar todas as unidades
@@ -58,6 +62,8 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
       accessLevel: 0 | 1;
       unitNames: Set<string>;
       unitPrincipal: string;
+      setor: string;
+      nmGrupo: string;
       enabled: boolean;
     }>();
 
@@ -72,6 +78,8 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
         const name = cells[3]?.trim().replace(/^"|"$/g, ''); // Coluna D
         const username = cells[4]?.trim().replace(/^"|"$/g, ''); // Coluna E
         const enabledStr = cells[5]?.trim().replace(/^"|"$/g, '').toUpperCase(); // Coluna F
+        const nmGrupo = cells[8]?.trim().replace(/^"|"$/g, '') || ''; // Coluna I
+        const setor = cells[10]?.trim().replace(/^"|"$/g, '') || ''; // Coluna K
         const accessLevelStr = cells[11]?.trim().replace(/^"|"$/g, ''); // Coluna L
 
         const enabled = enabledStr === 'TRUE';
@@ -84,6 +92,8 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
               accessLevel,
               unitNames: new Set(),
               unitPrincipal: unitPrincipalDesc || '',
+              setor,
+              nmGrupo,
               enabled
             });
           }
@@ -93,6 +103,9 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
           if (unitName) {
             user.unitNames.add(unitName);
           }
+          // Preencher setor/grupo se ainda vazio (primeira linha com valor vence)
+          if (!user.setor && setor) user.setor = setor;
+          if (!user.nmGrupo && nmGrupo) user.nmGrupo = nmGrupo;
         }
       }
     }
@@ -106,6 +119,8 @@ async function getAuthorizedUsers(): Promise<SheetUser[]> {
         accessLevel: user.accessLevel,
         unitNames: Array.from(user.unitNames).sort(),
         unitPrincipal: user.unitPrincipal,
+        setor: user.setor,
+        nmGrupo: user.nmGrupo,
         enabled: user.enabled
       });
     });
@@ -316,9 +331,11 @@ export default async function handler(
       accessLevel: sheetUser.accessLevel,
       unitNames: sheetUser.unitNames,
       unitPrincipal: sheetUser.unitPrincipal,
+      setor: sheetUser.setor,
+      nmGrupo: sheetUser.nmGrupo,
     };
 
-    console.log(`[Login] Sucesso: ${username} (nível ${sheetUser.accessLevel})`);
+    console.log(`[Login] Sucesso: ${username} (nível ${sheetUser.accessLevel}) setor="${sheetUser.setor}" nmGrupo="${sheetUser.nmGrupo}"`);
 
     return res.status(200).json({
       success: true,

@@ -10,6 +10,16 @@ import Image from 'next/image';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label } from 'recharts';
 import { ChevronDown, ChevronRight, Building2, MapPin, Users, TrendingUp, Briefcase } from 'lucide-react';
 import { useSheetsData, Card, PexLayout, IndicadorCardLegacy as IndicadorCard, TabelaResumo, TabelaResultadosOficiais, GraficoEvolucao, useParametrosData } from '@/modules/pex';
+import {
+  obterPosicoesUnidade,
+  calcularRankings,
+  isRegistroVigente,
+  isIncubacao0 as isIncubacao0Ranking,
+  isIncubacao as isIncubacaoRanking,
+  isMadura as isMaduraRanking,
+  isIniciante as isInicianteRanking,
+  parsePontuacaoHistorico as parsePontuacaoRanking,
+} from '@/modules/pex/utils/ranking';
 import { useAuth } from '@/context/AuthContext';
 import { filterDataByPermission } from '@/utils/permissoes';
 
@@ -247,7 +257,10 @@ export default function ResultadosPage() {
   const [filtrosPerformanceComercial, setFiltrosPerformanceComercial] = useState<string[]>([]);
   const [filtrosMaturidades, setFiltrosMaturidades] = useState<string[]>([]);
   const [filtrosMercados, setFiltrosMercados] = useState<string[]>([]);
+  // Filtro de saúde da franquia (exclusivo franqueadora). Avalia pelo registro mais recente.
+  const [filtrosSaudeFranquia, setFiltrosSaudeFranquia] = useState<string[]>([]);
   const [nomeColunaConsultor, setNomeColunaConsultor] = useState<string>('consultor');
+  const [nomeColunaSaudeFranquia, setNomeColunaSaudeFranquia] = useState<string>('saude_franquia');
   const [dadosHistorico, setDadosHistorico] = useState<any[]>([]);
   const [dadosResultadosOficiais, setDadosResultadosOficiais] = useState<any[]>([]);
   const [dadosEstrutura, setDadosEstrutura] = useState<Record<string, { societaria: string; time: string }>>({});
@@ -280,6 +293,27 @@ export default function ResultadosPage() {
       const possiveisNomes = ['consultor', 'Consultor', 'CONSULTOR', 'CONSULTOR RESPONSAVEL'];
       const nomeColuna = possiveisNomes.find(nome => dadosBrutos[0].hasOwnProperty(nome));
       if (nomeColuna) setNomeColunaConsultor(nomeColuna);
+    }
+  }, [dadosBrutos]);
+
+  // Detectar nome da coluna de saúde da franquia (header pode variar com acentos/underlines)
+  useEffect(() => {
+    if (dadosBrutos && dadosBrutos.length > 0) {
+      const candidatos = [
+        'saude_franquia', 'saúde_franquia',
+        'saude franquia', 'saúde franquia',
+        'Saude_Franquia', 'Saúde_Franquia',
+        'SAUDE_FRANQUIA', 'SAÚDE_FRANQUIA',
+      ];
+      const keys = Object.keys(dadosBrutos[0] || {});
+      // Correspondência exata primeiro
+      let encontrado = candidatos.find(nome => keys.includes(nome));
+      // Fallback: match case-insensitive ignorando espaços/underscore
+      if (!encontrado) {
+        const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[\s_]+/g, '');
+        encontrado = keys.find(k => norm(k) === 'saudefranquia');
+      }
+      if (encontrado) setNomeColunaSaudeFranquia(encontrado);
     }
   }, [dadosBrutos]);
 
@@ -347,6 +381,47 @@ export default function ResultadosPage() {
       .sort();
   }, [dadosBrutos]);
 
+  // Saúde da franquia mais recente por unidade.
+  // "Mais recente" = registro com maior `quarter` dentro de `dadosBrutos`
+  // (uma linha por unidade/quarter na base PEX). Empates: mantém a primeira ocorrência.
+  const saudeMaisRecentePorUnidade = useMemo(() => {
+    const mapa: Record<string, string> = {};
+    if (!dadosBrutos || dadosBrutos.length === 0) return mapa;
+    const quarterPorUnidade: Record<string, number> = {};
+    for (const item of dadosBrutos) {
+      const unidade = (item.nm_unidade || '').toString();
+      if (!unidade) continue;
+      const saude = (item[nomeColunaSaudeFranquia] || '').toString().trim();
+      if (!saude) continue;
+      const q = parseInt((item.quarter || '0').toString(), 10) || 0;
+      if (q >= (quarterPorUnidade[unidade] ?? -1)) {
+        quarterPorUnidade[unidade] = q;
+        mapa[unidade] = saude;
+      }
+    }
+    return mapa;
+  }, [dadosBrutos, nomeColunaSaudeFranquia]);
+
+  const listaSaudeFranquia = useMemo(() => {
+    const valores = Object.values(saudeMaisRecentePorUnidade)
+      .map(v => v.toString().trim())
+      .filter(v => v.length > 0);
+    return Array.from(new Set(valores)).sort();
+  }, [saudeMaisRecentePorUnidade]);
+
+  // `dadosBrutos` filtrado pelo filtro de saúde da franquia (para alimentar TabelaResumo).
+  // A TabelaResumo já aplica outros filtros internamente; este filtro é pré-aplicado
+  // porque não existe prop de saúde no componente.
+  const dadosBrutosComSaude = useMemo(() => {
+    if (!dadosBrutos) return [];
+    if (filtrosSaudeFranquia.length === 0) return dadosBrutos;
+    return dadosBrutos.filter(item => {
+      const unidade = (item.nm_unidade || '').toString();
+      const saude = saudeMaisRecentePorUnidade[unidade];
+      return saude && filtrosSaudeFranquia.includes(saude);
+    });
+  }, [dadosBrutos, filtrosSaudeFranquia, saudeMaisRecentePorUnidade]);
+
   const listaUnidades = useMemo(() => {
     if (!dadosBrutos || dadosBrutos.length === 0) return [];
     let dados = dadosBrutos;
@@ -377,12 +452,21 @@ export default function ResultadosPage() {
     if (filtrosMercados.length > 0) {
       dados = dados.filter(item => item.mercado && filtrosMercados.includes(item.mercado));
     }
+
+    // Aplicar filtro de saúde da franquia (baseado no registro mais recente)
+    if (filtrosSaudeFranquia.length > 0) {
+      dados = dados.filter(item => {
+        const unidade = (item.nm_unidade || '').toString();
+        const saudeAtual = saudeMaisRecentePorUnidade[unidade];
+        return saudeAtual && filtrosSaudeFranquia.includes(saudeAtual);
+      });
+    }
     
     return dados
       .map(item => item.nm_unidade)
       .filter((value, index, self) => value && self.indexOf(value) === index)
       .sort();
-  }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, filtrosPerformanceComercial, filtrosMaturidades, filtrosMercados, nomeColunaConsultor]);
+  }, [dadosBrutos, filtroQuarter, filtrosClusters, filtrosConsultores, filtrosPerformanceComercial, filtrosMaturidades, filtrosMercados, filtrosSaudeFranquia, saudeMaisRecentePorUnidade, nomeColunaConsultor]);
 
   // ============================================
   // HELPERS PARA CÁLCULOS COM HISTÓRICO
@@ -571,51 +655,22 @@ export default function ResultadosPage() {
     return soma / registrosUnidade.length;
   }, [dadosHistorico, unidadeEfetiva]);
 
-  // Posição na Rede e no Cluster (baseado na média de TODOS os meses vigentes do histórico)
+  // Posição na Rede e no Cluster (baseado na média de TODOS os meses vigentes do histórico).
+  // Regra unificada com a página de Ranking (ver `modules/pex/utils/ranking.ts`):
+  //  - Exclui INCUBAÇÃO 0.
+  //  - Ranking SEGREGADO por maturidade: unidades maduras comparadas só entre maduras;
+  //    iniciantes (INCUBAÇÃO 1/2/3) só entre iniciantes.
+  //  - Posição Cluster = posição dentro do mesmo cluster, dentro do mesmo grupo de maturidade.
+  //  - Cluster = registro mais recente do ciclo.
   const posicoes = useMemo(() => {
-    if (!dadosHistorico || dadosHistorico.length === 0 || !unidadeEfetiva) return { posicaoRede: 0, totalRede: 0, posicaoCluster: 0, totalCluster: 0 };
-    
-    const anoAtual = new Date().getFullYear();
-    
-    // Filtrar registros vigentes do histórico (excluindo INCUBAÇÃO 0)
-    const registrosVigentes = dadosHistorico.filter(item => {
-      // Excluir meses em que a franquia estava em INCUBAÇÃO 0 (sem nota)
-      if (isIncubacao0(item.cluster)) return false;
-      const parsed = parseDateHistorico(item.data);
-      if (!parsed) return false;
-      if (anoAtual === 2026) {
-        return parsed.ano === 2026 && parsed.mes >= 1 && parsed.mes <= 9;
-      }
-      return (parsed.ano === anoAtual - 1 && parsed.mes >= 9) || 
-             (parsed.ano === anoAtual && parsed.mes <= 9);
-    });
-    
-    // Calcular média de cada unidade
-    const unidadesUnicas = Array.from(new Set(registrosVigentes.map(item => item.nm_unidade)));
-    
-    const mediasPorUnidade = unidadesUnicas.map(unidade => {
-      const registros = registrosVigentes.filter(item => item.nm_unidade === unidade);
-      const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
-      const media = registros.length > 0 ? soma / registros.length : 0;
-      const cluster = registros[registros.length - 1]?.cluster || registros[0]?.cluster || '';
-      return { unidade, media, cluster };
-    });
-    
-    // Ordenar por média (maior primeiro)
-    const rankingRede = [...mediasPorUnidade].sort((a, b) => b.media - a.media);
-    const posicaoRede = rankingRede.findIndex(item => item.unidade === unidadeEfetiva) + 1;
-    const totalRede = rankingRede.length;
-    
-    // Cluster da unidade selecionada
-    const clusterUnidade = mediasPorUnidade.find(item => item.unidade === unidadeEfetiva)?.cluster || '';
-    const rankingCluster = rankingRede.filter(item => item.cluster === clusterUnidade);
-    const posicaoCluster = rankingCluster.findIndex(item => item.unidade === unidadeEfetiva) + 1;
-    const totalCluster = rankingCluster.length;
-    
-    return { posicaoRede, totalRede, posicaoCluster, totalCluster };
+    return obterPosicoesUnidade(dadosHistorico, unidadeEfetiva || '');
   }, [dadosHistorico, unidadeEfetiva]);
 
-  // Pontuações por quarter = média dos meses do quarter (do HISTÓRICO) com posições
+  // Pontuações por quarter = média dos meses do quarter (do HISTÓRICO) com posições.
+  // Para as POSIÇÕES por quarter aplicamos a MESMA regra do ranking da Rede:
+  //  - Exclui INCUBAÇÃO 0.
+  //  - Segrega Maduras x Iniciantes (Incubação 1/2/3).
+  //  - Unidade é comparada apenas dentro do seu grupo de maturidade.
   const pontuacoesPorQuarter = useMemo(() => {
     if (!dadosHistorico || dadosHistorico.length === 0 || !unidadeEfetiva) {
       return ['1', '2', '3', '4'].map(quarter => ({
@@ -635,51 +690,38 @@ export default function ResultadosPage() {
       // Filtrar meses do histórico para este quarter e unidade (excluindo INCUBAÇÃO 0)
       const registrosMesesQuarter = dadosHistorico.filter(item => {
         if (item.nm_unidade !== unidadeEfetiva) return false;
-        if (isIncubacao0(item.cluster)) return false;
+        if (isIncubacao0Ranking(item.cluster)) return false;
         const parsed = parseDateHistorico(item.data);
         if (!parsed) return false;
         return parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
       });
       
       // Média dos meses do quarter
-      const somaQuarter = registrosMesesQuarter.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
+      const somaQuarter = registrosMesesQuarter.reduce((sum, item) => sum + parsePontuacaoRanking(item), 0);
       const mediaQuarter = registrosMesesQuarter.length > 0 ? somaQuarter / registrosMesesQuarter.length : 0;
       
-      // Calcular posições para este quarter usando dados do histórico (todas as unidades)
+      // Calcular posições para este quarter reaproveitando a util unificada.
       let posicaoRede = 0, totalRede = 0, posicaoCluster = 0, totalCluster = 0;
       
       if (quarterAtivo) {
-        // Todas as unidades com dados neste quarter (excluindo INCUBAÇÃO 0)
-        const todasUnidadesQuarter = Array.from(new Set(
-          dadosHistorico
-            .filter(item => {
-              if (isIncubacao0(item.cluster)) return false;
-              const parsed = parseDateHistorico(item.data);
-              return parsed && parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
-            })
-            .map(item => item.nm_unidade)
-        ));
-        
-        const mediasQuarter = todasUnidadesQuarter.map(unidade => {
-          const registros = dadosHistorico.filter(item => {
-            if (item.nm_unidade !== unidade) return false;
-            if (isIncubacao0(item.cluster)) return false;
-            const parsed = parseDateHistorico(item.data);
-            return parsed && parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
-          });
-          const soma = registros.reduce((sum, item) => sum + parsePontuacaoHistorico(item), 0);
-          const media = registros.length > 0 ? soma / registros.length : 0;
-          const cluster = registros[registros.length - 1]?.cluster || registros[0]?.cluster || '';
-          return { unidade, media, cluster };
-        }).sort((a, b) => b.media - a.media);
-        
-        posicaoRede = mediasQuarter.findIndex(d => d.unidade === unidadeEfetiva) + 1;
-        totalRede = mediasQuarter.length;
-        
-        const clusterUnidade = mediasQuarter.find(d => d.unidade === unidadeEfetiva)?.cluster || '';
-        const rankingCluster = mediasQuarter.filter(d => d.cluster === clusterUnidade);
-        posicaoCluster = rankingCluster.findIndex(d => d.unidade === unidadeEfetiva) + 1;
-        totalCluster = rankingCluster.length;
+        // Recorte do histórico restrito aos meses do quarter (desse ano)
+        const registrosQuarterRede = dadosHistorico.filter(item => {
+          if (isIncubacao0Ranking(item.cluster)) return false;
+          const parsed = parseDateHistorico(item.data);
+          return !!parsed && parsed.ano === anoAtual && mesesDoQuarter.includes(parsed.mes);
+        });
+
+        // `obterPosicoesUnidade` com `aplicarFiltroVigente: false` respeita o recorte
+        // (já não inclui INCUBAÇÃO 0) e aplica a segregação por maturidade.
+        const resultado = obterPosicoesUnidade(
+          registrosQuarterRede,
+          unidadeEfetiva,
+          { aplicarFiltroVigente: false }
+        );
+        posicaoRede = resultado.posicaoRede;
+        totalRede = resultado.totalRede;
+        posicaoCluster = resultado.posicaoCluster;
+        totalCluster = resultado.totalCluster;
       }
       
       return { 
@@ -969,6 +1011,7 @@ export default function ResultadosPage() {
         showCluster: isFranchiser,
         showConsultor: isFranchiser,
         showPerformanceComercial: isFranchiser,
+        showSaudeFranquia: isFranchiser,
         filtroQuarter,
         filtroUnidade,
         filtrosUnidades,
@@ -977,6 +1020,7 @@ export default function ResultadosPage() {
         filtrosPerformanceComercial,
         filtrosMaturidades,
         filtrosMercados,
+        filtrosSaudeFranquia,
         onQuarterChange: setFiltroQuarter,
         onUnidadeChange: setFiltroUnidade,
         onUnidadesChange: setFiltrosUnidades,
@@ -985,6 +1029,7 @@ export default function ResultadosPage() {
         onPerformanceComercialMultiChange: setFiltrosPerformanceComercial,
         onMaturidadesChange: setFiltrosMaturidades,
         onMercadosChange: setFiltrosMercados,
+        onSaudeFranquiaChange: setFiltrosSaudeFranquia,
         listaQuarters,
         listaUnidades,
         listaClusters,
@@ -992,6 +1037,7 @@ export default function ResultadosPage() {
         listaPerformanceComercial,
         listaMaturidades: ['Maduras', 'Incubação'],
         listaMercados,
+        listaSaudeFranquia,
         showMaturidade: isFranchiser,
         showMercado: isFranchiser,
       }}
@@ -1162,7 +1208,7 @@ export default function ResultadosPage() {
               </div>
               <Card>
                 <TabelaResumo
-                  dados={dadosBrutos || []}
+                  dados={dadosBrutosComSaude}
                   quarterSelecionado={filtroQuarterTabela}
                   clustersSelecionados={filtrosClusters}
                   consultoresSelecionados={filtrosConsultores}
@@ -1763,7 +1809,7 @@ export default function ResultadosPage() {
               </div>
               <Card>
                 <TabelaResumo
-                  dados={dadosBrutos || []}
+                  dados={dadosBrutosComSaude}
                   quarterSelecionado={filtroQuarterTabela}
                   clustersSelecionados={filtrosClusters}
                   consultoresSelecionados={filtrosConsultores}
