@@ -42,6 +42,7 @@ export interface ExternalLinkData {
   franquiaSetores: string;
   franquiaGrupos: string;
   franquiaUsuarios: string;
+  franquiaUnidades: string;
 }
 
 export default function AddExternalLinkModal({
@@ -77,8 +78,10 @@ export default function AddExternalLinkModal({
   const [fqaSetores, setFqaSetores] = useState<string[]>([]);
   const [fqaGrupos, setFqaGrupos] = useState<string[]>([]);
   const [fqaUsuarios, setFqaUsuarios] = useState<string[]>([]);
+  const [fqaUnidades, setFqaUnidades] = useState<string[]>([]);
 
   const [todosUsuarios, setTodosUsuarios] = useState<Usuario[]>([]);
+  const [todasUnidades, setTodasUnidades] = useState<string[]>([]);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -106,12 +109,17 @@ export default function AddExternalLinkModal({
       setFqaSetores([]);
       setFqaGrupos([]);
       setFqaUsuarios([]);
+      setFqaUnidades([]);
       setError('');
 
       fetch('/api/controle-modulos/usuarios')
         .then(r => r.json())
         .then(d => setTodosUsuarios(d.usuarios || []))
         .catch(() => setTodosUsuarios([]));
+      fetch('/api/controle-modulos/unidades')
+        .then(r => r.json())
+        .then(d => setTodasUnidades(d.unidades || []))
+        .catch(() => setTodasUnidades([]));
     }
   }, [isOpen]);
 
@@ -204,6 +212,7 @@ export default function AddExternalLinkModal({
       franquiaSetores: fqaSetores.join(','),
       franquiaGrupos: fqaGrupos.join(','),
       franquiaUsuarios: fqaUsuarios.join(','),
+      franquiaUnidades: fqaUnidades.join(','),
     };
 
     const ok = await onSave(data);
@@ -765,6 +774,10 @@ export default function AddExternalLinkModal({
             usuariosSelecionados={fqaUsuarios}
             setUsuariosSelecionados={setFqaUsuarios}
             usuariosDisponiveis={usuariosFranquia}
+            incluirUnidades
+            unidadesSelecionadas={fqaUnidades}
+            setUnidadesSelecionadas={setFqaUnidades}
+            unidadesDisponiveis={todasUnidades}
           />
 
           {error && (

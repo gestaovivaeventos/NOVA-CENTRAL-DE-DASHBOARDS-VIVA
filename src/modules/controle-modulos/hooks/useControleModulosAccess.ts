@@ -14,10 +14,12 @@ interface ModuloAccessResult {
 export function useControleModulosAccess(
   username?: string,
   accessLevel?: number,
-  userInfo?: { setor?: string; nmGrupo?: string }
+  userInfo?: { setor?: string; nmGrupo?: string; unitNames?: string[] }
 ): ModuloAccessResult {
   const [hasAccess, setHasAccess] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const unitNamesKey = (userInfo?.unitNames || []).join('|');
 
   useEffect(() => {
     if (!username) {
@@ -50,6 +52,7 @@ export function useControleModulosAccess(
           accessLevel: accessLevel ?? 0,
           setor: userInfo?.setor,
           nmGrupo: userInfo?.nmGrupo,
+          unitNames: userInfo?.unitNames,
         });
         setHasAccess(ok);
       })
@@ -63,7 +66,8 @@ export function useControleModulosAccess(
     return () => {
       cancelled = true;
     };
-  }, [username, accessLevel, userInfo?.setor, userInfo?.nmGrupo]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, accessLevel, userInfo?.setor, userInfo?.nmGrupo, unitNamesKey]);
 
   return { hasAccess, loading };
 }

@@ -133,6 +133,7 @@ export default function ControleModulosPage() {
       accessLevel: user.accessLevel ?? 0,
       setor: (user as any).setor,
       nmGrupo: (user as any).nmGrupo,
+      unitNames: user.unitNames,
     });
   }, [user, modulos]);
 

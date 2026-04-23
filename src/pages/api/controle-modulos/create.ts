@@ -54,6 +54,7 @@ export default async function handler(
       franquiaSetores = '',
       franquiaGrupos = '',
       franquiaUsuarios = '',
+      franquiaUnidades = '',
     } = req.body;
 
     if (!moduloId || !moduloNome) {
@@ -115,11 +116,12 @@ export default async function handler(
       franquiaSetores,
       franquiaGrupos,
       franquiaUsuarios,
+      franquiaUnidades,
     ];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId,
-      range: `${sheetName}!A:X`,
+      range: `${sheetName}!A:Y`,
       valueInputOption: 'USER_ENTERED',
       requestBody: { values: [newRow] },
     });

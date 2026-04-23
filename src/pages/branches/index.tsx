@@ -57,7 +57,11 @@ const SIDEBAR_WIDTH_COLLAPSED = 60;
 export default function BranchesPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(
+    user?.username,
+    user?.accessLevel,
+    { unitNames: user?.unitNames }
+  );
   const { releases, branches, loading, error, refetch, setReleases, setBranches } = useBranchesData();
   const {
     creating,

@@ -48,9 +48,11 @@ export default function EditModuloModal({
   const [fqaSetores, setFqaSetores] = useState<string[]>([]);
   const [fqaGrupos, setFqaGrupos] = useState<string[]>([]);
   const [fqaUsuarios, setFqaUsuarios] = useState<string[]>([]);
+  const [fqaUnidades, setFqaUnidades] = useState<string[]>([]);
 
   // Users data
   const [todosUsuarios, setTodosUsuarios] = useState<Usuario[]>([]);
+  const [todasUnidades, setTodasUnidades] = useState<string[]>([]);
 
   // Exceção multi-select
   const [excecaoSearch, setExcecaoSearch] = useState('');
@@ -86,6 +88,7 @@ export default function EditModuloModal({
       setFqaSetores((modulo as any).franquiaSetores || []);
       setFqaGrupos((modulo as any).franquiaGrupos || []);
       setFqaUsuarios((modulo as any).franquiaUsuarios || []);
+      setFqaUnidades((modulo as any).franquiaUnidades || []);
       setExcecaoSearch('');
       setExcecaoDropdownOpen(false);
     }
@@ -98,6 +101,10 @@ export default function EditModuloModal({
         .then(r => r.json())
         .then(d => setTodosUsuarios(d.usuarios || []))
         .catch(() => setTodosUsuarios([]));
+      fetch('/api/controle-modulos/unidades')
+        .then(r => r.json())
+        .then(d => setTodasUnidades(d.unidades || []))
+        .catch(() => setTodasUnidades([]));
     }
   }, [isOpen]);
 
@@ -170,6 +177,7 @@ export default function EditModuloModal({
     if (fqaSetores.join(',') !== ((modulo as any).franquiaSetores || []).join(',')) return true;
     if (fqaGrupos.join(',') !== ((modulo as any).franquiaGrupos || []).join(',')) return true;
     if (fqaUsuarios.join(',') !== ((modulo as any).franquiaUsuarios || []).join(',')) return true;
+    if (fqaUnidades.join(',') !== ((modulo as any).franquiaUnidades || []).join(',')) return true;
     return false;
   })();
 
@@ -227,6 +235,8 @@ export default function EditModuloModal({
       await save('franquia_grupos', fqaGrupos.join(','));
     if (fqaUsuarios.join(',') !== ((modulo as any).franquiaUsuarios || []).join(','))
       await save('franquia_usuarios', fqaUsuarios.join(','));
+    if (fqaUnidades.join(',') !== ((modulo as any).franquiaUnidades || []).join(','))
+      await save('franquia_unidades', fqaUnidades.join(','));
 
     setSaving(false);
     if (allOk) onClose();
@@ -848,6 +858,10 @@ export default function EditModuloModal({
             usuariosSelecionados={fqaUsuarios}
             setUsuariosSelecionados={setFqaUsuarios}
             usuariosDisponiveis={usuariosFranquia}
+            incluirUnidades
+            unidadesSelecionadas={fqaUnidades}
+            setUnidadesSelecionadas={setFqaUnidades}
+            unidadesDisponiveis={todasUnidades}
           />
 
           {/* Botão Salvar */}

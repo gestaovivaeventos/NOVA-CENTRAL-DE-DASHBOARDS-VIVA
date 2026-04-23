@@ -29,6 +29,11 @@ export interface EixoAcessoSectionProps {
   usuariosSelecionados: string[];
   setUsuariosSelecionados: (v: string[]) => void;
   usuariosDisponiveis: UsuarioEixo[];
+  /** Habilita o seletor de Unidades (só faz sentido para o eixo Franquia). */
+  incluirUnidades?: boolean;
+  unidadesSelecionadas?: string[];
+  setUnidadesSelecionadas?: (v: string[]) => void;
+  unidadesDisponiveis?: string[];
 }
 
 export default function EixoAcessoSection({
@@ -44,22 +49,30 @@ export default function EixoAcessoSection({
   usuariosSelecionados,
   setUsuariosSelecionados,
   usuariosDisponiveis,
+  incluirUnidades = false,
+  unidadesSelecionadas = [],
+  setUnidadesSelecionadas,
+  unidadesDisponiveis = [],
 }: EixoAcessoSectionProps) {
   const [openSetor, setOpenSetor] = useState(false);
   const [openGrupo, setOpenGrupo] = useState(false);
   const [openUsuario, setOpenUsuario] = useState(false);
+  const [openUnidade, setOpenUnidade] = useState(false);
   const [searchSetor, setSearchSetor] = useState('');
   const [searchGrupo, setSearchGrupo] = useState('');
   const [searchUser, setSearchUser] = useState('');
+  const [searchUnidade, setSearchUnidade] = useState('');
   const setorRef = useRef<HTMLDivElement>(null);
   const grupoRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+  const unidadeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handle = (e: MouseEvent) => {
       if (setorRef.current && !setorRef.current.contains(e.target as Node)) setOpenSetor(false);
       if (grupoRef.current && !grupoRef.current.contains(e.target as Node)) setOpenGrupo(false);
       if (userRef.current && !userRef.current.contains(e.target as Node)) setOpenUsuario(false);
+      if (unidadeRef.current && !unidadeRef.current.contains(e.target as Node)) setOpenUnidade(false);
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
@@ -174,6 +187,124 @@ export default function EixoAcessoSection({
 
       {eixo === 'restrito' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {/* Unidades (franquias específicas) — opcional, só para eixo Franquia */}
+          {incluirUnidades && setUnidadesSelecionadas && (
+            <div ref={unidadeRef} style={{ position: 'relative' }}>
+              <label style={{ ...labelStyle, marginBottom: '6px' }}>
+                Unidades {unidadesSelecionadas.length > 0 && <span style={{ color: cor }}>({unidadesSelecionadas.length} selecionadas)</span>}
+              </label>
+              <button
+                type="button"
+                onClick={() => setOpenUnidade(o => !o)}
+                style={{ ...inputStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <span style={{ color: unidadesSelecionadas.length ? '#F8F9FA' : '#6c757d' }}>
+                  {unidadesSelecionadas.length
+                    ? `${unidadesSelecionadas.length} unidade(s) selecionada(s)`
+                    : 'Todas as unidades deste eixo'}
+                </span>
+                <ChevronDown size={16} />
+              </button>
+              {unidadesSelecionadas.length > 0 && (
+                <div style={chipsContainerStyle}>
+                  {unidadesSelecionadas.map(u => (
+                    <span key={u} style={chipStyle(cor)}>
+                      {u}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setUnidadesSelecionadas(unidadesSelecionadas.filter(x => x !== u))
+                        }
+                        style={chipRemoveBtnStyle}
+                        title="Remover"
+                      >
+                        <X size={12} />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {openUnidade && (
+                <div style={dropdownStyle}>
+                  <div style={{ padding: '8px', borderBottom: '1px solid #333', display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#0f1114', padding: '6px 8px', borderRadius: '6px', flex: 1 }}>
+                      <Search size={14} color="#6c757d" />
+                      <input
+                        value={searchUnidade}
+                        onChange={e => setSearchUnidade(e.target.value)}
+                        placeholder="Buscar unidade..."
+                        style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: '#F8F9FA', fontSize: '0.8rem' }}
+                      />
+                    </div>
+                    {unidadesDisponiveis.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const todasFiltradas = unidadesDisponiveis.filter(u =>
+                            u.toLowerCase().includes(searchUnidade.toLowerCase())
+                          );
+                          const todasJaSelecionadas = todasFiltradas.every(u =>
+                            unidadesSelecionadas.includes(u)
+                          );
+                          if (todasJaSelecionadas) {
+                            setUnidadesSelecionadas(
+                              unidadesSelecionadas.filter(u => !todasFiltradas.includes(u))
+                            );
+                          } else {
+                            const merged = Array.from(
+                              new Set([...unidadesSelecionadas, ...todasFiltradas])
+                            );
+                            setUnidadesSelecionadas(merged);
+                          }
+                        }}
+                        style={{
+                          padding: '6px 10px',
+                          background: 'transparent',
+                          border: `1px solid ${cor}60`,
+                          color: cor,
+                          borderRadius: '6px',
+                          fontSize: '0.7rem',
+                          fontFamily: 'Poppins, sans-serif',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        Selecionar todas
+                      </button>
+                    )}
+                  </div>
+                  <div style={{ maxHeight: '240px', overflowY: 'auto' }}>
+                    {unidadesDisponiveis
+                      .filter(u => u.toLowerCase().includes(searchUnidade.toLowerCase()))
+                      .map(u => {
+                        const sel = unidadesSelecionadas.includes(u);
+                        return (
+                          <button
+                            key={u}
+                            type="button"
+                            onClick={() =>
+                              setUnidadesSelecionadas(
+                                sel
+                                  ? unidadesSelecionadas.filter(x => x !== u)
+                                  : [...unidadesSelecionadas, u]
+                              )
+                            }
+                            style={dropdownItemStyle(sel, cor)}
+                          >
+                            <span>{u}</span>
+                            {sel && <Check size={14} color={cor} />}
+                          </button>
+                        );
+                      })}
+                    {unidadesDisponiveis.length === 0 && (
+                      <div style={{ padding: '12px', color: '#6c757d', fontSize: '0.8rem', textAlign: 'center' }}>Nenhuma unidade disponível</div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Setores */}
           <div ref={setorRef} style={{ position: 'relative' }}>
             <label style={{ ...labelStyle, marginBottom: '6px' }}>
