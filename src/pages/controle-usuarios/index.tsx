@@ -22,7 +22,11 @@ const SIDEBAR_WIDTH_COLLAPSED = 60;
 export default function ControleUsuariosPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(
+    user?.username,
+    user?.accessLevel,
+    { unitNames: user?.unitNames }
+  );
   const { data: usuarios, loading, error } = useUsuariosData();
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);

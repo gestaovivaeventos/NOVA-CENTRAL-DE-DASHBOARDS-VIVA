@@ -174,7 +174,11 @@ export default function HomePage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const [favorites, setFavorites] = useState<string[]>([]);
-  const { allowedIds, modulos } = useModuloPermissions(user?.username, user?.accessLevel);
+  const { allowedIds, modulos } = useModuloPermissions(
+    user?.username,
+    user?.accessLevel,
+    { unitNames: user?.unitNames }
+  );
 
   // Construir lista de dashboards dinamicamente a partir da planilha
   const allDashboards: Dashboard[] = useMemo(() => {

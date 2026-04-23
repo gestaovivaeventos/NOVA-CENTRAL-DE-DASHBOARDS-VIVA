@@ -768,7 +768,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const [subgruposInfo, setSubgruposInfo] = useState<SubgrupoAPIInfo[]>([]);
   const [gruposLoaded, setGruposLoaded] = useState(false);
   const [subgruposLoaded, setSubgruposLoaded] = useState(false);
-  const { allowedIds, modulos, loading: modulosLoading } = useModuloPermissions(user?.username, user?.accessLevel);
+  const { allowedIds, modulos, loading: modulosLoading } = useModuloPermissions(
+    user?.username,
+    user?.accessLevel,
+    { unitNames: user?.unitNames }
+  );
 
   // Buscar dados de grupos da API (ícone, ordem, ativo)
   const fetchGruposInfo = useCallback(async () => {

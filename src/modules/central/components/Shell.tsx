@@ -30,7 +30,11 @@ export function Shell({ children }: ShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(user?.username, user?.accessLevel);
+  const { allowedIds, loading: permissionsLoading } = useModuloPermissions(
+    user?.username,
+    user?.accessLevel,
+    { unitNames: user?.unitNames }
+  );
 
   // Fechar sidebar ao mudar de rota (mobile)
   useEffect(() => {

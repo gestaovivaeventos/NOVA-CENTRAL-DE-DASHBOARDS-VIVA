@@ -36,6 +36,7 @@ const FIELD_TO_COL: Record<string, number> = {
   franquia_setores: 21,        // V
   franquia_grupos: 22,         // W
   franquia_usuarios: 23,       // X
+  franquia_unidades: 24,       // Y
 };
 
 export default async function handler(
@@ -78,7 +79,7 @@ export default async function handler(
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:X`,
+      range: `${sheetName}!A:Y`,
     });
 
     const rows = response.data.values || [];

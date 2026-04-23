@@ -37,7 +37,7 @@ export default async function handler(
     const sheets = google.sheets({ version: 'v4', auth });
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: `${sheetName}!A:X`,
+      range: `${sheetName}!A:Y`,
     });
     const rows = response.data.values || [];
 
@@ -75,6 +75,7 @@ export default async function handler(
         let franquiaSetores = csv(row[21]);
         let franquiaGrupos = csv(row[22]);
         let franquiaUsuarios = csv(row[23]);
+        const franquiaUnidades = csv(row[24]);
 
         // Derivação: se eixo não está definido na planilha, calcula a partir do legado
         // Mantém permissões IDÊNTICAS às do sistema antigo.
@@ -154,6 +155,7 @@ export default async function handler(
           franquiaSetores,
           franquiaGrupos,
           franquiaUsuarios,
+          franquiaUnidades,
         };
       });
 

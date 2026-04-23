@@ -34,6 +34,7 @@ interface ModuloPermission {
   franquiaSetores: string[];
   franquiaGrupos: string[];
   franquiaUsuarios: string[];
+  franquiaUnidades: string[];
 }
 
 interface UseModuloPermissionsResult {
@@ -45,10 +46,11 @@ interface UseModuloPermissionsResult {
   loading: boolean;
 }
 
-// Info do usuário logado para checar setor/grupo
+// Info do usuário logado para checar setor/grupo/unidades
 interface UserInfo {
   setor?: string;
   nmGrupo?: string;
+  unitNames?: string[];
 }
 
 export function useModuloPermissions(
@@ -59,6 +61,8 @@ export function useModuloPermissions(
   const [modulos, setModulos] = useState<ModuloPermission[]>([]);
   const [allowedIds, setAllowedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+
+  const unitNamesKey = (userInfo?.unitNames || []).join('|');
 
   const compute = useCallback(
     (mods: ModuloPermission[]) => {
@@ -74,12 +78,14 @@ export function useModuloPermissions(
           accessLevel: userLevel,
           setor: userInfo?.setor,
           nmGrupo: userInfo?.nmGrupo,
+          unitNames: userInfo?.unitNames,
         });
         if (ok) ids.add(m.moduloId);
       }
       setAllowedIds(ids);
     },
-    [username, accessLevel, userInfo?.setor, userInfo?.nmGrupo]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [username, accessLevel, userInfo?.setor, userInfo?.nmGrupo, unitNamesKey]
   );
 
   useEffect(() => {
@@ -125,6 +131,7 @@ export function useModuloPermissions(
             franquiaSetores: m.franquiaSetores || [],
             franquiaGrupos: m.franquiaGrupos || [],
             franquiaUsuarios: m.franquiaUsuarios || [],
+            franquiaUnidades: m.franquiaUnidades || [],
           })
         );
         setModulos(mods);

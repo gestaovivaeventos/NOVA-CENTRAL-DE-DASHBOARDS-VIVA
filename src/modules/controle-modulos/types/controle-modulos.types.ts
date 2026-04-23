@@ -47,8 +47,15 @@ export function hasModuloAccess(
     | 'franquiaSetores'
     | 'franquiaGrupos'
     | 'franquiaUsuarios'
+    | 'franquiaUnidades'
   >,
-  user: { username: string; accessLevel: number; setor?: string; nmGrupo?: string }
+  user: {
+    username: string;
+    accessLevel: number;
+    setor?: string;
+    nmGrupo?: string;
+    unitNames?: string[];
+  }
 ): boolean {
   if (!modulo.ativo) return false;
 
@@ -68,6 +75,17 @@ export function hasModuloAccess(
   if (setores && setores.length > 0 && user.setor && !setores.includes(user.setor)) return false;
   if (grupos && grupos.length > 0 && user.nmGrupo && !grupos.includes(user.nmGrupo)) return false;
   if (usuarios && usuarios.length > 0 && !usuarios.includes(user.username)) return false;
+  // Restrição por unidade (só se aplica ao eixo Franquia)
+  if (!isFranqueadora) {
+    const unidades = modulo.franquiaUnidades || [];
+    if (unidades.length > 0) {
+      const userUnits = (user.unitNames || []).map(u => u.trim()).filter(Boolean);
+      if (userUnits.length === 0) return false;
+      const unidadesSet = new Set(unidades.map(u => u.toLowerCase().trim()));
+      const matched = userUnits.some(u => unidadesSet.has(u.toLowerCase()));
+      if (!matched) return false;
+    }
+  }
   return true;
 }
 
@@ -93,6 +111,8 @@ export interface ModuloConfig {
   franquiaSetores: string[];
   franquiaGrupos: string[];
   franquiaUsuarios: string[];
+  /** Restrição de acesso por unidade/franquia (apenas eixo Franquia). Vazio = todas as unidades do eixo. */
+  franquiaUnidades: string[];
   // === Comum ===
   usuariosExcecao: string[];
   ativo: boolean;
