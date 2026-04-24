@@ -18,6 +18,7 @@ export { default as TabelaIndicadoresPEX } from './TabelaIndicadoresPEX';
 export { default as GestaoRedeLayout } from './GestaoRedeLayout';
 export { default as ModalAlterarSaude } from './ModalAlterarSaude';
 export { default as ModalEditarFlags } from './ModalEditarFlags';
+export { default as ModalDetalheFlag } from './ModalDetalheFlag';
 
 // Re-exportar de subdiretórios
 export * from './filters';
