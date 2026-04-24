@@ -14,10 +14,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { getExternalSheetData, CACHE_TTL } from '@/lib/sheets-client';
 
-// IDs via env (com fallback para o ID fornecido pelo negócio)
-const SPREADSHEET_ID =
-  process.env.ESTRUTURA_ORGANIZACIONAL_SPREADSHEET_ID ||
-  '1FowRchKoX1cbAru73mb22BTIO27Fz92zgrByMLXhvu4';
+const SPREADSHEET_ID = process.env.ESTRUTURA_ORGANIZACIONAL_SPREADSHEET_ID || '';
 
 const SHEET_SOCIETARIA = 'BASE SOCIETARIA MV';
 const SHEET_ESTRUTURA = 'ESTRUTURA ATUAL';
