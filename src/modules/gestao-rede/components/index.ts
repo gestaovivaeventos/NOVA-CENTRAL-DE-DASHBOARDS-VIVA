@@ -11,6 +11,7 @@ export { default as GraficoDonut } from './GraficoDonut';
 export { default as GraficoBarras } from './GraficoBarras';
 export { default as TabelaFranquias } from './TabelaFranquias';
 export { default as TabelaClassificacaoPEX } from './TabelaClassificacaoPEX';
+export { default as TabelaDetalhamentoPexMensal } from './TabelaDetalhamentoPexMensal';
 export { default as TabelaSegmentoMercado } from './TabelaSegmentoMercado';
 export { default as TabelaFlags } from './TabelaFlags';
 export { default as TabelaIndicadoresPEX } from './TabelaIndicadoresPEX';

@@ -33,6 +33,7 @@ import {
   KPICard,
   TabelaFranquias,
   TabelaClassificacaoPEX,
+  TabelaDetalhamentoPexMensal,
   TabelaSegmentoMercado,
   TabelaFlags,
   TabelaIndicadoresPEX,
@@ -41,6 +42,7 @@ import {
 } from '@/modules/gestao-rede';
 import { useGestaoRede } from '@/modules/gestao-rede/hooks';
 import { useIndicadoresRede } from '@/modules/gestao-rede/hooks';
+import { useHistoricoMensalPex } from '@/modules/gestao-rede/hooks';
 import { 
   calcularResumoRede, 
   CORES 
@@ -55,6 +57,9 @@ export default function GestaoRedeDashboard() {
   
   // Hook para buscar indicadores PEX (resultados + metas + vendas VVR)
   const { resultados: indicadoresResultados, metas: indicadoresMetas, vendasVVR: indicadoresVendasVVR, isLoading: indicadoresLoading } = useIndicadoresRede();
+
+  // Hook para histórico mensal de PEX (BASE GESTAO REDE) — usado na tabela de detalhamento
+  const { historico: historicoMensalPex } = useHistoricoMensalPex();
 
   // Calcular resumo baseado nos dados
   const resumo = useMemo(() => calcularResumoRede(franquias), [franquias]);
@@ -548,6 +553,14 @@ export default function GestaoRedeDashboard() {
           <div style={{ marginBottom: '24px' }}>
             <TabelaClassificacaoPEX franquias={franquias} onRefresh={refetch} />
           </div>
+
+          {/* Detalhamento PEX Mensal por Franquia (colapsável, filtro de ano próprio) */}
+          <TabelaDetalhamentoPexMensal
+            resultados={indicadoresResultados}
+            franquias={franquias}
+            historicoMensal={historicoMensalPex}
+            filtros={filtros}
+          />
 
           {/* Kanban - Flags Estruturais */}
           <div style={{ marginBottom: '24px' }}>
