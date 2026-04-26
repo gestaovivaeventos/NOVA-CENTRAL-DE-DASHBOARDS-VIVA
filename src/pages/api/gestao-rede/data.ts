@@ -80,11 +80,18 @@ function mapStatusInativacao(valor: string): StatusInativacao {
   // #N/A, vazio ou erro de fórmula → sem inativação
   if (!status || status.startsWith('#')) return null;
   
-  // "Implantação" sozinho NÃO é inativação — indica fase de implantação
-  // Só considerar encerrada se contiver "encerrada" ou variações
+  // "Em encerramento" → franquia em processo de encerramento (ainda ativa no sistema)
+  if (status.includes('ENCERRAMENTO')) return 'EM_ENCERRAMENTO';
+  
+  // Variações com a palavra "encerrada" explícita
   if (status.includes('ENCERRAD') && status.includes('OPERA')) return 'ENCERRADA_OPERACAO';
   if (status.includes('ENCERRAD') && status.includes('IMPLANTA')) return 'ENCERRADA_IMPLANTACAO';
-  if (status.includes('ENCERRAMENTO') || status.includes('EM ENCERRAMENTO')) return 'EM_ENCERRAMENTO';
+  
+  // Na planilha BASE API MV a coluna status_inativacao para franquias INATIVAS
+  // costuma vir apenas como "Operação" ou "Implantação" (fase em que foi encerrada),
+  // sem o prefixo "Encerrada em". Tratar esses casos:
+  if (status.includes('OPERA')) return 'ENCERRADA_OPERACAO';
+  if (status.includes('IMPLANTA')) return 'ENCERRADA_IMPLANTACAO';
   
   return null;
 }
