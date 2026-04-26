@@ -6,9 +6,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { Users, Shield, AlertTriangle, DollarSign, Flag, Save, Loader2, X, AlertCircle } from 'lucide-react';
-import { Franquia, SaudeFranquia, FlagsEstruturais } from '../types';
+import { Franquia, SaudeFranquia, FlagsEstruturais, FlagKey } from '../types';
 import ModalEditarFlags from './ModalEditarFlags';
+import ModalDetalheFlag from './ModalDetalheFlag';
 import { useAuth } from '@/context/AuthContext';
+
+// Flags que possuem modal de detalhamento ao clicar no card
+const FLAGS_COM_DETALHE: FlagKey[] = ['timeCritico', 'socioOperador'];
 
 // Usuários autorizados a alterar flags
 const ALLOWED_FLAG_EDITORS = ['EVERDAN', 'vitor', 'marcos', 'cris', 'gabriel.braz'];
@@ -104,6 +108,11 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
   
   const [modalFlagsOpen, setModalFlagsOpen] = useState(false);
   const [franquiaSelecionada, setFranquiaSelecionada] = useState<Franquia | null>(null);
+
+  // Modal de detalhamento da flag (clique no card)
+  const [modalDetalheOpen, setModalDetalheOpen] = useState(false);
+  const [detalheFranquia, setDetalheFranquia] = useState<Franquia | null>(null);
+  const [detalheFlagKey, setDetalheFlagKey] = useState<FlagKey>('timeCritico');
   
   // Estado para alterações pendentes (batch save)
   const [alteracoesPendentes, setAlteracoesPendentes] = useState<AlteracaoFlagPendente[]>([]);
@@ -141,6 +150,12 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
   const handleEditarFlags = (franquia: Franquia) => {
     setFranquiaSelecionada(franquia);
     setModalFlagsOpen(true);
+  };
+
+  const handleAbrirDetalhe = (franquia: Franquia, flagKey: FlagKey) => {
+    setDetalheFranquia(franquia);
+    setDetalheFlagKey(flagKey);
+    setModalDetalheOpen(true);
   };
 
   // Adicionar alteração de flags às pendentes
@@ -401,9 +416,13 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                   Nenhuma franquia
                 </div>
               ) : (
-                franquiasPorFlag[flag.key]?.map((franquia) => (
+                franquiasPorFlag[flag.key]?.map((franquia) => {
+                  const temDetalhe = FLAGS_COM_DETALHE.includes(flag.key);
+                  return (
                   <div
                     key={franquia.id}
+                    onClick={temDetalhe ? () => handleAbrirDetalhe(franquia, flag.key) : undefined}
+                    title={temDetalhe ? 'Clique para ver o detalhamento da flag' : undefined}
                     style={{
                       backgroundColor: temAlteracaoPendente(franquia.chaveData) ? '#3d4a3d' : '#343A40',
                       borderRadius: '6px',
@@ -411,6 +430,17 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                       marginBottom: '8px',
                       borderLeft: `3px solid ${SAUDE_CORES[franquia.saude]}`,
                       position: 'relative',
+                      cursor: temDetalhe ? 'pointer' : 'default',
+                      transition: 'background-color 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (temDetalhe) (e.currentTarget as HTMLDivElement).style.backgroundColor = '#3d444b';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (temDetalhe)
+                        (e.currentTarget as HTMLDivElement).style.backgroundColor = temAlteracaoPendente(franquia.chaveData)
+                          ? '#3d4a3d'
+                          : '#343A40';
                     }}
                   >
                     {/* Indicador de alteração pendente */}
@@ -432,34 +462,43 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                       alignItems: 'flex-start',
                       marginBottom: '6px',
                     }}>
-                      <div style={{ flex: 1 }}>
-                        <span style={{
-                          color: '#F8F9FA',
-                          fontSize: '0.8rem',
-                          fontWeight: 500,
-                        }}>
-                          {franquia.nome}
-                        </span>
-                        {franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0') && (
-                          <div style={{
-                            color: '#e67e22',
-                            fontSize: '0.65rem',
-                            fontWeight: 600,
-                            fontFamily: 'Poppins, sans-serif',
-                          }}>
-                            Não participa do PEX
-                          </div>
-                        )}
-                      </div>
-                      <span style={{
-                        color: SAUDE_CORES[franquia.saude],
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        fontFamily: "'Orbitron', sans-serif",
-                        marginLeft: '8px',
-                      }}>
-                        {franquia.pontuacaoPex.toFixed(2)}
-                      </span>
+                      {(() => {
+                        const isIncubacao0 = franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0');
+                        return (
+                          <>
+                            <div style={{ flex: 1 }}>
+                              <span style={{
+                                color: '#F8F9FA',
+                                fontSize: '0.8rem',
+                                fontWeight: 500,
+                              }}>
+                                {franquia.nome}
+                              </span>
+                              {isIncubacao0 && (
+                                <div style={{
+                                  color: '#e67e22',
+                                  fontSize: '0.65rem',
+                                  fontWeight: 600,
+                                  fontFamily: 'Poppins, sans-serif',
+                                }}>
+                                  Não participa do PEX
+                                </div>
+                              )}
+                            </div>
+                            {!isIncubacao0 && (
+                              <span style={{
+                                color: SAUDE_CORES[franquia.saude],
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                fontFamily: "'Orbitron', sans-serif",
+                                marginLeft: '8px',
+                              }}>
+                                {franquia.pontuacaoPex.toFixed(2)}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     {/* Maturidade + Badge Saúde + Botão editar */}
                     <div style={{
@@ -474,24 +513,29 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                         {franquia.maturidade}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '2px 6px',
-                          borderRadius: '3px',
-                          backgroundColor: SAUDE_CORES[franquia.saude],
-                          color: franquia.saude === 'ATENCAO' ? '#000' : '#fff',
-                          fontSize: '0.6rem',
-                          fontWeight: 600,
-                          fontFamily: "'Poppins', sans-serif",
-                          textTransform: 'uppercase',
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {SAUDE_LABELS[franquia.saude]}
-                        </span>
+                        {(() => {
+                          const isIncubacao0 = franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0');
+                          return !isIncubacao0 ? (
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '2px 6px',
+                              borderRadius: '3px',
+                              backgroundColor: SAUDE_CORES[franquia.saude],
+                              color: franquia.saude === 'ATENCAO' ? '#000' : '#fff',
+                              fontSize: '0.6rem',
+                              fontWeight: 600,
+                              fontFamily: "'Poppins', sans-serif",
+                              textTransform: 'uppercase',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {SAUDE_LABELS[franquia.saude]}
+                            </span>
+                          ) : null;
+                        })()}
                         {/* Botão editar flags */}
                         {canEditFlags && (
                         <button
-                          onClick={() => handleEditarFlags(franquia)}
+                          onClick={(e) => { e.stopPropagation(); handleEditarFlags(franquia); }}
                           title="Editar flags"
                           style={{
                             display: 'inline-flex',
@@ -512,7 +556,8 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                       </div>
                     </div>
                   </div>
-                ))
+                  );
+                })
               )}
             </div>
           ))}
@@ -545,6 +590,23 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
           </span>
           <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>Clique para editar flags da franquia</span>
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '18px',
+            height: '18px',
+            borderRadius: '3px',
+            backgroundColor: '#495057',
+            color: '#fff',
+            fontSize: '0.65rem',
+            fontWeight: 700,
+          }}>i</span>
+          <span style={{ color: '#adb5bd', fontSize: '0.75rem' }}>
+            Clique no card (Time Crítico / Sócio Operador) para ver o detalhamento
+          </span>
+        </div>
       </div>
     </div>
 
@@ -558,6 +620,19 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
           setFranquiaSelecionada(null);
         }}
         onSave={handleAddFlagsPendente}
+      />
+    )}
+
+    {/* Modal de detalhamento da flag (clique no card) */}
+    {detalheFranquia && (
+      <ModalDetalheFlag
+        franquia={detalheFranquia}
+        flagKey={detalheFlagKey}
+        isOpen={modalDetalheOpen}
+        onClose={() => {
+          setModalDetalheOpen(false);
+          setDetalheFranquia(null);
+        }}
       />
     )}
     </>
