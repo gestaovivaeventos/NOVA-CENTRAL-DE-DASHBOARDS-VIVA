@@ -462,34 +462,43 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                       alignItems: 'flex-start',
                       marginBottom: '6px',
                     }}>
-                      <div style={{ flex: 1 }}>
-                        <span style={{
-                          color: '#F8F9FA',
-                          fontSize: '0.8rem',
-                          fontWeight: 500,
-                        }}>
-                          {franquia.nome}
-                        </span>
-                        {franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0') && (
-                          <div style={{
-                            color: '#e67e22',
-                            fontSize: '0.65rem',
-                            fontWeight: 600,
-                            fontFamily: 'Poppins, sans-serif',
-                          }}>
-                            Não participa do PEX
-                          </div>
-                        )}
-                      </div>
-                      <span style={{
-                        color: SAUDE_CORES[franquia.saude],
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        fontFamily: "'Orbitron', sans-serif",
-                        marginLeft: '8px',
-                      }}>
-                        {franquia.pontuacaoPex.toFixed(2)}
-                      </span>
+                      {(() => {
+                        const isIncubacao0 = franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0');
+                        return (
+                          <>
+                            <div style={{ flex: 1 }}>
+                              <span style={{
+                                color: '#F8F9FA',
+                                fontSize: '0.8rem',
+                                fontWeight: 500,
+                              }}>
+                                {franquia.nome}
+                              </span>
+                              {isIncubacao0 && (
+                                <div style={{
+                                  color: '#e67e22',
+                                  fontSize: '0.65rem',
+                                  fontWeight: 600,
+                                  fontFamily: 'Poppins, sans-serif',
+                                }}>
+                                  Não participa do PEX
+                                </div>
+                              )}
+                            </div>
+                            {!isIncubacao0 && (
+                              <span style={{
+                                color: SAUDE_CORES[franquia.saude],
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                fontFamily: "'Orbitron', sans-serif",
+                                marginLeft: '8px',
+                              }}>
+                                {franquia.pontuacaoPex.toFixed(2)}
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                     {/* Maturidade + Badge Saúde + Botão editar */}
                     <div style={{
@@ -504,20 +513,25 @@ export default function TabelaFlags({ franquias, titulo = 'Análise de Flags Est
                         {franquia.maturidade}
                       </span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '2px 6px',
-                          borderRadius: '3px',
-                          backgroundColor: SAUDE_CORES[franquia.saude],
-                          color: franquia.saude === 'ATENCAO' ? '#000' : '#fff',
-                          fontSize: '0.6rem',
-                          fontWeight: 600,
-                          fontFamily: "'Poppins', sans-serif",
-                          textTransform: 'uppercase',
-                          whiteSpace: 'nowrap',
-                        }}>
-                          {SAUDE_LABELS[franquia.saude]}
-                        </span>
+                        {(() => {
+                          const isIncubacao0 = franquia.cluster?.toUpperCase()?.includes('INCUBA') && franquia.cluster?.includes('0');
+                          return !isIncubacao0 ? (
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '2px 6px',
+                              borderRadius: '3px',
+                              backgroundColor: SAUDE_CORES[franquia.saude],
+                              color: franquia.saude === 'ATENCAO' ? '#000' : '#fff',
+                              fontSize: '0.6rem',
+                              fontWeight: 600,
+                              fontFamily: "'Poppins', sans-serif",
+                              textTransform: 'uppercase',
+                              whiteSpace: 'nowrap',
+                            }}>
+                              {SAUDE_LABELS[franquia.saude]}
+                            </span>
+                          ) : null;
+                        })()}
                         {/* Botão editar flags */}
                         {canEditFlags && (
                         <button
