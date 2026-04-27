@@ -4,7 +4,7 @@
   "buildCommand": "turbo run build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "ignoreCommand": "if [ \"$FORCE_PREVIEW_DEPLOY\" = \"1\" ]; then echo 'Forced preview deployment'; exit 1; fi; if [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]; then echo 'Skipping non-main branch preview'; exit 0; fi; if [ -z \"$VERCEL_GIT_PREVIOUS_SHA\" ]; then echo 'No previous successful deployment SHA, proceeding with build'; exit 1; fi; if git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- ':(exclude)docs/**' ':(exclude)scripts/**' ':(exclude)*.md' ':(exclude).gitignore' ':(exclude).vscode/**'; then echo 'Only ignored files changed'; exit 0; fi; echo 'Relevant files changed'; exit 1",
+  "ignoreCommand": "node scripts/vercel-ignore.js",
   "functions": {
     "src/pages/api/analise-mercado/inep.ts": {
       "maxDuration": 60,
