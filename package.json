@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "deploy:preview": "npx vercel deploy --target=preview --build-env FORCE_PREVIEW_DEPLOY=1 --env FORCE_PREVIEW_DEPLOY=1 --yes",
     "turbo:build": "turbo run build",
     "turbo:lint": "turbo run lint",
     "turbo:dev": "turbo run dev"
