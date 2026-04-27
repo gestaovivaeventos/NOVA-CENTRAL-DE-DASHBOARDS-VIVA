@@ -1,9 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npm run build",
+  "buildCommand": "turbo run build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD -- ':(exclude)docs/**' ':(exclude)scripts/**' ':(exclude)*.md' ':(exclude).gitignore' ':(exclude).vscode/**'",
   "functions": {
     "src/pages/api/analise-mercado/inep.ts": {
       "maxDuration": 60,
